@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Voltune v3.1</title>
+<title>Voltune v3.2</title>
 <style>
   :root { color-scheme: dark; --bg:#0b0d10; --panel:#13161b; --panel2:#0d1014; --line:#292f38; --muted:#98a3af; --text:#f4f6f8; }
   * { box-sizing: border-box; }
@@ -44,30 +44,30 @@
 </head>
 <body>
 <main>
-  <h1>Voltune <span style="font-size:14px;color:#7f8995">v3.1</span></h1>
-  <p class="sub">Eine Seite für Tesla und Smartphone: GPS immer, Bewegungssensor automatisch wenn verfügbar.</p>
+  <h1>Voltune <span style="font-size:14px;color:#7f8995">v3.2</span></h1>
+  <p class="sub">Eine Seite fÃ¼r Tesla und Smartphone: GPS immer, Bewegungssensor automatisch wenn verfÃ¼gbar.</p>
 
   <div class="badgeRow">
     <span class="badge" id="sourceBadge">Datenquelle: noch nicht gestartet</span>
-    <span class="badge" id="motionBadge">Motion API: prüfe …</span>
-    <span class="badge" id="secureBadge">Kontext: prüfe …</span>
+    <span class="badge" id="motionBadge">Motion API: prÃ¼fe â€¦</span>
+    <span class="badge" id="secureBadge">Kontext: prÃ¼fe â€¦</span>
   </div>
 
   <div class="speed" id="speed">0</div>
   <div class="unit">km/h</div>
 
   <div class="grid">
-    <div class="card"><div class="label">Fusion-Beschleunigung</div><div class="value"><span id="accel">0.00</span> m/s²</div></div>
-    <div class="card"><div class="label">GPS-Beschleunigung</div><div class="value"><span id="gpsAccel">0.00</span> m/s²</div></div>
-    <div class="card"><div class="label">Motion</div><div class="value"><span id="motionAccel">–</span> m/s²</div></div>
-    <div class="card"><div class="label">Tonhöhe</div><div class="value"><span id="freq">52</span> Hz</div></div>
+    <div class="card"><div class="label">Fusion-Beschleunigung</div><div class="value"><span id="accel">0.00</span> m/sÂ²</div></div>
+    <div class="card"><div class="label">GPS-Beschleunigung</div><div class="value"><span id="gpsAccel">0.00</span> m/sÂ²</div></div>
+    <div class="card"><div class="label">Motion</div><div class="value"><span id="motionAccel">â€“</span> m/sÂ²</div></div>
+    <div class="card"><div class="label">TonhÃ¶he</div><div class="value"><span id="freq">52</span> Hz</div></div>
   </div>
 
   <div class="grid">
     <div class="card"><div class="label">GPS-Rate</div><div class="value"><span id="gpsHz">0.0</span> Hz</div></div>
     <div class="card"><div class="label">Motion-Rate</div><div class="value"><span id="motionHz">0</span> Hz</div></div>
-    <div class="card"><div class="label">GPS-Genauigkeit</div><div class="value"><span id="accuracy">–</span> m</div></div>
-    <div class="card"><div class="label">Sensor-Kalibrierung</div><div class="value" id="calState">–</div></div>
+    <div class="card"><div class="label">GPS-Genauigkeit</div><div class="value"><span id="accuracy">â€“</span> m</div></div>
+    <div class="card"><div class="label">Sensor-Kalibrierung</div><div class="value" id="calState">â€“</div></div>
   </div>
 
   <div class="buttons">
@@ -80,13 +80,13 @@
   <div class="modeRow">
     <label for="mode">Datenmodus</label>
     <select id="mode">
-      <option value="auto" selected>Auto: GPS + Motion wenn möglich</option>
+      <option value="auto" selected>Auto: GPS + Motion wenn mÃ¶glich</option>
       <option value="gps">Nur GPS (Vergleich / Tesla)</option>
     </select>
   </div>
 
   <div class="sliderRow">
-    <div class="sliderTop"><span>Lautstärke</span><span id="volLabel">20 %</span></div>
+    <div class="sliderTop"><span>LautstÃ¤rke</span><span id="volLabel">20 %</span></div>
     <input id="volume" type="range" min="0" max="100" value="20">
   </div>
   <div class="sliderRow">
@@ -103,27 +103,27 @@
     <input id="boost" type="range" min="0" max="200" value="100">
   </div>
 
-  <div class="status" id="status">Bereit. Im Stand auf „Sound + Sensoren starten“ tippen.</div>
+  <div class="status" id="status">Bereit. Im Stand auf â€žSound + Sensoren startenâ€œ tippen.</div>
 
   <details>
     <summary>Diagnose</summary>
     <div class="diag">
-      <span>Motion API vorhanden</span><span id="dApi">–</span>
-      <span>Motion-Ereignisse empfangen</span><span id="dMotion">–</span>
-      <span>Motion-Datenquelle</span><span id="dMotionType">–</span>
-      <span>RAW X</span><span id="dRawX">–</span>
-      <span>RAW Y</span><span id="dRawY">–</span>
-      <span>RAW Z</span><span id="dRawZ">–</span>
-      <span>RAW Betrag</span><span id="dRawMag">–</span>
-      <span>Kalibrierte Achse</span><span id="dAxis">–</span>
-      <span>GPS letzte Aktualisierung</span><span id="dGpsAge">–</span>
-      <span>Motion letzte Aktualisierung</span><span id="dMotionAge">–</span>
+      <span>Motion API vorhanden</span><span id="dApi">â€“</span>
+      <span>Motion-Ereignisse empfangen</span><span id="dMotion">â€“</span>
+      <span>Motion-Datenquelle</span><span id="dMotionType">â€“</span>
+      <span>RAW X</span><span id="dRawX">â€“</span>
+      <span>RAW Y</span><span id="dRawY">â€“</span>
+      <span>RAW Z</span><span id="dRawZ">â€“</span>
+      <span>RAW Betrag</span><span id="dRawMag">â€“</span>
+      <span>Kalibrierte Achse</span><span id="dAxis">â€“</span>
+      <span>GPS letzte Aktualisierung</span><span id="dGpsAge">â€“</span>
+      <span>Motion letzte Aktualisierung</span><span id="dMotionAge">â€“</span>
     </div>
   </details>
 
   <small>
-    Wichtig: Demo und Audio funktionieren meist auch als lokale Datei. GPS und Bewegungssensoren können bei <code>file://</code>
-    je nach Browser gesperrt sein; für einen echten Fahrtest ist HTTPS (z. B. GitHub Pages) zuverlässiger.
+    Wichtig: Demo und Audio funktionieren meist auch als lokale Datei. GPS und Bewegungssensoren kÃ¶nnen bei <code>file://</code>
+    je nach Browser gesperrt sein; fÃ¼r einen echten Fahrtest ist HTTPS (z. B. GitHub Pages) zuverlÃ¤ssiger.
     Die Seite speichert oder sendet keine Standort- oder Sensordaten.
   </small>
 </main>
@@ -154,7 +154,7 @@
   function startAudio() {
     if (audioStarted) { ctx.resume(); return; }
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) throw new Error("Web Audio API wird von diesem Browser nicht unterstützt.");
+    if (!AudioCtx) throw new Error("Web Audio API wird von diesem Browser nicht unterstÃ¼tzt.");
     ctx = new AudioCtx();
     osc1 = ctx.createOscillator(); osc1.type = "sine";
     osc2 = ctx.createOscillator(); osc2.type = "triangle";
@@ -241,37 +241,37 @@
     lastGpsSpeed=smoothSpeed; lastGpsTs=ts; lastPos={lat:c.latitude,lon:c.longitude};
     if (finite(c.accuracy)) els.accuracy.textContent=Math.round(c.accuracy);
     render();
-    setStatus("ok", `GPS aktiv · ${gpsRate.toFixed(1)} Hz${motionReceived ? " · Bewegungssensor aktiv" : ""}`);
+    setStatus("ok", `GPS aktiv Â· ${gpsRate.toFixed(1)} Hz${motionReceived ? " Â· Bewegungssensor aktiv" : ""}`);
   }
 
   function onGeoError(err) {
-    const msg={1:"Standortberechtigung verweigert.",2:"Standort momentan nicht verfügbar.",3:"GPS-Abfrage hat zu lange gedauert."}[err.code] || err.message || "Unbekannter GPS-Fehler.";
-    setStatus("err", msg + " Für GPS ist HTTPS normalerweise am zuverlässigsten.");
+    const msg={1:"Standortberechtigung verweigert.",2:"Standort momentan nicht verfÃ¼gbar.",3:"GPS-Abfrage hat zu lange gedauert."}[err.code] || err.message || "Unbekannter GPS-Fehler.";
+    setStatus("err", msg + " FÃ¼r GPS ist HTTPS normalerweise am zuverlÃ¤ssigsten.");
   }
 
   function startGps() {
-    if (!("geolocation" in navigator)) { setStatus("err","navigator.geolocation ist in diesem Browser nicht verfügbar."); return; }
+    if (!("geolocation" in navigator)) { setStatus("err","navigator.geolocation ist in diesem Browser nicht verfÃ¼gbar."); return; }
     if (watchId!=null) navigator.geolocation.clearWatch(watchId);
     watchId=navigator.geolocation.watchPosition(onPosition,onGeoError,{enableHighAccuracy:true,maximumAge:0,timeout:10000});
   }
 
   // ---------- Device Motion ----------
   const motionApiAvailable = "DeviceMotionEvent" in window;
-  let motionReceived=false, motionType="–", lastMotionPerf=null, motionHz=0;
+  let motionReceived=false, motionType="â€“", lastMotionPerf=null, motionHz=0;
   let smoothVec=[0,0,0], gravity=[0,0,0], gravityReady=false;
   let selectedAxis=null, axisSign=1, calibrationSamples=0;
   let corr=[0,0,0], axisEnergy=[0,0,0], gpsEnergy=0, sensorAccel=0;
 
   function resetCalibration() {
     selectedAxis=null; axisSign=1; calibrationSamples=0; corr=[0,0,0]; axisEnergy=[0,0,0]; gpsEnergy=0; sensorAccel=0;
-    els.calState.textContent=motionReceived ? "lernt …" : "–"; els.dAxis.textContent="–";
+    els.calState.textContent=motionReceived ? "lernt â€¦" : "â€“"; els.dAxis.textContent="â€“";
   }
 
   function addCalibrationSample(avgVec, referenceAccel, speedKmh) {
     if (!motionReceived || Math.abs(referenceAccel)<.18 || speedKmh<3) return;
     calibrationSamples++; gpsEnergy += referenceAccel*referenceAccel;
     for (let i=0;i<3;i++) { corr[i] += avgVec[i]*referenceAccel; axisEnergy[i] += avgVec[i]*avgVec[i]; }
-    if (calibrationSamples<2) { els.calState.textContent="lernt …"; return; }
+    if (calibrationSamples<2) { els.calState.textContent="lernt â€¦"; return; }
     let best=-1, bestAbs=0, bestR=0;
     for (let i=0;i<3;i++) {
       const denom=Math.sqrt(Math.max(1e-6,axisEnergy[i]*gpsEnergy)), r=corr[i]/denom;
@@ -279,9 +279,9 @@
     }
     if (best>=0 && bestAbs>.28) {
       selectedAxis=best; axisSign=bestR>=0 ? 1 : -1;
-      els.calState.textContent=`Achse ${["X","Y","Z"][best]} ${axisSign>0?"+":"−"}`;
-      els.dAxis.textContent=`${["X","Y","Z"][best]} · Vorzeichen ${axisSign>0?"+":"−"} · r=${bestR.toFixed(2)}`;
-    } else els.calState.textContent="lernt …";
+      els.calState.textContent=`Achse ${["X","Y","Z"][best]} ${axisSign>0?"+":"âˆ’"}`;
+      els.dAxis.textContent=`${["X","Y","Z"][best]} Â· Vorzeichen ${axisSign>0?"+":"âˆ’"} Â· r=${bestR.toFixed(2)}`;
+    } else els.calState.textContent="lernt â€¦";
   }
 
   function onMotion(e) {
@@ -304,6 +304,17 @@
       for (let i=0;i<3;i++) gravity[i]=gravity[i]*(1-ga)+raw[i]*ga;
       v=raw.map((x,i)=>x-gravity[i]); motionType="accelerationIncludingGravity (High-Pass)";
     }
+
+    // Debugging: direkt aus dem aktuellen DeviceMotion-Event,
+    // bevor Voltune glÃ¤ttet oder eine Fahrzeugachse auswÃ¤hlt.
+    latestRawMotion=v.slice();
+    els.dRawX.textContent=latestRawMotion[0].toFixed(4)+" m/sÂ²";
+    els.dRawY.textContent=latestRawMotion[1].toFixed(4)+" m/sÂ²";
+    els.dRawZ.textContent=latestRawMotion[2].toFixed(4)+" m/sÂ²";
+    els.dRawMag.textContent=Math.hypot(
+      latestRawMotion[0], latestRawMotion[1], latestRawMotion[2]
+    ).toFixed(4)+" m/sÂ²";
+
     for (let i=0;i<3;i++) {
       smoothVec[i]=smoothVec[i]*.72 + clamp(v[i],-8,8)*.28;
       motionIntervalSum[i]+=smoothVec[i];
@@ -327,7 +338,7 @@
       window.addEventListener("devicemotion",onMotion,{passive:true});
       return true;
     } catch (e) {
-      setStatus("warn", `GPS läuft, Bewegungssensor aber nicht: ${e.message}`); return false;
+      setStatus("warn", `GPS lÃ¤uft, Bewegungssensor aber nicht: ${e.message}`); return false;
     }
   }
 
@@ -349,7 +360,7 @@
   function render() {
     const speedKmh=smoothSpeed*3.6, acc=fusedAcceleration();
     els.speed.textContent=Math.round(Math.max(0,speedKmh)); els.accel.textContent=acc.toFixed(2); els.gpsAccel.textContent=gpsAccel.toFixed(2);
-    els.motionAccel.textContent=motionReceived ? (selectedAxis!=null ? sensorAccel.toFixed(2) : "lernt") : "–";
+    els.motionAccel.textContent=motionReceived ? (selectedAxis!=null ? sensorAccel.toFixed(2) : "lernt") : "â€“";
     els.gpsHz.textContent=gpsRate.toFixed(1); els.motionHz.textContent=Math.round(motionHz); els.sourceBadge.textContent=`Datenquelle: ${currentSourceText()}`;
     updateSound(speedKmh,acc);
   }
@@ -359,22 +370,39 @@
   els.start.addEventListener("click", async () => {
     try {
       startAudio(); await ctx.resume(); resetCalibration(); startGps(); await startMotion();
-      els.start.textContent="Läuft ✓"; setStatus("warn","Audio läuft. Warte auf GPS und – falls verfügbar – Bewegungssensor …");
+      els.start.textContent="LÃ¤uft âœ“"; setStatus("warn","Audio lÃ¤uft. Warte auf GPS und â€“ falls verfÃ¼gbar â€“ Bewegungssensor â€¦");
       setTimeout(() => {
         if (!motionReceived) {
-          els.motionBadge.textContent=motionApiAvailable ? "Motion: API da, keine Daten" : "Motion: nicht verfügbar";
+          els.motionBadge.textContent=motionApiAvailable ? "Motion: API da, keine Daten" : "Motion: nicht verfÃ¼gbar";
           if (els.mode.value==="auto") setStatus("ok","GPS-Modus aktiv. Kein nutzbarer Bewegungssensor erkannt.");
         }
       },3500);
     } catch(e) { setStatus("err",e.message); }
   });
 
-  els.recal.addEventListener("click",() => { resetCalibration(); setStatus("warn","Motion-Kalibrierung zurückgesetzt. Bei der nächsten Beschleunigung lernt die Seite die Fahrzeug-Längsachse neu."); });
+  els.recal.addEventListener("click",() => { resetCalibration(); setStatus("warn","Motion-Kalibrierung zurÃ¼ckgesetzt. Bei der nÃ¤chsten Beschleunigung lernt die Seite die Fahrzeug-LÃ¤ngsachse neu."); });
+
+  els.accelOnly.addEventListener("click",() => {
+    try {
+      startAudio();
+      ctx.resume();
+      accelOnlyMode=!accelOnlyMode;
+      els.accelOnly.textContent=`Accel-Sound: ${accelOnlyMode ? "AN" : "AUS"}`;
+      if (accelOnlyMode) {
+        setStatus("ok","Accel-Sound aktiv: GPS wird fÃ¼r die TonhÃ¶he ignoriert. Der RAW-Beschleunigungsbetrag steuert den Ton direkt.");
+      } else {
+        setStatus("","Accel-Sound aus: normaler GPS/GPS+Motion-Modus aktiv.");
+      }
+      render();
+    } catch(e) {
+      setStatus("err",`Audio-Fehler: ${e.message}`);
+    }
+  });
 
   els.demo.addEventListener("click",() => {
     try { startAudio(); ctx.resume(); } catch(e) { setStatus("err",e.message); return; }
     demoActive=!demoActive; els.demo.textContent=demoActive ? "Demo: AN" : "Demo: AUS"; demoStart=performance.now();
-    if (demoActive) setStatus("ok","Demo aktiv: Beschleunigen → Halten → Rekuperieren/Ausrollen."); else setStatus("","Demo aus. GPS/Sensoren übernehmen wieder.");
+    if (demoActive) setStatus("ok","Demo aktiv: Beschleunigen â†’ Halten â†’ Rekuperieren/Ausrollen."); else setStatus("","Demo aus. GPS/Sensoren Ã¼bernehmen wieder.");
   });
 
   function demoLoop(t) {
@@ -403,14 +431,14 @@
 
   setInterval(() => {
     const now=Date.now();
-    els.dGpsAge.textContent=lastGpsTs ? `${((now-lastGpsTs)/1000).toFixed(1)} s` : "–";
-    els.dMotionAge.textContent=lastMotionPerf ? `${((performance.now()-lastMotionPerf)/1000).toFixed(1)} s` : "–";
-    if (motionReceived) els.motionBadge.textContent=selectedAxis!=null ? `Motion: aktiv · ${Math.round(motionHz)} Hz` : `Motion: aktiv · kalibriert sich`;
-    if (!demoActive && lastGpsTs && now-lastGpsTs>5000) setStatus("warn","GPS-Daten sind älter als 5 s – der Browser liefert gerade keine neue Position.");
+    els.dGpsAge.textContent=lastGpsTs ? `${((now-lastGpsTs)/1000).toFixed(1)} s` : "â€“";
+    els.dMotionAge.textContent=lastMotionPerf ? `${((performance.now()-lastMotionPerf)/1000).toFixed(1)} s` : "â€“";
+    if (motionReceived) els.motionBadge.textContent=selectedAxis!=null ? `Motion: aktiv Â· ${Math.round(motionHz)} Hz` : `Motion: aktiv Â· kalibriert sich`;
+    if (!demoActive && lastGpsTs && now-lastGpsTs>5000) setStatus("warn","GPS-Daten sind Ã¤lter als 5 s â€“ der Browser liefert gerade keine neue Position.");
   },1000);
 
   render();
 })();
 </script>
 </body>
-</html>
+</html> 
