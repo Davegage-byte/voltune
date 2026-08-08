@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>EV Sound Lab v2</title>
+<style>
+  :root { color-scheme: dark; --bg:#0b0d10; --panel:#13161b; --panel2:#0d1014; --line:#292f38; --muted:#98a3af; --text:#f4f6f8; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); display:grid; place-items:center; }
+  main { width:min(820px,95vw); margin:18px auto; padding:24px; border:1px solid var(--line); border-radius:22px; background:var(--panel); }
+  h1 { margin:0; font-size:30px; }
+  .sub { margin:5px 0 14px; color:var(--muted); }
+  .badgeRow { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 8px; }
+  .badge { padding:7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel2); font-size:13px; color:#cbd3dc; }
+  .speed { font-size:clamp(78px,16vw,150px); font-weight:750; line-height:.88; letter-spacing:-.06em; text-align:center; margin:24px 0 8px; }
+  .unit { text-align:center; color:var(--muted); font-size:22px; margin-bottom:22px; }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:14px 0; }
+  .card { padding:13px; border-radius:14px; background:var(--panel2); border:1px solid #252b33; min-width:0; }
+  .label { color:#8995a2; font-size:12px; }
+  .value { font-size:19px; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .buttons { display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:10px; margin:18px 0; }
+  button, select { min-height:54px; border:0; border-radius:14px; font-size:16px; font-weight:650; }
+  button { cursor:pointer; }
+  #start { background:#f4f6f8; color:#0b0d10; }
+  #demo, #recal { background:#252b33; color:#f4f6f8; }
+  .modeRow { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:center; margin:12px 0 18px; }
+  .modeRow label { color:#cbd3dc; }
+  select { width:100%; padding:0 12px; background:#20252c; color:#f4f6f8; border:1px solid #343b45; }
+  .sliderRow { margin-top:16px; }
+  .sliderTop { display:flex; justify-content:space-between; gap:12px; margin-bottom:7px; font-size:14px; }
+  input[type=range] { width:100%; }
+  .status { margin-top:18px; padding:12px 14px; border-radius:13px; background:var(--panel2); border:1px solid var(--line); color:#b8c1cb; min-height:48px; }
+  .ok { color:#a7e4a7; }
+  .warn { color:#ffd27d; }
+  .err { color:#ff9b9b; }
+  details { margin-top:14px; color:#aab4bf; }
+  summary { cursor:pointer; }
+  .diag { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; margin-top:10px; font-size:13px; }
+  .diag span:nth-child(odd) { color:#788491; }
+  small { display:block; margin-top:16px; color:#77828e; line-height:1.45; }
+  @media (max-width:700px) { main { padding:17px; } .grid { grid-template-columns:1fr 1fr; } .buttons { grid-template-columns:1fr; } .modeRow { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>EV Sound Lab v2</h1>
+  <p class="sub">Eine Seite für Tesla und Smartphone: GPS immer, Bewegungssensor automatisch wenn verfügbar.</p>
+
+  <div class="badgeRow">
+    <span class="badge" id="sourceBadge">Datenquelle: noch nicht gestartet</span>
+    <span class="badge" id="motionBadge">Motion API: prüfe …</span>
+    <span class="badge" id="secureBadge">Kontext: prüfe …</span>
+  </div>
+
+  <div class="speed" id="speed">0</div>
+  <div class="unit">km/h</div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Fusion-Beschleunigung</div><div class="value"><span id="accel">0.00</span> m/s²</div></div>
+    <div class="card"><div class="label">GPS-Beschleunigung</div><div class="value"><span id="gpsAccel">0.00</span> m/s²</div></div>
+    <div class="card"><div class="label">Motion</div><div class="value"><span id="motionAccel">–</span> m/s²</div></div>
+    <div class="card"><div class="label">Tonhöhe</div><div class="value"><span id="freq">52</span> Hz</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">GPS-Rate</div><div class="value"><span id="gpsHz">0.0</span> Hz</div></div>
+    <div class="card"><div class="label">Motion-Rate</div><div class="value"><span id="motionHz">0</span> Hz</div></div>
+    <div class="card"><div class="label">GPS-Genauigkeit</div><div class="value"><span id="accuracy">–</span> m</div></div>
+    <div class="card"><div class="label">Sensor-Kalibrierung</div><div class="value" id="calState">–</div></div>
+  </div>
+
+  <div class="buttons">
+    <button id="start">Sound + Sensoren starten</button>
+    <button id="demo">Demo: AUS</button>
+    <button id="recal">Motion neu kalibrieren</button>
+  </div>
+
+  <div class="modeRow">
+    <label for="mode">Datenmodus</label>
+    <select id="mode">
+      <option value="auto" selected>Auto: GPS + Motion wenn möglich</option>
+      <option value="gps">Nur GPS (Vergleich / Tesla)</option>
+    </select>
+  </div>
+
+  <div class="sliderRow">
+    <div class="sliderTop"><span>Lautstärke</span><span id="volLabel">20 %</span></div>
+    <input id="volume" type="range" min="0" max="100" value="20">
+  </div>
+  <div class="sliderRow">
+    <div class="sliderTop"><span>Tonanstieg pro km/h</span><span id="pitchLabel">2.4 Hz</span></div>
+    <input id="pitch" type="range" min="8" max="45" value="24">
+  </div>
+  <div class="sliderRow">
+    <div class="sliderTop"><span>Beschleunigungs-Einfluss</span><span id="boostLabel">100 %</span></div>
+    <input id="boost" type="range" min="0" max="200" value="100">
+  </div>
+
+  <div class="status" id="status">Bereit. Im Stand auf „Sound + Sensoren starten“ tippen.</div>
+
+  <details>
+    <summary>Diagnose</summary>
+    <div class="diag">
+      <span>Motion API vorhanden</span><span id="dApi">–</span>
+      <span>Motion-Ereignisse empfangen</span><span id="dMotion">–</span>
+      <span>Motion-Datenquelle</span><span id="dMotionType">–</span>
+      <span>Kalibrierte Achse</span><span id="dAxis">–</span>
+      <span>GPS letzte Aktualisierung</span><span id="dGpsAge">–</span>
+      <span>Motion letzte Aktualisierung</span><span id="dMotionAge">–</span>
+    </div>
+  </details>
+
+  <small>
+    Wichtig: Demo und Audio funktionieren meist auch als lokale Datei. GPS und Bewegungssensoren können bei <code>file://</code>
+    je nach Browser gesperrt sein; für einen echten Fahrtest ist HTTPS (z. B. GitHub Pages) zuverlässiger.
+    Die Seite speichert oder sendet keine Standort- oder Sensordaten.
+  </small>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const els = {
+    speed:$("speed"), accel:$("accel"), gpsAccel:$("gpsAccel"), motionAccel:$("motionAccel"),
+    freq:$("freq"), accuracy:$("accuracy"), gpsHz:$("gpsHz"), motionHz:$("motionHz"),
+    calState:$("calState"), sourceBadge:$("sourceBadge"), motionBadge:$("motionBadge"),
+    secureBadge:$("secureBadge"), status:$("status"), start:$("start"), demo:$("demo"),
+    recal:$("recal"), mode:$("mode"), volume:$("volume"), pitch:$("pitch"), boost:$("boost"),
+    volLabel:$("volLabel"), pitchLabel:$("pitchLabel"), boostLabel:$("boostLabel"),
+    dApi:$("dApi"), dMotion:$("dMotion"), dMotionType:$("dMotionType"), dAxis:$("dAxis"),
+    dGpsAge:$("dGpsAge"), dMotionAge:$("dMotionAge")
+  };
+
+  const clamp = (v,min,max) => Math.max(min, Math.min(max,v));
+  const finite = v => Number.isFinite(v);
+
+  // ---------- Audio ----------
+  let ctx, osc1, osc2, osc3, filter, master, audioStarted=false;
+  function startAudio() {
+    if (audioStarted) { ctx.resume(); return; }
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) throw new Error("Web Audio API wird von diesem Browser nicht unterstützt.");
+    ctx = new AudioCtx();
+    osc1 = ctx.createOscillator(); osc1.type = "sine";
+    osc2 = ctx.createOscillator(); osc2.type = "triangle";
+    osc3 = ctx.createOscillator(); osc3.type = "sine";
+    const g1=ctx.createGain(), g2=ctx.createGain(), g3=ctx.createGain();
+    g1.gain.value=.78; g2.gain.value=.12; g3.gain.value=.045;
+    filter=ctx.createBiquadFilter(); filter.type="lowpass"; filter.frequency.value=900; filter.Q.value=.8;
+    master=ctx.createGain(); master.gain.value=.0001;
+    osc1.connect(g1).connect(filter); osc2.connect(g2).connect(filter); osc3.connect(g3).connect(filter);
+    filter.connect(master).connect(ctx.destination);
+    osc1.start(); osc2.start(); osc3.start();
+    audioStarted=true; updateSound(0,0);
+  }
+
+  function updateSound(speedKmh, accel) {
+    if (!audioStarted) return;
+    const now=ctx.currentTime, hzPerKmh=Number(els.pitch.value)/10, boostScale=Number(els.boost.value)/100;
+    const positive=Math.max(0, accel), negative=Math.max(0,-accel);
+    const f=clamp(52 + speedKmh*hzPerKmh + positive*25*boostScale - negative*5*boostScale, 42, 620);
+    osc1.frequency.setTargetAtTime(f, now, .055);
+    osc2.frequency.setTargetAtTime(f*2.01, now, .055);
+    osc3.frequency.setTargetAtTime(f*3.96, now, .065);
+    filter.frequency.setTargetAtTime(clamp(550 + speedKmh*17 + Math.abs(accel)*130*boostScale, 450, 4300), now, .08);
+    const userVol=Number(els.volume.value)/100, movement=clamp(speedKmh/130,0,1), load=clamp(Math.abs(accel)/4,0,1);
+    let level=userVol*(.13 + movement*.50 + load*.22*boostScale);
+    if (speedKmh<1) level*=.42;
+    master.gain.setTargetAtTime(clamp(level,.0001,.30), now, .07);
+    els.freq.textContent=Math.round(f);
+  }
+
+  // ---------- GPS ----------
+  let watchId=null, lastPos=null, lastGpsTs=null, lastGpsSpeed=0, smoothSpeed=0;
+  let gpsAccel=0, gpsRate=0, motionIntervalSum=[0,0,0], motionIntervalCount=0;
+
+  function haversine(a,b) {
+    const R=6371000, p1=a.lat*Math.PI/180, p2=b.lat*Math.PI/180;
+    const dp=(b.lat-a.lat)*Math.PI/180, dl=(b.lon-a.lon)*Math.PI/180;
+    const h=Math.sin(dp/2)**2 + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+    return 2*R*Math.asin(Math.sqrt(h));
+  }
+
+  function onPosition(pos) {
+    if (demoActive) return;
+    const ts=pos.timestamp || Date.now(), c=pos.coords;
+    let speed=finite(c.speed) && c.speed>=0 ? c.speed : null;
+    if (speed==null && lastPos && lastGpsTs) {
+      const dt=(ts-lastGpsTs)/1000;
+      if (dt>.15 && dt<10) speed=haversine(lastPos,{lat:c.latitude,lon:c.longitude})/dt;
+    }
+    if (speed==null) speed=0;
+    if (speed<.45) speed=0;
+    const dt=lastGpsTs ? clamp((ts-lastGpsTs)/1000,.15,8) : 1;
+    gpsRate = lastGpsTs ? 1/dt : 0;
+    smoothSpeed=smoothSpeed*.58 + speed*.42;
+    const rawGpsAccel=(smoothSpeed-lastGpsSpeed)/dt;
+    gpsAccel=gpsAccel*.68 + clamp(rawGpsAccel,-5,5)*.32;
+    if (motionIntervalCount>0) {
+      const avg=motionIntervalSum.map(v=>v/motionIntervalCount);
+      addCalibrationSample(avg, gpsAccel, smoothSpeed*3.6);
+    }
+    motionIntervalSum=[0,0,0]; motionIntervalCount=0;
+    lastGpsSpeed=smoothSpeed; lastGpsTs=ts; lastPos={lat:c.latitude,lon:c.longitude};
+    if (finite(c.accuracy)) els.accuracy.textContent=Math.round(c.accuracy);
+    render();
+    setStatus("ok", `GPS aktiv · ${gpsRate.toFixed(1)} Hz${motionReceived ? " · Bewegungssensor aktiv" : ""}`);
+  }
+
+  function onGeoError(err) {
+    const msg={1:"Standortberechtigung verweigert.",2:"Standort momentan nicht verfügbar.",3:"GPS-Abfrage hat zu lange gedauert."}[err.code] || err.message || "Unbekannter GPS-Fehler.";
+    setStatus("err", msg + " Für GPS ist HTTPS normalerweise am zuverlässigsten.");
+  }
+
+  function startGps() {
+    if (!("geolocation" in navigator)) { setStatus("err","navigator.geolocation ist in diesem Browser nicht verfügbar."); return; }
+    if (watchId!=null) navigator.geolocation.clearWatch(watchId);
+    watchId=navigator.geolocation.watchPosition(onPosition,onGeoError,{enableHighAccuracy:true,maximumAge:0,timeout:10000});
+  }
+
+  // ---------- Device Motion ----------
+  const motionApiAvailable = "DeviceMotionEvent" in window;
+  let motionReceived=false, motionType="–", lastMotionPerf=null, motionHz=0;
+  let smoothVec=[0,0,0], gravity=[0,0,0], gravityReady=false;
+  let selectedAxis=null, axisSign=1, calibrationSamples=0;
+  let corr=[0,0,0], axisEnergy=[0,0,0], gpsEnergy=0, sensorAccel=0;
+
+  function resetCalibration() {
+    selectedAxis=null; axisSign=1; calibrationSamples=0; corr=[0,0,0]; axisEnergy=[0,0,0]; gpsEnergy=0; sensorAccel=0;
+    els.calState.textContent=motionReceived ? "lernt …" : "–"; els.dAxis.textContent="–";
+  }
+
+  function addCalibrationSample(avgVec, referenceAccel, speedKmh) {
+    if (!motionReceived || Math.abs(referenceAccel)<.18 || speedKmh<3) return;
+    calibrationSamples++; gpsEnergy += referenceAccel*referenceAccel;
+    for (let i=0;i<3;i++) { corr[i] += avgVec[i]*referenceAccel; axisEnergy[i] += avgVec[i]*avgVec[i]; }
+    if (calibrationSamples<2) { els.calState.textContent="lernt …"; return; }
+    let best=-1, bestAbs=0, bestR=0;
+    for (let i=0;i<3;i++) {
+      const denom=Math.sqrt(Math.max(1e-6,axisEnergy[i]*gpsEnergy)), r=corr[i]/denom;
+      if (Math.abs(r)>bestAbs) { best=i; bestAbs=Math.abs(r); bestR=r; }
+    }
+    if (best>=0 && bestAbs>.28) {
+      selectedAxis=best; axisSign=bestR>=0 ? 1 : -1;
+      els.calState.textContent=`Achse ${["X","Y","Z"][best]} ${axisSign>0?"+":"−"}`;
+      els.dAxis.textContent=`${["X","Y","Z"][best]} · Vorzeichen ${axisSign>0?"+":"−"} · r=${bestR.toFixed(2)}`;
+    } else els.calState.textContent="lernt …";
+  }
+
+  function onMotion(e) {
+    motionReceived=true;
+    const now=performance.now();
+    if (lastMotionPerf) {
+      const dt=(now-lastMotionPerf)/1000;
+      if (dt>0 && dt<1) motionHz = motionHz*.80 + (1/dt)*.20;
+    }
+    lastMotionPerf=now;
+    let v=[0,0,0], a=e.acceleration;
+    if (a && finite(a.x) && finite(a.y) && finite(a.z)) {
+      v=[a.x,a.y,a.z]; motionType="acceleration (ohne Gravitation)";
+    } else {
+      const ag=e.accelerationIncludingGravity;
+      if (!ag || !finite(ag.x) || !finite(ag.y) || !finite(ag.z)) return;
+      const raw=[ag.x,ag.y,ag.z];
+      if (!gravityReady) { gravity=raw.slice(); gravityReady=true; }
+      const ga=.035;
+      for (let i=0;i<3;i++) gravity[i]=gravity[i]*(1-ga)+raw[i]*ga;
+      v=raw.map((x,i)=>x-gravity[i]); motionType="accelerationIncludingGravity (High-Pass)";
+    }
+    for (let i=0;i<3;i++) {
+      smoothVec[i]=smoothVec[i]*.72 + clamp(v[i],-8,8)*.28;
+      motionIntervalSum[i]+=smoothVec[i];
+    }
+    motionIntervalCount++;
+    if (selectedAxis!=null) {
+      const rawLong=smoothVec[selectedAxis]*axisSign;
+      sensorAccel=sensorAccel*.58 + clamp(rawLong,-5,5)*.42;
+    }
+    els.motionHz.textContent=Math.round(motionHz); els.dMotion.textContent="ja"; els.dMotionType.textContent=motionType; render();
+  }
+
+  async function startMotion() {
+    if (!motionApiAvailable) return false;
+    try {
+      if (typeof DeviceMotionEvent.requestPermission === "function") {
+        const result=await DeviceMotionEvent.requestPermission();
+        if (result!=="granted") throw new Error("Bewegungssensor-Berechtigung nicht erteilt.");
+      }
+      window.removeEventListener("devicemotion",onMotion);
+      window.addEventListener("devicemotion",onMotion,{passive:true});
+      return true;
+    } catch (e) {
+      setStatus("warn", `GPS läuft, Bewegungssensor aber nicht: ${e.message}`); return false;
+    }
+  }
+
+  // ---------- Fusion / Anzeige ----------
+  let demoActive=false, demoStart=0;
+  function fusedAcceleration() {
+    if (els.mode.value==="gps") return gpsAccel;
+    if (motionReceived && selectedAxis!=null) return clamp(sensorAccel*.88 + gpsAccel*.12,-5,5);
+    return gpsAccel;
+  }
+  function currentSourceText() {
+    if (demoActive) return "Demo";
+    if (els.mode.value==="gps") return "GPS";
+    if (motionReceived && selectedAxis!=null) return "GPS + Bewegungssensor";
+    if (motionReceived) return "GPS + Motion (Kalibrierung)";
+    return "GPS";
+  }
+  function render() {
+    const speedKmh=smoothSpeed*3.6, acc=fusedAcceleration();
+    els.speed.textContent=Math.round(Math.max(0,speedKmh)); els.accel.textContent=acc.toFixed(2); els.gpsAccel.textContent=gpsAccel.toFixed(2);
+    els.motionAccel.textContent=motionReceived ? (selectedAxis!=null ? sensorAccel.toFixed(2) : "lernt") : "–";
+    els.gpsHz.textContent=gpsRate.toFixed(1); els.motionHz.textContent=Math.round(motionHz); els.sourceBadge.textContent=`Datenquelle: ${currentSourceText()}`;
+    updateSound(speedKmh,acc);
+  }
+  function setStatus(type,text) { els.status.className="status "+(type||""); els.status.textContent=text; }
+
+  // ---------- Buttons ----------
+  els.start.addEventListener("click", async () => {
+    try {
+      startAudio(); await ctx.resume(); resetCalibration(); startGps(); await startMotion();
+      els.start.textContent="Läuft ✓"; setStatus("warn","Audio läuft. Warte auf GPS und – falls verfügbar – Bewegungssensor …");
+      setTimeout(() => {
+        if (!motionReceived) {
+          els.motionBadge.textContent=motionApiAvailable ? "Motion: API da, keine Daten" : "Motion: nicht verfügbar";
+          if (els.mode.value==="auto") setStatus("ok","GPS-Modus aktiv. Kein nutzbarer Bewegungssensor erkannt.");
+        }
+      },3500);
+    } catch(e) { setStatus("err",e.message); }
+  });
+
+  els.recal.addEventListener("click",() => { resetCalibration(); setStatus("warn","Motion-Kalibrierung zurückgesetzt. Bei der nächsten Beschleunigung lernt die Seite die Fahrzeug-Längsachse neu."); });
+
+  els.demo.addEventListener("click",() => {
+    try { startAudio(); ctx.resume(); } catch(e) { setStatus("err",e.message); return; }
+    demoActive=!demoActive; els.demo.textContent=demoActive ? "Demo: AN" : "Demo: AUS"; demoStart=performance.now();
+    if (demoActive) setStatus("ok","Demo aktiv: Beschleunigen → Halten → Rekuperieren/Ausrollen."); else setStatus("","Demo aus. GPS/Sensoren übernehmen wieder.");
+  });
+
+  function demoLoop(t) {
+    if (demoActive) {
+      const phase=((t-demoStart)/1000)%20; let kmh,a;
+      if (phase<6) { kmh=phase/6*120; a=(120/3.6)/6; }
+      else if (phase<9) { kmh=120; a=0; }
+      else if (phase<14) { kmh=120-(phase-9)/5*55; a=-(55/3.6)/5; }
+      else { kmh=Math.max(0,65-(phase-14)/6*65); a=-(65/3.6)/6; }
+      smoothSpeed=kmh/3.6; gpsAccel=a; sensorAccel=a; render();
+    }
+    requestAnimationFrame(demoLoop);
+  }
+  requestAnimationFrame(demoLoop);
+
+  els.mode.addEventListener("change",render);
+  els.volume.addEventListener("input",()=>{ els.volLabel.textContent=`${els.volume.value} %`; render(); });
+  els.pitch.addEventListener("input",()=>{ els.pitchLabel.textContent=`${(Number(els.pitch.value)/10).toFixed(1)} Hz`; render(); });
+  els.boost.addEventListener("input",()=>{ els.boostLabel.textContent=`${els.boost.value} %`; render(); });
+
+  // ---------- Startdiagnose ----------
+  els.motionBadge.textContent=motionApiAvailable ? "Motion API: vorhanden" : "Motion API: nicht vorhanden";
+  els.secureBadge.textContent = window.isSecureContext ? "Kontext: HTTPS/sicher" : `Kontext: ${location.protocol} (Sensoren evtl. gesperrt)`;
+  els.dApi.textContent=motionApiAvailable ? "ja" : "nein"; els.dMotion.textContent="nein";
+
+  setInterval(() => {
+    const now=Date.now();
+    els.dGpsAge.textContent=lastGpsTs ? `${((now-lastGpsTs)/1000).toFixed(1)} s` : "–";
+    els.dMotionAge.textContent=lastMotionPerf ? `${((performance.now()-lastMotionPerf)/1000).toFixed(1)} s` : "–";
+    if (motionReceived) els.motionBadge.textContent=selectedAxis!=null ? `Motion: aktiv · ${Math.round(motionHz)} Hz` : `Motion: aktiv · kalibriert sich`;
+    if (!demoActive && lastGpsTs && now-lastGpsTs>5000) setStatus("warn","GPS-Daten sind älter als 5 s – der Browser liefert gerade keine neue Position.");
+  },1000);
+
+  render();
+})();
+</script>
+</body>
+</html>
