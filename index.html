@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Voltune Test v3</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d10;--p:#13161b;--p2:#0d1014;--l:#292f38;--m:#98a3af;--t:#f4f6f8}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--t);display:grid;place-items:center}
+main{width:min(820px,95vw);margin:18px auto;padding:24px;border:1px solid var(--l);border-radius:22px;background:var(--p)}
+h1{margin:0;font-size:30px}.sub{margin:5px 0 14px;color:var(--m)}
+.badges{display:flex;flex-wrap:wrap;gap:8px}.badge{padding:7px 10px;border:1px solid var(--l);border-radius:999px;background:var(--p2);font-size:13px}
+.speed{font-size:clamp(78px,16vw,150px);font-weight:750;line-height:.88;letter-spacing:-.06em;text-align:center;margin:24px 0 8px}.unit{text-align:center;color:var(--m);font-size:22px;margin-bottom:22px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:14px 0}.card{padding:13px;border-radius:14px;background:var(--p2);border:1px solid #252b33}.label{color:#8995a2;font-size:12px}.value{font-size:19px;margin-top:4px;white-space:nowrap}
+.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:18px 0}button,select{min-height:54px;border:0;border-radius:14px;font-size:16px;font-weight:650}button{cursor:pointer;background:#252b33;color:#f4f6f8}#start{background:#f4f6f8;color:#0b0d10}#accelOnly.active{outline:2px solid #f4f6f8}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;margin:12px 0 18px}select{width:100%;padding:0 12px;background:#20252c;color:#f4f6f8;border:1px solid #343b45}
+.slider{margin-top:16px}.sliderTop{display:flex;justify-content:space-between;margin-bottom:7px;font-size:14px}input[type=range]{width:100%}
+.status{margin-top:18px;padding:12px 14px;border-radius:13px;background:var(--p2);border:1px solid var(--l);color:#b8c1cb}.ok{color:#a7e4a7}.warn{color:#ffd27d}.err{color:#ff9b9b}
+details{margin-top:14px;color:#aab4bf}.diag{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-top:10px;font-size:13px}.diag span:nth-child(odd){color:#788491}
+.raw{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:15px}small{display:block;margin-top:16px;color:#77828e;line-height:1.45}
+@media(max-width:700px){main{padding:17px}.grid{grid-template-columns:1fr 1fr}.buttons,.row{grid-template-columns:1fr}}
+</style></head><body><main>
+<h1>Voltune <small style="display:inline;color:#77828e;font-size:14px">Test v3</small></h1>
+<p class="sub">GPS als Basis, Smartphone-Motion automatisch als schnelle Zusatzinformation.</p>
+<div class="badges"><span class="badge" id="source">Datenquelle: –</span><span class="badge" id="motionBadge">Motion: –</span><span class="badge" id="secure">Kontext: –</span></div>
+<div class="speed" id="speed">0</div><div class="unit">km/h</div>
+
+<div class="grid">
+<div class="card"><div class="label">Fusion</div><div class="value"><span id="fusion">0.00</span> m/s²</div></div>
+<div class="card"><div class="label">GPS-Beschleunigung</div><div class="value"><span id="gpsA">0.00</span> m/s²</div></div>
+<div class="card"><div class="label">Motion Längsachse</div><div class="value"><span id="motA">–</span> m/s²</div></div>
+<div class="card"><div class="label">Tonhöhe</div><div class="value"><span id="freq">60</span> Hz</div></div>
+</div>
+<div class="grid">
+<div class="card"><div class="label">GPS-Rate</div><div class="value"><span id="gpsHz">0.0</span> Hz</div></div>
+<div class="card"><div class="label">Motion-Rate</div><div class="value"><span id="motHz">0</span> Hz</div></div>
+<div class="card"><div class="label">GPS-Genauigkeit</div><div class="value"><span id="accuracy">–</span> m</div></div>
+<div class="card"><div class="label">Kalibrierte Achse</div><div class="value" id="axis">–</div></div>
+</div>
+
+<div class="buttons">
+<button id="start">Sound + Sensoren starten</button>
+<button id="accelOnly">Accel-Sound: AUS</button>
+<button id="demo">Demo: AUS</button>
+<button id="recal">Motion neu kalibrieren</button>
+</div>
+
+<div class="row"><label>Datenmodus</label><select id="mode"><option value="auto">Auto: GPS + Motion wenn möglich</option><option value="gps">Nur GPS</option></select></div>
+
+<div class="slider"><div class="sliderTop"><span>Grundfrequenz</span><span id="baseLbl">60 Hz</span></div><input id="base" type="range" min="20" max="200" step="1" value="60"></div>
+<div class="slider"><div class="sliderTop"><span>Tonanstieg pro km/h</span><span id="pitchLbl">2.4 Hz</span></div><input id="pitch" type="range" min="0" max="50" step="1" value="24"></div>
+<div class="slider"><div class="sliderTop"><span>Beschleunigungs-Einfluss</span><span id="boostLbl">100 %</span></div><input id="boost" type="range" min="0" max="200" value="100"></div>
+<div class="slider"><div class="sliderTop"><span>Lautstärke</span><span id="volLbl">20 %</span></div><input id="vol" type="range" min="0" max="100" value="20"></div>
+
+<div class="status" id="status">Bereit.</div>
+
+<details open><summary>Debugging / Raw Sensor Data</summary>
+<div class="grid">
+<div class="card"><div class="label">RAW X</div><div class="value raw"><span id="rawX">–</span></div></div>
+<div class="card"><div class="label">RAW Y</div><div class="value raw"><span id="rawY">–</span></div></div>
+<div class="card"><div class="label">RAW Z</div><div class="value raw"><span id="rawZ">–</span></div></div>
+<div class="card"><div class="label">RAW Betrag</div><div class="value raw"><span id="rawM">–</span></div></div>
+</div>
+<div class="diag">
+<span>Motion API</span><span id="dApi">–</span><span>Motion Events</span><span id="dEvents">–</span>
+<span>Datenquelle</span><span id="dType">–</span><span>Kalibrierte Achse</span><span id="dAxis">–</span>
+<span>GPS Alter</span><span id="dGps">–</span><span>Motion Alter</span><span id="dMot">–</span>
+</div></details>
+<small>RAW X/Y/Z sind die direkt von <code>DeviceMotionEvent.acceleration</code> gelieferten linearen Beschleunigungswerte, bevor Voltune sie glättet oder eine Fahrzeugachse auswählt. Accel-Sound ignoriert GPS-Geschwindigkeit für die Tonhöhe und reagiert ausschließlich auf die rohe Bewegungsstärke – praktisch zum Testen im Stand.</small>
+</main>
+<script>
+const $=x=>document.getElementById(x), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), fin=Number.isFinite;
+let audio=false,ctx,o1,o2,filter,gain,watch=null,demo=false,demoT=0,accelOnly=false;
+let speed=0,lastSpeed=0,gpsA=0,lastGps=null,gpsHz=0,lastPos=null;
+let motion=false,lastMot=null,motHz=0,raw=[0,0,0],smooth=[0,0,0],motA=0,axis=null,sign=1;
+let sums=[0,0,0],sumN=0,corr=[0,0,0],ae=[0,0,0],ge=0,samples=0;
+
+function audioStart(){if(audio){ctx.resume();return}ctx=new(window.AudioContext||window.webkitAudioContext)();o1=ctx.createOscillator();o2=ctx.createOscillator();o1.type="sine";o2.type="triangle";let g2=ctx.createGain();g2.gain.value=.10;filter=ctx.createBiquadFilter();filter.type="lowpass";gain=ctx.createGain();gain.gain.value=.0001;o1.connect(filter);o2.connect(g2).connect(filter);filter.connect(gain).connect(ctx.destination);o1.start();o2.start();audio=true}
+function fusion(){if($("#mode").value==="gps"||!motion||axis===null)return gpsA;return clamp(motA*.88+gpsA*.12,-6,6)}
+function sound(){
+ if(!audio)return; let a=fusion(), base=+$("base").value, p=+$("pitch").value/10, b=+$("boost").value/100;
+ let f;
+ if(accelOnly){ // Testmodus: keine GPS-Geschwindigkeit. Betrag der RAW-Beschleunigung treibt die Tonhöhe.
+   let m=Math.sqrt(raw[0]**2+raw[1]**2+raw[2]**2);
+   f=clamp(base+m*55*b,20,1200);
+ }else{
+   f=clamp(base+speed*3.6*p+Math.max(0,a)*25*b-Math.max(0,-a)*5*b,20,1200);
+ }
+ let n=ctx.currentTime;o1.frequency.setTargetAtTime(f,n,.045);o2.frequency.setTargetAtTime(f*2.01,n,.045);filter.frequency.setTargetAtTime(clamp(500+f*5,500,5000),n,.06);
+ let v=+$("vol").value/100;gain.gain.setTargetAtTime(clamp(v*(accelOnly?.30:(.12+Math.min(speed*3.6/130,1)*.5+Math.min(Math.abs(a)/4,1)*.2)),.0001,.3),n,.05);$("#freq").textContent=Math.round(f)
+}
+function render(){let a=fusion();$("#speed").textContent=Math.round(speed*3.6);$("#fusion").textContent=a.toFixed(2);$("#gpsA").textContent=gpsA.toFixed(2);$("#motA").textContent=axis===null?(motion?"lernt":"–"):motA.toFixed(2);$("#gpsHz").textContent=gpsHz.toFixed(1);$("#motHz").textContent=Math.round(motHz);$("#source").textContent="Datenquelle: "+(accelOnly?"Motion Test":($("#mode").value==="gps"?"GPS":(axis!==null?"GPS + Motion":"GPS + Motion (Kalibrierung)")));sound()}
+function hav(a,b){let R=6371000,p1=a.lat*Math.PI/180,p2=b.lat*Math.PI/180,dp=(b.lat-a.lat)*Math.PI/180,dl=(b.lon-a.lon)*Math.PI/180,h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function pos(p){if(demo)return;let t=p.timestamp||Date.now(),c=p.coords,s=fin(c.speed)&&c.speed>=0?c.speed:null;if(s===null&&lastPos&&lastGps){let dt=(t-lastGps)/1000;if(dt>.15&&dt<10)s=hav(lastPos,{lat:c.latitude,lon:c.longitude})/dt}if(s===null)s=0;if(s<.45)s=0;let dt=lastGps?clamp((t-lastGps)/1000,.15,8):1;gpsHz=lastGps?1/dt:0;speed=speed*.58+s*.42;let r=(speed-lastSpeed)/dt;gpsA=gpsA*.68+clamp(r,-6,6)*.32;if(sumN){cal(sums.map(x=>x/sumN),gpsA,speed*3.6)}sums=[0,0,0];sumN=0;lastSpeed=speed;lastGps=t;lastPos={lat:c.latitude,lon:c.longitude};if(fin(c.accuracy))$("#accuracy").textContent=Math.round(c.accuracy);render();$("#status").className="status ok";$("#status").textContent=`GPS aktiv · ${gpsHz.toFixed(1)} Hz · Motion ${motion?Math.round(motHz)+" Hz":"nicht aktiv"}`}
+function geoErr(e){$("#status").className="status err";$("#status").textContent="GPS: "+({1:"Berechtigung verweigert",2:"nicht verfügbar",3:"Timeout"}[e.code]||e.message)}
+function cal(v,ref,kmh){if(!motion||Math.abs(ref)<.18||kmh<3)return;samples++;ge+=ref*ref;for(let i=0;i<3;i++){corr[i]+=v[i]*ref;ae[i]+=v[i]*v[i]}let best=-1,br=0;for(let i=0;i<3;i++){let r=corr[i]/Math.sqrt(Math.max(1e-6,ae[i]*ge));if(Math.abs(r)>Math.abs(br)){best=i;br=r}}if(samples>=2&&Math.abs(br)>.28){axis=best;sign=br>=0?1:-1;$("#axis").textContent="XYZ"[axis]+" "+(sign>0?"+":"−");$("#dAxis").textContent=$("#axis").textContent+" · r="+br.toFixed(2)}}
+function reset(){axis=null;sign=1;samples=0;corr=[0,0,0];ae=[0,0,0];ge=0;$("#axis").textContent="–";$("#dAxis").textContent="–"}
+function motionEvent(e){motion=true;let now=performance.now();if(lastMot){let dt=(now-lastMot)/1000;if(dt>0&&dt<1)motHz=motHz*.8+(1/dt)*.2}lastMot=now;let a=e.acceleration;if(!a||!fin(a.x)||!fin(a.y)||!fin(a.z))return;raw=[a.x,a.y,a.z];$("#rawX").textContent=raw[0].toFixed(4);$("#rawY").textContent=raw[1].toFixed(4);$("#rawZ").textContent=raw[2].toFixed(4);$("#rawM").textContent=Math.hypot(...raw).toFixed(4);for(let i=0;i<3;i++){smooth[i]=smooth[i]*.72+clamp(raw[i],-8,8)*.28;sums[i]+=smooth[i]}sumN++;if(axis!==null)motA=motA*.58+clamp(smooth[axis]*sign,-6,6)*.42;$("#dEvents").textContent="ja";$("#dType").textContent="acceleration (RAW ohne Gravitation)";$("#motionBadge").textContent=`Motion: aktiv · ${Math.round(motHz)} Hz`;render()}
+async function motionStart(){if(!("DeviceMotionEvent"in window))return;if(typeof DeviceMotionEvent.requestPermission==="function"){if(await DeviceMotionEvent.requestPermission()!=="granted")return}addEventListener("devicemotion",motionEvent,{passive:true})}
+$("#start").onclick=async()=>{audioStart();await ctx.resume();if("geolocation"in navigator)watch=navigator.geolocation.watchPosition(pos,geoErr,{enableHighAccuracy:true,maximumAge:0,timeout:10000});await motionStart();$("#start").textContent="Läuft ✓"}
+$("#accelOnly").onclick=()=>{audioStart();ctx.resume();accelOnly=!accelOnly;$("#accelOnly").textContent="Accel-Sound: "+(accelOnly?"AN":"AUS");$("#accelOnly").classList.toggle("active",accelOnly);render()}
+$("#recal").onclick=reset;
+$("#demo").onclick=()=>{audioStart();ctx.resume();demo=!demo;demoT=performance.now();$("#demo").textContent="Demo: "+(demo?"AN":"AUS")}
+function loop(t){if(demo){let q=((t-demoT)/1000)%18;if(q<6){speed=q/6*110/3.6;gpsA=5.09}else if(q<9){speed=110/3.6;gpsA=0}else{speed=Math.max(0,110*(1-(q-9)/9))/3.6;gpsA=-3.4}render()}requestAnimationFrame(loop)}requestAnimationFrame(loop);
+["base","pitch","boost","vol"].forEach(id=>$(id).oninput=()=>{$("#baseLbl").textContent=$("#base").value+" Hz";$("#pitchLbl").textContent=(+$("#pitch").value/10).toFixed(1)+" Hz";$("#boostLbl").textContent=$("#boost").value+" %";$("#volLbl").textContent=$("#vol").value+" %";render()});$("#mode").onchange=render;
+$("#secure").textContent="Kontext: "+(isSecureContext?"HTTPS/sicher":location.protocol);$("#dApi").textContent=("DeviceMotionEvent"in window)?"ja":"nein";
+setInterval(()=>{$("#dGps").textContent=lastGps?((Date.now()-lastGps)/1000).toFixed(1)+" s":"–";$("#dMot").textContent=lastMot?((performance.now()-lastMot)/1000).toFixed(1)+" s":"–"},500);render();
+</script></body></html>
