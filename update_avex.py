@@ -49,4 +49,16 @@ data = {
 with open("avex-data.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
-print(data)
+print("PRICE:",
+      price.group(0) if price else "NICHT GEFUNDEN")
+
+print("FREE:",
+      free.group(0) if free else "NICHT GEFUNDEN")
+
+print("OCCUPIED:",
+      occupied.group(0) if occupied else "NICHT GEFUNDEN")
+
+print("OFFLINE:",
+      offline.group(0) if offline else "NICHT GEFUNDEN")
+
+print(data) 
