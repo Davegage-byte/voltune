@@ -1,52 +1,126 @@
-import re
-import json
-import urllib.request
-from datetime import datetime
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-URL = "https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/"
+<title>AVEX Preis</title>
 
-req = urllib.request.Request(
-    URL,
-    headers={
-        "User-Agent": "Mozilla/5.0"
-    }
-)
+<style>
 
-with urllib.request.urlopen(req) as r:
-    html = r.read().decode("utf-8", errors="ignore")
+body{
+    margin:0;
+    background:#111;
+    color:white;
+    font-family:Segoe UI,Arial,sans-serif;
 
-price = re.search(
-    r'(\d+,\d{2})\s*€/kWh',
-    html
-)
+    display:flex;
+    justify-content:center;
+    align-items:center;
 
-free = re.search(
-    r'<strong>(\d+)</strong><span>frei',
-    html,
-    re.I
-)
-
-occupied = re.search(
-    r'<strong>(\d+)</strong><span>belegt',
-    html,
-    re.I
-)
-
-offline = re.search(
-    r'<strong>(\d+)</strong><span>offline',
-    html,
-    re.I
-)
-
-data = {
-    "price": price.group(1) if price else "?",
-    "free": int(free.group(1)) if free else 0,
-    "occupied": int(occupied.group(1)) if occupied else 0,
-    "offline": int(offline.group(1)) if offline else 0,
-    "updated": datetime.now().strftime("%H:%M")
+    height:100vh;
 }
 
-with open("avex-data.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
+.box{
+    text-align:center;
+}
 
-print(data)
+h1{
+    margin-bottom:40px;
+}
+
+.price{
+    font-size:70px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+
+.time{
+    color:#999;
+    margin-bottom:30px;
+}
+
+button{
+    font-size:18px;
+    padding:12px 24px;
+    cursor:pointer;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="box">
+
+    <h1>AVEX Euskirchen</h1>
+
+    <div id="price" class="price">
+        Lädt...
+    </div>
+
+    <div id="updated" class="time">
+        Bitte warten...
+    </div>
+
+    <button onclick="loadData()">
+        Aktualisieren
+    </button>
+
+</div>
+
+<script>
+
+async function loadData() {
+
+    document.getElementById("price").innerText =
+        "Lädt...";
+
+    document.getElementById("updated").innerText =
+        "Bitte warten...";
+
+    try {
+
+        const response = await fetch(
+            "avex-data.json?t=" + Date.now(),
+            {
+                cache: "no-store"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "HTTP " + response.status
+            );
+        }
+
+        const data = await response.json();
+
+        document.getElementById("price").innerText =
+            data.price + " €/kWh";
+
+        document.getElementById("updated").innerHTML =
+            "🟢 " + data.free + " Frei | " +
+            "🔴 " + data.occupied + " Belegt | " +
+            "⚫ " + data.offline + " Offline" +
+            "<br><br>🕒 Aktualisiert: " +
+            data.updated;
+
+    }
+    catch(err) {
+
+        document.getElementById("price").innerText =
+            "Fehler";
+
+        document.getElementById("updated").innerText =
+            err.toString();
+    }
+}
+
+loadData();
+
+</script>
+
+
+</body>
+</html>
