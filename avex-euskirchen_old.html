@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>AVEX Preis</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#111;
+    color:white;
+    font-family:Segoe UI,Arial,sans-serif;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    height:100vh;
+}
+
+.box{
+    text-align:center;
+}
+
+h1{
+    margin-bottom:40px;
+}
+
+.price{
+    font-size:70px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+
+.time{
+    color:#999;
+    margin-bottom:30px;
+}
+
+button{
+    font-size:18px;
+    padding:12px 24px;
+    cursor:pointer;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="box">
+
+    <h1>AVEX Euskirchen</h1>
+
+    <div id="price" class="price">
+        Lädt...
+    </div>
+
+    <div id="updated" class="time">
+        Bitte warten...
+    </div>
+
+    <button onclick="loadData()">
+        Aktualisieren
+    </button>
+
+</div>
+
+<script>
+
+async function loadData() {
+
+    document.getElementById("price").innerText =
+        "Lädt...";
+
+    document.getElementById("updated").innerText =
+        "Bitte warten...";
+
+    try {
+
+        const response = await fetch(
+            "https://r.jina.ai/http://ladestatistik.de/euskirchen/avex-mineraloelhandelsgesellschaft/"
+        );
+
+        const html = await response.text();
+
+        // Preis
+        const priceMatch =
+            html.match(/(\d+,\d{2})\s*€\/kWh/i);
+
+        document.getElementById("price").innerText =
+            priceMatch
+                ? priceMatch[0]
+                : "Preis nicht gefunden";
+
+        // Gesamtzahl Ladepunkte
+        const totalMatch =
+            html.match(/LP\*?\*?(\d+)\*?\*?Ladepunkte/i);
+
+        // Frei
+        const freeMatch =
+            html.match(/(\d+)\s+aktuell\s+frei/i);
+
+        // Belegt
+        const occupiedMatch =
+            html.match(/aktuell\s+belegt\s+(\d+)/i);
+
+        const total =
+            parseInt(totalMatch?.[1] || 8);
+
+        const free =
+            parseInt(freeMatch?.[1] || 0);
+
+        const occupied =
+            parseInt(occupiedMatch?.[1] || 0);
+
+        const offline =
+            Math.max(
+                0,
+                total - free - occupied
+            );
+
+        const now = new Date().toLocaleTimeString(
+            "de-DE",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+        document.getElementById("updated").innerHTML =
+            "🟢 " + free + " Frei | " +
+            "🔴 " + occupied + " Belegt | " +
+            "⚫ " + offline + " Offline" +
+            "<br><br>🕒 Aktualisiert: " + now;
+
+    }
+    catch(err) {
+
+        document.getElementById("price").innerText =
+            "Fehler";
+
+        document.getElementById("updated").innerText =
+            err.toString();
+    }
+}
+
+loadData();
+
+</script>
+
+
+</body>
+</html>
