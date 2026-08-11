@@ -1,52 +1,35 @@
-import re
-import json
-import urllib.request
-from datetime import datetime
+name: Update AVEX
 
-URL = "https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/"
+'on':
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
 
-req = urllib.request.Request(
-    URL,
-    headers={
-        "User-Agent": "Mozilla/5.0"
-    }
-)
+permissions:
+  contents: write
 
-with urllib.request.urlopen(req) as r:
-    html = r.read().decode("utf-8", errors="ignore")
+jobs:
+  update:
+    runs-on: ubuntu-latest
 
-price = re.search(
-    r'(\d+,\d{2})\s*€/kWh',
-    html
-)
+    steps:
+      - uses: actions/checkout@v4
 
-free = re.search(
-    r'<strong>(\d+)</strong><span>frei',
-    html,
-    re.I
-)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
-occupied = re.search(
-    r'<strong>(\d+)</strong><span>belegt',
-    html,
-    re.I
-)
+      - name: Scrape AVEX
+        run: python update_avex.py
 
-offline = re.search(
-    r'<strong>(\d+)</strong><span>offline',
-    html,
-    re.I
-)
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-data = {
-    "price": price.group(1) if price else "?",
-    "free": int(free.group(1)) if free else 0,
-    "occupied": int(occupied.group(1)) if occupied else 0,
-    "offline": int(offline.group(1)) if offline else 0,
-    "updated": datetime.now().strftime("%H:%M")
-}
+          git add avex-data.json
 
-with open("avex-data.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
+          git diff --cached --quiet && exit 0
 
-print(data)
+          git commit -m "Update AVEX"
+          git push
