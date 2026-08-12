@@ -100,6 +100,28 @@ button:disabled{
         Aktualisieren
     </button>
 
+    <div style="margin-top:40px;">
+    <h3>🚗 Tesla Fakt</h3>
+
+    <div id="factText"
+         style="max-width:600px;margin:15px auto;font-size:18px;">
+        Lade Fakt...
+    </div>
+
+    <div id="progress"
+         style="color:#999;margin-bottom:8px;">
+    </div>
+
+    <div id="level"
+         style="margin-bottom:15px;">
+    </div>
+
+    <button onclick="nextFact()">
+        ⏭ Nächster Fakt
+    </button>
+</div>
+
+
 </div>
 
 <script>
@@ -222,8 +244,90 @@ setInterval(() => {
 
 }, 1000);
 
-loadData();
+let facts = [];
 
+let seenFacts =
+    JSON.parse(
+        localStorage.getItem("seenFacts") || "[]"
+    );
+
+async function loadFacts() {
+
+    const response =
+        await fetch("facts.json");
+
+    facts =
+        await response.json();
+
+    showNextUnseenFact();
+}
+
+function getLevel(count) {
+
+    if (count >= 1000) return "👑 Tesla Legende";
+    if (count >= 750) return "🌟 Tesla Guru";
+    if (count >= 500) return "🚀 Tesla Experte";
+    if (count >= 250) return "🏆 Tesla Nerd";
+    if (count >= 100) return "🔋 Akku-Profi";
+    if (count >= 50) return "⚡ Supercharger Rookie";
+    if (count >= 10) return "🚗 Tesla Fan";
+
+    return "🔰 Tesla Anfänger";
+}
+
+function updateFactStats() {
+
+    document.getElementById("progress").innerHTML =
+        `📚 Gelesen: ${seenFacts.length} / ${facts.length}`;
+
+    document.getElementById("level").innerHTML =
+        `🏆 ${getLevel(seenFacts.length)}`;
+}
+
+function showNextUnseenFact() {
+
+    let available =
+        facts.filter(
+            f => !seenFacts.includes(f.id)
+        );
+
+    if (available.length === 0) {
+
+        document.getElementById("factText").innerHTML =
+            "🎉 Du hast alle Fakten gelesen!";
+
+        updateFactStats();
+
+        return;
+    }
+
+    const fact =
+        available[
+            Math.floor(
+                Math.random() * available.length
+            )
+        ];
+
+    document.getElementById("factText").innerHTML =
+        fact.text;
+
+    seenFacts.push(fact.id);
+
+    localStorage.setItem(
+        "seenFacts",
+        JSON.stringify(seenFacts)
+    );
+
+    updateFactStats();
+}
+
+function nextFact() {
+    showNextUnseenFact();
+}
+    
+loadData();
+loadFacts();
+    
 </script>
 
 
