@@ -85,6 +85,21 @@ async function loadData() {
 let secondsLeft = 300;
 let countdownInterval;
 let lastUpdate = "--:--";
+
+    function updateCountdown() {
+
+    const min =
+        String(Math.floor(secondsLeft / 60))
+            .padStart(2, "0");
+
+    const sec =
+        String(secondsLeft % 60)
+            .padStart(2, "0");
+
+    document.getElementById("refreshInfo")
+        .innerText =
+        `Stand: ${lastUpdate} | Refresh in ${min}:${sec}`;
+    }
     
     const btn =
         document.getElementById("refreshBtn");
