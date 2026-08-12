@@ -129,6 +129,10 @@ let lastUpdate = "--:--";
         }
 
         const data = await response.json();
+        lastUpdate = data.updated;
+        secondsLeft = 300;
+        
+        updateCountdown();
 
         document.getElementById("price").innerText =
             data.price + " €/kWh";
