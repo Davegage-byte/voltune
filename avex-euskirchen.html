@@ -179,7 +179,7 @@ async function loadData() {
         }
 
         document.getElementById("updated").innerHTML =
-            statusText;
+            `<span class="${statusClass}">${statusText}</span>`;
 
         btn.disabled = false;
         btn.innerText = "Aktualisieren";
