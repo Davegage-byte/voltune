@@ -68,6 +68,10 @@ button:disabled{
         Bitte warten...
     </div>
 
+    <div id="refreshInfo" class="time">
+        Stand: --:-- | Refresh in 05:00
+    </div>
+
     <button id="refreshBtn" onclick="loadData()">
         Aktualisieren
     </button>
@@ -134,6 +138,33 @@ async function loadData() {
 }
 
 loadData();
+
+let secondsLeft = 300;
+
+setInterval(() => {
+
+    secondsLeft--;
+
+    const min =
+        String(Math.floor(secondsLeft / 60))
+            .padStart(2, "0");
+
+    const sec =
+        String(secondsLeft % 60)
+            .padStart(2, "0");
+
+    document.getElementById("refreshInfo")
+        .innerText =
+        `Stand: ${lastUpdate} | Refresh in ${min}:${sec}`;
+
+    if (secondsLeft <= 0) {
+
+        secondsLeft = 300;
+
+        loadData();
+    }
+
+}, 1000);
 
 </script>
 
