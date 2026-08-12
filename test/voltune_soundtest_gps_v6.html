@@ -975,15 +975,15 @@
     let kmh, a, state;
 
     if (phase < 6) {
-      kmh = phase/6*120;
-      a = (120/3.6)/6;
+      kmh = phase/6*200;
+      a = (200/3.6)/6;
       state = "Beschleunigen";
     } else if (phase < 9) {
-      kmh = 120;
+      kmh = 200;
       a = 0;
       state = "Halten";
     } else if (phase < 14) {
-      kmh = 120-(phase-9)/5*55;
+      kmh = 200-(phase-9)/5*55;
       a = -(55/3.6)/5;
       state = "Reku";
     } else {
