@@ -1,7 +1,8 @@
 import re
 import json
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 URL = "https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/"
 
@@ -43,8 +44,8 @@ data = {
     "free": int(free.group(1)) if free else 0,
     "occupied": int(occupied.group(1)) if occupied else 0,
     "offline": int(offline.group(1)) if offline else 0,
-    "updated": (
-        datetime.utcnow() + timedelta(hours=2)
+    "updated": datetime.now(
+        ZoneInfo("Europe/Berlin")
     ).strftime("%H:%M")
 }
 
