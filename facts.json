@@ -1,22 +1,502 @@
 [
   {
     "id": 1,
-    "text": "Der erste Tesla Roadster nutzte über 6.800 Lithium-Ionen-Zellen."
+    "category": "Supercharger",
+    "text": "Der erste Tesla Supercharger-Standort wurde im Jahr 2012 eröffnet."
   },
   {
     "id": 2,
-    "text": "Der erste Supercharger-Standort wurde 2012 eröffnet."
+    "category": "Model Y",
+    "text": "Das Model Y basiert technisch auf vielen Komponenten des Model 3."
   },
   {
     "id": 3,
-    "text": "Model 3 sollte ursprünglich Model E heißen."
+    "category": "Elon Musk",
+    "text": "Elon Musk war bereits vor dem Börsengang eng an Tesla beteiligt."
   },
   {
     "id": 4,
-    "text": "Tesla produziert mehr Akkuzellen pro Jahr als viele traditionelle Autohersteller zusammen."
+    "category": "Batterie",
+    "text": "Tesla verwendet Batteriemanagementsysteme, um die Lebensdauer der Akkus zu maximieren."
   },
   {
     "id": 5,
-    "text": "Der Model S Plaid beschleunigt in etwa 2 Sekunden von 0 auf 100 km/h."
+    "category": "Gigafactory",
+    "text": "Die Gigafactory Berlin befindet sich in Grünheide bei Berlin."
+  },
+  {
+    "id": 6,
+    "category": "Fahrzeuge",
+    "text": "Das Model S war Teslas erstes massenproduziertes Fahrzeug nach dem Roadster."
+  },
+  {
+    "id": 7,
+    "category": "Fun Fact",
+    "text": "Viele Tesla-Fahrer geben ihren Fahrzeugen eigene Namen in der App."
+  },
+  {
+    "id": 8,
+    "category": "Geschichte",
+    "text": "Tesla wurde im Jahr 2003 gegründet."
+  },
+  {
+    "id": 9,
+    "category": "Supercharger",
+    "text": "Tesla plant Ladepausen automatisch bei längeren Navigationsrouten."
+  },
+  {
+    "id": 10,
+    "category": "Model 3",
+    "text": "Das Model 3 gehört zu den meistverkauften Elektrofahrzeugen weltweit."
+  },
+  {
+    "id": 11,
+    "category": "Elon Musk",
+    "text": "Elon Musk gründete auch SpaceX."
+  },
+  {
+    "id": 12,
+    "category": "Batterie",
+    "text": "Lithium-Ionen-Zellen werden auch in Smartphones und Laptops verwendet."
+  },
+  {
+    "id": 13,
+    "category": "Fahrzeuge",
+    "text": "Das Model X war das erste Tesla-Modell mit Falcon-Wing-Türen."
+  },
+  {
+    "id": 14,
+    "category": "Fun Fact",
+    "text": "Viele Easter Eggs in Teslas Software sind über Jahre hinweg erhalten geblieben."
+  },
+  {
+    "id": 15,
+    "category": "Gigafactory",
+    "text": "Tesla betreibt Gigafactories auf mehreren Kontinenten."
+  },
+  {
+    "id": 16,
+    "category": "Geschichte",
+    "text": "Der Tesla Roadster wurde von 2008 bis 2012 produziert."
+  },
+  {
+    "id": 17,
+    "category": "Supercharger",
+    "text": "V3-Supercharger benötigen keine Leistungsteilung zwischen benachbarten Stalls."
+  },
+  {
+    "id": 18,
+    "category": "Model S",
+    "text": "Das Model S war eines der ersten Elektroautos mit großer Langstreckenreichweite."
+  },
+  {
+    "id": 19,
+    "category": "Batterie",
+    "text": "Rekuperation wandelt Bremsenergie in elektrische Energie zurück."
+  },
+  {
+    "id": 20,
+    "category": "Fun Fact",
+    "text": "Der Ladeanschluss öffnet sich automatisch über den Tesla-Stecker."
+  },
+  {
+    "id": 21,
+    "category": "Elon Musk",
+    "text": "Elon Musk wurde in Südafrika geboren."
+  },
+  {
+    "id": 22,
+    "category": "Fahrzeuge",
+    "text": "Tesla-Fahrzeuge erhalten regelmäßig neue Funktionen per Softwareupdate."
+  },
+  {
+    "id": 23,
+    "category": "Gigafactory",
+    "text": "Die Gigafactory Nevada produziert unter anderem Batterien."
+  },
+  {
+    "id": 24,
+    "category": "Geschichte",
+    "text": "Der Name Tesla geht auf den Erfinder Nikola Tesla zurück."
+  },
+  {
+    "id": 25,
+    "category": "Supercharger",
+    "text": "Tesla betreibt eines der größten Schnellladenetze der Welt."
+  },
+  {
+    "id": 26,
+    "category": "Model Y",
+    "text": "Das Model Y gibt es in Varianten mit Hinterrad- und Allradantrieb."
+  },
+  {
+    "id": 27,
+    "category": "Batterie",
+    "text": "Akkus arbeiten bei moderaten Temperaturen am effizientesten."
+  },
+  {
+    "id": 28,
+    "category": "Fun Fact",
+    "text": "Der Bildschirm eines Tesla ersetzt viele klassische Schalter."
+  },
+  {
+    "id": 29,
+    "category": "Fahrzeuge",
+    "text": "Over-the-Air-Updates können die Effizienz eines Fahrzeugs verbessern."
+  },
+  {
+    "id": 30,
+    "category": "Model 3",
+    "text": "Das Model 3 wurde erstmals 2016 vorgestellt."
+  },
+  {
+    "id": 31,
+    "category": "Elon Musk",
+    "text": "Elon Musk studierte unter anderem Physik."
+  },
+  {
+    "id": 32,
+    "category": "Geschichte",
+    "text": "Der erste Tesla Roadster basierte auf einer Lotus-Elise-Plattform."
+  },
+  {
+    "id": 33,
+    "category": "Supercharger",
+    "text": "Die Navigation berücksichtigt den Ladestand bei der Routenplanung."
+  },
+  {
+    "id": 34,
+    "category": "Gigafactory",
+    "text": "Gigafactories sollen Transportwege und Produktionskosten reduzieren."
+  },
+  {
+    "id": 35,
+    "category": "Batterie",
+    "text": "Beim Bergabfahren kann ein Tesla häufig Energie zurückgewinnen."
+  },
+  {
+    "id": 36,
+    "category": "Fun Fact",
+    "text": "Tesla-Fahrer diskutieren oft über den effizientesten Fahrstil."
+  },
+  {
+    "id": 37,
+    "category": "Fahrzeuge",
+    "text": "Das Model S Plaid gehört zu den schnellsten Serienfahrzeugen der Welt."
+  },
+  {
+    "id": 38,
+    "category": "Model X",
+    "text": "Die Falcon-Wing-Türen öffnen automatisch mit Sensorunterstützung."
+  },
+  {
+    "id": 39,
+    "category": "Supercharger",
+    "text": "Viele Supercharger-Standorte befinden sich in der Nähe von Restaurants."
+  },
+  {
+    "id": 40,
+    "category": "Elon Musk",
+    "text": "Musk investierte einen großen Teil seines Vermögens in Tesla und SpaceX."
+  },
+  {
+    "id": 41,
+    "category": "Geschichte",
+    "text": "Tesla ging 2010 an die Börse."
+  },
+  {
+    "id": 42,
+    "category": "Batterie",
+    "text": "Der Batteriepuffer schützt die Zellen vor extremer Belastung."
+  },
+  {
+    "id": 43,
+    "category": "Gigafactory",
+    "text": "Die Gigafactory Shanghai war Teslas erstes großes Werk außerhalb der USA."
+  },
+  {
+    "id": 44,
+    "category": "Fun Fact",
+    "text": "Viele Tesla-Fahrer verfolgen ihre Ladehistorie sehr genau."
+  },
+  {
+    "id": 45,
+    "category": "Model Y",
+    "text": "Das Model Y bietet mehr Laderaum als das Model 3."
+  },
+  {
+    "id": 46,
+    "category": "Fahrzeuge",
+    "text": "Tesla verwendet überwiegend einen zentralen Touchscreen zur Bedienung."
+  },
+  {
+    "id": 47,
+    "category": "Supercharger",
+    "text": "Einige Supercharger-Standorte verfügen über Solaranlagen."
+  },
+  {
+    "id": 48,
+    "category": "Geschichte",
+    "text": "Der Roadster war eines der ersten Elektroautos mit mehr als 300 Kilometern Reichweite."
+  },
+  {
+    "id": 49,
+    "category": "Elon Musk",
+    "text": "Vor Tesla war Musk unter anderem an PayPal beteiligt."
+  },
+  {
+    "id": 50,
+    "category": "Fun Fact",
+    "text": "Viele Tesla-Besitzer nutzen Dashcams und Sentry Mode im Alltag."
+  },
+    {
+    "id": 51,
+    "category": "Model 3",
+    "text": "Das Model 3 war das erste Tesla-Fahrzeug für einen breiteren Massenmarkt."
+  },
+  {
+    "id": 52,
+    "category": "Gigafactory",
+    "text": "Die Gigafactory Berlin produziert Fahrzeuge für den europäischen Markt."
+  },
+  {
+    "id": 53,
+    "category": "Batterie",
+    "text": "Vorkonditionierung kann die Ladegeschwindigkeit eines Akkus verbessern."
+  },
+  {
+    "id": 54,
+    "category": "Fun Fact",
+    "text": "Viele Tesla-Fahrer beobachten ihre Effizienzwerte nach jeder Fahrt."
+  },
+  {
+    "id": 55,
+    "category": "Supercharger",
+    "text": "Ein Tesla kann die Batterie vor einem Supercharger-Besuch automatisch vorkonditionieren."
+  },
+  {
+    "id": 56,
+    "category": "Elon Musk",
+    "text": "Elon Musk besitzt einen Abschluss in Physik."
+  },
+  {
+    "id": 57,
+    "category": "Geschichte",
+    "text": "Der Tesla Roadster war das erste Serien-Elektroauto mit Lithium-Ionen-Zellen in großer Stückzahl."
+  },
+  {
+    "id": 58,
+    "category": "Model S",
+    "text": "Das Model S erhielt im Laufe der Jahre zahlreiche Software- und Hardwareverbesserungen."
+  },
+  {
+    "id": 59,
+    "category": "Fahrzeuge",
+    "text": "Tesla-Fahrzeuge können per Smartphone-App gesteuert werden."
+  },
+  {
+    "id": 60,
+    "category": "Fun Fact",
+    "text": "Teslas haben deutlich weniger bewegliche Teile als viele Verbrenner."
+  },
+  {
+    "id": 61,
+    "category": "Batterie",
+    "text": "Rekuperation reduziert den Verschleiß der mechanischen Bremsen."
+  },
+  {
+    "id": 62,
+    "category": "Supercharger",
+    "text": "Viele Tesla-Navigationsrouten zeigen die voraussichtliche Ankunftsenergie an."
+  },
+  {
+    "id": 63,
+    "category": "Gigafactory",
+    "text": "Tesla baut Gigafactories möglichst nahe an wichtigen Absatzmärkten."
+  },
+  {
+    "id": 64,
+    "category": "Elon Musk",
+    "text": "Musk war an mehreren Technologieunternehmen beteiligt, bevor Tesla bekannt wurde."
+  },
+  {
+    "id": 65,
+    "category": "Model Y",
+    "text": "Das Model Y gehört weltweit zu den meistverkauften Elektrofahrzeugen."
+  },
+  {
+    "id": 66,
+    "category": "Geschichte",
+    "text": "Tesla brachte den Roadster auf den Markt, bevor Model S, X, 3 und Y erschienen."
+  },
+  {
+    "id": 67,
+    "category": "Fun Fact",
+    "text": "Manche Tesla-Besitzer vergleichen Ladeleistungen wie andere Sportwerte."
+  },
+  {
+    "id": 68,
+    "category": "Fahrzeuge",
+    "text": "Softwareupdates können neue Funktionen hinzufügen, ohne eine Werkstatt zu besuchen."
+  },
+  {
+    "id": 69,
+    "category": "Batterie",
+    "text": "Die Batterie ist eines der schwersten Bauteile eines Tesla."
+  },
+  {
+    "id": 70,
+    "category": "Supercharger",
+    "text": "Tesla erweitert sein Schnellladenetz kontinuierlich um neue Standorte."
+  },
+  {
+    "id": 71,
+    "category": "Model X",
+    "text": "Das Model X bietet serienmäßig drei Sitzreihen in bestimmten Varianten."
+  },
+  {
+    "id": 72,
+    "category": "Gigafactory",
+    "text": "Moderne Gigafactories kombinieren Fahrzeug- und Batterieproduktion an einem Standort."
+  },
+  {
+    "id": 73,
+    "category": "Elon Musk",
+    "text": "Musk tritt häufig bei Produktvorstellungen von Tesla auf."
+  },
+  {
+    "id": 74,
+    "category": "Fun Fact",
+    "text": "Einige Tesla-Fahrer geben ihren Autos lustige WLAN-Hotspot-Namen."
+  },
+  {
+    "id": 75,
+    "category": "Geschichte",
+    "text": "Tesla war einer der wichtigsten Treiber für die Verbreitung moderner Elektroautos."
+  },
+  {
+    "id": 76,
+    "category": "Model 3",
+    "text": "Im Innenraum des Model 3 dominiert ein zentraler Touchscreen."
+  },
+  {
+    "id": 77,
+    "category": "Batterie",
+    "text": "Schnellladen ist besonders effizient, wenn die Batterie bereits warm ist."
+  },
+  {
+    "id": 78,
+    "category": "Supercharger",
+    "text": "Viele Supercharger sind rund um die Uhr zugänglich."
+  },
+  {
+    "id": 79,
+    "category": "Fahrzeuge",
+    "text": "Tesla-Fahrzeuge unterstützen Navigation mit Echtzeit-Verkehrsdaten."
+  },
+  {
+    "id": 80,
+    "category": "Fun Fact",
+    "text": "Viele Tesla-Besitzer können ihren durchschnittlichen Verbrauch auswendig nennen."
+  },
+  {
+    "id": 81,
+    "category": "Gigafactory",
+    "text": "Die Gigafactory Texas gehört zu den größten Tesla-Standorten."
+  },
+  {
+    "id": 82,
+    "category": "Geschichte",
+    "text": "Das Model S gewann zahlreiche internationale Auszeichnungen."
+  },
+  {
+    "id": 83,
+    "category": "Elon Musk",
+    "text": "Elon Musk ist bekannt für langfristige Technologievisionen."
+  },
+  {
+    "id": 84,
+    "category": "Batterie",
+    "text": "Akkus verlieren bei sehr niedrigen Temperaturen temporär an Leistung."
+  },
+  {
+    "id": 85,
+    "category": "Supercharger",
+    "text": "Einige Supercharger-Standorte verfügen über Dutzende Ladeplätze."
+  },
+  {
+    "id": 86,
+    "category": "Model S",
+    "text": "Das Model S Plaid verfügt über drei Elektromotoren."
+  },
+  {
+    "id": 87,
+    "category": "Fun Fact",
+    "text": "Tesla-Fahrer diskutieren regelmäßig über den besten Ladestand für den Alltag."
+  },
+  {
+    "id": 88,
+    "category": "Fahrzeuge",
+    "text": "Tesla nutzt Kameras und Sensoren für verschiedene Assistenzfunktionen."
+  },
+  {
+    "id": 89,
+    "category": "Geschichte",
+    "text": "Der erste Tesla Roadster wurde an Elon Musk ausgeliefert."
+  },
+  {
+    "id": 90,
+    "category": "Gigafactory",
+    "text": "Gigafactories sollen durch hohe Stückzahlen Skaleneffekte schaffen."
+  },
+  {
+    "id": 91,
+    "category": "Model Y",
+    "text": "Das Model Y teilt sich zahlreiche Komponenten mit dem Model 3."
+  },
+  {
+    "id": 92,
+    "category": "Elon Musk",
+    "text": "Musk war Mitgründer des Online-Bezahldienstes X.com, aus dem später PayPal entstand."
+  },
+  {
+    "id": 93,
+    "category": "Supercharger",
+    "text": "Tesla zeigt verfügbare Supercharger-Standorte direkt auf der Fahrzeugkarte an."
+  },
+  {
+    "id": 94,
+    "category": "Batterie",
+    "text": "Elektroautos können beim Rollen bergab Energie zurückgewinnen."
+  },
+  {
+    "id": 95,
+    "category": "Fun Fact",
+    "text": "Viele Tesla-Besitzer kennen die Anzahl ihrer Ladezyklen erstaunlich genau."
+  },
+  {
+    "id": 96,
+    "category": "Fahrzeuge",
+    "text": "Ein Tesla kann viele Einstellungen fahrerbezogen in Profilen speichern."
+  },
+  {
+    "id": 97,
+    "category": "Model X",
+    "text": "Die Falcon-Wing-Türen benötigen seitlich oft weniger Platz als klassische Türen."
+  },
+  {
+    "id": 98,
+    "category": "Geschichte",
+    "text": "Tesla gehörte zu den ersten Herstellern mit großflächigen Over-the-Air-Updates."
+  },
+  {
+    "id": 99,
+    "category": "Gigafactory",
+    "text": "Die Produktion in Gigafactories ist stark automatisiert."
+  },
+  {
+    "id": 100,
+    "category": "Fun Fact",
+    "text": "Viele Tesla-Fahrer planen längere Reisen ausschließlich rund um Schnelllader."
   }
 ]
