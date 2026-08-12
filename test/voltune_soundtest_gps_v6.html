@@ -144,8 +144,20 @@
     background:#0d1117;
     border:1px solid #202936;
     border-radius:12px;
+    min-width:0;
   }
-  .meter b{display:block;font-size:17px;margin-top:4px}
+  
+  .meter b{
+    display:block;
+    font-size:17px;
+    margin-top:4px;
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  
+  .stateBox{
+    min-width:0;
+  }
   .note{
     margin-top:18px;
     color:#7f8b9b;
