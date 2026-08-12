@@ -82,6 +82,10 @@ button:disabled{
 
 async function loadData() {
 
+let secondsLeft = 300;
+let countdownInterval;
+let lastUpdate = "--:--";
+    
     const btn =
         document.getElementById("refreshBtn");
 
