@@ -132,8 +132,14 @@ async function loadData() {
             data.price + " €/kWh";
 
         let statusText =
-            "🟢 " + data.free + " Frei | " +
-            "🔴 " + data.occupied + " Belegt";
+        const totalActive =
+            data.free + data.occupied;
+        
+        let statusText =
+            "🟢 " + data.free +
+            " von " +
+            totalActive +
+            " Frei";
 
         if (data.offline > 0) {
             statusText +=
