@@ -481,6 +481,9 @@
     baseGain1 = ctx.createGain();
     baseGain2 = ctx.createGain();
     subGain = ctx.createGain();
+    baseGain1.gain.value = 0.0001;
+    baseGain2.gain.value = 0.0001;
+    subGain.gain.value = 0.0001;
 
     baseFilter = ctx.createBiquadFilter();
     baseFilter.type = "lowpass";
@@ -500,6 +503,9 @@
     invGain1 = ctx.createGain();
     invGain2 = ctx.createGain();
     invGain3 = ctx.createGain();
+    invGain1.gain.value = 0.0001;
+    invGain2.gain.value = 0.0001;
+    invGain3.gain.value = 0.0001;
 
     invFilter = ctx.createBiquadFilter();
     invFilter.type = "bandpass";
@@ -736,7 +742,7 @@
   function setMasterVolume() {
     if (!audioStarted || !master) return;
     const v = muted ? 0.0001 : Number(ui.volume.value)/100;
-    setTarget(master.gain, v, 0.05);
+    setTarget(master.gain, v, 0.15);
   }
 
   function triggerDigitalDischarge(intensity=1, minCooldown=650) {
