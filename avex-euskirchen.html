@@ -147,14 +147,17 @@ async function loadData() {
         const totalActive =
             data.free + data.occupied;
         
-        let indicator = "🟢";
-        
-        if (data.free <= 1) {
-            indicator = "🔴";
-        }
-        else if (data.free <= 3) {
-            indicator = "🟡";
-        }
+            let indicator = "🟢";
+            let statusClass = "green";
+            
+            if (data.free <= 1) {
+                indicator = "🔴";
+                statusClass = "red";
+            }
+            else if (data.free <= 3) {
+                indicator = "🟡";
+                statusClass = "yellow";
+            }
         
         let statusText =
             indicator + " " +
