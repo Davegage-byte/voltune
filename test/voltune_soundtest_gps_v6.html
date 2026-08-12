@@ -603,14 +603,27 @@
     if (speed==null) speed=0;
     if (speed<.45) speed=0;
 
-    const dt=lastGpsTs ? clamp((ts-lastGpsTs)/1000,.15,8) : 1;
-    gpsRate=lastGpsTs ? 1/dt : 0;
-
-    smoothGpsSpeed=smoothGpsSpeed*.58 + speed*.42;
-    const rawGpsAccel=(smoothGpsSpeed-lastGpsSpeed)/dt;
-    gpsAccel=gpsAccel*.68 + clamp(rawGpsAccel,-5,5)*.32;
-
-    lastGpsSpeed=smoothGpsSpeed;
+    const firstGpsValue = lastGpsTs == null;
+    
+    if (firstGpsValue) {
+      // Ersten Messwert nur als Ausgangszustand übernehmen.
+      // Keine künstliche Beschleunigung von 0 auf aktuelle Geschwindigkeit erzeugen.
+      smoothGpsSpeed = speed;
+      lastGpsSpeed = speed;
+      gpsAccel = 0;
+      gpsRate = 0;
+    } else {
+      const dt = clamp((ts-lastGpsTs)/1000,.15,8);
+      gpsRate = 1/dt;
+    
+      smoothGpsSpeed = smoothGpsSpeed*.58 + speed*.42;
+    
+      const rawGpsAccel = (smoothGpsSpeed-lastGpsSpeed)/dt;
+      gpsAccel = gpsAccel*.68 + clamp(rawGpsAccel,-5,5)*.32;
+    
+      lastGpsSpeed = smoothGpsSpeed;
+    }
+    
     lastGpsTs=ts;
     lastPos={lat:c.latitude,lon:c.longitude};
 
