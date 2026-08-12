@@ -114,10 +114,17 @@ async function loadData() {
         document.getElementById("price").innerText =
             data.price + " €/kWh";
 
-        document.getElementById("updated").innerHTML =
+        let statusText =
             "🟢 " + data.free + " Frei | " +
-            "🔴 " + data.occupied + " Belegt | " +
-            "⚫ " + data.offline + " Offline" +
+            "🔴 " + data.occupied + " Belegt";
+        
+        if (data.offline > 0) {
+            statusText +=
+                " | ⚫ " + data.offline + " Offline";
+        }
+        
+        document.getElementById("updated").innerHTML =
+            statusText;
 
             btn.disabled = false;
             btn.innerText = "Aktualisieren";
