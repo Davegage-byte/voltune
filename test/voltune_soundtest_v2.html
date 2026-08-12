@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voltune Sound Test v2</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --bg:#090b0f;
+    --panel:#11151c;
+    --panel2:#171d26;
+    --line:#2a3442;
+    --text:#f4f7fb;
+    --muted:#93a0b2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 50% -20%, #162837 0, transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  main{
+    width:min(900px,94vw);
+    margin:24px auto;
+    padding:24px;
+    background:rgba(17,21,28,.96);
+    border:1px solid var(--line);
+    border-radius:22px;
+  }
+  h1{margin:0;font-size:30px}
+  .sub{color:var(--muted);margin:6px 0 22px}
+  .hero{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .speedBox,.stateBox{
+    background:var(--panel2);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+  }
+  .speed{
+    font-size:clamp(72px,13vw,128px);
+    font-weight:800;
+    line-height:.9;
+    letter-spacing:-.06em;
+  }
+  .unit,.label{color:var(--muted)}
+  .state{
+    font-size:28px;
+    font-weight:750;
+    margin-top:8px;
+  }
+  .accel{
+    font-size:18px;
+    margin-top:10px;
+  }
+  .bar{
+    height:9px;
+    background:#0b0f14;
+    border:1px solid #27313d;
+    border-radius:99px;
+    overflow:hidden;
+    margin-top:16px;
+  }
+  .bar > div{
+    width:0%;
+    height:100%;
+    background:linear-gradient(90deg,#3cc6ff,#8dffdf);
+    transition:width .06s linear;
+  }
+  .buttons{
+    display:grid;
+    grid-template-columns:1.4fr 1fr 1fr 1fr;
+    gap:10px;
+    margin:14px 0 18px;
+  }
+  button{
+    min-height:54px;
+    border:0;
+    border-radius:14px;
+    font:inherit;
+    font-weight:750;
+    cursor:pointer;
+  }
+  #start{background:#f5f7fa;color:#0a0d11}
+  #restart,#mute{background:#232c38;color:#f4f7fb}
+  #stop{background:#8e2424;color:#fff}
+  .manual{
+    padding:16px;
+    margin-bottom:14px;
+    background:#111820;
+    border:1px solid #304050;
+    border-radius:16px;
+  }
+  .manual .top{
+    font-size:16px;
+    font-weight:700;
+  }
+  .manual small{
+    display:block;
+    color:var(--muted);
+    margin-top:7px;
+  }
+  .controls{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .control{
+    padding:14px;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    border-radius:14px;
+  }
+  .top{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    font-size:14px;
+    margin-bottom:8px;
+  }
+  input[type=range]{width:100%}
+  .meter{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-top:14px;
+  }
+  .meter div{
+    padding:10px 12px;
+    background:#0d1117;
+    border:1px solid #202936;
+    border-radius:12px;
+  }
+  .meter b{display:block;font-size:17px;margin-top:4px}
+  .note{
+    margin-top:18px;
+    color:#7f8b9b;
+    font-size:13px;
+    line-height:1.5;
+  }
+  @media(max-width:700px){
+    main{padding:16px}
+    .hero,.controls{grid-template-columns:1fr}
+    .buttons{grid-template-columns:1fr 1fr}
+    .meter{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Voltune · Sound Test <span style="font-size:14px;color:#7f8b9b">v2</span></h1>
+  <p class="sub">Sound-Labor: feste Demo oder Geschwindigkeit direkt per Regler testen.</p>
+
+  <div class="hero">
+    <div class="speedBox">
+      <div class="label">Geschwindigkeit</div>
+      <div class="speed" id="speed">0</div>
+      <div class="unit">km/h</div>
+      <div class="bar"><div id="speedBar"></div></div>
+    </div>
+
+    <div class="stateBox">
+      <div class="label">Fahrzustand</div>
+      <div class="state" id="state">Bereit</div>
+      <div class="accel"><span id="accel">0.00</span> m/s²</div>
+
+      <div class="meter">
+        <div><span class="label">Base</span><b id="baseHz">55 Hz</b></div>
+        <div><span class="label">Inverter</span><b id="invHz">240 Hz</b></div>
+        <div><span class="label">Drive</span><b id="drivePct">0 %</b></div>
+        <div><span class="label">Reku</span><b id="regenPct">0 %</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button id="start">Sound + Demo starten</button>
+    <button id="restart">Demo neu starten</button>
+    <button id="stop">STOP</button>
+    <button id="mute">Stumm</button>
+  </div>
+
+  <div class="manual">
+    <div class="top">
+      <span>Test-Geschwindigkeit</span>
+      <span id="speedTestLabel">0 km/h</span>
+    </div>
+    <input id="speedTest" type="range" min="0" max="120" step="1" value="0">
+    <small>Beim Bewegen wird die Demo pausiert. Schnell hochziehen erzeugt Beschleunigung, schnell runterziehen Reku/BOV.</small>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <div class="top"><span>Master-Lautstärke</span><span id="volumeLabel">32 %</span></div>
+      <input id="volume" type="range" min="0" max="70" value="32">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>Grundfrequenz</span><span id="baseLabel">55 Hz</span></div>
+      <input id="base" type="range" min="30" max="100" value="55">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>Pitch-Anstieg</span><span id="pitchLabel">2.1 Hz/km/h</span></div>
+      <input id="pitch" type="range" min="8" max="35" value="21">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>Grundsound-Layer</span><span id="baseVolLabel">65 %</span></div>
+      <input id="baseVol" type="range" min="0" max="100" value="65">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>Inverter-Layer</span><span id="inverterLabel">42 %</span></div>
+      <input id="inverter" type="range" min="0" max="100" value="42">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>Beschleunigungs-Layer</span><span id="driveLabel">55 %</span></div>
+      <input id="drive" type="range" min="0" max="100" value="55">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>Reku-Layer</span><span id="regenLabel">48 %</span></div>
+      <input id="regen" type="range" min="0" max="100" value="48">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>Luft/Textur-Layer</span><span id="airLabel">30 %</span></div>
+      <input id="air" type="range" min="0" max="100" value="30">
+    </div>
+
+    <div class="control">
+      <div class="top"><span>BOV/Entladung-Layer</span><span id="bovLabel">60 %</span></div>
+      <input id="bov" type="range" min="0" max="100" value="60">
+    </div>
+  </div>
+
+  <div class="note">
+    Demo: 0→120 km/h in 6 s · 3 s halten · 120→65 km/h in 5 s · 65→0 km/h in 6 s.
+    Der STOP-Knopf beendet Demo und Audio vollständig. Mit „Sound + Demo starten“ wird die Audio-Engine danach neu aufgebaut.
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
+
+  const ui = {
+    speed:$("speed"), accel:$("accel"), state:$("state"), speedBar:$("speedBar"),
+    baseHz:$("baseHz"), invHz:$("invHz"), drivePct:$("drivePct"), regenPct:$("regenPct"),
+
+    start:$("start"), restart:$("restart"), stop:$("stop"), mute:$("mute"),
+
+    speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
+    volume:$("volume"), base:$("base"), pitch:$("pitch"),
+    baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
+    regen:$("regen"), air:$("air"), bov:$("bov"),
+
+    volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), pitchLabel:$("pitchLabel"),
+    baseVolLabel:$("baseVolLabel"), inverterLabel:$("inverterLabel"),
+    driveLabel:$("driveLabel"), regenLabel:$("regenLabel"),
+    airLabel:$("airLabel"), bovLabel:$("bovLabel")
+  };
+
+  let ctx = null;
+  let master = null;
+  let compressor = null;
+  let audioStarted = false;
+  let muted = false;
+
+  let base1, base2, sub;
+  let baseGain1, baseGain2, subGain, baseFilter;
+
+  let inv1, inv2, inv3;
+  let invGain1, invGain2, invGain3, invFilter;
+
+  let driveOsc, driveGain, driveFilter;
+  let regenOsc1, regenOsc2, regenGain, regenFilter;
+
+  let airSource, airGain, airFilter;
+  let sharedNoiseBuffer = null;
+
+  let demoActive = false;
+  let demoStart = 0;
+
+  let manualSpeed = 0;
+  let lastManualSpeed = 0;
+  let lastManualTime = performance.now();
+  let manualAccel = 0;
+
+  let lastAccel = 0;
+  let lastState = "idle";
+  let lastBovAt = -9999;
+
+  function setTarget(param, value, time=0.05) {
+    if (!ctx) return;
+    param.setTargetAtTime(value, ctx.currentTime, time);
+  }
+
+  function createNoiseBuffer(seconds=2) {
+    const length = Math.floor(ctx.sampleRate * seconds);
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    let last = 0;
+    for (let i=0;i<length;i++) {
+      const white = Math.random()*2-1;
+      last = last*0.82 + white*0.18;
+      data[i] = white*0.68 + last*0.32;
+    }
+    return buffer;
+  }
+
+  function createOsc(type) {
+    const o = ctx.createOscillator();
+    o.type = type;
+    return o;
+  }
+
+  function startAudio() {
+    if (audioStarted && ctx) {
+      ctx.resume();
+      return;
+    }
+
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) {
+      alert("Dieser Browser unterstützt die Web Audio API nicht.");
+      return;
+    }
+
+    ctx = new AudioCtx();
+    sharedNoiseBuffer = createNoiseBuffer(2);
+
+    master = ctx.createGain();
+    master.gain.value = 0.0001;
+
+    compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -13;
+    compressor.knee.value = 16;
+    compressor.ratio.value = 5;
+    compressor.attack.value = 0.004;
+    compressor.release.value = 0.15;
+
+    master.connect(compressor).connect(ctx.destination);
+
+    // ----- Grundsound -----
+    base1 = createOsc("triangle");
+    base2 = createOsc("sawtooth");
+    sub = createOsc("sine");
+
+    baseGain1 = ctx.createGain();
+    baseGain2 = ctx.createGain();
+    subGain = ctx.createGain();
+
+    baseFilter = ctx.createBiquadFilter();
+    baseFilter.type = "lowpass";
+    baseFilter.frequency.value = 1050;
+    baseFilter.Q.value = 0.8;
+
+    base1.connect(baseGain1).connect(baseFilter);
+    base2.connect(baseGain2).connect(baseFilter);
+    sub.connect(subGain).connect(baseFilter);
+    baseFilter.connect(master);
+
+    // ----- Inverter -----
+    inv1 = createOsc("sine");
+    inv2 = createOsc("sine");
+    inv3 = createOsc("triangle");
+
+    invGain1 = ctx.createGain();
+    invGain2 = ctx.createGain();
+    invGain3 = ctx.createGain();
+
+    invFilter = ctx.createBiquadFilter();
+    invFilter.type = "bandpass";
+    invFilter.frequency.value = 1500;
+    invFilter.Q.value = 0.7;
+
+    inv1.connect(invGain1).connect(invFilter);
+    inv2.connect(invGain2).connect(invFilter);
+    inv3.connect(invGain3).connect(invFilter);
+    invFilter.connect(master);
+
+    // ----- Beschleunigung -----
+    driveOsc = createOsc("sawtooth");
+    driveGain = ctx.createGain();
+    driveGain.gain.value = 0.0001;
+
+    driveFilter = ctx.createBiquadFilter();
+    driveFilter.type = "bandpass";
+    driveFilter.frequency.value = 900;
+    driveFilter.Q.value = 1.8;
+
+    driveOsc.connect(driveGain).connect(driveFilter).connect(master);
+
+    // ----- Reku -----
+    regenOsc1 = createOsc("triangle");
+    regenOsc2 = createOsc("sine");
+    regenGain = ctx.createGain();
+    regenGain.gain.value = 0.0001;
+
+    regenFilter = ctx.createBiquadFilter();
+    regenFilter.type = "bandpass";
+    regenFilter.frequency.value = 1050;
+    regenFilter.Q.value = 1.25;
+
+    const rg2 = ctx.createGain();
+    rg2.gain.value = 0.36;
+
+    regenOsc1.connect(regenGain);
+    regenOsc2.connect(rg2).connect(regenGain);
+    regenGain.connect(regenFilter).connect(master);
+
+    // ----- Luft / Textur -----
+    airSource = ctx.createBufferSource();
+    airSource.buffer = sharedNoiseBuffer;
+    airSource.loop = true;
+
+    airGain = ctx.createGain();
+    airGain.gain.value = 0.0001;
+
+    airFilter = ctx.createBiquadFilter();
+    airFilter.type = "bandpass";
+    airFilter.frequency.value = 1700;
+    airFilter.Q.value = 0.8;
+
+    airSource.connect(airFilter).connect(airGain).connect(master);
+
+    [base1,base2,sub,inv1,inv2,inv3,driveOsc,regenOsc1,regenOsc2].forEach(o => o.start());
+    airSource.start();
+
+    audioStarted = true;
+    updateAudio(manualSpeed,0);
+    setMasterVolume();
+  }
+
+  function stopAudio() {
+    demoActive = false;
+    lastAccel = 0;
+    lastState = "idle";
+
+    if (ctx) {
+      try { ctx.close(); } catch(e) {}
+    }
+
+    ctx = null;
+    master = null;
+    compressor = null;
+    audioStarted = false;
+
+    ui.start.textContent = "Sound + Demo starten";
+    ui.mute.textContent = "Stumm";
+    muted = false;
+
+    manualSpeed = 0;
+    lastManualSpeed = 0;
+    manualAccel = 0;
+    ui.speedTest.value = 0;
+    ui.speedTestLabel.textContent = "0 km/h";
+
+    renderVisual(0,0,"Gestoppt");
+  }
+
+  function setMasterVolume() {
+    if (!audioStarted || !master) return;
+    const v = muted ? 0.0001 : Number(ui.volume.value)/100;
+    setTarget(master.gain, v, 0.05);
+  }
+
+  function triggerDigitalDischarge(intensity=1) {
+    if (!audioStarted || !ctx || !sharedNoiseBuffer) return;
+
+    const bovAmount = Number(ui.bov.value)/100;
+    if (bovAmount <= 0.001) return;
+
+    const nowMs = performance.now();
+    if (nowMs - lastBovAt < 650) return;
+    lastBovAt = nowMs;
+
+    const now = ctx.currentTime;
+    const duration = 0.28 + intensity*0.22;
+
+    const src = ctx.createBufferSource();
+    src.buffer = sharedNoiseBuffer;
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(2600 + intensity*900, now);
+    bp.frequency.exponentialRampToValueAtTime(720, now + duration);
+    bp.Q.value = 2.2;
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(
+      (0.045 + intensity*0.035) * bovAmount,
+      now + 0.012
+    );
+    g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    const zap = ctx.createOscillator();
+    zap.type = "sawtooth";
+    zap.frequency.setValueAtTime(1250 + intensity*550, now);
+    zap.frequency.exponentialRampToValueAtTime(210, now + duration*0.78);
+
+    const zapG = ctx.createGain();
+    zapG.gain.setValueAtTime(0.0001, now);
+    zapG.gain.exponentialRampToValueAtTime(
+      (0.018 + intensity*0.012) * bovAmount,
+      now + 0.008
+    );
+    zapG.gain.exponentialRampToValueAtTime(0.0001, now + duration*0.68);
+
+    src.connect(bp).connect(g).connect(master);
+    zap.connect(zapG).connect(master);
+
+    src.start(now);
+    src.stop(now + duration + 0.03);
+    zap.start(now);
+    zap.stop(now + duration + 0.03);
+  }
+
+  function updateAudio(speedKmh, accel) {
+    if (!audioStarted || !ctx) return;
+
+    const baseStart = Number(ui.base.value);
+    const pitch = Number(ui.pitch.value)/10;
+
+    const baseAmount = Number(ui.baseVol.value)/100;
+    const inverterAmount = Number(ui.inverter.value)/100;
+    const driveAmount = Number(ui.drive.value)/100;
+    const regenAmount = Number(ui.regen.value)/100;
+    const airAmount = Number(ui.air.value)/100;
+
+    const speedN = clamp(speedKmh/120,0,1);
+    const pos = clamp(accel/5.7,0,1);
+    const neg = clamp(-accel/3.2,0,1);
+
+    const fundamental = clamp(
+      baseStart + speedKmh*pitch + Math.pow(speedN,2)*38 + pos*16,
+      30,520
+    );
+
+    // Grundsound
+    setTarget(base1.frequency, fundamental, 0.04);
+    setTarget(base2.frequency, fundamental*1.006, 0.04);
+    setTarget(sub.frequency, fundamental*0.5, 0.05);
+
+    setTarget(baseFilter.frequency, 760 + speedN*1500 + pos*500, 0.08);
+
+    setTarget(baseGain1.gain,
+      baseAmount * (0.09 + speedN*0.07 + pos*0.018), 0.08
+    );
+    setTarget(baseGain2.gain,
+      baseAmount * (0.012 + speedN*0.018), 0.08
+    );
+    setTarget(subGain.gain,
+      baseAmount * (0.055 - speedN*0.024), 0.08
+    );
+
+    // Inverter
+    const invFund = 235 + speedKmh*12.6 + Math.pow(speedN,2)*410;
+
+    setTarget(inv1.frequency, invFund, 0.035);
+    setTarget(inv2.frequency, invFund*1.502, 0.035);
+    setTarget(inv3.frequency, invFund*2.017, 0.035);
+    setTarget(invFilter.frequency, clamp(invFund*1.32,650,4200), 0.06);
+
+    const invLevel = inverterAmount * (0.006 + speedN*0.027 + pos*0.010);
+    setTarget(invGain1.gain, invLevel, 0.06);
+    setTarget(invGain2.gain, invLevel*0.44, 0.06);
+    setTarget(invGain3.gain, invLevel*0.20, 0.06);
+
+    // Beschleunigung
+    const driveFreq = 290 + fundamental*2.25 + pos*160;
+    setTarget(driveOsc.frequency, driveFreq, 0.035);
+    setTarget(driveFilter.frequency,
+      clamp(620 + speedN*1450 + pos*850,500,3500), 0.055
+    );
+    setTarget(driveGain.gain,
+      driveAmount * pos * (0.018 + speedN*0.035), 0.045
+    );
+
+    // Reku
+    const regenF = 520 + speedKmh*8.6;
+    setTarget(regenOsc1.frequency, regenF, 0.045);
+    setTarget(regenOsc2.frequency, regenF*1.49, 0.045);
+    setTarget(regenFilter.frequency,
+      clamp(800 + speedKmh*10,700,2600), 0.06
+    );
+    setTarget(regenGain.gain,
+      regenAmount * neg * (0.016 + speedN*0.035), 0.055
+    );
+
+    // Luft/Textur
+    const airLevel = airAmount * (speedN*0.005 + pos*0.011 + neg*0.007);
+    setTarget(airGain.gain, airLevel, 0.09);
+    setTarget(airFilter.frequency, 1250 + speedN*1800, 0.1);
+
+    ui.baseHz.textContent = `${Math.round(fundamental)} Hz`;
+    ui.invHz.textContent = `${Math.round(invFund)} Hz`;
+    ui.drivePct.textContent = `${Math.round(pos*100)} %`;
+    ui.regenPct.textContent = `${Math.round(neg*100)} %`;
+
+    // deutlicher Lastwechsel -> BOV/Entladung
+    if (lastAccel > 0.8 && accel < -0.35) {
+      triggerDigitalDischarge(clamp(lastAccel/5.7,0.35,1));
+    }
+    lastAccel = accel;
+  }
+
+  function renderVisual(speedKmh, accel, state) {
+    ui.speed.textContent = Math.round(speedKmh);
+    ui.accel.textContent = accel.toFixed(2);
+    ui.state.textContent = state;
+    ui.speedBar.style.width = `${clamp(speedKmh/120*100,0,100)}%`;
+  }
+
+  function render(speedKmh, accel, state) {
+    renderVisual(speedKmh,accel,state);
+    updateAudio(speedKmh,accel);
+  }
+
+  // 0-6 s: 0 -> 120
+  // 6-9 s: 120 halten
+  // 9-14 s: 120 -> 65
+  // 14-20 s: 65 -> 0
+  function demoValues(t) {
+    const phase = (t/1000) % 20;
+    let kmh, a, state;
+
+    if (phase < 6) {
+      kmh = phase/6*120;
+      a = (120/3.6)/6;
+      state = "Beschleunigen";
+    } else if (phase < 9) {
+      kmh = 120;
+      a = 0;
+      state = "Halten";
+    } else if (phase < 14) {
+      kmh = 120-(phase-9)/5*55;
+      a = -(55/3.6)/5;
+      state = "Reku";
+    } else {
+      kmh = Math.max(0,65-(phase-14)/6*65);
+      a = -(65/3.6)/6;
+      state = "Ausrollen / Reku";
+    }
+
+    return {kmh,a,state};
+  }
+
+  function loop(now) {
+    if (demoActive) {
+      const v = demoValues(now-demoStart);
+
+      manualSpeed = v.kmh;
+      ui.speedTest.value = Math.round(v.kmh);
+      ui.speedTestLabel.textContent = `${Math.round(v.kmh)} km/h`;
+
+      render(v.kmh,v.a,v.state);
+
+      if (lastState === "Beschleunigen" && v.state === "Halten") {
+        triggerDigitalDischarge(0.38);
+      }
+      lastState = v.state;
+    } else if (audioStarted) {
+      // manuelle Beschleunigung weich gegen 0 auslaufen lassen
+      manualAccel *= 0.86;
+      if (Math.abs(manualAccel) < 0.03) manualAccel = 0;
+
+      const state =
+        manualAccel > 0.25 ? "Manuell · Beschleunigen" :
+        manualAccel < -0.25 ? "Manuell · Reku" :
+        "Manuell · Konstant";
+
+      render(manualSpeed,manualAccel,state);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  ui.start.addEventListener("click", async () => {
+    startAudio();
+    if (!ctx) return;
+
+    await ctx.resume();
+
+    muted = false;
+    setMasterVolume();
+
+    demoActive = true;
+    demoStart = performance.now();
+    lastAccel = 0;
+    lastState = "idle";
+
+    ui.start.textContent = "Läuft ✓";
+    ui.mute.textContent = "Stumm";
+  });
+
+  ui.restart.addEventListener("click", async () => {
+    startAudio();
+    if (!ctx) return;
+
+    await ctx.resume();
+
+    demoActive = true;
+    demoStart = performance.now();
+    lastAccel = 0;
+    lastState = "idle";
+  });
+
+  ui.stop.addEventListener("click", () => {
+    stopAudio();
+  });
+
+  ui.mute.addEventListener("click", () => {
+    if (!audioStarted) return;
+
+    muted = !muted;
+    setMasterVolume();
+    ui.mute.textContent = muted ? "Ton an" : "Stumm";
+  });
+
+  // Manuelle Geschwindigkeit:
+  // Die Änderungsrate des Sliders wird als Beschleunigung interpretiert.
+  ui.speedTest.addEventListener("input", async () => {
+    startAudio();
+    if (!ctx) return;
+    await ctx.resume();
+
+    demoActive = false;
+
+    const now = performance.now();
+    const nextSpeed = Number(ui.speedTest.value);
+    const dt = clamp((now-lastManualTime)/1000,0.035,0.35);
+
+    const dvMs = (nextSpeed-lastManualSpeed)/3.6;
+    const rawAccel = dvMs/dt;
+
+    manualAccel = clamp(rawAccel,-5.7,5.7);
+    manualSpeed = nextSpeed;
+
+    lastManualSpeed = nextSpeed;
+    lastManualTime = now;
+
+    ui.speedTestLabel.textContent = `${Math.round(nextSpeed)} km/h`;
+    ui.start.textContent = "Sound läuft · Manuell";
+
+    render(
+      manualSpeed,
+      manualAccel,
+      manualAccel > 0.25 ? "Manuell · Beschleunigen" :
+      manualAccel < -0.25 ? "Manuell · Reku" :
+      "Manuell · Konstant"
+    );
+  });
+
+  const updateLabels = () => {
+    ui.volumeLabel.textContent = `${ui.volume.value} %`;
+    ui.baseLabel.textContent = `${ui.base.value} Hz`;
+    ui.pitchLabel.textContent = `${(Number(ui.pitch.value)/10).toFixed(1)} Hz/km/h`;
+
+    ui.baseVolLabel.textContent = `${ui.baseVol.value} %`;
+    ui.inverterLabel.textContent = `${ui.inverter.value} %`;
+    ui.driveLabel.textContent = `${ui.drive.value} %`;
+    ui.regenLabel.textContent = `${ui.regen.value} %`;
+    ui.airLabel.textContent = `${ui.air.value} %`;
+    ui.bovLabel.textContent = `${ui.bov.value} %`;
+  };
+
+  [
+    ui.volume,ui.base,ui.pitch,ui.baseVol,ui.inverter,
+    ui.drive,ui.regen,ui.air,ui.bov
+  ].forEach(el => {
+    el.addEventListener("input", () => {
+      updateLabels();
+      if (el === ui.volume) setMasterVolume();
+
+      if (audioStarted && !demoActive) {
+        updateAudio(manualSpeed,manualAccel);
+      }
+    });
+  });
+
+  updateLabels();
+  renderVisual(0,0,"Bereit");
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
