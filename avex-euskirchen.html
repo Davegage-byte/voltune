@@ -156,10 +156,10 @@ async function loadData() {
     catch(err) {
 
         document.getElementById("price").innerText =
-            "Fehler";
-
+            "FEHLER";
+        
         document.getElementById("updated").innerText =
-            err.toString();
+            err.stack || err.toString();
 
         btn.disabled = false;
         btn.innerText = "Aktualisieren";
