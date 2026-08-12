@@ -87,7 +87,7 @@ let countdownInterval;
 let lastUpdate = "--:--";
 
     function updateCountdown() {
-
+        document.title = secondsLeft;
     const min =
         String(Math.floor(secondsLeft / 60))
             .padStart(2, "0");
