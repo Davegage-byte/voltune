@@ -68,7 +68,7 @@ button:disabled{
         Bitte warten...
     </div>
 
-    <button onclick="loadData()">
+    <button id="refreshBtn" onclick="loadData()">
         Aktualisieren
     </button>
 
@@ -77,6 +77,12 @@ button:disabled{
 <script>
 
 async function loadData() {
+
+    const btn =
+        document.getElementById("refreshBtn");
+
+    btn.disabled = true;
+    btn.innerText = "Aktualisiere...";
 
     document.getElementById("price").innerText =
         "Lädt...";
@@ -110,6 +116,8 @@ async function loadData() {
             "⚫ " + data.offline + " Offline" +
             "<br><br>🕒 Aktualisiert: " +
             data.updated;
+            btn.disabled = false;
+            btn.innerText = "Aktualisieren";
 
     }
     catch(err) {
@@ -119,6 +127,9 @@ async function loadData() {
 
         document.getElementById("updated").innerText =
             err.toString();
+
+        btn.disabled = false;
+        btn.innerText = "Aktualisieren";
     }
 }
 
