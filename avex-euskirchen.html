@@ -81,13 +81,10 @@ button:disabled{
 <script>
 
 let secondsLeft = 300;
-let countdownInterval;
 let lastUpdate = "--:--";
 
-async function loadData() {
+function updateCountdown() {
 
-    function updateCountdown() {
-        document.title = secondsLeft;
     const min =
         String(Math.floor(secondsLeft / 60))
             .padStart(2, "0");
@@ -99,19 +96,15 @@ async function loadData() {
     document.getElementById("refreshInfo")
         .innerText =
         `Stand: ${lastUpdate} | Refresh in ${min}:${sec}`;
-    }
-    
+}
+
+async function loadData() {
+
     const btn =
         document.getElementById("refreshBtn");
 
     btn.disabled = true;
     btn.innerText = "Aktualisiere...";
-
-    document.getElementById("price").innerText =
-        "Lädt...";
-
-    document.getElementById("updated").innerText =
-        "Bitte warten...";
 
     try {
 
@@ -129,9 +122,10 @@ async function loadData() {
         }
 
         const data = await response.json();
+
         lastUpdate = data.updated;
         secondsLeft = 300;
-        
+
         updateCountdown();
 
         document.getElementById("price").innerText =
@@ -140,17 +134,17 @@ async function loadData() {
         let statusText =
             "🟢 " + data.free + " Frei | " +
             "🔴 " + data.occupied + " Belegt";
-        
+
         if (data.offline > 0) {
             statusText +=
                 " | ⚫ " + data.offline + " Offline";
         }
-        
+
         document.getElementById("updated").innerHTML =
             statusText;
 
-            btn.disabled = false;
-            btn.innerText = "Aktualisieren";
+        btn.disabled = false;
+        btn.innerText = "Aktualisieren";
 
     }
     catch(err) {
@@ -170,7 +164,7 @@ setInterval(() => {
 
     secondsLeft--;
 
-    if (secondsLeft < 0) {
+    if (secondsLeft <= 0) {
         loadData();
         return;
     }
@@ -179,36 +173,7 @@ setInterval(() => {
 
 }, 1000);
 
-
-
 loadData();
-
-let secondsLeft = 300;
-
-setInterval(() => {
-
-    secondsLeft--;
-
-    const min =
-        String(Math.floor(secondsLeft / 60))
-            .padStart(2, "0");
-
-    const sec =
-        String(secondsLeft % 60)
-            .padStart(2, "0");
-
-    document.getElementById("refreshInfo")
-        .innerText =
-        `Stand: ${lastUpdate} | Refresh in ${min}:${sec}`;
-
-    if (secondsLeft <= 0) {
-
-        secondsLeft = 300;
-
-        loadData();
-    }
-
-}, 1000);
 
 </script>
 
