@@ -69,7 +69,7 @@ button:disabled{
     </div>
 
     <div id="refreshInfo" class="time">
-        Stand: --:-- | Refresh in 05:00
+        Letzte Änderung: --:-- | Refresh in 05:00
     </div>
 
     <button id="refreshBtn" onclick="loadData()">
@@ -95,7 +95,7 @@ function updateCountdown() {
 
     document.getElementById("refreshInfo")
         .innerText =
-        `Stand: ${lastUpdate} | Refresh in ${min}:${sec}`;
+        `Letzte Änderung: ${lastUpdate} | Refresh in ${min}:${sec}`;
 }
 
 async function loadData() {
