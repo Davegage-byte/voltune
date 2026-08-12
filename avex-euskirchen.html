@@ -283,12 +283,12 @@ async function loadFacts() {
 
 function getLevel(count) {
 
-    if (count >= 1000) return "👑 Tesla Legende";
-    if (count >= 750) return "🌟 Tesla Guru";
-    if (count >= 500) return "🚀 Tesla Experte";
-    if (count >= 250) return "🏆 Tesla Nerd";
-    if (count >= 100) return "🔋 Akku-Profi";
-    if (count >= 50) return "⚡ Supercharger Rookie";
+    if (count >= 100) return "👑 Tesla Legende";
+    if (count >= 90) return "🌟 Tesla Guru";
+    if (count >= 75) return "🚀 Tesla Experte";
+    if (count >= 60) return "🏆 Tesla Nerd";
+    if (count >= 40) return "🔋 Akku-Profi";
+    if (count >= 25) return "⚡ Supercharger Rookie";
     if (count >= 10) return "🚗 Tesla Fan";
 
     return "🔰 Tesla Anfänger";
@@ -297,7 +297,7 @@ function getLevel(count) {
 function updateFactStats() {
 
     document.getElementById("progress").innerHTML =
-        `📚 Gelesen: ${seenFacts.length} / ${facts.length}`;
+        `📚 Gelesen: ${seenFacts.length}`;
 
     document.getElementById("level").innerHTML =
         `🏆 ${getLevel(seenFacts.length)}`;
