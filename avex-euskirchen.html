@@ -80,11 +80,11 @@ button:disabled{
 
 <script>
 
-async function loadData() {
-
 let secondsLeft = 300;
 let countdownInterval;
 let lastUpdate = "--:--";
+
+async function loadData() {
 
     function updateCountdown() {
         document.title = secondsLeft;
@@ -176,7 +176,6 @@ setInterval(() => {
     }
 
     updateCountdown();
-    console.log("Countdown", secondsLeft);
 
 }, 1000);
 
