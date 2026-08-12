@@ -292,6 +292,17 @@ function showNextUnseenFact() {
         );
 
     if (available.length === 0) {
+    
+        document.getElementById("factText").innerHTML =
+            `🎉 Du hast alle Fakten gelesen!<br><br>
+             <button onclick="resetFacts()">
+                 🔄 Von vorne beginnen
+             </button>`;
+    
+        updateFactStats();
+    
+        return;
+    }
 
         document.getElementById("factText").innerHTML =
             "🎉 Du hast alle Fakten gelesen!";
@@ -321,6 +332,15 @@ function showNextUnseenFact() {
     updateFactStats();
 }
 
+function resetFacts() {
+
+    localStorage.removeItem("seenFacts");
+
+    seenFacts = [];
+
+    showNextUnseenFact();
+}
+    
 function nextFact() {
     showNextUnseenFact();
 }
