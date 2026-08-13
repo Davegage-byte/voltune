@@ -310,23 +310,41 @@ window.VoltuneAudio = (() => {
     return true;
   }
 
-  function stop() {
-    if (ctx) {
-      try {
-        ctx.close();
-      } catch (e) {}
+function stop() {
+  if (!ctx) return;
+
+  try {
+    // Sofort lautlos machen.
+    if (master) {
+      master.gain.cancelScheduledValues(
+        ctx.currentTime
+      );
+
+      master.gain.setValueAtTime(
+        0.0001,
+        ctx.currentTime
+      );
     }
 
-    ctx = null;
-    master = null;
-    compressor = null;
+    // AudioContext nicht zerstören.
+    // Nur pausieren, damit Mobile-Browser
+    // beim nächsten Start denselben Context
+    // zuverlässig fortsetzen können.
+    if (ctx.state === "running") {
+      ctx.suspend().catch(() => {});
+    }
 
-    started = false;
-    muted = false;
-
-    lastAccel = 0;
-    lastBovAt = -9999;
+  } catch (error) {
+    console.warn(
+      "Voltune Audio konnte nicht pausiert werden:",
+      error
+    );
   }
+
+  muted = false;
+  lastAccel = 0;
+  lastBovAt = -9999;
+}
 
   function setMasterVolume(percent) {
     if (!started || !master) return;
