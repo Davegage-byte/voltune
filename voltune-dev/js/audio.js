@@ -344,14 +344,14 @@ function stop() {
   function setMasterVolume(percent) {
     if (!started || !master || !ctx) return;
   
-    const target =
-      muted
-        ? 0.0001
-        : clamp(
-            Number(percent) / 100,
-            0.0001,
-            1
-          );
+      const target =
+        muted
+          ? 0.0001
+          : clamp(
+              (Number(percent) / 100) * 3.0,
+              0.0001,
+              3.0
+            );
   
     const now = ctx.currentTime;
   
