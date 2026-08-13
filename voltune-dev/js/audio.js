@@ -314,7 +314,6 @@ function stop() {
   if (!ctx) return;
 
   try {
-    // Sofort lautlos machen.
     if (master) {
       master.gain.cancelScheduledValues(
         ctx.currentTime
@@ -325,22 +324,15 @@ function stop() {
         ctx.currentTime
       );
     }
-
-    // AudioContext nicht zerstören.
-    // Nur pausieren, damit Mobile-Browser
-    // beim nächsten Start denselben Context
-    // zuverlässig fortsetzen können.
-    if (ctx.state === "running") {
-      ctx.suspend().catch(() => {});
-    }
-
   } catch (error) {
     console.warn(
-      "Voltune Audio konnte nicht pausiert werden:",
+      "Voltune Audio konnte nicht gestoppt werden:",
       error
     );
   }
 
+  // AudioContext absichtlich weiterlaufen lassen.
+  // Nur der Master wird stumm geschaltet.
   muted = false;
   lastAccel = 0;
   lastBovAt = -9999;
