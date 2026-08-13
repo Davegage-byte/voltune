@@ -356,12 +356,13 @@ function updateVoltuneSound(speedKmh, accel) {
         const drop =
           previousGpsKmhForEasyBov - gpsSpeedKmh;
     
-      VoltuneAudio.triggerBov(
-        clamp(0.42 + drop / 5, 0.42, 0.85),
-        Number(ui.bov.value),
-        850
-      );
-    }
+        VoltuneAudio.triggerBov(
+          clamp(0.42 + drop / 5, 0.42, 0.85),
+          Number(ui.bov.value),
+          850
+        );
+      }
+    
       previousGpsKmhForEasyBov = gpsSpeedKmh;
     
       manualSpeed = gpsSpeedKmh;
@@ -397,7 +398,6 @@ function updateVoltuneSound(speedKmh, accel) {
         state
       );
     }
-    
     function handleGpsError(error) {
       ui.gpsStatus.textContent =
         error.message || "GPS-Fehler";
