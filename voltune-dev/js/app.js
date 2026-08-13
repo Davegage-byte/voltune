@@ -67,6 +67,24 @@
 
   let previousGpsKmhForEasyBov = null;
 
+  function getAudioSettings() {
+  return {
+    masterVolume: Number(ui.volume.value),
+
+    baseFrequency: Number(ui.base.value),
+    pitch: Number(ui.pitch.value),
+
+    baseVolume: Number(ui.baseVol.value),
+    inverterVolume: Number(ui.inverter.value),
+    driveVolume: Number(ui.drive.value),
+    regenVolume: Number(ui.regen.value),
+    airVolume: Number(ui.air.value),
+    bovVolume: Number(ui.bov.value),
+
+    easyBovEnabled
+  };
+}
+
   function setTarget(param, value, time=0.05) {
     if (!ctx) return;
     param.setTargetAtTime(value, ctx.currentTime, time);
