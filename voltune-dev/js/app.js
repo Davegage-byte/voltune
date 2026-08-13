@@ -991,8 +991,11 @@ function updateVoltuneSound(speedKmh, accel) {
       }
 
       if (audioStarted && !demoActive) {
-        if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
-        else updateVoltuneSound(manualSpeed, manualAccel);
+        if (gpsActive) {
+          updateVoltuneSound(gpsSpeedKmh, gpsAccel);
+        } else {
+          updateVoltuneSound(manualSpeed, manualAccel);
+        }
       }
     });
   });
