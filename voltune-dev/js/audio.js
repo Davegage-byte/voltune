@@ -72,7 +72,10 @@ window.VoltuneAudio = (() => {
 
   async function start() {
     if (started && ctx) {
-      await ctx.resume();
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+    
       return true;
     }
 
@@ -339,19 +342,35 @@ function stop() {
 }
 
   function setMasterVolume(percent) {
-    if (!started || !master) return;
-
-    const volume =
+    if (!started || !master || !ctx) return;
+  
+    const target =
       muted
         ? 0.0001
-        : Number(percent) / 100;
-
-    // Dein bereits eingebauter
-    // sanfter Start bleibt erhalten.
-    setTarget(
-      master.gain,
-      volume,
-      0.15
+        : clamp(
+            Number(percent) / 100,
+            0.0001,
+            1
+          );
+  
+    const now = ctx.currentTime;
+  
+    const current =
+      Math.max(
+        0.0001,
+        Number(master.gain.value) || 0.0001
+      );
+  
+    master.gain.cancelScheduledValues(now);
+  
+    master.gain.setValueAtTime(
+      current,
+      now
+    );
+  
+    master.gain.linearRampToValueAtTime(
+      target,
+      now + 0.12
     );
   }
 
