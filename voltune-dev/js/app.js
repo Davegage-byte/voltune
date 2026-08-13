@@ -45,16 +45,11 @@
   let demoActive = false;
   let demoStart = 0;
 
-  // ----- GPS aus Voltune v3.2 -----
+  // ----- GPS-Zustand aus dem VoltuneGps-Modul -----
   let gpsActive = false;
-  let watchId = null;
-  let lastPos = null;
-  let lastGpsTs = null;
-  let lastGpsSpeed = 0;
-  let smoothGpsSpeed = 0;
+  let gpsSpeedKmh = 0;
   let gpsAccel = 0;
-  let gpsRate = 0;
-  const finite = v => Number.isFinite(v);
+  let lastGpsTs = null;
 
   let manualSpeed = 0;
   let lastManualSpeed = 0;
@@ -221,141 +216,111 @@
     setMasterVolume();
   }
 
-  function haversine(a,b) {
-    const R=6371000;
-    const p1=a.lat*Math.PI/180, p2=b.lat*Math.PI/180;
-    const dp=(b.lat-a.lat)*Math.PI/180;
-    const dl=(b.lon-a.lon)*Math.PI/180;
-    const h=Math.sin(dp/2)**2 + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
-    return 2*R*Math.asin(Math.sqrt(h));
-  }
-
-  function stopGps(resetText=false) {
-    gpsActive=false;
-    if (watchId != null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(watchId);
-    }
-    watchId=null;
-    if (resetText) {
-      ui.gpsStatus.textContent='gestoppt';
-      ui.gpsStatus.className='';
-      ui.gpsHz.textContent='0.0 Hz';
-    }
-  }
-
-  function onPosition(pos) {
-    if (!gpsActive) return;
-
-    const ts=pos.timestamp || Date.now();
-    const c=pos.coords;
-    let speed=finite(c.speed) && c.speed>=0 ? c.speed : null;
-
-    if (speed==null && lastPos && lastGpsTs) {
-      const dt=(ts-lastGpsTs)/1000;
-      if (dt>.15 && dt<10) {
-        speed=haversine(lastPos,{lat:c.latitude,lon:c.longitude})/dt;
+    function stopGps(resetText=false) {
+      gpsActive = false;
+      VoltuneGps.stop();
+    
+      if (resetText) {
+        ui.gpsStatus.textContent = "gestoppt";
+        ui.gpsStatus.className = "";
+        ui.gpsHz.textContent = "0.0 Hz";
       }
     }
-
-    if (speed==null) speed=0;
-    if (speed<.45) speed=0;
-
-    const firstGpsValue = lastGpsTs == null;
     
-    if (firstGpsValue) {
-      // Ersten Messwert nur als Ausgangszustand übernehmen.
-      // Keine künstliche Beschleunigung von 0 auf aktuelle Geschwindigkeit erzeugen.
-      smoothGpsSpeed = speed;
-      lastGpsSpeed = speed;
+    function handleGpsUpdate(data) {
+      if (!gpsActive) return;
+    
+      gpsSpeedKmh = data.speedKmh;
+      gpsAccel = data.acceleration;
+      lastGpsTs = data.timestamp;
+    
+      // EasyBOV-Fallback:
+      // Kleine reale Geschwindigkeitsabfälle dürfen bereits triggern.
+      if (
+        easyBovEnabled &&
+        previousGpsKmhForEasyBov != null &&
+        gpsSpeedKmh > 7 &&
+        previousGpsKmhForEasyBov - gpsSpeedKmh > 0.25
+      ) {
+        const drop =
+          previousGpsKmhForEasyBov - gpsSpeedKmh;
+    
+        triggerDigitalDischarge(
+          clamp(0.42 + drop / 5, 0.42, 0.85),
+          850
+        );
+      }
+    
+      previousGpsKmhForEasyBov = gpsSpeedKmh;
+    
+      manualSpeed = gpsSpeedKmh;
+      lastManualSpeed = gpsSpeedKmh;
+    
+      ui.speedTest.value =
+        Math.round(clamp(gpsSpeedKmh, 0, 270));
+    
+      ui.speedTestLabel.textContent =
+        `${Math.round(gpsSpeedKmh)} km/h`;
+    
+      if (data.accuracy != null) {
+        ui.gpsAccuracy.textContent =
+          `${Math.round(data.accuracy)} m`;
+      }
+    
+      ui.gpsHz.textContent =
+        `${data.rateHz.toFixed(1)} Hz`;
+    
+      ui.gpsStatus.textContent = "aktiv";
+      ui.gpsStatus.className = "okText";
+    
+      const state =
+        gpsAccel > 0.22
+          ? "GPS · Beschleunigen"
+          : gpsAccel < -0.22
+            ? "GPS · Reku"
+            : "GPS · Fahrt";
+    
+      render(
+        gpsSpeedKmh,
+        gpsAccel,
+        state
+      );
+    }
+    
+    function handleGpsError(error) {
+      ui.gpsStatus.textContent =
+        error.message || "GPS-Fehler";
+    
+      ui.gpsStatus.className = "errText";
+    }
+    
+    function startGps() {
+      stopGps(false);
+    
+      demoActive = false;
+      gpsSpeedKmh = 0;
       gpsAccel = 0;
-      gpsRate = 0;
-    } else {
-      const dt = clamp((ts-lastGpsTs)/1000,.15,8);
-      gpsRate = 1/dt;
+      lastGpsTs = null;
+      previousGpsKmhForEasyBov = null;
     
-      smoothGpsSpeed = smoothGpsSpeed*.58 + speed*.42;
+      ui.gpsStatus.textContent =
+        "warte auf Position …";
     
-      const rawGpsAccel = (smoothGpsSpeed-lastGpsSpeed)/dt;
-      gpsAccel = gpsAccel*.68 + clamp(rawGpsAccel,-5,5)*.32;
+      ui.gpsStatus.className =
+        "warnText";
     
-      lastGpsSpeed = smoothGpsSpeed;
+      ui.gpsAccuracy.textContent = "–";
+      ui.gpsHz.textContent = "0.0 Hz";
+    
+      const started = VoltuneGps.start({
+        onUpdate: handleGpsUpdate,
+        onError: handleGpsError
+      });
+    
+      gpsActive = started;
+    
+      return started;
     }
-    
-    lastGpsTs=ts;
-    lastPos={lat:c.latitude,lon:c.longitude};
-
-    const kmh=smoothGpsSpeed*3.6;
-
-    // EasyBOV-Fallback speziell für träges GPS:
-    // Schon ein kleiner echter Geschwindigkeitsabfall kann die Entladung auslösen.
-    if (
-      easyBovEnabled &&
-      previousGpsKmhForEasyBov != null &&
-      kmh > 7 &&
-      previousGpsKmhForEasyBov - kmh > 0.25
-    ) {
-      const drop = previousGpsKmhForEasyBov - kmh;
-      triggerDigitalDischarge(clamp(0.42 + drop/5, 0.42, 0.85), 850);
-    }
-    previousGpsKmhForEasyBov=kmh;
-
-    manualSpeed=kmh;
-    lastManualSpeed=kmh;
-    ui.speedTest.value=Math.round(clamp(kmh,0,270));
-    ui.speedTestLabel.textContent=`${Math.round(kmh)} km/h`;
-
-    if (finite(c.accuracy)) ui.gpsAccuracy.textContent=`${Math.round(c.accuracy)} m`;
-    ui.gpsHz.textContent=`${gpsRate.toFixed(1)} Hz`;
-    ui.gpsStatus.textContent='aktiv';
-    ui.gpsStatus.className='okText';
-
-    const state = gpsAccel > .22 ? 'GPS · Beschleunigen' :
-                  gpsAccel < -.22 ? 'GPS · Reku' :
-                  'GPS · Fahrt';
-    render(kmh,gpsAccel,state);
-  }
-
-  function onGeoError(err) {
-    const msg={
-      1:'Berechtigung verweigert',
-      2:'Position nicht verfügbar',
-      3:'GPS-Timeout'
-    }[err.code] || err.message || 'GPS-Fehler';
-    ui.gpsStatus.textContent=msg;
-    ui.gpsStatus.className='errText';
-  }
-
-  function startGps() {
-    if (!("geolocation" in navigator)) {
-      ui.gpsStatus.textContent='Geolocation nicht verfügbar';
-      ui.gpsStatus.className='errText';
-      return false;
-    }
-
-    stopGps(false);
-    demoActive=false;
-    gpsActive=true;
-    lastPos=null;
-    lastGpsTs=null;
-    lastGpsSpeed=0;
-    smoothGpsSpeed=0;
-    gpsAccel=0;
-    gpsRate=0;
-    previousGpsKmhForEasyBov=null;
-
-    ui.gpsStatus.textContent='warte auf Position …';
-    ui.gpsStatus.className='warnText';
-    ui.gpsAccuracy.textContent='–';
-    ui.gpsHz.textContent='0.0 Hz';
-
-    watchId=navigator.geolocation.watchPosition(
-      onPosition,
-      onGeoError,
-      {enableHighAccuracy:true, maximumAge:0, timeout:10000}
-    );
-    return true;
-  }
-
   function stopAudio() {
     stopGps(true);
     demoActive = false;
@@ -806,7 +771,7 @@
     VoltuneDrivetrain.reset();
 
     if (audioStarted) {
-      if (gpsActive) updateAudio(smoothGpsSpeed*3.6, gpsAccel);
+      if (gpsActive) updateAudio(gpsSpeedKmh, gpsAccel);
       else updateAudio(manualSpeed, manualAccel);
     } else {
       ui.gearDisplay.textContent = gearsEnabled ? "1. · 2.66:1" : "Direkt";
@@ -822,7 +787,7 @@
       dynamicShiftEnabled ? "Dynamische Schalt-RPM: AN\n      " : "Dynamische Schalt-RPM: AUS\n      ";
 
     if (audioStarted) {
-      if (gpsActive) updateAudio(smoothGpsSpeed*3.6, gpsAccel);
+      if (gpsActive) updateAudio(gpsSpeedKmh, gpsAccel);
       else updateAudio(manualSpeed, manualAccel);
     }
   });
@@ -917,7 +882,7 @@
       }
 
       if (audioStarted && !demoActive) {
-        if (gpsActive) updateAudio(smoothGpsSpeed*3.6,gpsAccel);
+        if (gpsActive) updateAudio(gpsSpeedKmh,gpsAccel);
         else updateAudio(manualSpeed,manualAccel);
       }
     });
