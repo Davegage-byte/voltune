@@ -85,6 +85,98 @@
   };
 }
 
+async function ensureVoltuneAudio() {
+  try {
+    await VoltuneAudio.start();
+    await VoltuneAudio.resume();
+
+    VoltuneAudio.setMuted(
+      false,
+      Number(ui.volume.value)
+    );
+
+    return true;
+
+  } catch (error) {
+    console.error(
+      "Voltune Audio konnte nicht gestartet werden:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "Voltune Audio konnte nicht gestartet werden."
+    );
+
+    return false;
+  }
+}
+
+
+function updateVoltuneSound(speedKmh, accel) {
+  if (!VoltuneAudio.isStarted()) {
+    return;
+  }
+
+  // Erst Getriebe / RPM berechnen
+  const transmission = VoltuneDrivetrain.update(
+    speedKmh,
+    accel,
+    {
+      maxRpm: Number(ui.maxRpm.value),
+      gearRange: Number(ui.gearRange.value),
+      shiftRpm: Number(ui.shiftRpm.value),
+      gearsEnabled,
+      dynamicShiftEnabled
+    }
+  );
+
+
+  // Getriebeanzeige aktualisieren
+  if (transmission.direct) {
+    ui.gearDisplay.textContent = "Direkt";
+    ui.shiftTargetDisplay.textContent = "–";
+
+  } else {
+    ui.gearDisplay.textContent =
+      `${transmission.gear}. · ${transmission.ratio.toFixed(2)}:1`;
+
+    ui.shiftTargetDisplay.textContent =
+      `${Math.round(transmission.shiftTarget)} RPM`;
+  }
+
+  ui.rpmDisplay.textContent =
+    `${Math.round(transmission.rpm)} RPM`;
+
+
+  // Fertige Fahrwerte an die Soundengine übergeben
+  const soundState = VoltuneAudio.update(
+    {
+      speedKmh,
+      acceleration: accel,
+      rpm: transmission.rpm,
+      maxRpm: transmission.maxRpm
+    },
+    getAudioSettings()
+  );
+
+
+  // Anzeigen der einzelnen Sound-Layer
+  if (soundState) {
+    ui.baseHz.textContent =
+      `${Math.round(soundState.fundamentalHz)} Hz`;
+
+    ui.invHz.textContent =
+      `${Math.round(soundState.inverterHz)} Hz`;
+
+    ui.drivePct.textContent =
+      `${soundState.drivePercent} %`;
+
+    ui.regenPct.textContent =
+      `${soundState.regenPercent} %`;
+  }
+}
+
   function setTarget(param, value, time=0.05) {
     if (!ctx) return;
     param.setTargetAtTime(value, ctx.currentTime, time);
