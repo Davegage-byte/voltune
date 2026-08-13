@@ -317,13 +317,6 @@ function updateVoltuneSound(speedKmh, accel) {
     VoltuneDrivetrain.reset();
     previousGpsKmhForEasyBov = null;
 
-    if (ctx) {
-      try { ctx.close(); } catch(e) {}
-    }
-
-    ctx = null;
-    master = null;
-    compressor = null;
     audioStarted = false;
 
     ui.start.textContent = "Sound + Demo starten";
