@@ -361,7 +361,7 @@ function updateVoltuneSound(speedKmh, accel) {
         Number(ui.bov.value),
         850
       );
-    
+    }
       previousGpsKmhForEasyBov = gpsSpeedKmh;
     
       manualSpeed = gpsSpeedKmh;
@@ -991,8 +991,8 @@ function updateVoltuneSound(speedKmh, accel) {
       }
 
       if (audioStarted && !demoActive) {
-        if (gpsActive) updateAudio(gpsSpeedKmh,gpsAccel);
-        else updateAudio(manualSpeed,manualAccel);
+        if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
+        else updateVoltuneSound(manualSpeed, manualAccel);
       }
     });
   });
