@@ -70,13 +70,6 @@
   let gearsEnabled = true;
   let dynamicShiftEnabled = true;
 
-  // TREMEC 6-Gang-Verhältnisfolge als virtuelles Sound-Getriebe.
-  const gearRatios = [2.66, 1.78, 1.30, 1.00, 0.80, 0.63];
-  const topGearRatio = gearRatios[gearRatios.length-1];
-  let currentGear = 1;
-  let virtualRpm = 0;
-  let currentShiftTarget = 0;
-
   let previousGpsKmhForEasyBov = null;
 
   function setTarget(param, value, time=0.05) {
@@ -368,7 +361,7 @@
     demoActive = false;
     lastAccel = 0;
     lastState = "idle";
-    currentGear = 1;
+    VoltuneDrivetrain.reset();
     previousGpsKmhForEasyBov = null;
 
     if (ctx) {
@@ -549,95 +542,6 @@
   zap.stop(now + 0.3);
 }
 
-  function rpmForGear(speedKmh, gear) {
-    const maxRpm = Number(ui.maxRpm.value);
-    const rangeKmh = Math.max(1, Number(ui.gearRange.value));
-    const ratio = gearRatios[gear-1];
-
-    // Definition der Getriebe-Reichweite:
-    // Im 6. Gang gilt bei rangeKmh ungefähr maxRpm.
-    return Math.max(0,
-      (speedKmh / rangeKmh) *
-      maxRpm *
-      (ratio / topGearRatio)
-    );
-  }
-
-  function calculateShiftTarget(accel) {
-    const maxRpm = Number(ui.maxRpm.value);
-    const sportShift = Math.min(Number(ui.shiftRpm.value), maxRpm);
-
-    if (!dynamicShiftEnabled) return sportShift;
-
-    // Sanftes Fahren -> frühes Schalten.
-    // Starke Beschleunigung -> nähert sich dem eingestellten Sport-Schaltpunkt.
-    const gentleShift = clamp(maxRpm * 0.34, 1500, Math.min(2800, sportShift));
-    const accelN = clamp(Math.max(0, accel) / 5.0, 0, 1);
-    const demand = Math.pow(accelN, 0.55);
-
-    return gentleShift + (sportShift - gentleShift) * demand;
-  }
-
-  function updateVirtualTransmission(speedKmh, accel) {
-    const maxRpm = Number(ui.maxRpm.value);
-    const rangeKmh = Math.max(1, Number(ui.gearRange.value));
-    currentShiftTarget = calculateShiftTarget(accel);
-
-    if (!gearsEnabled) {
-      currentGear = 1;
-      virtualRpm = clamp((speedKmh / rangeKmh) * maxRpm, 0, maxRpm * 1.08);
-      ui.gearDisplay.textContent = "Direkt";
-      ui.rpmDisplay.textContent = `${Math.round(virtualRpm)} RPM`;
-      ui.shiftTargetDisplay.textContent = "–";
-      return {gear:1, rpm:virtualRpm, maxRpm, shiftTarget:maxRpm};
-    }
-
-    // Hochschalten nur bei nicht-negativer Last.
-    // Bei großen Sprüngen des Testsliders dürfen mehrere Gänge in einem Update folgen.
-    let rpm = rpmForGear(speedKmh, currentGear);
-    while (
-      currentGear < gearRatios.length &&
-      accel > -0.08 &&
-      rpm >= currentShiftTarget
-    ) {
-      currentGear++;
-      rpm = rpmForGear(speedKmh, currentGear);
-    }
-
-    // Zurückschalten mit deutlicher Hysterese.
-    // Der neue Gang soll nicht sofort wieder hochschalten.
-    const downshiftRpm = Math.max(950, currentShiftTarget * 0.46);
-    while (
-      currentGear > 1 &&
-      rpm < downshiftRpm
-    ) {
-      currentGear--;
-      rpm = rpmForGear(speedKmh, currentGear);
-
-      // Falls der niedrigere Gang bereits fast am Schaltpunkt liegt,
-      // bleibt der höhere Gang drin – verhindert hektisches Pendeln.
-      if (rpm > currentShiftTarget * 0.94) {
-        currentGear++;
-        rpm = rpmForGear(speedKmh, currentGear);
-        break;
-      }
-    }
-
-    virtualRpm = clamp(rpm, 0, maxRpm * 1.08);
-
-    ui.gearDisplay.textContent =
-      `${currentGear}. · ${gearRatios[currentGear-1].toFixed(2)}:1`;
-    ui.rpmDisplay.textContent = `${Math.round(virtualRpm)} RPM`;
-    ui.shiftTargetDisplay.textContent = `${Math.round(currentShiftTarget)} RPM`;
-
-    return {
-      gear:currentGear,
-      rpm:virtualRpm,
-      maxRpm,
-      shiftTarget:currentShiftTarget
-    };
-  }
-
   function updateAudio(speedKmh, accel) {
     if (!audioStarted || !ctx) return;
 
@@ -654,7 +558,30 @@
     const pos = clamp(accel/5.7,0,1);
     const neg = clamp(-accel/3.2,0,1);
 
-    const transmission = updateVirtualTransmission(speedKmh, accel);
+    const transmission = VoltuneDrivetrain.update(
+      speedKmh,
+      accel,
+      {
+        maxRpm: Number(ui.maxRpm.value),
+        gearRange: Number(ui.gearRange.value),
+        shiftRpm: Number(ui.shiftRpm.value),
+        gearsEnabled,
+        dynamicShiftEnabled
+      }
+    );
+      if (transmission.direct) {
+    ui.gearDisplay.textContent = "Direkt";
+    ui.shiftTargetDisplay.textContent = "–";
+  } else {
+    ui.gearDisplay.textContent =
+      `${transmission.gear}. · ${transmission.ratio.toFixed(2)}:1`;
+  
+    ui.shiftTargetDisplay.textContent =
+      `${Math.round(transmission.shiftTarget)} RPM`;
+  }
+  
+  ui.rpmDisplay.textContent =
+    `${Math.round(transmission.rpm)} RPM`;
     const rpmN = clamp(transmission.rpm / Math.max(1, transmission.maxRpm), 0, 1.08);
 
     // Der eigentliche Fahrsound folgt jetzt der virtuellen Drehzahl.
@@ -876,7 +803,7 @@
     gearsEnabled = !gearsEnabled;
     ui.gears.classList.toggle("active", gearsEnabled);
     ui.gears.childNodes[0].nodeValue = gearsEnabled ? "Virtuelle Gänge: AN\n      " : "Virtuelle Gänge: AUS\n      ";
-    currentGear = 1;
+    VoltuneDrivetrain.reset();
 
     if (audioStarted) {
       if (gpsActive) updateAudio(smoothGpsSpeed*3.6, gpsAccel);
@@ -986,7 +913,7 @@
       if (el === ui.volume) setMasterVolume();
 
       if (el === ui.gearRange || el === ui.maxRpm || el === ui.shiftRpm) {
-        currentGear = 1;
+        VoltuneDrivetrain.reset();
       }
 
       if (audioStarted && !demoActive) {
