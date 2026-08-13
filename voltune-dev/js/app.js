@@ -25,7 +25,6 @@
   };
 
   let audioStarted = false;
-  let muted = false;
 
   let demoActive = false;
   let demoStart = 0;
@@ -76,8 +75,8 @@ async function ensureVoltuneAudio() {
       false,
       Number(ui.volume.value)
     );
+    
     audioStarted = true;
-    muted = false;
     return true;
 
   } catch (error) {
@@ -278,7 +277,6 @@ function updateVoltuneSound(speedKmh, accel) {
     ui.start.textContent = "Sound + Demo starten";
     ui.gps.textContent = "GPS fahren";
     ui.mute.textContent = "Stumm";
-    muted = false;
 
     manualSpeed = 0;
     lastManualSpeed = 0;
@@ -295,8 +293,7 @@ function updateVoltuneSound(speedKmh, accel) {
   function setMasterVolume() {
     if (!VoltuneAudio.isStarted()) return;
   
-    VoltuneAudio.setMuted(
-      muted,
+    VoltuneAudio.setMasterVolume(
       Number(ui.volume.value)
     );
   }
@@ -457,11 +454,18 @@ function updateVoltuneSound(speedKmh, accel) {
   });
 
   ui.mute.addEventListener("click", () => {
-    if (!audioStarted) return;
-
-    muted = !muted;
-    setMasterVolume();
-    ui.mute.textContent = muted ? "Ton an" : "Stumm";
+    if (!VoltuneAudio.isStarted()) return;
+  
+    const nextMuted =
+      !VoltuneAudio.isMuted();
+  
+    VoltuneAudio.setMuted(
+      nextMuted,
+      Number(ui.volume.value)
+    );
+  
+    ui.mute.textContent =
+      nextMuted ? "Ton an" : "Stumm";
   });
 
   // Manuelle Geschwindigkeit:
