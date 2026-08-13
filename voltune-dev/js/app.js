@@ -88,7 +88,6 @@
 async function ensureVoltuneAudio() {
   try {
     await VoltuneAudio.start();
-    await VoltuneAudio.resume();
 
     VoltuneAudio.setMuted(
       false,
