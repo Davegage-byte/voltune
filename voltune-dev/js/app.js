@@ -24,23 +24,8 @@
     airLabel:$("airLabel"), bovLabel:$("bovLabel")
   };
 
-  let ctx = null;
-  let master = null;
-  let compressor = null;
   let audioStarted = false;
   let muted = false;
-
-  let base1, base2, sub;
-  let baseGain1, baseGain2, subGain, baseFilter;
-
-  let inv1, inv2, inv3;
-  let invGain1, invGain2, invGain3, invFilter;
-
-  let driveOsc, driveGain, driveFilter;
-  let regenOsc1, regenOsc2, regenGain, regenFilter;
-
-  let airSource, airGain, airFilter;
-  let sharedNoiseBuffer = null;
 
   let demoActive = false;
   let demoStart = 0;
@@ -176,31 +161,6 @@ function updateVoltuneSound(speedKmh, accel) {
       `${soundState.regenPercent} %`;
   }
 }
-
-  function setTarget(param, value, time=0.05) {
-    if (!ctx) return;
-    param.setTargetAtTime(value, ctx.currentTime, time);
-  }
-
-  function createNoiseBuffer(seconds=2) {
-    const length = Math.floor(ctx.sampleRate * seconds);
-    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-
-    let last = 0;
-    for (let i=0;i<length;i++) {
-      const white = Math.random()*2-1;
-      last = last*0.82 + white*0.18;
-      data[i] = white*0.68 + last*0.32;
-    }
-    return buffer;
-  }
-
-  function createOsc(type) {
-    const o = ctx.createOscillator();
-    o.type = type;
-    return o;
-  }
 
     function stopGps(resetText=false) {
       gpsActive = false;
