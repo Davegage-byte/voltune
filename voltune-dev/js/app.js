@@ -41,9 +41,7 @@
   let lastManualTime = performance.now();
   let manualAccel = 0;
 
-  let lastAccel = 0;
   let lastState = "idle";
-  let lastBovAt = -9999;
 
   // ----- Experimentelle Komfortfunktionen -----
   let easyBovEnabled = false;
@@ -271,7 +269,6 @@ function updateVoltuneSound(speedKmh, accel) {
     VoltuneAudio.stop();
     stopGps(true);
     demoActive = false;
-    lastAccel = 0;
     lastState = "idle";
     VoltuneDrivetrain.reset();
     previousGpsKmhForEasyBov = null;
@@ -387,7 +384,6 @@ function updateVoltuneSound(speedKmh, accel) {
     stopGps(false);
     demoActive = true;
     demoStart = performance.now();
-    lastAccel = 0;
     lastState = "idle";
 
     ui.start.textContent = "Läuft ✓";
@@ -400,7 +396,6 @@ function updateVoltuneSound(speedKmh, accel) {
     
     VoltuneAudio.resetDrivingState();
     demoActive=false;
-    lastAccel=0;
     lastState='idle';
 
     if (startGps()) {
@@ -419,7 +414,6 @@ function updateVoltuneSound(speedKmh, accel) {
     stopGps(false);
     demoActive = true;
     demoStart = performance.now();
-    lastAccel = 0;
     lastState = "idle";
     ui.gps.textContent = "GPS fahren";
   });
@@ -432,7 +426,6 @@ function updateVoltuneSound(speedKmh, accel) {
     easyBovEnabled = !easyBovEnabled;
     ui.easyBov.classList.toggle("active", easyBovEnabled);
     ui.easyBov.childNodes[0].nodeValue = easyBovEnabled ? "EasyBOV: AN\n      " : "EasyBOV: AUS\n      ";
-    lastBovAt = -9999;
   });
 
   ui.gears.addEventListener("click", () => {
