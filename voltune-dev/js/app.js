@@ -94,7 +94,8 @@ async function ensureVoltuneAudio() {
       false,
       Number(ui.volume.value)
     );
-
+    audioStarted = true;
+    muted = false;
     return true;
 
   } catch (error) {
@@ -355,11 +356,11 @@ function updateVoltuneSound(speedKmh, accel) {
         const drop =
           previousGpsKmhForEasyBov - gpsSpeedKmh;
     
-        triggerDigitalDischarge(
-          clamp(0.42 + drop / 5, 0.42, 0.85),
-          850
-        );
-      }
+      VoltuneAudio.triggerBov(
+        clamp(0.42 + drop / 5, 0.42, 0.85),
+        Number(ui.bov.value),
+        850
+      );
     
       previousGpsKmhForEasyBov = gpsSpeedKmh;
     
@@ -432,6 +433,7 @@ function updateVoltuneSound(speedKmh, accel) {
       return started;
     }
   function stopAudio() {
+    VoltuneAudio.stop();
     stopGps(true);
     demoActive = false;
     lastAccel = 0;
@@ -466,9 +468,12 @@ function updateVoltuneSound(speedKmh, accel) {
   }
 
   function setMasterVolume() {
-    if (!audioStarted || !master) return;
-    const v = muted ? 0.0001 : Number(ui.volume.value)/100;
-    setTarget(master.gain, v, 0.15);
+    if (!VoltuneAudio.isStarted()) return;
+  
+    VoltuneAudio.setMuted(
+      muted,
+      Number(ui.volume.value)
+    );
   }
 
   function triggerDigitalDischarge(intensity=1, minCooldown=650) {
@@ -747,8 +752,8 @@ function updateVoltuneSound(speedKmh, accel) {
   }
 
   function render(speedKmh, accel, state) {
-    renderVisual(speedKmh,accel,state);
-    updateAudio(speedKmh,accel);
+    renderVisual(speedKmh, accel, state);
+    updateVoltuneSound(speedKmh, accel);
   }
 
   // 0-6 s: 0 -> 120
@@ -791,7 +796,11 @@ function updateVoltuneSound(speedKmh, accel) {
       render(v.kmh,v.a,v.state);
 
       if (lastState === "Beschleunigen" && v.state === "Halten") {
-        triggerDigitalDischarge(0.38);
+        VoltuneAudio.triggerBov(
+          0.38,
+          Number(ui.bov.value),
+          650
+        );
       }
       lastState = v.state;
     } else if (audioStarted && !gpsActive) {
@@ -811,13 +820,9 @@ function updateVoltuneSound(speedKmh, accel) {
   }
 
   ui.start.addEventListener("click", async () => {
-    startAudio();
-    if (!ctx) return;
-
-    await ctx.resume();
-
-    muted = false;
-    setMasterVolume();
+    if (!await ensureVoltuneAudio()) return;
+    
+    VoltuneAudio.resetDrivingState();
 
     stopGps(false);
     demoActive = true;
@@ -831,12 +836,9 @@ function updateVoltuneSound(speedKmh, accel) {
   });
 
   ui.gps.addEventListener("click", async () => {
-    startAudio();
-    if (!ctx) return;
-    await ctx.resume();
-
-    muted=false;
-    setMasterVolume();
+    if (!await ensureVoltuneAudio()) return;
+    
+    VoltuneAudio.resetDrivingState();
     demoActive=false;
     lastAccel=0;
     lastState='idle';
@@ -850,10 +852,9 @@ function updateVoltuneSound(speedKmh, accel) {
   });
 
   ui.restart.addEventListener("click", async () => {
-    startAudio();
-    if (!ctx) return;
-
-    await ctx.resume();
+    if (!await ensureVoltuneAudio()) return;
+    
+    VoltuneAudio.resetDrivingState();
 
     stopGps(false);
     demoActive = true;
@@ -881,8 +882,8 @@ function updateVoltuneSound(speedKmh, accel) {
     VoltuneDrivetrain.reset();
 
     if (audioStarted) {
-      if (gpsActive) updateAudio(gpsSpeedKmh, gpsAccel);
-      else updateAudio(manualSpeed, manualAccel);
+      if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
+      else updateVoltuneSound(manualSpeed, manualAccel);
     } else {
       ui.gearDisplay.textContent = gearsEnabled ? "1. · 2.66:1" : "Direkt";
       ui.rpmDisplay.textContent = "0 RPM";
@@ -897,8 +898,8 @@ function updateVoltuneSound(speedKmh, accel) {
       dynamicShiftEnabled ? "Dynamische Schalt-RPM: AN\n      " : "Dynamische Schalt-RPM: AUS\n      ";
 
     if (audioStarted) {
-      if (gpsActive) updateAudio(gpsSpeedKmh, gpsAccel);
-      else updateAudio(manualSpeed, manualAccel);
+      if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
+      else updateVoltuneSound(manualSpeed, manualAccel);
     }
   });
 
@@ -913,9 +914,7 @@ function updateVoltuneSound(speedKmh, accel) {
   // Manuelle Geschwindigkeit:
   // Die Änderungsrate des Sliders wird als Beschleunigung interpretiert.
   ui.speedTest.addEventListener("input", async () => {
-    startAudio();
-    if (!ctx) return;
-    await ctx.resume();
+    if (!await ensureVoltuneAudio()) return;
 
     demoActive = false;
     stopGps(false);
