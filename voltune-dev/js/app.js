@@ -24,7 +24,7 @@
     airLabel:$("airLabel"), bovLabel:$("bovLabel")
   };
 
-  let audioStarted = false;
+  let soundActive = false;
 
   let demoActive = false;
   let demoStart = 0;
@@ -76,7 +76,7 @@ async function ensureVoltuneAudio() {
       Number(ui.volume.value)
     );
     
-    audioStarted = true;
+    soundActive = true;
     return true;
 
   } catch (error) {
@@ -272,7 +272,7 @@ function updateVoltuneSound(speedKmh, accel) {
     VoltuneDrivetrain.reset();
     previousGpsKmhForEasyBov = null;
 
-    audioStarted = false;
+    soundActive = false;
 
     ui.start.textContent = "Sound + Demo starten";
     ui.gps.textContent = "GPS fahren";
@@ -357,7 +357,7 @@ function updateVoltuneSound(speedKmh, accel) {
         );
       }
       lastState = v.state;
-    } else if (audioStarted && !gpsActive) {
+    } else if (soundActive && !gpsActive) {
       // manuelle Beschleunigung weich gegen 0 auslaufen lassen
       manualAccel *= 0.86;
       if (Math.abs(manualAccel) < 0.03) manualAccel = 0;
@@ -431,7 +431,7 @@ function updateVoltuneSound(speedKmh, accel) {
     ui.gears.childNodes[0].nodeValue = gearsEnabled ? "Virtuelle Gänge: AN\n      " : "Virtuelle Gänge: AUS\n      ";
     VoltuneDrivetrain.reset();
 
-    if (audioStarted) {
+    if (soundActive) {
       if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
       else updateVoltuneSound(manualSpeed, manualAccel);
     } else {
@@ -447,7 +447,7 @@ function updateVoltuneSound(speedKmh, accel) {
     ui.dynamicShift.childNodes[0].nodeValue =
       dynamicShiftEnabled ? "Dynamische Schalt-RPM: AN\n      " : "Dynamische Schalt-RPM: AUS\n      ";
 
-    if (audioStarted) {
+    if (soundActive) {
       if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
       else updateVoltuneSound(manualSpeed, manualAccel);
     }
@@ -547,7 +547,7 @@ function updateVoltuneSound(speedKmh, accel) {
         VoltuneDrivetrain.reset();
       }
 
-      if (audioStarted && !demoActive) {
+      if (soundActive && !demoActive) {
         if (gpsActive) {
           updateVoltuneSound(gpsSpeedKmh, gpsAccel);
         } else {
