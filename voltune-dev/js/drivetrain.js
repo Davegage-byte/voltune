@@ -104,10 +104,18 @@ window.VoltuneDrivetrain = (() => {
       );
     }
 
-    const downshiftRpm = Math.max(
-      950,
-      currentShiftTarget * 0.46
-    );
+  // Beim normalen Rollen nicht zu früh zurückschalten.
+  // Bei stärkerer Verzögerung steigt die Rückschalt-Drehzahl,
+  // damit das Getriebe früher in einen niedrigeren Gang geht.
+  const decelDemand = clamp(
+    -accel / 2.0,
+    0,
+    1
+  );
+
+const downshiftRpm =
+  1250 +
+  decelDemand * 450;
 
     while (
       currentGear > 1 &&
@@ -121,7 +129,7 @@ window.VoltuneDrivetrain = (() => {
         config
       );
 
-      if (rpm > currentShiftTarget * 0.94) {
+      if (rpm > currentShiftTarget * 0.98) {
         currentGear++;
 
         rpm = rpmForGear(
