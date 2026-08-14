@@ -5,6 +5,10 @@ window.VoltuneDrivetrain = (() => {
   let currentGear = 1;
   let virtualRpm = 0;
   let currentShiftTarget = 0;
+  let lastShiftAt = -9999;
+
+  const SHIFT_COOLDOWN_MS = 350;
+  
 
   function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
@@ -14,6 +18,7 @@ window.VoltuneDrivetrain = (() => {
     currentGear = 1;
     virtualRpm = 0;
     currentShiftTarget = 0;
+    lastShiftAt = -9999;
   }
 
   function rpmForGear(speedKmh, gear, config) {
@@ -90,57 +95,101 @@ window.VoltuneDrivetrain = (() => {
       config
     );
 
-    while (
-      currentGear < gearRatios.length &&
-      accel > -0.08 &&
-      rpm >= currentShiftTarget
-    ) {
-      currentGear++;
-
-      rpm = rpmForGear(
-        speedKmh,
-        currentGear,
-        config
-      );
-    }
+  if (
+    currentGear < gearRatios.length &&
+    accel > -0.08 &&
+    rpm >= currentShiftTarget &&
+    nowMs - lastShiftAt >= SHIFT_COOLDOWN_MS
+  ) {
+    currentGear++;
+  
+    rpm = rpmForGear(
+      speedKmh,
+      currentGear,
+      config
+    );
+  
+    lastShiftAt = nowMs;
+  }
 
   // Beim normalen Rollen nicht zu früh zurückschalten.
   // Bei stärkerer Verzögerung steigt die Rückschalt-Drehzahl,
   // damit das Getriebe früher in einen niedrigeren Gang geht.
-  const decelDemand = clamp(
-    -accel / 2.0,
-    0,
-    1
-  );
+// =========================
+// Rückschalten
+// =========================
 
-const downshiftRpm =
-  1250 +
-  decelDemand * 450;
+const nowMs = performance.now();
 
-    while (
-      currentGear > 1 &&
-      rpm < downshiftRpm
-    ) {
-      currentGear--;
+const canShift =
+  nowMs - lastShiftAt >= SHIFT_COOLDOWN_MS;
 
-      rpm = rpmForGear(
+// Gewünschte Drehzahl NACH dem Zurückschalten.
+//
+// Index entspricht dem aktuellen Gang:
+// 2 -> 1 = 2350 RPM
+// 3 -> 2 = 2100 RPM
+// 4 -> 3 = 1900 RPM
+// 5 -> 4 = 1750 RPM
+// 6 -> 5 = 1600 RPM
+const downshiftLandingRpm = {
+  2: 2350,
+  3: 2100,
+  4: 1900,
+  5: 1750,
+  6: 1600
+};
+
+if (
+  canShift &&
+  currentGear > 1
+) {
+  const currentRatio =
+    gearRatios[currentGear - 1];
+
+  const lowerRatio =
+    gearRatios[currentGear - 2];
+
+  const targetLandingRpm =
+    downshiftLandingRpm[currentGear];
+
+  // Berechnet, bei welcher Drehzahl im aktuellen
+  // Gang heruntergeschaltet werden muss, damit
+  // der niedrigere Gang ungefähr bei seiner
+  // gewünschten Ziel-RPM landet.
+  const downshiftTriggerRpm =
+    targetLandingRpm *
+    (currentRatio / lowerRatio);
+
+  if (rpm <= downshiftTriggerRpm) {
+    const nextGear =
+      currentGear - 1;
+
+    const nextRpm =
+      rpmForGear(
         speedKmh,
-        currentGear,
+        nextGear,
         config
       );
 
-      if (rpm > currentShiftTarget * 0.98) {
-        currentGear++;
+    // Nicht zurückschalten, wenn der niedrigere
+    // Gang dadurch praktisch sofort wieder
+    // hochgeschaltet werden müsste.
+    if (
+      nextRpm <
+      currentShiftTarget * 0.98
+    ) {
+      currentGear =
+        nextGear;
 
-        rpm = rpmForGear(
-          speedKmh,
-          currentGear,
-          config
-        );
+      rpm =
+        nextRpm;
 
-        break;
-      }
+      lastShiftAt =
+        nowMs;
     }
+  }
+}
 
     virtualRpm = clamp(
       rpm,
