@@ -288,26 +288,6 @@ function updateVoltuneSound(speedKmh, accel) {
       gpsAccel = data.acceleration;
       lastGpsTs = data.timestamp;
     
-      // EasyBOV-Fallback:
-      // Kleine reale Geschwindigkeitsabfälle dürfen bereits triggern.
-      if (
-        easyBovEnabled &&
-        previousGpsKmhForEasyBov != null &&
-        gpsSpeedKmh > 7 &&
-        previousGpsKmhForEasyBov - gpsSpeedKmh > 0.25
-      ) {
-        const drop =
-          previousGpsKmhForEasyBov - gpsSpeedKmh;
-    
-        VoltuneAudio.triggerBov(
-          clamp(0.42 + drop / 5, 0.42, 0.85),
-          Number(ui.bov.value),
-          850
-        );
-      }
-    
-      previousGpsKmhForEasyBov = gpsSpeedKmh;
-    
       manualSpeed = gpsSpeedKmh;
       lastManualSpeed = gpsSpeedKmh;
     
