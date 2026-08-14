@@ -401,62 +401,147 @@ function updateVoltuneSound(speedKmh, accel) {
     updateVoltuneSound(speedKmh, accel);
   }
 
+// BOV-Test-Demo
+//
 // 0-2 s: Stillstand
-// 2-8 s: Beschleunigen auf 200 km/h
-// 8-16 s: 200 km/h halten
-// 16-26 s: auf 120 km/h verzögern
-// 26-38 s: auf 0 km/h verzögern
-// 38-40 s: Stillstand
+//
+// 2-6.5 s:
+// zügig von 0 auf 100 km/h
+// -> hoher BOV-Ladedruck
+//
+// 6.5-9 s:
+// 100 km/h halten
+// -> großer BOV
+//
+// 9-23 s:
+// moderat von 100 auf 150 km/h
+// -> deutlich weniger BOV-Ladedruck
+//
+// 23-27 s:
+// 150 km/h halten
+// -> kleinerer BOV
+//
+// 27-39 s:
+// gleichmäßig auf 0 verzögern
+//
+// 39-41 s:
+// Stillstand
+
 function demoValues(t) {
-  const phase = (t / 1000) % 40;
+  const phase = (t / 1000) % 41;
   let kmh, a, state;
+
+  // -------------------------
+  // Stillstand
+  // -------------------------
 
   if (phase < 2) {
     kmh = 0;
     a = 0;
     state = "Stillstand";
+  }
 
-  } else if (phase < 8) {
-    const p = (phase - 2) / 6;
+  // -------------------------
+  // Zügige Beschleunigung
+  // 0 -> 100 km/h in 4,5 s
+  // ca. 6,2 m/s²
+  // -------------------------
 
-    kmh = p * 200;
-    a = (200 / 3.6) / 6;
-    state = "Beschleunigen";
+  else if (phase < 6.5) {
+    const p =
+      (phase - 2) / 4.5;
 
-  } else if (phase < 16) {
-    kmh = 200;
-    a = 0;
-    state = "Halten";
-
-  } else if (phase < 26) {
     kmh =
-      200 -
-      ((phase - 16) / 10) * 80;
+      p * 100;
 
     a =
-      -(80 / 3.6) / 10;
+      (100 / 3.6) / 4.5;
 
-    state = "Reku";
+    state =
+      "Zügig beschleunigen";
+  }
 
-  } else if (phase < 38) {
-    kmh = Math.max(
-      0,
-      120 -
-        ((phase - 26) / 12) * 120
-    );
+  // -------------------------
+  // Gas weg
+  // großer BOV
+  // -------------------------
+
+  else if (phase < 9) {
+    kmh = 100;
+    a = 0;
+    state =
+      "Halten · großer BOV";
+  }
+
+  // -------------------------
+  // Moderate Beschleunigung
+  // 100 -> 150 km/h in 14 s
+  // ca. 1,0 m/s²
+  // -------------------------
+
+  else if (phase < 23) {
+    const p =
+      (phase - 9) / 14;
+
+    kmh =
+      100 +
+      p * 50;
 
     a =
-      -(120 / 3.6) / 12;
+      (50 / 3.6) / 14;
 
-    state = "Ausrollen / Reku";
+    state =
+      "Moderat beschleunigen";
+  }
 
-  } else {
+  // -------------------------
+  // Gas weg
+  // kleiner BOV
+  // -------------------------
+
+  else if (phase < 27) {
+    kmh = 150;
+    a = 0;
+    state =
+      "Halten · kleiner BOV";
+  }
+
+  // -------------------------
+  // Verzögern
+  // -------------------------
+
+  else if (phase < 39) {
+    const p =
+      (phase - 27) / 12;
+
+    kmh =
+      Math.max(
+        0,
+        150 - p * 150
+      );
+
+    a =
+      -(150 / 3.6) / 12;
+
+    state =
+      "Reku / Verzögern";
+  }
+
+  // -------------------------
+  // Stillstand
+  // -------------------------
+
+  else {
     kmh = 0;
     a = 0;
     state = "Stillstand";
   }
 
-  return { kmh, a, state };
+  return {
+    kmh,
+    a,
+    state
+  };
 }
 
   function loop(now) {
