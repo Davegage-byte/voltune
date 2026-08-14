@@ -422,13 +422,13 @@ function updateVoltuneSound(speedKmh, accel) {
   }
 
 // 0-2 s: Stillstand
-// 2-8 s: Beschleunigen
-// 8-16 s: Geschwindigkeit 8 Sekunden halten
-// 16-21 s: Verzögern
-// 21-27 s: bis 0 ausrollen
-// 27-29 s: Stillstand
+// 2-8 s: Beschleunigen auf 200 km/h
+// 8-16 s: 200 km/h halten
+// 16-26 s: auf 120 km/h verzögern
+// 26-38 s: auf 0 km/h verzögern
+// 38-40 s: Stillstand
 function demoValues(t) {
-  const phase = (t / 1000) % 29;
+  const phase = (t / 1000) % 40;
   let kmh, a, state;
 
   if (phase < 2) {
@@ -448,18 +448,26 @@ function demoValues(t) {
     a = 0;
     state = "Halten";
 
-  } else if (phase < 21) {
-    kmh = 200 - (phase - 16) / 5 * 55;
-    a = -(55 / 3.6) / 5;
+  } else if (phase < 26) {
+    kmh =
+      200 -
+      ((phase - 16) / 10) * 80;
+
+    a =
+      -(80 / 3.6) / 10;
+
     state = "Reku";
 
-  } else if (phase < 27) {
+  } else if (phase < 38) {
     kmh = Math.max(
       0,
-      145 - (phase - 21) / 6 * 145
+      120 -
+        ((phase - 26) / 12) * 120
     );
 
-    a = -(145 / 3.6) / 6;
+    a =
+      -(120 / 3.6) / 12;
+
     state = "Ausrollen / Reku";
 
   } else {
