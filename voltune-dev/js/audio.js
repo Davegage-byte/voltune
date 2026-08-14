@@ -1055,12 +1055,11 @@ const subCruiseScale =
     if (normalBovRelease) {
       const bovIntensity =
         clamp(
-          0.18 +
-            Math.pow(
-              bovPressure,
-              0.85
-            ) * 0.82,
-          0.22,
+          Math.pow(
+            bovPressure,
+            1.7
+          ),
+          0.10,
           1
         );
     
