@@ -217,13 +217,15 @@ async function loadData() {
             " von " +
             totalActive +
             " Frei";
-            document.title =
-                indicator +
-                " AVEX (" +
-                data.free +
-                "/" +
-                totalActive +
-                ")";
+                document.title =
+                    indicator +
+                    " AVEX (" +
+                    data.free +
+                    "/" +
+                    totalActive +
+                    ") | " +
+                    data.price +
+                    "€/kWh";
 
         if (data.offline > 0) {
             statusText +=
