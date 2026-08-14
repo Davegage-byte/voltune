@@ -415,31 +415,41 @@ function updateVoltuneSound(speedKmh, accel) {
     updateVoltuneSound(speedKmh, accel);
   }
 
-  // 0-6 s: 0 -> 120
-  // 6-9 s: 120 halten
-  // 9-14 s: 120 -> 65
-  // 14-20 s: 65 -> 0
-  function demoValues(t) {
-    const phase = (t/1000) % 20;
-    let kmh, a, state;
+// 0-6 s: Beschleunigen
+// 6-14 s: Geschwindigkeit 8 Sekunden halten
+// 14-19 s: Verzögern
+// 19-25 s: bis 0 ausrollen
+function demoValues(t) {
+  const phase = (t / 1000) % 25;
+  let kmh, a, state;
 
-    if (phase < 6) {
-      kmh = phase/6*200;
-      a = (200/3.6)/6;
-      state = "Beschleunigen";
-    } else if (phase < 9) {
-      kmh = 200;
-      a = 0;
-      state = "Halten";
-    } else if (phase < 14) {
-      kmh = 200-(phase-9)/5*55;
-      a = -(55/3.6)/5;
-      state = "Reku";
-    } else {
-      kmh = Math.max(0,65-(phase-14)/6*65);
-      a = -(65/3.6)/6;
-      state = "Ausrollen / Reku";
-    }
+  if (phase < 6) {
+    kmh = phase / 6 * 200;
+    a = (200 / 3.6) / 6;
+    state = "Beschleunigen";
+
+  } else if (phase < 14) {
+    kmh = 200;
+    a = 0;
+    state = "Halten";
+
+  } else if (phase < 19) {
+    kmh = 200 - (phase - 14) / 5 * 55;
+    a = -(55 / 3.6) / 5;
+    state = "Reku";
+
+  } else {
+    kmh = Math.max(
+      0,
+      145 - (phase - 19) / 6 * 145
+    );
+
+    a = -(145 / 3.6) / 6;
+    state = "Ausrollen / Reku";
+  }
+
+  return { kmh, a, state };
+}
 
     return {kmh,a,state};
   }
