@@ -476,14 +476,18 @@ function stop() {
     );
 
     hissGain.gain.exponentialRampToValueAtTime(
-      (0.10 + intensity * 0.08) *
-        bovAmount,
+      (
+        0.025 +
+        Math.pow(intensity, 1.35) * 0.155
+      ) * bovAmount,
       now + 0.018
     );
 
     hissGain.gain.exponentialRampToValueAtTime(
-      (0.075 + intensity * 0.055) *
-        bovAmount,
+      (
+        0.018 +
+        Math.pow(intensity, 1.35) * 0.112
+      ) * bovAmount,
       now + 0.16
     );
 
@@ -533,8 +537,10 @@ function stop() {
     );
 
     whooshGain.gain.exponentialRampToValueAtTime(
-      (0.045 + intensity * 0.035) *
-        bovAmount,
+      (
+        0.012 +
+        Math.pow(intensity, 1.25) * 0.068
+      ) * bovAmount,
       now + 0.025
     );
 
