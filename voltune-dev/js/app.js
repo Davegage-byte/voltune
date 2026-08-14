@@ -451,9 +451,6 @@ function demoValues(t) {
   return { kmh, a, state };
 }
 
-    return {kmh,a,state};
-  }
-
   function loop(now) {
     if (demoActive) {
       const v = demoValues(now-demoStart);
