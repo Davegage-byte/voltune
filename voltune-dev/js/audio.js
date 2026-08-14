@@ -1041,18 +1041,18 @@ const subCruiseScale =
 
     else if (
       settings.easyBovEnabled &&
-      speedKmh > 7 &&
-      accel < -0.06
+      speedKmh > 10 &&
+      accel < -0.30
     ) {
       triggerBov(
         clamp(
-          0.42 +
-            Math.abs(accel) / 4,
-          0.42,
-          0.85
+          0.30 +
+            Math.abs(accel) / 3.5,
+          0.30,
+          0.75
         ),
         settings.bovVolume,
-        900
+        1300
       );
     }
 
