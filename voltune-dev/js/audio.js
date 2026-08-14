@@ -22,6 +22,7 @@ window.VoltuneAudio = (() => {
 
   let lastAccel = 0;
   let lastBovAt = -9999;
+  let bovPressure = 0;
 
     // Konstantfahrt-Erkennung
   let steadySince = null;
@@ -692,6 +693,28 @@ const dt = clamp(
 
 lastSoundUpdate = nowMs;
 
+// =========================
+// Virtueller BOV-Druck
+// =========================
+
+// Bei Beschleunigung Druck aufbauen.
+// Etwa 2,2 m/s² entsprechen vollem Druck.
+if (accel > 0.15) {
+  const pressureTarget =
+    clamp(accel / 2.2, 0, 1);
+
+  const chargeSpeed =
+    clamp(dt * 2.4, 0, 1);
+
+  bovPressure +=
+    (pressureTarget - bovPressure) *
+    chargeSpeed;
+} else {
+  // Ohne Last fällt der gespeicherte Druck
+  // nur langsam von selbst ab.
+  bovPressure *=
+    Math.exp(-dt / 2.5);
+}
 // Erst ab etwas Geschwindigkeit.
 // An der Ampel soll das Brummen bestehen bleiben.
 const steadyDriving =
@@ -991,19 +1014,29 @@ const subCruiseScale =
     // BOV-Automatik
     // =========================
 
+    const accelDrop =
+      lastAccel - accel;
+    
     if (
-      lastAccel > 0.8 &&
-      accel < -0.35
+      bovPressure > 0.12 &&
+      lastAccel > 0.30 &&
+      accelDrop > 0.35
     ) {
-      triggerBov(
+      const bovIntensity =
         clamp(
-          lastAccel / 5.7,
-          0.35,
+          0.25 + bovPressure * 0.75,
+          0.25,
           1
-        ),
+        );
+    
+      triggerBov(
+        bovIntensity,
         settings.bovVolume,
         650
       );
+    
+      // Druck wurde größtenteils entlüftet.
+      bovPressure *= 0.08;
     }
 
     else if (
@@ -1044,6 +1077,15 @@ const subCruiseScale =
     steadySince = null;
     cruiseQuiet = 0;
     lastSoundUpdate = performance.now();
+  }
+  
+  function resetDrivingState() {
+  lastAccel = 0;
+  bovPressure = 0;
+
+  steadySince = null;
+  cruiseQuiet = 0;
+  lastSoundUpdate = performance.now();
   }
 
   return {
