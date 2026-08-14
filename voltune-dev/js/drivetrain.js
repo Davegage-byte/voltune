@@ -8,6 +8,9 @@ window.VoltuneDrivetrain = (() => {
   let lastShiftAt = -9999;
 
   const SHIFT_COOLDOWN_MS = 350;
+
+  let shiftDemand = 0;
+  let lastDemandUpdate = performance.now();
   
 
   function clamp(v, min, max) {
@@ -19,6 +22,9 @@ window.VoltuneDrivetrain = (() => {
     virtualRpm = 0;
     currentShiftTarget = 0;
     lastShiftAt = -9999;
+  
+    shiftDemand = 0;
+    lastDemandUpdate = performance.now();
   }
 
   function rpmForGear(speedKmh, gear, config) {
@@ -34,34 +40,81 @@ window.VoltuneDrivetrain = (() => {
     );
   }
 
-  function calculateShiftTarget(accel, config) {
-    const maxRpm = Number(config.maxRpm);
-    const sportShift = Math.min(
-      Number(config.shiftRpm),
-      maxRpm
-    );
+function calculateShiftTarget(accel, config) {
+  const maxRpm = Number(config.maxRpm);
 
-    if (!config.dynamicShiftEnabled) {
-      return sportShift;
-    }
+  const sportShift = Math.min(
+    Number(config.shiftRpm),
+    maxRpm
+  );
 
-    const gentleShift = clamp(
-      maxRpm * 0.34,
-      1500,
-      Math.min(2800, sportShift)
-    );
+  if (!config.dynamicShiftEnabled) {
+    shiftDemand = 0;
+    lastDemandUpdate = performance.now();
 
-    const accelN = clamp(
-      Math.max(0, accel) / 5.0,
-      0,
-      1
-    );
-
-    const demand = Math.pow(accelN, 0.55);
-
-    return gentleShift +
-      (sportShift - gentleShift) * demand;
+    return sportShift;
   }
+
+  const gentleShift = clamp(
+    maxRpm * 0.34,
+    1500,
+    Math.min(2800, sportShift)
+  );
+
+  // -------------------------
+  // Fahrerlast aus Beschleunigung
+  // -------------------------
+  //
+  // ca. 2,5 m/s² = volle Last.
+  // Dadurch reagiert das Getriebe auch
+  // auf die eher trägen GPS-Werte deutlich.
+
+  const rawDemand =
+    Math.pow(
+      clamp(
+        Math.max(0, accel) / 2.5,
+        0,
+        1
+      ),
+      0.8
+    );
+
+  const nowMs =
+    performance.now();
+
+  const dt = clamp(
+    (nowMs - lastDemandUpdate) / 1000,
+    0,
+    0.2
+  );
+
+  lastDemandUpdate = nowMs;
+
+  // Last soll schnell ansteigen,
+  // aber deutlich langsamer wieder abfallen.
+  const timeConstant =
+    rawDemand > shiftDemand
+      ? 0.18
+      : 0.85;
+
+  const response =
+    1 - Math.exp(
+      -dt / timeConstant
+    );
+
+  shiftDemand +=
+    (rawDemand - shiftDemand) *
+    response;
+
+  shiftDemand =
+    clamp(shiftDemand, 0, 1);
+
+  return (
+    gentleShift +
+    (sportShift - gentleShift) *
+      shiftDemand
+  );
+}
 
   function update(speedKmh, accel, config) {
     const maxRpm = Number(config.maxRpm);
