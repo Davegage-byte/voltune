@@ -150,11 +150,22 @@
   </div>
 </main>
 
-<script src="js/drivetrain.js?v=2"></script>
-<script src="js/gps.js?v=2"></script>
-<script src="js/audio.js?v=2"></script>
-<script src="js/storage.js?v=2"></script>
-<script src="js/app.js?v=2"></script>
+<script>
+  const devVersion = Date.now();
+
+  [
+    "js/drivetrain.js",
+    "js/gps.js",
+    "js/audio.js",
+    "js/storage.js",
+    "js/app.js"
+  ].forEach(src => {
+    const script = document.createElement("script");
+    script.src = `${src}?v=${devVersion}`;
+    script.async = false;
+    document.body.appendChild(script);
+  });
+</script>
   
 </body>
   
