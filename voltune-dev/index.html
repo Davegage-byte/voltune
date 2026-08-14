@@ -160,20 +160,52 @@
 </main>
 
 <script>
-  const devVersion = Date.now();
+  (() => {
+    const devVersion = Date.now();
 
-  [
-    "js/drivetrain.js",
-    "js/gps.js",
-    "js/audio.js",
-    "js/storage.js",
-    "js/app.js"
-  ].forEach(src => {
-    const script = document.createElement("script");
-    script.src = `${src}?v=${devVersion}`;
-    script.async = false;
-    document.body.appendChild(script);
-  });
+    const versionDisplay =
+      document.getElementById("devVersionDisplay");
+
+    if (versionDisplay) {
+      versionDisplay.textContent =
+        String(devVersion).slice(-6);
+    }
+
+    const scripts = [
+      "js/drivetrain.js",
+      "js/gps.js",
+      "js/audio.js",
+      "js/storage.js",
+      "js/app.js"
+    ];
+
+    function loadScript(index) {
+      if (index >= scripts.length) {
+        return;
+      }
+
+      const script =
+        document.createElement("script");
+
+      script.src =
+        `${scripts[index]}?v=${devVersion}`;
+
+      script.onload = () => {
+        loadScript(index + 1);
+      };
+
+      script.onerror = () => {
+        console.error(
+          "Voltune konnte Script nicht laden:",
+          scripts[index]
+        );
+      };
+
+      document.body.appendChild(script);
+    }
+
+    loadScript(0);
+  })();
 </script>
   
 </body>
