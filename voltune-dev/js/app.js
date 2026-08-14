@@ -554,13 +554,6 @@ function demoValues(t) {
 
       render(v.kmh,v.a,v.state);
 
-      if (lastState === "Beschleunigen" && v.state === "Halten") {
-        VoltuneAudio.triggerBov(
-          0.38,
-          Number(ui.bov.value),
-          650
-        );
-      }
       lastState = v.state;
     } else if (soundActive && !gpsActive) {
       // manuelle Beschleunigung weich gegen 0 auslaufen lassen
