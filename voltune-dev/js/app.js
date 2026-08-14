@@ -102,6 +102,76 @@ function scheduleSettingsSave() {
   }, 200);
 }
 
+function applyPersistentSettings(settings) {
+  if (!settings) return;
+
+  const setNumber = (element, value) => {
+    const number = Number(value);
+
+    if (Number.isFinite(number)) {
+      element.value = number;
+    }
+  };
+
+  setNumber(ui.volume, settings.volume);
+  setNumber(ui.base, settings.baseFrequency);
+  setNumber(ui.pitch, settings.pitch);
+
+  setNumber(ui.gearRange, settings.gearRange);
+  setNumber(ui.maxRpm, settings.maxRpm);
+  setNumber(ui.shiftRpm, settings.shiftRpm);
+
+  setNumber(ui.baseVol, settings.baseVolume);
+  setNumber(ui.inverter, settings.inverterVolume);
+  setNumber(ui.drive, settings.driveVolume);
+  setNumber(ui.regen, settings.regenVolume);
+  setNumber(ui.air, settings.airVolume);
+  setNumber(ui.bov, settings.bovVolume);
+
+  if (typeof settings.easyBovEnabled === "boolean") {
+    easyBovEnabled = settings.easyBovEnabled;
+  }
+
+  if (typeof settings.gearsEnabled === "boolean") {
+    gearsEnabled = settings.gearsEnabled;
+  }
+
+  if (typeof settings.dynamicShiftEnabled === "boolean") {
+    dynamicShiftEnabled =
+      settings.dynamicShiftEnabled;
+  }
+
+  ui.easyBov.classList.toggle(
+    "active",
+    easyBovEnabled
+  );
+
+  ui.easyBov.childNodes[0].nodeValue =
+    easyBovEnabled
+      ? "EasyBOV: AN\n      "
+      : "EasyBOV: AUS\n      ";
+
+  ui.gears.classList.toggle(
+    "active",
+    gearsEnabled
+  );
+
+  ui.gears.childNodes[0].nodeValue =
+    gearsEnabled
+      ? "Virtuelle Gänge: AN\n      "
+      : "Virtuelle Gänge: AUS\n      ";
+
+  ui.dynamicShift.classList.toggle(
+    "active",
+    dynamicShiftEnabled
+  );
+
+  ui.dynamicShift.childNodes[0].nodeValue =
+    dynamicShiftEnabled
+      ? "Dynamische Schalt-RPM: AN\n      "
+      : "Dynamische Schalt-RPM: AUS\n      ";
+}
+  
 async function ensureVoltuneAudio() {
   try {
     await VoltuneAudio.start();
@@ -596,10 +666,35 @@ function updateVoltuneSound(speedKmh, accel) {
     });
   });
 
-  updateLabels();
-  ui.gearDisplay.textContent = "1. · 2.66:1";
-  ui.rpmDisplay.textContent = "0 RPM";
-  ui.shiftTargetDisplay.textContent = `${ui.shiftRpm.value} RPM`;
-  renderVisual(0,0,"Bereit");
-  requestAnimationFrame(loop);
+const savedSettings =
+  VoltuneStorage.loadSettings();
+
+if (savedSettings) {
+  applyPersistentSettings(
+    savedSettings
+  );
+}
+
+updateLabels();
+
+ui.gearDisplay.textContent =
+  gearsEnabled
+    ? "1. · 2.66:1"
+    : "Direkt";
+
+ui.rpmDisplay.textContent =
+  "0 RPM";
+
+ui.shiftTargetDisplay.textContent =
+  gearsEnabled
+    ? `${ui.shiftRpm.value} RPM`
+    : "–";
+
+renderVisual(
+  0,
+  0,
+  "Bereit"
+);
+
+requestAnimationFrame(loop);
 })();
