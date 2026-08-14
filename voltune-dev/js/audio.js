@@ -735,6 +735,8 @@ const baseCruiseScale =
 const inverterCruiseScale =
   1 - cruiseQuiet * 0.78;
 
+const subCruiseScale =
+  1 - cruiseQuiet * 0.35;
 
     // =========================
     // Grundsound
@@ -803,7 +805,7 @@ const inverterCruiseScale =
     setTarget(
       subGain.gain,
       baseAmount *
-        baseCruiseScale *
+        subCruiseScale *
         (
           0.055 -
           speedN * 0.024
