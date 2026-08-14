@@ -4,7 +4,11 @@
 
   const ui = {
     speed:$("speed"), accel:$("accel"), state:$("state"), speedBar:$("speedBar"),
-    baseHz:$("baseHz"), invHz:$("invHz"), drivePct:$("drivePct"), regenPct:$("regenPct"),
+    baseHz:$("baseHz"),
+    invHz:$("invHz"),
+    drivePct:$("drivePct"),
+    regenPct:$("regenPct"),
+    bovPressureDisplay:$("bovPressureDisplay"),
     gearDisplay:$("gearDisplay"), rpmDisplay:$("rpmDisplay"), shiftTargetDisplay:$("shiftTargetDisplay"),
 
     start:$("start"), gps:$("gps"), restart:$("restart"), stop:$("stop"), mute:$("mute"),
@@ -261,6 +265,8 @@ function updateVoltuneSound(speedKmh, accel) {
 
     ui.regenPct.textContent =
       `${soundState.regenPercent} %`;
+    ui.bovPressureDisplay.textContent =
+      `${soundState.bovPressurePercent} %`;
   }
 }
 
