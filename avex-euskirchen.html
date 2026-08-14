@@ -135,9 +135,13 @@ button:disabled{
          style="margin-bottom:15px;">
     </div>
 
-    <button onclick="nextFact()">
-        ⏭ Nächster Fakt
-    </button>
+<button onclick="nextFact()">
+    ⏭ Nächster Fakt
+</button>
+
+<button onclick="resetFacts()" style="margin-left:10px;">
+    🔄 Reset
+</button>
 </div>
 
 
@@ -347,6 +351,10 @@ function showNextUnseenFact() {
 }
 
 function resetFacts() {
+
+    if (!confirm("Fortschritt wirklich komplett zurücksetzen?")) {
+        return;
+    }
 
     localStorage.removeItem("seenFacts");
 
