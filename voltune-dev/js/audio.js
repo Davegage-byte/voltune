@@ -23,6 +23,7 @@ window.VoltuneAudio = (() => {
   let lastAccel = 0;
   let lastBovAt = -9999;
   let bovPressure = 0;
+  let bovArmed = false;
 
     // Konstantfahrt-Erkennung
   let steadySince = null;
@@ -696,25 +697,47 @@ lastSoundUpdate = nowMs;
 // =========================
 // Virtueller BOV-Druck
 // =========================
+// =========================
+// Virtueller BOV-Druck
+// =========================
 
-// Bei Beschleunigung Druck aufbauen.
-// Etwa 2,2 m/s² entsprechen vollem Druck.
 if (accel > 0.15) {
   const pressureTarget =
-    clamp(accel / 2.2, 0, 1);
+    clamp(
+      (accel - 0.10) / 2.2,
+      0,
+      1
+    );
 
-  const chargeSpeed =
-    clamp(dt * 2.4, 0, 1);
+  // Druck relativ schnell aufbauen,
+  // aber vorhandenen Druck während
+  // der Beschleunigung nicht wieder abbauen.
+  if (pressureTarget > bovPressure) {
+    const chargeRate =
+      1 - Math.exp(-dt / 0.55);
 
-  bovPressure +=
-    (pressureTarget - bovPressure) *
-    chargeSpeed;
-} else {
-  // Ohne Last fällt der gespeicherte Druck
-  // nur langsam von selbst ab.
+    bovPressure +=
+      (pressureTarget - bovPressure) *
+      chargeRate;
+  }
+
+  // Genug Druck vorhanden:
+  // BOV für Lastwegnahme scharf stellen.
+  if (
+    bovPressure > 0.12 &&
+    accel > 0.35
+  ) {
+    bovArmed = true;
+  }
+
+} else if (!bovArmed) {
+  // Nur ungenutzten Restdruck langsam abbauen.
   bovPressure *=
-    Math.exp(-dt / 2.5);
+    Math.exp(-dt / 3.5);
 }
+
+bovPressure =
+  clamp(bovPressure, 0, 1);
 // Erst ab etwas Geschwindigkeit.
 // An der Ampel soll das Brummen bestehen bleiben.
 const steadyDriving =
@@ -1017,26 +1040,42 @@ const subCruiseScale =
     const accelDrop =
       lastAccel - accel;
     
-    if (
-      bovPressure > 0.12 &&
-      lastAccel > 0.30 &&
-      accelDrop > 0.35
-    ) {
+    const normalBovRelease =
+      bovArmed &&
+      bovPressure > 0.10 &&
+      (
+        // GPS darf langsam auf 0 zurücklaufen
+        accel < 0.18 ||
+    
+        // Oder ein deutlicher Lastabfall
+        // wird direkt erkannt.
+        (
+          lastAccel > 0.45 &&
+          accelDrop > 0.28
+        )
+      );
+    
+    if (normalBovRelease) {
       const bovIntensity =
         clamp(
-          0.25 + bovPressure * 0.75,
-          0.25,
+          0.18 +
+            Math.pow(
+              bovPressure,
+              0.85
+            ) * 0.82,
+          0.22,
           1
         );
     
       triggerBov(
         bovIntensity,
         settings.bovVolume,
-        650
+        700
       );
     
-      // Druck wurde größtenteils entlüftet.
-      bovPressure *= 0.08;
+      // Druck vollständig entlüftet.
+      bovPressure = 0;
+      bovArmed = false;
     }
 
     else if (
@@ -1085,12 +1124,14 @@ const subCruiseScale =
   }
   
   function resetDrivingState() {
-  lastAccel = 0;
-  bovPressure = 0;
-
-  steadySince = null;
-  cruiseQuiet = 0;
-  lastSoundUpdate = performance.now();
+    lastAccel = 0;
+  
+    bovPressure = 0;
+    bovArmed = false;
+  
+    steadySince = null;
+    cruiseQuiet = 0;
+    lastSoundUpdate = performance.now();
   }
 
   return {
