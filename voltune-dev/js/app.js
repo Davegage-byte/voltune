@@ -67,6 +67,29 @@
   };
 }
 
+function getPersistentSettings() {
+  return {
+    volume: Number(ui.volume.value),
+    baseFrequency: Number(ui.base.value),
+    pitch: Number(ui.pitch.value),
+
+    gearRange: Number(ui.gearRange.value),
+    maxRpm: Number(ui.maxRpm.value),
+    shiftRpm: Number(ui.shiftRpm.value),
+
+    baseVolume: Number(ui.baseVol.value),
+    inverterVolume: Number(ui.inverter.value),
+    driveVolume: Number(ui.drive.value),
+    regenVolume: Number(ui.regen.value),
+    airVolume: Number(ui.air.value),
+    bovVolume: Number(ui.bov.value),
+
+    easyBovEnabled,
+    gearsEnabled,
+    dynamicShiftEnabled
+  };
+}
+
 async function ensureVoltuneAudio() {
   try {
     await VoltuneAudio.start();
