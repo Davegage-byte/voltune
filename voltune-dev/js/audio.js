@@ -23,6 +23,11 @@ window.VoltuneAudio = (() => {
   let lastAccel = 0;
   let lastBovAt = -9999;
 
+    // Konstantfahrt-Erkennung
+  let steadySince = null;
+  let cruiseQuiet = 0;
+  let lastSoundUpdate = performance.now();
+
   function setTarget(param, value, time = 0.05) {
     if (!ctx) return;
 
@@ -673,6 +678,63 @@ function stop() {
         1.08
       );
 
+    // =========================
+// Konstantfahrt beruhigen
+// =========================
+
+const nowMs = performance.now();
+
+const dt = clamp(
+  (nowMs - lastSoundUpdate) / 1000,
+  0,
+  0.12
+);
+
+lastSoundUpdate = nowMs;
+
+// Erst ab etwas Geschwindigkeit.
+// An der Ampel soll das Brummen bestehen bleiben.
+const steadyDriving =
+  speedKmh > 10 &&
+  Math.abs(accel) < 0.18;
+
+if (steadyDriving) {
+  if (steadySince === null) {
+    steadySince = nowMs;
+  }
+} else {
+  steadySince = null;
+}
+
+const steadySeconds =
+  steadySince === null
+    ? 0
+    : (nowMs - steadySince) / 1000;
+
+// Erst nach 2 Sekunden Konstantfahrt leiser werden.
+const quietTarget =
+  steadySeconds >= 2.0;
+
+// Langsam leiser,
+// aber bei Beschleunigung/Reku schnell wieder präsent.
+if (quietTarget) {
+  cruiseQuiet += dt / 2.2;
+} else {
+  cruiseQuiet -= dt / 0.30;
+}
+
+cruiseQuiet =
+  clamp(cruiseQuiet, 0, 1);
+
+// Bei voller Beruhigung:
+// Base noch ca. 32 %
+// Inverter noch ca. 22 %
+const baseCruiseScale =
+  1 - cruiseQuiet * 0.68;
+
+const inverterCruiseScale =
+  1 - cruiseQuiet * 0.78;
+
 
     // =========================
     // Grundsound
@@ -718,6 +780,7 @@ function stop() {
     setTarget(
       baseGain1.gain,
       baseAmount *
+        baseCruiseScale *
         (
           0.09 +
           speedN * 0.07 +
@@ -729,6 +792,7 @@ function stop() {
     setTarget(
       baseGain2.gain,
       baseAmount *
+        baseCruiseScale *
         (
           0.012 +
           speedN * 0.018
@@ -739,6 +803,7 @@ function stop() {
     setTarget(
       subGain.gain,
       baseAmount *
+        baseCruiseScale *
         (
           0.055 -
           speedN * 0.024
@@ -786,6 +851,7 @@ function stop() {
 
     const invLevel =
       inverterAmount *
+      inverterCruiseScale *
       (
         0.006 +
         speedN * 0.027 +
@@ -972,6 +1038,10 @@ function stop() {
 
   function resetDrivingState() {
     lastAccel = 0;
+  
+    steadySince = null;
+    cruiseQuiet = 0;
+    lastSoundUpdate = performance.now();
   }
 
   return {
