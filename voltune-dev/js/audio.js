@@ -1064,10 +1064,15 @@ const subCruiseScale =
     return {
       fundamentalHz: fundamental,
       inverterHz,
+    
       drivePercent:
         Math.round(pos * 100),
+    
       regenPercent:
-        Math.round(neg * 100)
+        Math.round(neg * 100),
+    
+      bovPressurePercent:
+        Math.round(bovPressure * 100)
     };
   }
 
