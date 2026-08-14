@@ -680,7 +680,7 @@ function stop() {
         1.08
       );
 
-    // =========================
+// =========================
 // Konstantfahrt beruhigen
 // =========================
 
@@ -694,9 +694,6 @@ const dt = clamp(
 
 lastSoundUpdate = nowMs;
 
-// =========================
-// Virtueller BOV-Druck
-// =========================
 // =========================
 // Virtueller BOV-Druck
 // =========================
@@ -1115,14 +1112,6 @@ const subCruiseScale =
     };
   }
 
-  function resetDrivingState() {
-    lastAccel = 0;
-  
-    steadySince = null;
-    cruiseQuiet = 0;
-    lastSoundUpdate = performance.now();
-  }
-  
   function resetDrivingState() {
     lastAccel = 0;
   
