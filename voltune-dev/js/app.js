@@ -90,6 +90,18 @@ function getPersistentSettings() {
   };
 }
 
+let saveSettingsTimer = null;
+
+function scheduleSettingsSave() {
+  clearTimeout(saveSettingsTimer);
+
+  saveSettingsTimer = setTimeout(() => {
+    VoltuneStorage.saveSettings(
+      getPersistentSettings()
+    );
+  }, 200);
+}
+
 async function ensureVoltuneAudio() {
   try {
     await VoltuneAudio.start();
@@ -446,6 +458,7 @@ function updateVoltuneSound(speedKmh, accel) {
     easyBovEnabled = !easyBovEnabled;
     ui.easyBov.classList.toggle("active", easyBovEnabled);
     ui.easyBov.childNodes[0].nodeValue = easyBovEnabled ? "EasyBOV: AN\n      " : "EasyBOV: AUS\n      ";
+    scheduleSettingsSave();
   });
 
   ui.gears.addEventListener("click", () => {
@@ -462,6 +475,7 @@ function updateVoltuneSound(speedKmh, accel) {
       ui.rpmDisplay.textContent = "0 RPM";
       ui.shiftTargetDisplay.textContent = "–";
     }
+    scheduleSettingsSave();
   });
 
   ui.dynamicShift.addEventListener("click", () => {
@@ -474,6 +488,7 @@ function updateVoltuneSound(speedKmh, accel) {
       if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
       else updateVoltuneSound(manualSpeed, manualAccel);
     }
+    scheduleSettingsSave();
   });
 
   ui.mute.addEventListener("click", () => {
@@ -577,6 +592,7 @@ function updateVoltuneSound(speedKmh, accel) {
           updateVoltuneSound(manualSpeed, manualAccel);
         }
       }
+    scheduleSettingsSave();
     });
   });
 
