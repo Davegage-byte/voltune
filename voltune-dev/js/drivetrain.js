@@ -95,6 +95,8 @@ window.VoltuneDrivetrain = (() => {
       config
     );
 
+    const nowMs = performance.now();
+
   if (
     currentGear < gearRatios.length &&
     accel > -0.08 &&
@@ -118,8 +120,6 @@ window.VoltuneDrivetrain = (() => {
 // =========================
 // Rückschalten
 // =========================
-
-const nowMs = performance.now();
 
 const canShift =
   nowMs - lastShiftAt >= SHIFT_COOLDOWN_MS;
