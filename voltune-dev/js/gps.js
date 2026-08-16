@@ -8,7 +8,8 @@ window.VoltuneGps = (() => {
   let smoothGpsSpeed = 0;
   let gpsAccel = 0;
   let gpsRate = 0;
-
+  let rawGpsSpeed = 0;
+  let rawGpsAccel = 0;
   let onUpdate = null;
   let onError = null;
 
@@ -78,6 +79,8 @@ window.VoltuneGps = (() => {
       speed = 0;
     }
 
+    rawGpsSpeed = speed;
+
     const firstGpsValue =
       lastGpsTs == null;
 
@@ -104,9 +107,8 @@ window.VoltuneGps = (() => {
         smoothGpsSpeed * 0.58 +
         speed * 0.42;
 
-      const rawGpsAccel =
-        (smoothGpsSpeed - lastGpsSpeed) /
-        dt;
+      rawGpsAccel =
+        (smoothGpsSpeed - lastGpsSpeed) / dt;
 
       // Beschleunigung ebenfalls glätten
       gpsAccel =
@@ -134,6 +136,9 @@ window.VoltuneGps = (() => {
     if (onUpdate) {
       onUpdate({
         speedKmh: kmh,
+        rawSpeedKmh: rawGpsSpeed * 3.6,
+        smoothSpeedKmh: smoothGpsSpeed * 3.6,
+        rawAcceleration: rawGpsAccel,
         acceleration: gpsAccel,
         rateHz: gpsRate,
         accuracy:
