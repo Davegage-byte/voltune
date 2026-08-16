@@ -688,15 +688,34 @@ function updateControllerDrive(now) {
     const maxAccel =
       6.6 -
       speedN * 3.8;
-
-    // Halbgas soll deutlich moderater
-    // als Vollgas sein.
-    accel =
+  
+    // Virtueller Roll- und Luftwiderstand.
+    // Mit steigender Geschwindigkeit wird
+    // mehr Gas zum Halten des Tempos benötigt.
+    const roadLoad =
+      0.08 +
+      speedN * 0.12 +
+      Math.pow(speedN, 2) * 0.35;
+  
+    // Im unteren Pedalbereich feinfühliger,
+    // Vollgas bleibt weiterhin kräftig.
+    const motorAccel =
       Math.pow(
         throttle,
-        1.45
+        1.8
       ) *
       maxAccel;
+  
+    accel =
+      motorAccel -
+      roadLoad;
+  
+    // Kleine Haltezone:
+    // erleichtert konstantes Fahren
+    // mit dem Controller.
+    if (Math.abs(accel) < 0.08) {
+      accel = 0;
+    }
   }
 
   // -------------------------
