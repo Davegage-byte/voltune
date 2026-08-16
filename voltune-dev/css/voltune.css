@@ -497,44 +497,6 @@ button:hover{
     var(--orange);
 }
 
-
-/* kleine farbige Oberkante */
-
-.control-driving::before,
-.control-accel::before,
-.control-regen::before,
-.control-rpm::before{
-  content:"";
-
-  position:absolute;
-
-  left:12px;
-  right:12px;
-  top:0;
-
-  height:2px;
-
-  border-radius:
-    0 0 4px 4px;
-}
-
-.control-driving::before{
-  background:var(--blue);
-}
-
-.control-accel::before{
-  background:var(--red);
-}
-
-.control-regen::before{
-  background:var(--green);
-}
-
-.control-rpm::before{
-  background:var(--orange);
-}
-
-
 /* =========================
    Regler-Inhalt
    ========================= */
