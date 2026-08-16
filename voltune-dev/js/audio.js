@@ -615,6 +615,179 @@ function stop() {
   }
 
 
+// =========================
+// DSG-Schaltblubbern
+// =========================
+
+function triggerShiftBurble(
+  intensity = 0.7
+) {
+  if (
+    !started ||
+    !ctx ||
+    !master
+  ) {
+    return;
+  }
+
+  const amount =
+    clamp(
+      Number(intensity) || 0,
+      0,
+      1
+    );
+
+  // Bei sehr geringer Last
+  // praktisch kein hörbarer Effekt.
+  if (amount < 0.08) {
+    return;
+  }
+
+  const now =
+    ctx.currentTime;
+
+  const duration =
+    0.10 +
+    amount * 0.09;
+
+
+  // -------------------------
+  // Tiefer Hauptton
+  // -------------------------
+
+  const burble =
+    ctx.createOscillator();
+
+  burble.type =
+    "sawtooth";
+
+  burble.frequency.setValueAtTime(
+    105 + amount * 25,
+    now
+  );
+
+  burble.frequency.exponentialRampToValueAtTime(
+    62 + amount * 8,
+    now + duration
+  );
+
+
+  // -------------------------
+  // Tiefer Unterton
+  // -------------------------
+
+  const subBurble =
+    ctx.createOscillator();
+
+  subBurble.type =
+    "triangle";
+
+  subBurble.frequency.setValueAtTime(
+    58 + amount * 10,
+    now
+  );
+
+  subBurble.frequency.exponentialRampToValueAtTime(
+    42,
+    now + duration
+  );
+
+
+  // -------------------------
+  // Filter
+  // =========================
+
+  const filter =
+    ctx.createBiquadFilter();
+
+  filter.type =
+    "lowpass";
+
+  filter.frequency.setValueAtTime(
+    420 + amount * 180,
+    now
+  );
+
+  filter.frequency.exponentialRampToValueAtTime(
+    180,
+    now + duration
+  );
+
+  filter.Q.value =
+    1.1;
+
+
+  // -------------------------
+  // Lautstärke / Blubbern
+  // -------------------------
+
+  const gain =
+    ctx.createGain();
+
+  gain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+  // erster kurzer "BRR"
+  gain.gain.exponentialRampToValueAtTime(
+    0.018 +
+      amount * 0.075,
+    now + 0.012
+  );
+
+  // kurze Einbuchtung
+  gain.gain.exponentialRampToValueAtTime(
+    0.008 +
+      amount * 0.025,
+    now + duration * 0.48
+  );
+
+  // zweites kleines "blubb"
+  gain.gain.exponentialRampToValueAtTime(
+    0.012 +
+      amount * 0.048,
+    now + duration * 0.68
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now + duration
+  );
+
+
+  // Unterton etwas leiser
+  const subGain =
+    ctx.createGain();
+
+  subGain.gain.value =
+    0.42;
+
+
+  burble
+    .connect(filter);
+
+  subBurble
+    .connect(subGain)
+    .connect(filter);
+
+  filter
+    .connect(gain)
+    .connect(master);
+
+
+  burble.start(now);
+  subBurble.start(now);
+
+  burble.stop(
+    now + duration + 0.03
+  );
+
+  subBurble.stop(
+    now + duration + 0.03
+  );
+}
+  
   // =========================
   // Sound-Layer aktualisieren
   // =========================
@@ -1164,6 +1337,7 @@ const subCruiseScale =
     update,
 
     triggerBov,
+    triggerShiftBurble,
 
     setMasterVolume,
     setMuted,
