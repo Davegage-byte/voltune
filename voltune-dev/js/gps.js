@@ -79,14 +79,6 @@ window.VoltuneGps = (() => {
       speed = 0;
     }
 
-    rawGpsSpeed = speed;
-
-    const firstGpsValue =
-      lastGpsTs == null;
-
-const firstGpsValue =
-  lastGpsTs == null;
-
 // Rohgeschwindigkeit immer direkt merken.
 rawGpsSpeed = speed;
 
