@@ -22,12 +22,12 @@
     
     speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
     volume:$("volume"), base:$("base"), maxBase:$("maxBase"), pitch:$("pitch"),
-    gearRange:$("gearRange"), maxRpm:$("maxRpm"), shiftRpm:$("shiftRpm"),
+    gearRange:$("gearRange"), maxRpm:$("maxRpm"), shiftRpm:$("shiftRpm"), shiftBurble:$("shiftBurble"),
     baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
     regen:$("regen"), air:$("air"), bov:$("bov"),
 
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
-    gearRangeLabel:$("gearRangeLabel"), maxRpmLabel:$("maxRpmLabel"), shiftRpmLabel:$("shiftRpmLabel"),
+    gearRangeLabel:$("gearRangeLabel"), maxRpmLabel:$("maxRpmLabel"), shiftRpmLabel:$("shiftRpmLabel"), shiftBurbleLabel:$("shiftBurbleLabel"),
     baseVolLabel:$("baseVolLabel"), inverterLabel:$("inverterLabel"),
     driveLabel:$("driveLabel"), regenLabel:$("regenLabel"),
     airLabel:$("airLabel"), bovLabel:$("bovLabel")
@@ -119,6 +119,7 @@ function getPersistentSettings() {
     gearRange: Number(ui.gearRange.value),
     maxRpm: Number(ui.maxRpm.value),
     shiftRpm: Number(ui.shiftRpm.value),
+    shiftBurbleVolume: Number(ui.shiftBurble.value),
 
     baseVolume: Number(ui.baseVol.value),
     inverterVolume: Number(ui.inverter.value),
@@ -164,6 +165,10 @@ function applyPersistentSettings(settings) {
   setNumber(ui.gearRange, settings.gearRange);
   setNumber(ui.maxRpm, settings.maxRpm);
   setNumber(ui.shiftRpm, settings.shiftRpm);
+  setNumber(
+  ui.shiftBurble,
+  settings.shiftBurbleVolume
+);
 
   setNumber(ui.baseVol, settings.baseVolume);
   setNumber(ui.inverter, settings.inverterVolume);
@@ -312,7 +317,8 @@ if (
     );
 
   VoltuneAudio.triggerShiftBurble(
-    shiftIntensity
+    shiftIntensity,
+    Number(ui.shiftBurble.value)
   );
 }
 
@@ -1155,7 +1161,9 @@ ui.controller.addEventListener(
     ui.pitchLabel.textContent = `${(Number(ui.pitch.value)/10).toFixed(1)}×`;
     ui.gearRangeLabel.textContent = `${ui.gearRange.value} km/h`;
     ui.maxRpmLabel.textContent = `${ui.maxRpm.value} RPM`;
-
+    ui.shiftBurbleLabel.textContent =
+     `${ui.shiftBurble.value} %`;
+    
     // Schalt-RPM darf Max-RPM nie überschreiten.
     ui.shiftRpm.max = ui.maxRpm.value;
     if (Number(ui.shiftRpm.value) > Number(ui.maxRpm.value)) {
@@ -1179,6 +1187,7 @@ ui.controller.addEventListener(
     ui.gearRange,
     ui.maxRpm,
     ui.shiftRpm,
+    ui.shiftBurble,
     ui.baseVol,
     ui.inverter,
     ui.drive,
