@@ -124,6 +124,7 @@ return (
   (sportShift - gentleShift) *
     effectiveDemand
 );
+}
 
 function updateDrivingStyle(accel) {
   const nowMs =
