@@ -42,6 +42,33 @@
   let controllerSpeed = 0;
   let lastControllerTime = performance.now();
 
+  const LAST_DRIVE_MODE_KEY =
+    "voltune.lastDriveMode";
+  
+  function saveLastDriveMode(mode) {
+    try {
+      localStorage.setItem(
+        LAST_DRIVE_MODE_KEY,
+        mode
+      );
+    } catch (error) {
+      console.warn(
+        "Letzter Fahrmodus konnte nicht gespeichert werden:",
+        error
+      );
+    }
+  }
+  
+  function loadLastDriveMode() {
+    try {
+      return localStorage.getItem(
+        LAST_DRIVE_MODE_KEY
+      );
+    } catch (error) {
+      return null;
+    }
+  }
+  
   // ----- GPS-Zustand aus dem VoltuneGps-Modul -----
   let gpsActive = false;
   let gpsSpeedKmh = 0;
@@ -817,6 +844,7 @@ function updateControllerDrive(now) {
 
     stopGps(false);
     demoActive = true;
+    saveLastDriveMode("demo");
     demoStart = performance.now();
     lastState = "idle";
 
@@ -825,20 +853,64 @@ function updateControllerDrive(now) {
     ui.mute.textContent = "Stumm";
   });
 
-  ui.gps.addEventListener("click", async () => {
-    if (!await ensureVoltuneAudio()) return;
-    
-    VoltuneAudio.resetDrivingState();
-    demoActive=false;
-    lastState='idle';
+ui.gps.addEventListener("click", async () => {
+  if (!await ensureVoltuneAudio()) {
+    return;
+  }
 
-    if (startGps()) {
-      ui.start.textContent='Sound läuft · GPS';
-      ui.gps.textContent='GPS aktiv ✓';
-      ui.mute.textContent='Stumm';
-      renderVisual(0,0,'GPS · warte …');
-    }
-  });
+  VoltuneAudio.resetDrivingState();
+
+  demoActive = false;
+  controllerActive = false;
+  lastState = "idle";
+
+  saveLastDriveMode("gps");
+
+  // GPS läuft durch den automatischen
+  // Wiederherstellungsmodus bereits.
+  // Dann nicht noch einmal starten.
+  if (gpsActive) {
+    ui.start.textContent =
+      "Sound läuft · GPS";
+
+    ui.gps.textContent =
+      "GPS aktiv ✓";
+
+    ui.mute.textContent =
+      "Stumm";
+
+    renderVisual(
+      gpsSpeedKmh,
+      gpsAccel,
+      "GPS · aktiv"
+    );
+
+    updateVoltuneSound(
+      gpsSpeedKmh,
+      gpsAccel
+    );
+
+    return;
+  }
+
+  // GPS war noch nicht aktiv.
+  if (startGps()) {
+    ui.start.textContent =
+      "Sound läuft · GPS";
+
+    ui.gps.textContent =
+      "GPS aktiv ✓";
+
+    ui.mute.textContent =
+      "Stumm";
+
+    renderVisual(
+      0,
+      0,
+      "GPS · warte …"
+    );
+  }
+});
 
 ui.controller.addEventListener(
   "click",
@@ -872,6 +944,7 @@ ui.controller.addEventListener(
 
     demoActive = false;
     controllerActive = true;
+    saveLastDriveMode("controller");
 
     controllerSpeed = 0;
     manualSpeed = 0;
@@ -907,6 +980,7 @@ ui.controller.addEventListener(
 
     stopGps(false);
     demoActive = true;
+    saveLastDriveMode("demo");
     demoStart = performance.now();
     lastState = "idle";
     ui.gps.textContent = "GPS fahren";
@@ -973,7 +1047,8 @@ ui.controller.addEventListener(
   // Die Änderungsrate des Sliders wird als Beschleunigung interpretiert.
   ui.speedTest.addEventListener("input", async () => {
     if (!await ensureVoltuneAudio()) return;
-
+    saveLastDriveMode("manual");
+    
     demoActive = false;
     stopGps(false);
     ui.gps.textContent = "GPS fahren";
@@ -1107,6 +1182,31 @@ ui.controller.addEventListener(
     });
   });
 
+function restoreLastDriveMode() {
+  const lastMode =
+    loadLastDriveMode();
+
+  // Nur GPS automatisch wiederherstellen.
+  if (lastMode !== "gps") {
+    return;
+  }
+
+  demoActive = false;
+  controllerActive = false;
+  lastState = "idle";
+
+  if (startGps()) {
+    ui.gps.textContent =
+      "GPS aktiv ✓";
+
+    renderVisual(
+      0,
+      0,
+      "GPS · warte …"
+    );
+  }
+}
+  
 const savedSettings =
   VoltuneStorage.loadSettings();
 
@@ -1135,6 +1235,11 @@ renderVisual(
   0,
   0,
   "Bereit"
+);
+
+  setTimeout(
+  restoreLastDriveMode,
+  300
 );
 
 requestAnimationFrame(loop);
