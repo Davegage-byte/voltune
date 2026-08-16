@@ -201,6 +201,7 @@ function updateDrivingStyle(accel) {
 
     if (!config.gearsEnabled) {
       currentGear = 1;
+      drivingStyle,
 
       virtualRpm = clamp(
         (speedKmh / rangeKmh) * maxRpm,
@@ -368,6 +369,7 @@ const targetLandingRpm =
       rpm: virtualRpm,
       maxRpm,
       shiftTarget: currentShiftTarget,
+      drivingStyle,
       direct: false
     };
   }
