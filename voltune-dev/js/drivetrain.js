@@ -2,6 +2,8 @@ window.VoltuneDrivetrain = (() => {
   const gearRatios = [2.66, 1.78, 1.30, 1.00, 0.80, 0.63];
   const topGearRatio = gearRatios[gearRatios.length - 1];
 
+  let drivingStyle = 0;
+  let lastStyleUpdate = performance.now();
   let currentGear = 1;
   let virtualRpm = 0;
   let currentShiftTarget = 0;
@@ -25,6 +27,8 @@ window.VoltuneDrivetrain = (() => {
   
     shiftDemand = 0;
     lastDemandUpdate = performance.now();
+    drivingStyle = 0;
+    lastStyleUpdate = performance.now();
   }
 
   function rpmForGear(speedKmh, gear, config) {
@@ -109,17 +113,88 @@ function calculateShiftTarget(accel, config) {
   shiftDemand =
     clamp(shiftDemand, 0, 1);
 
-  return (
-    gentleShift +
-    (sportShift - gentleShift) *
-      shiftDemand
+const effectiveDemand =
+  Math.max(
+    shiftDemand,
+    drivingStyle * 0.60
   );
-}
 
+return (
+  gentleShift +
+  (sportShift - gentleShift) *
+    effectiveDemand
+);
+
+function updateDrivingStyle(accel) {
+  const nowMs =
+    performance.now();
+
+  const dt =
+    clamp(
+      (nowMs - lastStyleUpdate) / 1000,
+      0,
+      0.25
+    );
+
+  lastStyleUpdate = nowMs;
+
+  // Kräftige Beschleunigung macht den
+  // Fahrstil sportlicher.
+  const accelStyle =
+    clamp(
+      (Math.max(0, accel) - 0.35) / 2.4,
+      0,
+      1
+    );
+
+  // Auch starkes Verzögern ist ein Hinweis
+  // auf sportliche Fahrweise.
+  const brakeStyle =
+    clamp(
+      (Math.max(0, -accel) - 0.9) / 2.8,
+      0,
+      1
+    ) * 0.75;
+
+  const target =
+    Math.max(
+      accelStyle,
+      brakeStyle
+    );
+
+  // Sportmodus schnell merken,
+  // entspannten Fahrstil langsam wieder lernen.
+  const timeConstant =
+    target > drivingStyle
+      ? 0.9
+      : 18.0;
+
+  const response =
+    1 -
+    Math.exp(
+      -dt / timeConstant
+    );
+
+  drivingStyle +=
+    (target - drivingStyle) *
+    response;
+
+  drivingStyle =
+    clamp(
+      drivingStyle,
+      0,
+      1
+    );
+
+  return drivingStyle;
+}
+  
   function update(speedKmh, accel, config) {
     const maxRpm = Number(config.maxRpm);
     const rangeKmh = Math.max(1, Number(config.gearRange));
 
+    updateDrivingStyle(accel);
+    
     currentShiftTarget =
       calculateShiftTarget(accel, config);
 
@@ -185,13 +260,41 @@ const canShift =
 // 4 -> 3 = 1900 RPM
 // 5 -> 4 = 1750 RPM
 // 6 -> 5 = 1600 RPM
-const downshiftLandingRpm = {
-  2: 2350,
-  3: 2100,
-  4: 1900,
-  5: 1750,
-  6: 1600
+// Entspannte Ziel-RPM nach dem Zurückschalten.
+const relaxedDownshiftRpm = {
+  2: 2200,
+  3: 1950,
+  4: 1750,
+  5: 1600,
+  6: 1450
 };
+
+// Sportliche Ziel-RPM.
+// Dadurch wird deutlich früher zurückgeschaltet.
+const sportDownshiftRpm = {
+  2: 3400,
+  3: 3150,
+  4: 2900,
+  5: 2650,
+  6: 2400
+};
+
+// Stärkeres Bremsen darf die Rückschaltung
+// zusätzlich etwas aggressiver machen.
+const brakingDemand =
+  clamp(
+    (-accel - 0.30) / 2.5,
+    0,
+    1
+  );
+
+const downshiftAggression =
+  clamp(
+    drivingStyle +
+      brakingDemand * 0.25,
+    0,
+    1
+  );
 
 if (
   canShift &&
@@ -203,8 +306,16 @@ if (
   const lowerRatio =
     gearRatios[currentGear - 2];
 
-  const targetLandingRpm =
-    downshiftLandingRpm[currentGear];
+const relaxedRpm =
+  relaxedDownshiftRpm[currentGear];
+
+const sportRpm =
+  sportDownshiftRpm[currentGear];
+
+const targetLandingRpm =
+  relaxedRpm +
+  (sportRpm - relaxedRpm) *
+    downshiftAggression;
 
   // Berechnet, bei welcher Drehzahl im aktuellen
   // Gang heruntergeschaltet werden muss, damit
