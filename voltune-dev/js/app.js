@@ -741,25 +741,72 @@ function demoValues(t) {
   };
 
   [
-    ui.volume,ui.base,ui.maxBase,ui.pitch,ui.gearRange,ui.maxRpm,ui.shiftRpm,
-    ui.baseVol,ui.inverter,ui.drive,ui.regen,ui.air,ui.bov
+    ui.volume,
+    ui.base,
+    ui.maxBase,
+    ui.pitch,
+    ui.gearRange,
+    ui.maxRpm,
+    ui.shiftRpm,
+    ui.baseVol,
+    ui.inverter,
+    ui.drive,
+    ui.regen,
+    ui.air,
+    ui.bov
   ].forEach(el => {
     el.addEventListener("input", () => {
+  
+      // Min. und Max. Grundfrequenz
+      // dürfen sich nicht überschneiden.
+      if (
+        el === ui.base &&
+        Number(ui.base.value) > Number(ui.maxBase.value)
+      ) {
+        ui.maxBase.value =
+          ui.base.value;
+      }
+  
+      if (
+        el === ui.maxBase &&
+        Number(ui.maxBase.value) < Number(ui.base.value)
+      ) {
+        ui.base.value =
+          ui.maxBase.value;
+      }
+  
       updateLabels();
-      if (el === ui.volume) setMasterVolume();
-
-      if (el === ui.gearRange || el === ui.maxRpm || el === ui.shiftRpm) {
+  
+      if (el === ui.volume) {
+        setMasterVolume();
+      }
+  
+      if (
+        el === ui.gearRange ||
+        el === ui.maxRpm ||
+        el === ui.shiftRpm
+      ) {
         VoltuneDrivetrain.reset();
       }
-
-      if (soundActive && !demoActive) {
+  
+      if (
+        soundActive &&
+        !demoActive
+      ) {
         if (gpsActive) {
-          updateVoltuneSound(gpsSpeedKmh, gpsAccel);
+          updateVoltuneSound(
+            gpsSpeedKmh,
+            gpsAccel
+          );
         } else {
-          updateVoltuneSound(manualSpeed, manualAccel);
+          updateVoltuneSound(
+            manualSpeed,
+            manualAccel
+          );
         }
       }
-    scheduleSettingsSave();
+  
+      scheduleSettingsSave();
     });
   });
 
