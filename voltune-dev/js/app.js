@@ -9,7 +9,7 @@
     drivePct:$("drivePct"),
     regenPct:$("regenPct"),
     bovPressureDisplay:$("bovPressureDisplay"),
-    gearDisplay:$("gearDisplay"), rpmDisplay:$("rpmDisplay"), shiftTargetDisplay:$("shiftTargetDisplay"),
+    gearDisplay:$("gearDisplay"), rpmDisplay:$("rpmDisplay"), shiftTargetDisplay:$("shiftTargetDisplay"),drivingStyleDisplay:$("drivingStyleDisplay"),
 
     start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"),
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
@@ -340,9 +340,13 @@ lastTransmissionGear =
       `${Math.round(transmission.shiftTarget)} RPM`;
   }
 
-  ui.rpmDisplay.textContent =
-    `${Math.round(transmission.rpm)} RPM`;
-
+    ui.rpmDisplay.textContent =
+      `${Math.round(transmission.rpm)} RPM`;
+    
+    ui.drivingStyleDisplay.textContent =
+      Number(
+        transmission.drivingStyle ?? 0
+      ).toFixed(2);
 
   // Fertige Fahrwerte an die Soundengine übergeben
   const soundState = VoltuneAudio.update(
