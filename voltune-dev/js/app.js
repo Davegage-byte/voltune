@@ -38,6 +38,10 @@
   let demoActive = false;
   let demoStart = 0;
 
+  let controllerActive = false;
+  let controllerSpeed = 0;
+  let lastControllerTime = performance.now();
+
   // ----- GPS-Zustand aus dem VoltuneGps-Modul -----
   let gpsActive = false;
   let gpsSpeedKmh = 0;
@@ -604,10 +608,163 @@ function demoValues(t) {
     `${axis0.toFixed(2)} / ${axis1.toFixed(2)}`;
 }
 
+function updateControllerDrive(now) {
+  const gamepads =
+    navigator.getGamepads
+      ? navigator.getGamepads()
+      : [];
+
+  const gamepad =
+    Array.from(gamepads).find(
+      pad => pad !== null
+    );
+
+  if (!gamepad) {
+    controllerActive = false;
+
+    ui.controller.textContent =
+      "Controller fahren";
+
+    renderVisual(
+      controllerSpeed,
+      0,
+      "Controller getrennt"
+    );
+
+    return;
+  }
+
+  const throttle =
+    clamp(
+      gamepad.buttons[7]?.value ?? 0,
+      0,
+      1
+    );
+
+  const brake =
+    clamp(
+      gamepad.buttons[6]?.value ?? 0,
+      0,
+      1
+    );
+
+  const dt =
+    clamp(
+      (now - lastControllerTime) / 1000,
+      0,
+      0.05
+    );
+
+  lastControllerTime = now;
+
+  const speedN =
+    clamp(
+      controllerSpeed / 270,
+      0,
+      1
+    );
+
+  let accel = 0;
+
+  // -------------------------
+  // Bremse / starke Reku
+  // -------------------------
+
+  if (brake > 0.02) {
+    accel =
+      -(
+        1.8 +
+        brake * 4.2
+      );
+  }
+
+  // -------------------------
+  // Gas
+  // -------------------------
+
+  else if (throttle > 0.02) {
+    // Bei niedriger Geschwindigkeit kräftiger,
+    // bei hoher Geschwindigkeit weniger Schub.
+    const maxAccel =
+      6.6 -
+      speedN * 3.8;
+
+    // Halbgas soll deutlich moderater
+    // als Vollgas sein.
+    accel =
+      Math.pow(
+        throttle,
+        1.45
+      ) *
+      maxAccel;
+  }
+
+  // -------------------------
+  // Gas losgelassen:
+  // Tesla-artige Reku
+  // -------------------------
+
+  else if (controllerSpeed > 10) {
+    accel = -1.8;
+
+  } else if (controllerSpeed > 0.3) {
+    accel = -0.8;
+
+  } else {
+    accel = 0;
+  }
+
+  controllerSpeed =
+    clamp(
+      controllerSpeed +
+        accel * dt * 3.6,
+      0,
+      270
+    );
+
+  if (
+    controllerSpeed <= 0 &&
+    accel < 0
+  ) {
+    controllerSpeed = 0;
+    accel = 0;
+  }
+
+  manualSpeed =
+    controllerSpeed;
+
+  manualAccel =
+    accel;
+
+  ui.speedTest.value =
+    Math.round(controllerSpeed);
+
+  ui.speedTestLabel.textContent =
+    `${Math.round(controllerSpeed)} km/h`;
+
+  const state =
+    throttle > 0.02
+      ? `Controller · Gas ${Math.round(throttle * 100)} %`
+      : brake > 0.02
+        ? `Controller · Bremse ${Math.round(brake * 100)} %`
+        : controllerSpeed > 0
+          ? "Controller · Reku"
+          : "Controller · Stillstand";
+
+  render(
+    controllerSpeed,
+    accel,
+    state
+  );
+}
+  
   function loop(now) {
     updateGamepadDebug();
   
-    if (demoActive) {
+    if (controllerActive) {
+      updateControllerDrive(now);
+  
+    } else if (demoActive) {
       const v = demoValues(now-demoStart);
 
       manualSpeed = v.kmh;
@@ -663,6 +820,66 @@ function demoValues(t) {
     }
   });
 
+ui.controller.addEventListener(
+  "click",
+  async () => {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+
+    const gamepads =
+      navigator.getGamepads
+        ? navigator.getGamepads()
+        : [];
+
+    const gamepad =
+      Array.from(gamepads).find(
+        pad => pad !== null
+      );
+
+    if (!gamepad) {
+      alert(
+        "Kein Controller erkannt."
+      );
+
+      return;
+    }
+
+    VoltuneAudio.resetDrivingState();
+    VoltuneDrivetrain.reset();
+
+    stopGps(false);
+
+    demoActive = false;
+    controllerActive = true;
+
+    controllerSpeed = 0;
+    manualSpeed = 0;
+    manualAccel = 0;
+
+    lastControllerTime =
+      performance.now();
+
+    ui.controller.textContent =
+      "Controller aktiv ✓";
+
+    ui.start.textContent =
+      "Sound läuft · Controller";
+
+    ui.gps.textContent =
+      "GPS fahren";
+
+    ui.mute.textContent =
+      "Stumm";
+
+    render(
+      0,
+      0,
+      "Controller · bereit"
+    );
+  }
+);
+  
   ui.restart.addEventListener("click", async () => {
     if (!await ensureVoltuneAudio()) return;
     
