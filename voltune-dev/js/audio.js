@@ -639,7 +639,13 @@ function stop() {
 
     const baseStart =
       Number(settings.baseFrequency);
-
+    
+    const baseMax =
+      Math.max(
+        baseStart + 1,
+        Number(settings.maxBaseFrequency) || 70
+      );
+    
     const pitch =
       Number(settings.pitch) / 10;
 
@@ -791,15 +797,37 @@ const subCruiseScale =
     // Grundsound
     // =========================
 
-    const fundamental =
-      clamp(
-        baseStart +
-          rpmN * (pitch * 120) +
-          Math.pow(rpmN, 2) * 38 +
-          pos * 16,
-        10,
-        620
+    const rawFundamental =
+      baseStart +
+        rpmN * (pitch * 120) +
+        Math.pow(rpmN, 2) * 38 +
+        pos * 16;
+    
+    const baseRange =
+      Math.max(
+        1,
+        baseMax - baseStart
       );
+    
+    const frequencyRise =
+      Math.max(
+        0,
+        rawFundamental - baseStart
+      );
+    
+    // Weicher Frequenzdeckel:
+    // Die Frequenz nähert sich dem Maximalwert,
+    // statt dort hart abgeschnitten zu werden.
+    const fundamental =
+      baseStart +
+      baseRange *
+        (
+          1 -
+          Math.exp(
+            -frequencyRise /
+            (baseRange * 2.5)
+          )
+        );
 
     setTarget(
       base1.frequency,
