@@ -15,6 +15,11 @@
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
+    gamepadStatus:$("gamepadStatus"),
+    gamepadLT:$("gamepadLT"),
+    gamepadRT:$("gamepadRT"),
+    gamepadAxes:$("gamepadAxes"),
+    
     speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
     volume:$("volume"), base:$("base"), maxBase:$("maxBase"), pitch:$("pitch"),
     gearRange:$("gearRange"), maxRpm:$("maxRpm"), shiftRpm:$("shiftRpm"),
@@ -547,7 +552,61 @@ function demoValues(t) {
   };
 }
 
+  function updateGamepadDebug() {
+  const gamepads =
+    navigator.getGamepads
+      ? navigator.getGamepads()
+      : [];
+
+  const gamepad =
+    Array.from(gamepads).find(
+      pad => pad !== null
+    );
+
+  if (!gamepad) {
+    ui.gamepadStatus.textContent =
+      "nicht verbunden";
+
+    ui.gamepadLT.textContent =
+      "0.00";
+
+    ui.gamepadRT.textContent =
+      "0.00";
+
+    ui.gamepadAxes.textContent =
+      "0.00 / 0.00";
+
+    return;
+  }
+
+  ui.gamepadStatus.textContent =
+    gamepad.id;
+
+  const lt =
+    gamepad.buttons[6]?.value ?? 0;
+
+  const rt =
+    gamepad.buttons[7]?.value ?? 0;
+
+  const axis0 =
+    gamepad.axes[0] ?? 0;
+
+  const axis1 =
+    gamepad.axes[1] ?? 0;
+
+  ui.gamepadLT.textContent =
+    lt.toFixed(2);
+
+  ui.gamepadRT.textContent =
+    rt.toFixed(2);
+
+  ui.gamepadAxes.textContent =
+    `${axis0.toFixed(2)} / ${axis1.toFixed(2)}`;
+}
+
   function loop(now) {
+    updateGamepadDebug();
+  
     if (demoActive) {
       const v = demoValues(now-demoStart);
 
