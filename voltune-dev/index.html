@@ -36,18 +36,15 @@
         <div><span class="label">Inverter</span><b id="invHz">240 Hz</b></div>
         <div><span class="label">Drive</span><b id="drivePct">0 %</b></div>
         <div><span class="label">Reku</span><b id="regenPct">0 %</b></div>
-        <div>
-            <span class="label">BOV-Ladedruck</span>
-            <b id="bovPressureDisplay">0 %</b>
-        </div>
-        <div><span class="label">Virtueller Gang</span><b id="gearDisplay">–</b></div>
-        <div><span class="label">Virtuelle Drehzahl</span><b id="rpmDisplay">0 RPM</b></div>
+        <div><span class="label">Ladedruck</span><b id="bovPressureDisplay">0 %</b></div>
+        <div><span class="label">Gang</span><b id="gearDisplay">–</b></div>
+        <div><span class="label">RPM</span><b id="rpmDisplay">0 RPM</b></div>
         <div><span class="label">Schaltziel</span><b id="shiftTargetDisplay">–</b></div>
       </div>
     </div>
   </div>
 
-  <div class="buttons">
+  <div class="buttons sideButtons">
     <button id="start">Sound + Demo starten</button>
     <button id="gps">GPS fahren</button>
     <button id="controller">Controller fahren</button>
@@ -62,26 +59,48 @@
     <div class="gpsItem"><span class="label">GPS-Rate</span><b id="gpsHz">0.0 Hz</b></div>
     <div class="gpsItem"><span class="label">Kontext</span><b id="secureContext">–</b></div>
     <div class="gpsPanel">
-  <div class="gpsItem">
-    <span class="label">GPS Raw Speed</span>
-    <b id="gpsRawSpeed">0.0 km/h</b>
-  </div>
-
-  <div class="gpsItem">
-    <span class="label">GPS Smooth Speed</span>
-    <b id="gpsSmoothSpeed">0.0 km/h</b>
-  </div>
-
-  <div class="gpsItem">
-    <span class="label">Raw Beschleunigung</span>
-    <b id="gpsRawAccel">0.00 m/s²</b>
-  </div>
-
-  <div class="gpsItem">
-    <span class="label">Smooth Beschleunigung</span>
-    <b id="gpsSmoothAccel">0.00 m/s²</b>
-  </div>
-</div>
+      <div class="gpsItem">
+        <span class="label">GPS-Status</span>
+        <b id="gpsStatus">nicht gestartet</b>
+      </div>
+    
+      <div class="gpsItem">
+        <span class="label">Genauigkeit</span>
+        <b id="gpsAccuracy">–</b>
+      </div>
+    
+      <div class="gpsItem">
+        <span class="label">GPS-Rate</span>
+        <b id="gpsHz">0.0 Hz</b>
+      </div>
+    
+      <div class="gpsItem">
+        <span class="label">Kontext</span>
+        <b id="secureContext">–</b>
+      </div>
+    </div>
+    
+    <div class="gpsPanel">
+      <div class="gpsItem">
+        <span class="label">GPS Raw Speed</span>
+        <b id="gpsRawSpeed">0.0 km/h</b>
+      </div>
+    
+      <div class="gpsItem">
+        <span class="label">GPS Smooth Speed</span>
+        <b id="gpsSmoothSpeed">0.0 km/h</b>
+      </div>
+    
+      <div class="gpsItem">
+        <span class="label">Raw m/s²</span>
+        <b id="gpsRawAccel">0.00 m/s²</b>
+      </div>
+    
+      <div class="gpsItem">
+        <span class="label">Smooth m/s²</span>
+        <b id="gpsSmoothAccel">0.00 m/s²</b>
+      </div>
+    </div>
   </div>
 
   <div class="gpsPanel">
@@ -131,12 +150,12 @@
   </div>
 
   <div class="controls">
-    <div class="control">
+    <div class="control control-neutral">
       <div class="top"><span>Master-Lautstärke</span><span id="volumeLabel">32 %</span></div>
       <input id="volume" type="range" min="0" max="100" value="32">
     </div>
 
-  <div class="control">
+  <div class="control control-driving">
     <div class="top">
       <span>Min. Grundfrequenz</span>
       <span id="baseLabel">35 Hz</span>
@@ -151,7 +170,7 @@
     >
   </div>
   
-  <div class="control">
+  <div class="control control-driving">
     <div class="top">
       <span>Max. Grundfrequenz</span>
       <span id="maxBaseLabel">70 Hz</span>
@@ -166,55 +185,55 @@
     >
   </div>
 
-    <div class="control">
+    <div class="control control-rpm">
       <div class="top"><span>Drehzahl-Pitch</span><span id="pitchLabel">2.1×</span></div>
       <input id="pitch" type="range" min="8" max="35" value="21">
       <small style="color:#7f8b9b">Wie stark die Tonhöhe innerhalb eines Gangs ansteigt</small>
     </div>
 
-    <div class="control">
+    <div class="control control-rpm">
       <div class="top"><span>Getriebe-Reichweite</span><span id="gearRangeLabel">270 km/h</span></div>
       <input id="gearRange" type="range" min="80" max="300" step="1" value="270">
       <small style="color:#7f8b9b">6. Gang erreicht Max-RPM ungefähr bei dieser Geschwindigkeit</small>
     </div>
 
-    <div class="control">
+    <div class="control control-rpm">
       <div class="top"><span>Max. virtuelle Drehzahl</span><span id="maxRpmLabel">6500 RPM</span></div>
       <input id="maxRpm" type="range" min="3000" max="9000" step="100" value="6500">
     </div>
 
-    <div class="control">
+    <div class="control control-rpm">
       <div class="top"><span>Schalt-Drehzahl</span><span id="shiftRpmLabel">6000 RPM</span></div>
       <input id="shiftRpm" type="range" min="1500" max="6500" step="100" value="6000">
       <small style="color:#7f8b9b">Bei Dynamik AN ist das der Sport-/Vollgas-Schaltpunkt</small>
     </div>
 
-    <div class="control">
+    <div class="control control-driving">
       <div class="top"><span>Grundsound-Layer</span><span id="baseVolLabel">65 %</span></div>
       <input id="baseVol" type="range" min="0" max="100" value="65">
     </div>
 
-    <div class="control">
+    <div class="control control-driving">
       <div class="top"><span>Inverter-Layer</span><span id="inverterLabel">42 %</span></div>
       <input id="inverter" type="range" min="0" max="100" value="42">
     </div>
 
-    <div class="control">
+    <div class="control control-accel">
       <div class="top"><span>Beschleunigungs-Layer</span><span id="driveLabel">55 %</span></div>
       <input id="drive" type="range" min="0" max="100" value="55">
     </div>
 
-    <div class="control">
+    <div class="control control-regen">
       <div class="top"><span>Reku-Layer</span><span id="regenLabel">48 %</span></div>
       <input id="regen" type="range" min="0" max="100" value="48">
     </div>
 
-    <div class="control">
+    <div class="control control-driving">
       <div class="top"><span>Luft/Textur-Layer</span><span id="airLabel">30 %</span></div>
       <input id="air" type="range" min="0" max="100" value="30">
     </div>
 
-    <div class="control">
+    <div class="control control-accel">
       <div class="top"><span>BOV/Entladung-Layer</span><span id="bovLabel">60 %</span></div>
       <input id="bov" type="range" min="0" max="100" value="60">
     </div>
@@ -276,14 +295,6 @@
     loadScript(0);
   })();
 </script>
-  
-</body>
-  
-</html>
-  
-</body>
-</html>
-
   
 </body>
 </html>
