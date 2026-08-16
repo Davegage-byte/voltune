@@ -11,7 +11,7 @@
     bovPressureDisplay:$("bovPressureDisplay"),
     gearDisplay:$("gearDisplay"), rpmDisplay:$("rpmDisplay"), shiftTargetDisplay:$("shiftTargetDisplay"),
 
-    start:$("start"), gps:$("gps"), restart:$("restart"), stop:$("stop"), mute:$("mute"),
+    start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"),
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
