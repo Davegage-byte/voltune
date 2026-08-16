@@ -242,7 +242,7 @@ function updateVoltuneSound(speedKmh, accel) {
 
   } else {
     ui.gearDisplay.textContent =
-      `${transmission.gear}. · ${transmission.ratio.toFixed(2)}:1`;
+      `${transmission.gear}`;
 
     ui.shiftTargetDisplay.textContent =
       `${Math.round(transmission.shiftTarget)} RPM`;
@@ -387,7 +387,8 @@ function updateVoltuneSound(speedKmh, accel) {
     ui.speedTest.value = 0;
     ui.speedTestLabel.textContent = "0 km/h";
 
-    ui.gearDisplay.textContent = gearsEnabled ? "1. · 2.66:1" : "Direkt";
+    ui.gearDisplay.textContent =
+      gearsEnabled ? "1" : "Direkt";
     ui.rpmDisplay.textContent = "0 RPM";
     ui.shiftTargetDisplay.textContent = "–";
     renderVisual(0,0,"Gestoppt");
@@ -932,7 +933,8 @@ ui.controller.addEventListener(
       if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
       else updateVoltuneSound(manualSpeed, manualAccel);
     } else {
-      ui.gearDisplay.textContent = gearsEnabled ? "1. · 2.66:1" : "Direkt";
+      ui.gearDisplay.textContent =
+        gearsEnabled ? "1" : "Direkt";
       ui.rpmDisplay.textContent = "0 RPM";
       ui.shiftTargetDisplay.textContent = "–";
     }
@@ -1118,7 +1120,7 @@ updateLabels();
 
 ui.gearDisplay.textContent =
   gearsEnabled
-    ? "1. · 2.66:1"
+    ? "1"
     : "Direkt";
 
 ui.rpmDisplay.textContent =
