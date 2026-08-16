@@ -92,10 +92,35 @@
       <input id="volume" type="range" min="0" max="100" value="32">
     </div>
 
-    <div class="control">
-      <div class="top"><span>Grundfrequenz</span><span id="baseLabel">55 Hz</span></div>
-      <input id="base" type="range" min="10" max="100" value="55">
+  <div class="control">
+    <div class="top">
+      <span>Min. Grundfrequenz</span>
+      <span id="baseLabel">35 Hz</span>
     </div>
+    <input
+      id="base"
+      type="range"
+      min="20"
+      max="80"
+      step="1"
+      value="35"
+    >
+  </div>
+  
+  <div class="control">
+    <div class="top">
+      <span>Max. Grundfrequenz</span>
+      <span id="maxBaseLabel">70 Hz</span>
+    </div>
+    <input
+      id="maxBase"
+      type="range"
+      min="40"
+      max="150"
+      step="1"
+      value="70"
+    >
+  </div>
 
     <div class="control">
       <div class="top"><span>Drehzahl-Pitch</span><span id="pitchLabel">2.1×</span></div>
