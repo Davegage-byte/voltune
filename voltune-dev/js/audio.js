@@ -620,7 +620,8 @@ function stop() {
 // =========================
 
 function triggerShiftBurble(
-  intensity = 0.7
+  intensity = 0.7,
+  volumePercent = 60
 ) {
   if (
     !started ||
@@ -636,6 +637,13 @@ function triggerShiftBurble(
       0,
       1
     );
+
+  const volumeAmount =
+  clamp(
+    Number(volumePercent) / 100,
+    0,
+    1
+  );
 
   if (amount < 0.08) {
     return;
@@ -726,12 +734,16 @@ function triggerShiftBurble(
     ctx.createGain();
 
   const peak =
-    0.025 +
-    amount * 0.085;
-
+    (
+      0.025 +
+      amount * 0.085
+    ) * volumeAmount;
+  
   const dip =
-    0.004 +
-    amount * 0.012;
+    (
+      0.004 +
+      amount * 0.012
+    ) * volumeAmount;
 
   gain.gain.setValueAtTime(
     0.0001,
