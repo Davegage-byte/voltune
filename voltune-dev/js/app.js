@@ -79,6 +79,7 @@
   let lastManualSpeed = 0;
   let lastManualTime = performance.now();
   let manualAccel = 0;
+  let lastTransmissionGear = 1;
 
   let lastState = "idle";
 
@@ -261,7 +262,65 @@ function updateVoltuneSound(speedKmh, accel) {
     }
   );
 
+// =========================
+// DSG-Schaltblubbern
+// =========================
 
+if (
+  !transmission.direct &&
+  transmission.gear > lastTransmissionGear
+) {
+  const maxRpm =
+    Number(ui.maxRpm.value);
+
+  const sportShift =
+    Math.min(
+      Number(ui.shiftRpm.value),
+      maxRpm
+    );
+
+  const relaxedShift =
+    clamp(
+      maxRpm * 0.34,
+      1500,
+      Math.min(
+        2800,
+        sportShift
+      )
+    );
+
+  // Das aktuelle Schaltziel enthält bereits
+  // Fahrerlast und Fahrstil-Gedächtnis.
+  //
+  // Frühes / gemütliches Schalten:
+  // fast kein DSG-Blubbern.
+  //
+  // Hohes / sportliches Schaltziel:
+  // kräftiges Blubbern.
+  const shiftIntensity =
+    clamp(
+      (
+        transmission.shiftTarget -
+        relaxedShift
+      ) /
+      Math.max(
+        1,
+        sportShift - relaxedShift
+      ),
+      0,
+      1
+    );
+
+  VoltuneAudio.triggerShiftBurble(
+    shiftIntensity
+  );
+}
+
+lastTransmissionGear =
+  transmission.direct
+    ? 1
+    : transmission.gear;
+  
   // Getriebeanzeige aktualisieren
   if (transmission.direct) {
     ui.gearDisplay.textContent = "Direkt";
