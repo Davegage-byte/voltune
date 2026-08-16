@@ -16,12 +16,12 @@
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
     speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
-    volume:$("volume"), base:$("base"), pitch:$("pitch"),
+    volume:$("volume"), base:$("base"), maxBase:$("maxBase"), pitch:$("pitch"),
     gearRange:$("gearRange"), maxRpm:$("maxRpm"), shiftRpm:$("shiftRpm"),
     baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
     regen:$("regen"), air:$("air"), bov:$("bov"),
 
-    volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), pitchLabel:$("pitchLabel"),
+    volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
     gearRangeLabel:$("gearRangeLabel"), maxRpmLabel:$("maxRpmLabel"), shiftRpmLabel:$("shiftRpmLabel"),
     baseVolLabel:$("baseVolLabel"), inverterLabel:$("inverterLabel"),
     driveLabel:$("driveLabel"), regenLabel:$("regenLabel"),
@@ -58,6 +58,7 @@
     masterVolume: Number(ui.volume.value),
 
     baseFrequency: Number(ui.base.value),
+    maxBaseFrequency: Number(ui.maxBase.value),
     pitch: Number(ui.pitch.value),
 
     baseVolume: Number(ui.baseVol.value),
@@ -75,6 +76,7 @@ function getPersistentSettings() {
   return {
     volume: Number(ui.volume.value),
     baseFrequency: Number(ui.base.value),
+    maxBaseFrequency: Number(ui.maxBase.value),
     pitch: Number(ui.pitch.value),
 
     gearRange: Number(ui.gearRange.value),
@@ -119,6 +121,7 @@ function applyPersistentSettings(settings) {
 
   setNumber(ui.volume, settings.volume);
   setNumber(ui.base, settings.baseFrequency);
+  setNumber(ui.maxBase, settings.maxBaseFrequency);
   setNumber(ui.pitch, settings.pitch);
 
   setNumber(ui.gearRange, settings.gearRange);
@@ -717,6 +720,7 @@ function demoValues(t) {
   const updateLabels = () => {
     ui.volumeLabel.textContent = `${ui.volume.value} %`;
     ui.baseLabel.textContent = `${ui.base.value} Hz`;
+    ui.maxBaseLabel.textContent = `${ui.maxBase.value} Hz`;
     ui.pitchLabel.textContent = `${(Number(ui.pitch.value)/10).toFixed(1)}×`;
     ui.gearRangeLabel.textContent = `${ui.gearRange.value} km/h`;
     ui.maxRpmLabel.textContent = `${ui.maxRpm.value} RPM`;
@@ -737,7 +741,7 @@ function demoValues(t) {
   };
 
   [
-    ui.volume,ui.base,ui.pitch,ui.gearRange,ui.maxRpm,ui.shiftRpm,
+    ui.volume,ui.base,ui.maxBase,ui.pitch,ui.gearRange,ui.maxRpm,ui.shiftRpm,
     ui.baseVol,ui.inverter,ui.drive,ui.regen,ui.air,ui.bov
   ].forEach(el => {
     el.addEventListener("input", () => {
