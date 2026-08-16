@@ -84,51 +84,75 @@ window.VoltuneGps = (() => {
     const firstGpsValue =
       lastGpsTs == null;
 
-    if (firstGpsValue) {
-      // Der erste GPS-Wert ist nur unser Ausgangszustand.
-      // Dadurch entsteht beim Start keine künstliche
-      // Beschleunigung von 0 km/h auf die aktuelle Geschwindigkeit.
-      smoothGpsSpeed = speed;
-      lastGpsSpeed = speed;
+const firstGpsValue =
+  lastGpsTs == null;
 
-      gpsAccel = 0;
-      gpsRate = 0;
-    } else {
-      const dt = clamp(
-        (ts - lastGpsTs) / 1000,
-        0.15,
-        8
-      );
+// Rohgeschwindigkeit immer direkt merken.
+rawGpsSpeed = speed;
 
-      gpsRate = 1 / dt;
+if (firstGpsValue) {
+  // Erster GPS-Wert ist nur der Ausgangspunkt.
+  // Keine künstliche Beschleunigung erzeugen.
 
-      // Geschwindigkeitsglättung
-      smoothGpsSpeed =
-        smoothGpsSpeed * 0.58 +
-        speed * 0.42;
+  smoothGpsSpeed = speed;
+  lastGpsSpeed = speed;
 
-      rawGpsAccel =
-        (smoothGpsSpeed - lastGpsSpeed) / dt;
+  rawGpsAccel = 0;
+  gpsAccel = 0;
+  gpsRate = 0;
 
-      // Beschleunigung ebenfalls glätten
-      gpsAccel =
-        gpsAccel * 0.68 +
-        clamp(
-          rawGpsAccel,
-          -5,
-          5
-        ) * 0.32;
+} else {
+  const dt =
+    clamp(
+      (ts - lastGpsTs) / 1000,
+      0.15,
+      8
+    );
 
-      lastGpsSpeed =
-        smoothGpsSpeed;
-    }
+  gpsRate =
+    1 / dt;
 
-    lastGpsTs = ts;
+  // Geschwindigkeit nicht zusätzlich glätten.
+  smoothGpsSpeed = speed;
 
-    lastPos = {
-      lat: c.latitude,
-      lon: c.longitude
-    };
+  // Beschleunigung direkt aus der
+  // Geschwindigkeitsänderung berechnen.
+  rawGpsAccel =
+    (speed - lastGpsSpeed) / dt;
+
+  // Nur die Beschleunigung leicht glätten.
+  const accelResponse =
+    1 - Math.exp(-dt / 0.25);
+
+  gpsAccel +=
+    (
+      clamp(
+        rawGpsAccel,
+        -6,
+        6
+      ) -
+      gpsAccel
+    ) *
+    accelResponse;
+
+  // Kleines GPS-Rauschen um 0 entfernen.
+  if (
+    Math.abs(gpsAccel) < 0.03
+  ) {
+    gpsAccel = 0;
+  }
+
+  lastGpsSpeed = speed;
+}
+
+// Erst NACH der Berechnung
+// den aktuellen Messpunkt speichern.
+lastGpsTs = ts;
+
+lastPos = {
+  lat: c.latitude,
+  lon: c.longitude
+};
 
     const kmh =
       smoothGpsSpeed * 3.6;
