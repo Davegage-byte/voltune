@@ -90,6 +90,9 @@ const firstGpsValue =
 // Rohgeschwindigkeit immer direkt merken.
 rawGpsSpeed = speed;
 
+const firstGpsValue =
+  lastGpsTs == null;
+
 if (firstGpsValue) {
   // Erster GPS-Wert ist nur der Ausgangspunkt.
   // Keine künstliche Beschleunigung erzeugen.
@@ -220,8 +223,9 @@ lastPos = {
     lastGpsTs = null;
     lastGpsSpeed = 0;
     smoothGpsSpeed = 0;
-
+    rawGpsSpeed = 0;
     gpsAccel = 0;
+    rawGpsAccel = 0;
     gpsRate = 0;
 
     watchId =
