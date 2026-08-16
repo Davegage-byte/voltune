@@ -637,8 +637,6 @@ function triggerShiftBurble(
       1
     );
 
-  // Bei sehr geringer Last
-  // praktisch kein hörbarer Effekt.
   if (amount < 0.08) {
     return;
   }
@@ -646,14 +644,15 @@ function triggerShiftBurble(
   const now =
     ctx.currentTime;
 
+  // Etwa doppelt so lang wie bisher.
   const duration =
-    0.10 +
-    amount * 0.09;
+    0.20 +
+    amount * 0.18;
 
 
-  // -------------------------
+  // =========================
   // Tiefer Hauptton
-  // -------------------------
+  // =========================
 
   const burble =
     ctx.createOscillator();
@@ -661,20 +660,22 @@ function triggerShiftBurble(
   burble.type =
     "sawtooth";
 
+  // Start im Bereich ~65-70 Hz,
+  // dann beim Schalten Richtung 50 Hz.
   burble.frequency.setValueAtTime(
-    105 + amount * 25,
+    64 + amount * 6,
     now
   );
 
   burble.frequency.exponentialRampToValueAtTime(
-    62 + amount * 8,
+    50 + amount * 3,
     now + duration
   );
 
 
-  // -------------------------
+  // =========================
   // Tiefer Unterton
-  // -------------------------
+  // =========================
 
   const subBurble =
     ctx.createOscillator();
@@ -683,17 +684,17 @@ function triggerShiftBurble(
     "triangle";
 
   subBurble.frequency.setValueAtTime(
-    58 + amount * 10,
+    58 + amount * 5,
     now
   );
 
   subBurble.frequency.exponentialRampToValueAtTime(
-    42,
+    50,
     now + duration
   );
 
 
-  // -------------------------
+  // =========================
   // Filter
   // =========================
 
@@ -704,64 +705,81 @@ function triggerShiftBurble(
     "lowpass";
 
   filter.frequency.setValueAtTime(
-    420 + amount * 180,
+    260 + amount * 100,
     now
   );
 
   filter.frequency.exponentialRampToValueAtTime(
-    180,
+    150,
     now + duration
   );
 
   filter.Q.value =
-    1.1;
+    0.9;
 
 
-  // -------------------------
-  // Lautstärke / Blubbern
-  // -------------------------
+  // =========================
+  // Zündaussetzer / BRR-BRR
+  // =========================
 
   const gain =
     ctx.createGain();
+
+  const peak =
+    0.025 +
+    amount * 0.085;
+
+  const dip =
+    0.004 +
+    amount * 0.012;
 
   gain.gain.setValueAtTime(
     0.0001,
     now
   );
 
-  // erster kurzer "BRR"
+  // erster Schlag
   gain.gain.exponentialRampToValueAtTime(
-    0.018 +
-      amount * 0.075,
-    now + 0.012
+    peak,
+    now + 0.015
   );
 
-  // kurze Einbuchtung
+  // Zündung kurz weg
   gain.gain.exponentialRampToValueAtTime(
-    0.008 +
-      amount * 0.025,
-    now + duration * 0.48
+    dip,
+    now + duration * 0.25
   );
 
-  // zweites kleines "blubb"
+  // wieder da
   gain.gain.exponentialRampToValueAtTime(
-    0.012 +
-      amount * 0.048,
-    now + duration * 0.68
+    peak * 0.90,
+    now + duration * 0.40
   );
 
+  // zweiter Aussetzer
+  gain.gain.exponentialRampToValueAtTime(
+    dip,
+    now + duration * 0.56
+  );
+
+  // letztes tiefes BRR
+  gain.gain.exponentialRampToValueAtTime(
+    peak * 0.72,
+    now + duration * 0.70
+  );
+
+  // ausblenden
   gain.gain.exponentialRampToValueAtTime(
     0.0001,
     now + duration
   );
 
 
-  // Unterton etwas leiser
   const subGain =
     ctx.createGain();
 
   subGain.gain.value =
-    0.42;
+    0.48;
 
 
   burble
