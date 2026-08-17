@@ -454,14 +454,16 @@ ui.gpsSmoothAccel.textContent =
       // die GPS-Anzeige aktualisieren.
       // Mit Sound übernimmt der Animations-Loop
       // die geglättete Ausgabe.
-      if (!soundActive) {
-        renderVisual(
-          gpsSpeedKmh,
-          gpsAccel,
-          state
-        );
+        if (!soundActive) {
+          renderVisual(
+            gpsSpeedKmh,
+            gpsAccel,
+            state
+          );
+        }
       }
-    function handleGpsError(error) {
+      
+      function handleGpsError(error) {
       ui.gpsStatus.textContent =
         error.message || "GPS-Fehler";
     
