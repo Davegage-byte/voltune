@@ -11,6 +11,9 @@ window.VoltuneAudio = (() => {
   let base1, base2, sub;
   let baseGain1, baseGain2, subGain, baseFilter;
 
+  let idle1, idle2;
+  let idleGain, idleFilter;
+
   let inv1, inv2, inv3;
   let invGain1, invGain2, invGain3, invFilter;
 
@@ -159,6 +162,53 @@ window.VoltuneAudio = (() => {
 
     baseFilter.connect(master);
 
+    // =========================
+    // Stillstand / Idle
+    // =========================
+    
+    // Zwei eng benachbarte Frequenzen.
+    // Durch ihre Überlagerung entsteht
+    // ein langsames rhythmisches Wummern.
+    idle1 =
+      createOsc("sine");
+    
+    idle2 =
+      createOsc("sine");
+    
+    idle1.frequency.value =
+      42;
+    
+    idle2.frequency.value =
+      44;
+    
+    idleGain =
+      ctx.createGain();
+    
+    idleGain.gain.value =
+      0.0001;
+    
+    idleFilter =
+      ctx.createBiquadFilter();
+    
+    idleFilter.type =
+      "lowpass";
+    
+    idleFilter.frequency.value =
+      180;
+    
+    idleFilter.Q.value =
+      0.7;
+    
+    idle1
+      .connect(idleGain)
+      .connect(idleFilter);
+    
+    idle2
+      .connect(idleGain)
+      .connect(idleFilter);
+    
+    idleFilter.connect(master);
+
 
     // =========================
     // Inverter
@@ -295,6 +345,8 @@ window.VoltuneAudio = (() => {
       base1,
       base2,
       sub,
+      idle1,
+      idle2,
       inv1,
       inv2,
       inv3,
@@ -1139,6 +1191,28 @@ const inverterCruiseScale =
 
 const subCruiseScale =
   1 - cruiseQuiet * 0.35;
+
+    // =========================
+    // Stillstand / Idle
+    // =========================
+    
+    // Bei 0 km/h volle Stärke.
+    // Bis etwa 5 km/h weich ausblenden.
+    const idleAmount =
+      1 -
+      clamp(
+        speedKmh / 5,
+        0,
+        1
+      );
+    
+    setTarget(
+      idleGain.gain,
+      baseAmount *
+        idleAmount *
+        0.060,
+      0.12
+    );
 
     // =========================
     // Grundsound
