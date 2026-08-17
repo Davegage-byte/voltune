@@ -1060,6 +1060,32 @@ function triggerShiftBurble(
       );
 
 // =========================
+// Beschleunigungs-Frequenzanstieg
+// =========================
+
+// Solange noch mindestens ungefähr
+// 1 m/s² Beschleunigung anliegt,
+// wirkt der Geschwindigkeitseinfluss voll.
+//
+// Dadurch steigt die Klangfrequenz beim
+// Durchbeschleunigen weiter an, auch wenn
+// die reale Beschleunigung bei hohem Tempo
+// langsam schwächer wird.
+const accelPresence =
+  clamp(
+    accel / 1.0,
+    0,
+    1
+  );
+
+const accelSpeedRise =
+  Math.pow(
+    speedN,
+    0.75
+  ) *
+  accelPresence;    
+    
+// =========================
 // Konstantfahrt beruhigen
 // =========================
 
@@ -1222,7 +1248,11 @@ const subCruiseScale =
       baseStart +
         rpmN * (pitch * 120) +
         Math.pow(rpmN, 2) * 38 +
-        pos * 16;
+        pos * 16 +
+    
+        // Beim Durchbeschleunigen steigt
+        // die Grundfrequenz mit dem Tempo weiter.
+        accelSpeedRise * 22;
     
     const baseRange =
       Math.max(
@@ -1384,7 +1414,11 @@ const subCruiseScale =
     const driveFreq =
       290 +
       fundamental * 2.25 +
-      pos * 160;
+      pos * 160 +
+    
+      // Deutlich stärkerer Hochzieheffekt
+      // speziell im Beschleunigungs-Layer.
+      accelSpeedRise * 380;
 
     setTarget(
       driveOsc.frequency,
