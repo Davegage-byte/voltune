@@ -644,6 +644,9 @@ function triggerShiftBurble(
     0,
     1
   );
+  if (volumeAmount <= 0.001) {
+  return;
+}
 
   if (amount < 0.08) {
     return;
@@ -1296,7 +1299,7 @@ const releasePressure =
 
 const releaseAccel =
   settings.easyBovEnabled
-    ? 0.28
+    ? 0.10
     : 0.18;
 
 const abruptLastAccel =
