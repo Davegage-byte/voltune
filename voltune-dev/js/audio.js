@@ -638,15 +638,15 @@ function triggerShiftBurble(
       1
     );
 
-  const volumeAmount =
-  clamp(
-    Number(volumePercent) / 100,
-    0,
-    1
-  );
-  if (volumeAmount <= 0.001) {
-  return;
-}
+    const volumeAmount =
+    clamp(
+      Number(volumePercent) / 100,
+      0,
+      1
+    );
+    if (volumeAmount <= 0.001) {
+    return;
+  }
 
   if (amount < 0.08) {
     return;
