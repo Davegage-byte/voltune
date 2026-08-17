@@ -399,7 +399,7 @@ lastTransmissionGear =
     
       gpsSpeedKmh = data.speedKmh;
       gpsAccel = data.acceleration;
-      lastGpsTs = data.timestamp;
+      lastGpsTs = Date.now();
       ui.gpsRawSpeed.textContent =
   `${Number(data.rawSpeedKmh ?? 0).toFixed(1)} km/h`;
 
