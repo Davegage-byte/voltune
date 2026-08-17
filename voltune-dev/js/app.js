@@ -79,6 +79,10 @@
   let gpsSpeedKmh = 0;
   let gpsAccel = 0;
   let lastGpsTs = null;
+  let gpsRenderSpeed = 0;
+  let gpsRenderAccel = 0;
+  let gpsHasRenderValue = false;
+  let lastGpsRenderTime = performance.now();
 
   let manualSpeed = 0;
   let lastManualSpeed = 0;
@@ -400,6 +404,13 @@ lastTransmissionGear =
       gpsSpeedKmh = data.speedKmh;
       gpsAccel = data.acceleration;
       lastGpsTs = Date.now();
+        // Beim allerersten GPS-Wert nicht erst
+        // von 0 km/h hochglätten.
+          if (!gpsHasRenderValue) {
+            gpsRenderSpeed = gpsSpeedKmh;
+            gpsRenderAccel = gpsAccel;
+            gpsHasRenderValue = true;
+          }
       ui.gpsRawSpeed.textContent =
   `${Number(data.rawSpeedKmh ?? 0).toFixed(1)} km/h`;
 
@@ -439,12 +450,17 @@ ui.gpsSmoothAccel.textContent =
             ? "GPS · Reku"
             : "GPS · Fahrt";
     
-      render(
-        gpsSpeedKmh,
-        gpsAccel,
-        state
-      );
-    }
+      // Ohne laufenden Sound weiterhin
+      // die GPS-Anzeige aktualisieren.
+      // Mit Sound übernimmt der Animations-Loop
+      // die geglättete Ausgabe.
+      if (!soundActive) {
+        renderVisual(
+          gpsSpeedKmh,
+          gpsAccel,
+          state
+        );
+      }
     function handleGpsError(error) {
       ui.gpsStatus.textContent =
         error.message || "GPS-Fehler";
@@ -459,6 +475,10 @@ ui.gpsSmoothAccel.textContent =
       gpsSpeedKmh = 0;
       gpsAccel = 0;
       lastGpsTs = null;
+      gpsRenderSpeed = 0;
+      gpsRenderAccel = 0;
+      gpsHasRenderValue = false;
+      lastGpsRenderTime = performance.now();
       previousGpsKmhForEasyBov = null;
     
       ui.gpsStatus.textContent =
@@ -906,7 +926,52 @@ function updateControllerDrive(now) {
       render(v.kmh,v.a,v.state);
 
       lastState = v.state;
-    } else if (soundActive && !gpsActive) {
+} else if (
+  soundActive &&
+  gpsActive &&
+  gpsHasRenderValue
+) {
+  const dt =
+    clamp(
+      (now - lastGpsRenderTime) / 1000,
+      0,
+      0.05
+    );
+
+  lastGpsRenderTime = now;
+
+  // Geschwindigkeit weich zwischen
+  // den GPS-Messwerten bewegen.
+  const speedResponse =
+    1 - Math.exp(-dt / 0.28);
+
+  gpsRenderSpeed +=
+    (gpsSpeedKmh - gpsRenderSpeed) *
+    speedResponse;
+
+  // Smooth m/s² ist bereits gut.
+  // Nur noch leicht für die Audioengine glätten.
+  const accelResponse =
+    1 - Math.exp(-dt / 0.12);
+
+  gpsRenderAccel +=
+    (gpsAccel - gpsRenderAccel) *
+    accelResponse;
+
+  const state =
+    gpsRenderAccel > 0.22
+      ? "GPS · Beschleunigen"
+      : gpsRenderAccel < -0.22
+        ? "GPS · Reku"
+        : "GPS · Fahrt";
+
+  render(
+    gpsRenderSpeed,
+    gpsRenderAccel,
+    state
+  );
+
+} else if (soundActive && !gpsActive) {
       // manuelle Beschleunigung weich gegen 0 auslaufen lassen
       manualAccel *= 0.86;
       if (Math.abs(manualAccel) < 0.03) manualAccel = 0;
