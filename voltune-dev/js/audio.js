@@ -652,31 +652,40 @@ function triggerShiftBurble(
       1
     );
 
-    const volumeAmount =
+  const volumeAmount =
     clamp(
       Number(volumePercent) / 100,
       0,
       1
     );
-    if (volumeAmount <= 0.001) {
+
+  if (volumeAmount <= 0.001) {
     return;
   }
 
-  if (amount < 0.08) {
-    return;
-  }
+  // JEDES echte Hochschalten soll hörbar sein.
+  // Der Fahrstil bestimmt nur noch,
+  // wie brutal der Effekt wird.
+  const effectAmount =
+    clamp(
+      0.40 +
+      amount * 0.60,
+      0.40,
+      1
+    );
 
   const now =
     ctx.currentTime;
 
-  // Etwa doppelt so lang wie bisher.
+  // Deutlich länger als vorher:
+  // ungefähr 0,44 - 0,60 Sekunden.
   const duration =
-    0.20 +
-    amount * 0.18;
+    0.34 +
+    effectAmount * 0.26;
 
 
   // =========================
-  // Tiefer Hauptton
+  // Haupt-Furz
   // =========================
 
   const burble =
@@ -685,15 +694,15 @@ function triggerShiftBurble(
   burble.type =
     "sawtooth";
 
-  // Start im Bereich ~65-70 Hz,
-  // dann beim Schalten Richtung 50 Hz.
   burble.frequency.setValueAtTime(
-    64 + amount * 6,
+    68 +
+      effectAmount * 10,
     now
   );
 
   burble.frequency.exponentialRampToValueAtTime(
-    50 + amount * 3,
+    46 +
+      effectAmount * 3,
     now + duration
   );
 
@@ -709,12 +718,13 @@ function triggerShiftBurble(
     "triangle";
 
   subBurble.frequency.setValueAtTime(
-    58 + amount * 5,
+    58 +
+      effectAmount * 7,
     now
   );
 
   subBurble.frequency.exponentialRampToValueAtTime(
-    50,
+    43,
     now + duration
   );
 
@@ -730,74 +740,91 @@ function triggerShiftBurble(
     "lowpass";
 
   filter.frequency.setValueAtTime(
-    260 + amount * 100,
+    320 +
+      effectAmount * 160,
     now
   );
 
   filter.frequency.exponentialRampToValueAtTime(
-    150,
+    140,
     now + duration
   );
 
   filter.Q.value =
-    0.9;
+    0.85;
 
 
   // =========================
-  // Zündaussetzer / BRR-BRR
+  // BRR - BRR - BRR
   // =========================
 
   const gain =
     ctx.createGain();
 
+  // Absichtlich sehr kräftig.
+  // Der Master-Kompressor fängt
+  // extreme Spitzen anschließend ab.
   const peak =
     (
-      0.025 +
-      amount * 0.085
-    ) * volumeAmount;
-  
+      0.09 +
+      effectAmount * 0.30
+    ) *
+    volumeAmount;
+
   const dip =
     (
-      0.004 +
-      amount * 0.012
-    ) * volumeAmount;
+      0.008 +
+      effectAmount * 0.025
+    ) *
+    volumeAmount;
 
   gain.gain.setValueAtTime(
     0.0001,
     now
   );
 
-  // erster Schlag
+  // Erster kräftiger Schlag
   gain.gain.exponentialRampToValueAtTime(
     peak,
-    now + 0.015
+    now + 0.012
   );
 
-  // Zündung kurz weg
+  // erster Aussetzer
   gain.gain.exponentialRampToValueAtTime(
     dip,
-    now + duration * 0.25
+    now + duration * 0.20
   );
 
-  // wieder da
+  // zweiter Schlag
   gain.gain.exponentialRampToValueAtTime(
-    peak * 0.90,
-    now + duration * 0.40
+    peak * 0.95,
+    now + duration * 0.34
   );
 
   // zweiter Aussetzer
   gain.gain.exponentialRampToValueAtTime(
     dip,
-    now + duration * 0.56
+    now + duration * 0.49
   );
 
-  // letztes tiefes BRR
+  // dritter Schlag
   gain.gain.exponentialRampToValueAtTime(
-    peak * 0.72,
-    now + duration * 0.70
+    peak * 0.80,
+    now + duration * 0.64
   );
 
-  // ausblenden
+  // kurzer Aussetzer
+  gain.gain.exponentialRampToValueAtTime(
+    dip * 0.80,
+    now + duration * 0.78
+  );
+
+  // letztes Nachblubbern
+  gain.gain.exponentialRampToValueAtTime(
+    peak * 0.45,
+    now + duration * 0.87
+  );
+
   gain.gain.exponentialRampToValueAtTime(
     0.0001,
     now + duration
@@ -808,7 +835,7 @@ function triggerShiftBurble(
     ctx.createGain();
 
   subGain.gain.value =
-    0.48;
+    0.85;
 
 
   burble
@@ -823,8 +850,72 @@ function triggerShiftBurble(
     .connect(master);
 
 
+  // =========================
+  // Tiefbass-Impuls
+  // =========================
+
+  const bassKick =
+    ctx.createOscillator();
+
+  bassKick.type =
+    "sine";
+
+  // Beginnt ungefähr bei 60 Hz
+  // und fällt sehr schnell nach unten.
+  bassKick.frequency.setValueAtTime(
+    58 +
+      effectAmount * 8,
+    now
+  );
+
+  bassKick.frequency.exponentialRampToValueAtTime(
+    44,
+    now + 0.22
+  );
+
+  const bassKickGain =
+    ctx.createGain();
+
+  const bassPeak =
+    (
+      0.16 +
+      effectAmount * 0.48
+    ) *
+    volumeAmount;
+
+  bassKickGain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+  // Sehr schneller Bass-Schlag
+  bassKickGain.gain.exponentialRampToValueAtTime(
+    bassPeak,
+    now + 0.008
+  );
+
+  bassKickGain.gain.exponentialRampToValueAtTime(
+    bassPeak * 0.58,
+    now + 0.055
+  );
+
+  bassKickGain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now + 0.24
+  );
+
+  bassKick
+    .connect(bassKickGain)
+    .connect(master);
+
+
+  // =========================
+  // Start / Stop
+  // =========================
+
   burble.start(now);
   subBurble.start(now);
+  bassKick.start(now);
 
   burble.stop(
     now + duration + 0.03
@@ -832,6 +923,10 @@ function triggerShiftBurble(
 
   subBurble.stop(
     now + duration + 0.03
+  );
+
+  bassKick.stop(
+    now + 0.27
   );
 }
   
