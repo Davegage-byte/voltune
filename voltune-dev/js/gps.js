@@ -10,6 +10,7 @@ window.VoltuneGps = (() => {
   let gpsRate = 0;
   let rawGpsSpeed = 0;
   let rawGpsAccel = 0;
+  let speedHistory = [];
   let onUpdate = null;
   let onError = null;
 
@@ -19,6 +20,79 @@ window.VoltuneGps = (() => {
   const finite = v =>
     Number.isFinite(v);
 
+  function calculateAccelerationTrend(
+  timestamp,
+  speed
+) {
+  speedHistory.push({
+    timestamp,
+    speed
+  });
+
+  // Nur ungefähr die letzten 1,5 Sekunden behalten.
+  const minTimestamp =
+    timestamp - 1500;
+
+  while (
+    speedHistory.length > 2 &&
+    speedHistory[1].timestamp < minTimestamp
+  ) {
+    speedHistory.shift();
+  }
+
+  if (speedHistory.length < 2) {
+    return 0;
+  }
+
+  const firstTimestamp =
+    speedHistory[0].timestamp;
+
+  let sumTime = 0;
+  let sumSpeed = 0;
+
+  for (const sample of speedHistory) {
+    sumTime +=
+      (sample.timestamp - firstTimestamp) / 1000;
+
+    sumSpeed +=
+      sample.speed;
+  }
+
+  const meanTime =
+    sumTime / speedHistory.length;
+
+  const meanSpeed =
+    sumSpeed / speedHistory.length;
+
+  let numerator = 0;
+  let denominator = 0;
+
+  for (const sample of speedHistory) {
+    const time =
+      (sample.timestamp - firstTimestamp) / 1000;
+
+    const timeDiff =
+      time - meanTime;
+
+    numerator +=
+      timeDiff *
+      (sample.speed - meanSpeed);
+
+    denominator +=
+      timeDiff * timeDiff;
+  }
+
+  if (denominator < 0.0001) {
+    return 0;
+  }
+
+  return clamp(
+    numerator / denominator,
+    -6,
+    6
+  );
+}
+  
   function haversine(a, b) {
     const R = 6371000;
 
@@ -95,6 +169,12 @@ if (firstGpsValue) {
   rawGpsAccel = 0;
   gpsAccel = 0;
   gpsRate = 0;
+  speedHistory = [
+  {
+    timestamp: ts,
+    speed
+  }
+];
 
 } else {
   const dt =
@@ -115,29 +195,32 @@ if (firstGpsValue) {
   rawGpsAccel =
     (speed - lastGpsSpeed) / dt;
 
-  // Nur die Beschleunigung leicht glätten.
-  const accelResponse =
-    1 - Math.exp(-dt / 0.25);
+// Direkter Wert zwischen genau zwei GPS-Messungen.
+// Bleibt für die Debuganzeige erhalten.
+rawGpsAccel =
+  clamp(
+    (speed - lastGpsSpeed) / dt,
+    -6,
+    6
+  );
 
-  gpsAccel +=
-    (
-      clamp(
-        rawGpsAccel,
-        -6,
-        6
-      ) -
-      gpsAccel
-    ) *
-    accelResponse;
+// Für Voltune verwenden wir einen kurzen
+// Geschwindigkeitstrend statt nur eines
+// einzelnen GPS-Sprungs.
+gpsAccel =
+  calculateAccelerationTrend(
+    ts,
+    speed
+  );
 
-  // Kleines GPS-Rauschen um 0 entfernen.
-  if (
-    Math.abs(gpsAccel) < 0.03
-  ) {
-    gpsAccel = 0;
-  }
+// Sehr kleines Restzittern entfernen.
+if (
+  Math.abs(gpsAccel) < 0.025
+) {
+  gpsAccel = 0;
+}
 
-  lastGpsSpeed = speed;
+lastGpsSpeed = speed;
 }
 
 // Erst NACH der Berechnung
@@ -216,9 +299,12 @@ lastPos = {
     lastGpsSpeed = 0;
     smoothGpsSpeed = 0;
     rawGpsSpeed = 0;
+    
     gpsAccel = 0;
     rawGpsAccel = 0;
     gpsRate = 0;
+    
+    speedHistory = [];
 
     watchId =
       navigator.geolocation.watchPosition(
