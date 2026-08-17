@@ -979,9 +979,31 @@ bovPressure =
   clamp(bovPressure, 0, 1);
 // Erst ab etwas Geschwindigkeit.
 // An der Ampel soll das Brummen bestehen bleiben.
-const steadyDriving =
+// =========================
+// Konstantfahrt mit Hysterese
+// =========================
+
+// Um in den ruhigen Fahrmodus zu kommen,
+// muss die Fahrt zunächst wirklich stabil sein.
+const steadyEnter =
   speedKmh > 10 &&
   Math.abs(accel) < 0.18;
+
+// Sobald wir bereits als Konstantfahrt gelten,
+// dürfen kleine GPS-/Tempo-Schwankungen auftreten,
+// ohne den Sound sofort wieder aufzuwecken.
+const steadyKeep =
+  speedKmh > 10 &&
+  Math.abs(accel) < 0.70;
+
+const alreadySteady =
+  steadySince !== null ||
+  cruiseQuiet > 0.05;
+
+const steadyDriving =
+  alreadySteady
+    ? steadyKeep
+    : steadyEnter;
 
 if (steadyDriving) {
   if (steadySince === null) {
