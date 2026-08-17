@@ -355,9 +355,9 @@ function stop() {
         muted
           ? 0.0001
           : clamp(
-              (Number(percent) / 100) * 10.0,
+              (Number(percent) / 100) * 15.0,
               0.0001,
-              10.0
+              15.0
             );
   
     const now = ctx.currentTime;
