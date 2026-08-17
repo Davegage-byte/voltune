@@ -935,9 +935,19 @@ if (accel > 0.15) {
 
   // Genug Druck vorhanden:
   // BOV für Lastwegnahme scharf stellen.
+  const armPressure =
+    settings.easyBovEnabled
+      ? 0.03
+      : 0.12;
+  
+  const armAccel =
+    settings.easyBovEnabled
+      ? 0.18
+      : 0.35;
+  
   if (
-    bovPressure > 0.12 &&
-    accel > 0.35
+    bovPressure > armPressure &&
+    accel > armAccel
   ) {
     bovArmed = true;
   }
@@ -1271,65 +1281,75 @@ const subCruiseScale =
     // BOV-Automatik
     // =========================
 
-    const accelDrop =
-      lastAccel - accel;
-    
-    const normalBovRelease =
-      bovArmed &&
-      bovPressure > 0.10 &&
-      (
-        // GPS darf langsam auf 0 zurücklaufen
-        accel < 0.18 ||
-    
-        // Oder ein deutlicher Lastabfall
-        // wird direkt erkannt.
-        (
-          lastAccel > 0.45 &&
-          accelDrop > 0.28
-        )
-      );
-    
-    if (normalBovRelease) {
-      const bovIntensity =
-        clamp(
-          Math.pow(
-            bovPressure,
-            1.7
-          ),
-          0.10,
-          1
-        );
-    
-      triggerBov(
-        bovIntensity,
-        settings.bovVolume,
-        700
-      );
-    
-      // Druck vollständig entlüftet.
-      bovPressure = 0;
-      bovArmed = false;
-    }
+const accelDrop =
+  lastAccel - accel;
 
-    else if (
-      settings.easyBovEnabled &&
-      speedKmh > 10 &&
-      accel < -0.30
-    ) {
-      triggerBov(
-        clamp(
-          0.30 +
-            Math.abs(accel) / 3.5,
-          0.30,
-          0.75
-        ),
-        settings.bovVolume,
-        1300
-      );
-    }
+// =========================
+// Gemeinsamer BOV-Trigger
+// Normal + EasyBOV
+// =========================
 
-    lastAccel = accel;
+const releasePressure =
+  settings.easyBovEnabled
+    ? 0.025
+    : 0.10;
 
+const releaseAccel =
+  settings.easyBovEnabled
+    ? 0.28
+    : 0.18;
+
+const abruptLastAccel =
+  settings.easyBovEnabled
+    ? 0.22
+    : 0.45;
+
+const abruptAccelDrop =
+  settings.easyBovEnabled
+    ? 0.12
+    : 0.28;
+
+const bovRelease =
+  bovArmed &&
+  bovPressure > releasePressure &&
+  (
+    // Last wird weit genug zurückgenommen.
+    accel < releaseAccel ||
+
+    // Oder ein deutlicher Lastsprung
+    // wird direkt erkannt.
+    (
+      lastAccel > abruptLastAccel &&
+      accelDrop > abruptAccelDrop
+    )
+  );
+
+if (bovRelease) {
+  const bovIntensity =
+    clamp(
+      Math.pow(
+        bovPressure,
+        1.7
+      ),
+      0.10,
+      1
+    );
+
+  triggerBov(
+    bovIntensity,
+    settings.bovVolume,
+    settings.easyBovEnabled
+      ? 500
+      : 700
+  );
+
+  // Ein BOV entleert den virtuellen Druck
+  // vollständig.
+  bovPressure = 0;
+  bovArmed = false;
+}
+
+lastAccel = accel;
 
     // Diese Werte braucht app.js
     // nur noch für die Anzeigen.
