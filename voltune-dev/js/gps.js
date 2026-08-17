@@ -114,7 +114,7 @@ window.VoltuneGps = (() => {
   function handlePosition(pos) {
     if (!active) return;
 
-    const ts = pos.timestamp || Date.now();
+    const ts = performance.now();
     const c = pos.coords;
 
     let speed =
