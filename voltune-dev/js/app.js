@@ -15,6 +15,11 @@
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
+    gpsRawSpeed:$("gpsRawSpeed"),
+    gpsSmoothSpeed:$("gpsSmoothSpeed"),
+    gpsRawAccel:$("gpsRawAccel"),
+    gpsSmoothAccel:$("gpsSmoothAccel"),
+    
     gamepadStatus:$("gamepadStatus"),
     gamepadLT:$("gamepadLT"),
     gamepadRT:$("gamepadRT"),
@@ -395,6 +400,17 @@ lastTransmissionGear =
       gpsSpeedKmh = data.speedKmh;
       gpsAccel = data.acceleration;
       lastGpsTs = data.timestamp;
+      ui.gpsRawSpeed.textContent =
+  `${Number(data.rawSpeedKmh ?? 0).toFixed(1)} km/h`;
+
+ui.gpsSmoothSpeed.textContent =
+  `${Number(data.smoothSpeedKmh ?? 0).toFixed(1)} km/h`;
+
+ui.gpsRawAccel.textContent =
+  `${Number(data.rawAcceleration ?? 0).toFixed(2)} m/s²`;
+
+ui.gpsSmoothAccel.textContent =
+  `${Number(data.acceleration ?? 0).toFixed(2)} m/s²`;
     
       manualSpeed = gpsSpeedKmh;
       lastManualSpeed = gpsSpeedKmh;
