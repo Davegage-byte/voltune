@@ -413,8 +413,22 @@ function stop() {
       return;
     }
 
+    const bovVolume =
+      clamp(
+        Number(bovPercent) / 100,
+        0,
+        1
+      );
+    
+    const pressureVolume =
+      0.06 +
+      Math.pow(
+        clamp(intensity, 0, 1),
+        1.25
+      ) * 0.94;
+    
     const bovAmount =
-      Number(bovPercent) / 100;
+      bovVolume * pressureVolume;
 
     if (bovAmount <= 0.001) return;
 
@@ -916,10 +930,10 @@ lastSoundUpdate = nowMs;
 // Virtueller BOV-Druck
 // =========================
 
-if (accel > 0.15) {
+if (accel > 0.20) {
   const pressureTarget =
     clamp(
-      (accel - 0.10) / 2.2,
+      (accel - 0.15) / 2.8,
       0,
       1
     );
@@ -940,12 +954,12 @@ if (accel > 0.15) {
   // BOV für Lastwegnahme scharf stellen.
   const armPressure =
     settings.easyBovEnabled
-      ? 0.03
+      ? 0.05
       : 0.12;
   
   const armAccel =
     settings.easyBovEnabled
-      ? 0.18
+      ? 0.25
       : 0.35;
   
   if (
@@ -1334,7 +1348,7 @@ if (bovRelease) {
         bovPressure,
         1.7
       ),
-      0.10,
+      0.01,
       1
     );
 
