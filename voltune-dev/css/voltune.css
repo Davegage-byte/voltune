@@ -134,6 +134,27 @@ h1{
   margin-top:10px;
 }
 
+.driveInfo{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:18px;
+}
+
+.driveInfo > div{
+  padding:10px 12px;
+  background:#0d1117;
+  border:1px solid #202936;
+  border-radius:12px;
+}
+
+.driveInfo b{
+  display:block;
+  margin-top:3px;
+  font-size:20px;
+  font-variant-numeric:tabular-nums;
+}
+
 .stateBox{
   min-width:0;
 }
@@ -160,12 +181,12 @@ h1{
   width:0%;
   height:100%;
 
-  background:
-    linear-gradient(
-      90deg,
-      #3cc6ff,
-      #8dffdf
-    );
+    background:
+      linear-gradient(
+        90deg,
+        #ffa94d,
+        #ff6262
+      );
 
   transition:
     width .06s linear;
@@ -268,8 +289,16 @@ button:hover{
 }
 
 /* Werden später per Debug-Button eingeblendet */
-body.debugActive .debugOnly{
+body.debugActive .sideButtons .debugOnly{
   display:block !important;
+}
+
+body.debugActive .gpsPanel.debugOnly{
+  display:grid !important;
+}
+
+body.debugActive .meter.debugOnly{
+  display:grid !important;
 }
 
 /* Zentraler Start-Button */
