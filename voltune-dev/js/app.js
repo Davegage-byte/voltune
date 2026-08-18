@@ -11,7 +11,7 @@
     bovPressureDisplay:$("bovPressureDisplay"),
     gearDisplay:$("gearDisplay"), rpmDisplay:$("rpmDisplay"), shiftTargetDisplay:$("shiftTargetDisplay"),drivingStyleDisplay:$("drivingStyleDisplay"),
 
-    start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"),
+    start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
@@ -357,7 +357,19 @@ lastTransmissionGear =
 
     ui.rpmDisplay.textContent =
       `${Math.round(transmission.rpm)} RPM`;
+
+    const rpmBarPercent =
+      clamp(
+        transmission.rpm /
+          transmission.maxRpm *
+          100,
+        0,
+        100
+      );
     
+    ui.speedBar.style.width =
+      `${rpmBarPercent}%`;
+  
     ui.drivingStyleDisplay.textContent =
       Number(
         transmission.drivingStyle ?? 0
@@ -522,7 +534,7 @@ ui.gpsSmoothAccel.textContent =
     soundActive = false;
 
     ui.start.textContent = "Sound + Demo starten";
-    ui.gps.textContent = "GPS fahren";
+    ui.gps.textContent = "Start";
     ui.mute.textContent = "Stumm";
 
     manualSpeed = 0;
@@ -553,7 +565,6 @@ ui.gpsSmoothAccel.textContent =
       performance.now() < overrunFlashUntil
         ? "SCHUBKNALLEN"
         : state;
-    ui.speedBar.style.width = `${clamp(speedKmh/270*100,0,100)}%`;
   }
 
   function render(speedKmh, accel, state) {
@@ -1014,7 +1025,7 @@ function updateControllerDrive(now) {
     lastState = "idle";
 
     ui.start.textContent = "Läuft ✓";
-    ui.gps.textContent = "GPS fahren";
+    ui.gps.textContent = "Start";
     ui.mute.textContent = "Stumm";
   });
 
@@ -1039,7 +1050,7 @@ ui.gps.addEventListener("click", async () => {
       "Sound läuft · GPS";
 
     ui.gps.textContent =
-      "GPS aktiv ✓";
+      "Aktiv ✓";
 
     ui.mute.textContent =
       "Stumm";
@@ -1064,7 +1075,7 @@ ui.gps.addEventListener("click", async () => {
       "Sound läuft · GPS";
 
     ui.gps.textContent =
-      "GPS aktiv ✓";
+      "Aktiv ✓";
 
     ui.mute.textContent =
       "Stumm";
@@ -1125,7 +1136,7 @@ ui.controller.addEventListener(
       "Sound läuft · Controller";
 
     ui.gps.textContent =
-      "GPS fahren";
+      "Start";
 
     ui.mute.textContent =
       "Stumm";
@@ -1148,7 +1159,7 @@ ui.controller.addEventListener(
     saveLastDriveMode("demo");
     demoStart = performance.now();
     lastState = "idle";
-    ui.gps.textContent = "GPS fahren";
+    ui.gps.textContent = "Start";
   });
 
   ui.stop.addEventListener("click", () => {
@@ -1193,6 +1204,28 @@ ui.controller.addEventListener(
     scheduleSettingsSave();
   });
 
+ui.debug.addEventListener("click", () => {
+  const active =
+    document.body.classList.toggle(
+      "debugActive"
+    );
+
+  ui.debug.classList.toggle(
+    "active",
+    active
+  );
+
+  ui.debug.setAttribute(
+    "aria-pressed",
+    active ? "true" : "false"
+  );
+
+  ui.debug.textContent =
+    active
+      ? "Debug aus"
+      : "Debug";
+});
+  
   ui.mute.addEventListener("click", () => {
     if (!VoltuneAudio.isStarted()) return;
   
@@ -1216,7 +1249,7 @@ ui.controller.addEventListener(
     
     demoActive = false;
     stopGps(false);
-    ui.gps.textContent = "GPS fahren";
+    ui.gps.textContent = "Start";
 
     const now = performance.now();
     const nextSpeed = Number(ui.speedTest.value);
@@ -1369,7 +1402,7 @@ function restoreLastDriveMode() {
 
   if (startGps()) {
     ui.gps.textContent =
-      "GPS aktiv ✓";
+      "Aktiv ✓";
 
     renderVisual(
       0,
