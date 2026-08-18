@@ -27,11 +27,13 @@
     
     speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
     volume:$("volume"), base:$("base"), maxBase:$("maxBase"), pitch:$("pitch"),
+    cruiseDamping:$("cruiseDamping"),
     gearRange:$("gearRange"), maxRpm:$("maxRpm"), shiftRpm:$("shiftRpm"), shiftBurble:$("shiftBurble"),
     baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
     regen:$("regen"), air:$("air"), bov:$("bov"),
 
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
+    cruiseDampingLabel:$("cruiseDampingLabel"),
     gearRangeLabel:$("gearRangeLabel"), maxRpmLabel:$("maxRpmLabel"), shiftRpmLabel:$("shiftRpmLabel"), shiftBurbleLabel:$("shiftBurbleLabel"),
     baseVolLabel:$("baseVolLabel"), inverterLabel:$("inverterLabel"),
     driveLabel:$("driveLabel"), regenLabel:$("regenLabel"),
@@ -106,6 +108,7 @@
     baseFrequency: Number(ui.base.value),
     maxBaseFrequency: Number(ui.maxBase.value),
     pitch: Number(ui.pitch.value),
+    cruiseDamping: Number(ui.cruiseDamping.value),
 
     baseVolume: Number(ui.baseVol.value),
     inverterVolume: Number(ui.inverter.value),
@@ -124,6 +127,7 @@ function getPersistentSettings() {
     baseFrequency: Number(ui.base.value),
     maxBaseFrequency: Number(ui.maxBase.value),
     pitch: Number(ui.pitch.value),
+    cruiseDamping: Number(ui.cruiseDamping.value),
 
     gearRange: Number(ui.gearRange.value),
     maxRpm: Number(ui.maxRpm.value),
@@ -170,14 +174,12 @@ function applyPersistentSettings(settings) {
   setNumber(ui.base, settings.baseFrequency);
   setNumber(ui.maxBase, settings.maxBaseFrequency);
   setNumber(ui.pitch, settings.pitch);
+  setNumber(ui.cruiseDamping, settings.cruiseDamping);
 
   setNumber(ui.gearRange, settings.gearRange);
   setNumber(ui.maxRpm, settings.maxRpm);
   setNumber(ui.shiftRpm, settings.shiftRpm);
-  setNumber(
-  ui.shiftBurble,
-  settings.shiftBurbleVolume
-);
+  setNumber(ui.shiftBurble, settings.shiftBurbleVolume);
 
   setNumber(ui.baseVol, settings.baseVolume);
   setNumber(ui.inverter, settings.inverterVolume);
@@ -1245,6 +1247,7 @@ ui.controller.addEventListener(
     ui.volumeLabel.textContent = `${ui.volume.value} %`;
     ui.baseLabel.textContent = `${ui.base.value} Hz`;
     ui.maxBaseLabel.textContent = `${ui.maxBase.value} Hz`;
+    ui.cruiseDampingLabel.textContent = `${ui.cruiseDamping.value} %`;
     ui.pitchLabel.textContent = `${(Number(ui.pitch.value)/10).toFixed(1)}×`;
     ui.gearRangeLabel.textContent = `${ui.gearRange.value} km/h`;
     ui.maxRpmLabel.textContent = `${ui.maxRpm.value} RPM`;
@@ -1270,6 +1273,7 @@ ui.controller.addEventListener(
     ui.volume,
     ui.base,
     ui.maxBase,
+    ui.cruiseDamping,
     ui.pitch,
     ui.gearRange,
     ui.maxRpm,
