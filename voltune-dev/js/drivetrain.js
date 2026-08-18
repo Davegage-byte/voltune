@@ -446,8 +446,57 @@ const targetLandingRpm =
   }
 }
 
+// =========================
+// Dynamische Idle-RPM
+// =========================
+
+// Nur die ausgegebene virtuelle Drehzahl.
+// Die interne Getriebe-RPM bleibt unverändert.
+const idleRpm = 800;
+
+// Die kleine Leerlaufbewegung verschwindet
+// zwischen 0 und 5 km/h weich.
+const idleWobbleMix =
+  1 -
+  clamp(
+    speedKmh / 5,
+    0,
+    1
+  );
+
+const idleTime =
+  nowMs / 1000;
+
+// Zwei langsame Bewegungen übereinander.
+// Dadurch wirkt die Drehzahl lebendig,
+// ohne hektisch oder zufällig zu springen.
+const idleWobble =
+  (
+    Math.sin(
+      idleTime *
+      Math.PI *
+      2 *
+      1.35
+    ) * 10 +
+
+    Math.sin(
+      idleTime *
+      Math.PI *
+      2 *
+      0.17
+    ) * 6
+  ) *
+  idleWobbleMix;
+
+const displayedIdleRpm =
+  idleRpm +
+  idleWobble;
+    
     virtualRpm = clamp(
-      rpm,
+      Math.max(
+        rpm,
+        displayedIdleRpm
+      ),
       0,
       maxRpm * 1.08
     );
