@@ -27,6 +27,7 @@ window.VoltuneAudio = (() => {
   let lastBovAt = -9999;
   let bovPressure = 0;
   let bovArmed = false;
+  let bovPeakAccel = 0;
 
     // Konstantfahrt-Erkennung
   let steadySince = null;
@@ -1099,53 +1100,47 @@ const dt = clamp(
 
 lastSoundUpdate = nowMs;
 
-// =========================
-// Virtueller BOV-Druck
-// =========================
+// EasyBOV nutzt ungefähr den bisherigen,
+// leicht aufbaubaren Ladedruck.
+//
+// Normal-BOV braucht mehr Beschleunigung,
+// baut weniger Druck auf und lädt langsamer.
+const easyBov = settings.easyBovEnabled;
 
-if (accel > 0.20) {
-  const pressureTarget =
-    clamp(
-      (accel - 0.15) / 2.8,
-      0,
-      1
-    );
+const pressureStart = easyBov ? 0.20 : 0.35;
+const pressureOffset = easyBov ? 0.15 : 0.30;
+const pressureRange = easyBov ? 2.8 : 3.4;
+const chargeTime = easyBov ? 0.55 : 0.95;
 
-  // Druck relativ schnell aufbauen,
-  // aber vorhandenen Druck während
-  // der Beschleunigung nicht wieder abbauen.
+  if (accel > pressureStart) {
+    bovPeakAccel = Math.max(bovPeakAccel, accel);
+  
+    const pressureTarget = clamp(
+    (accel - pressureOffset) / pressureRange,
+    0,
+    1
+  );
+
+  // Vorhandenen Druck während der
+  // Beschleunigung nicht wieder abbauen.
   if (pressureTarget > bovPressure) {
-    const chargeRate =
-      1 - Math.exp(-dt / 0.55);
-
-    bovPressure +=
-      (pressureTarget - bovPressure) *
-      chargeRate;
+    const chargeRate = 1 - Math.exp(-dt / chargeTime);
+    bovPressure += (pressureTarget - bovPressure) * chargeRate;
   }
 
-  // Genug Druck vorhanden:
-  // BOV für Lastwegnahme scharf stellen.
-  const armPressure =
-    settings.easyBovEnabled
-      ? 0.05
-      : 0.12;
-  
-  const armAccel =
-    settings.easyBovEnabled
-      ? 0.25
-      : 0.35;
-  
-  if (
-    bovPressure > armPressure &&
-    accel > armAccel
-  ) {
+  // EasyBOV wird weiterhin sehr früh scharf.
+  // Normal-BOV benötigt deutlich mehr Druck
+  // und eine stärkere Beschleunigung.
+  const armPressure = easyBov ? 0.05 : 0.18;
+  const armAccel = easyBov ? 0.25 : 0.55;
+
+  if (bovPressure > armPressure && accel > armAccel) {
     bovArmed = true;
   }
 
 } else if (!bovArmed) {
   // Nur ungenutzten Restdruck langsam abbauen.
-  bovPressure *=
-    Math.exp(-dt / 3.5);
+  bovPressure *= Math.exp(-dt / 3.5);
 }
 
 bovPressure =
@@ -1517,43 +1512,32 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     // BOV-Automatik
     // =========================
 
-const accelDrop =
-  lastAccel - accel;
+const accelDrop = lastAccel - accel;
+const peakAccelDrop = bovPeakAccel - accel;
 
-// =========================
-// Gemeinsamer BOV-Trigger
-// Normal + EasyBOV
-// =========================
+// Sobald Druck aufgebaut wurde, darf das BOV
+// auch bei noch positiver Beschleunigung auslösen.
+// Entscheidend ist die deutliche Lastwegnahme.
+const releasePressure = easyBov ? 0.025 : 0.14;
+const releaseAccel = easyBov ? 0.55 : 0.40;
+const peakDropNeeded = easyBov ? 0.25 : 0.45;
 
-const releasePressure =
-  settings.easyBovEnabled
-    ? 0.025
-    : 0.10;
-
-const releaseAccel =
-  settings.easyBovEnabled
-    ? 0.10
-    : 0.18;
-
-const abruptLastAccel =
-  settings.easyBovEnabled
-    ? 0.22
-    : 0.45;
-
-const abruptAccelDrop =
-  settings.easyBovEnabled
-    ? 0.12
-    : 0.28;
+// Sehr schnelle Lastwegnahme zusätzlich direkt erkennen.
+const abruptLastAccel = easyBov ? 0.35 : 0.70;
+const abruptAccelDrop = easyBov ? 0.18 : 0.35;
 
 const bovRelease =
   bovArmed &&
   bovPressure > releasePressure &&
   (
-    // Last wird weit genug zurückgenommen.
-    accel < releaseAccel ||
+    // Die starke Beschleunigungsphase ist vorbei.
+    // Das Fahrzeug darf dabei noch leicht weiterbeschleunigen.
+    (
+      accel < releaseAccel &&
+      peakAccelDrop > peakDropNeeded
+    ) ||
 
-    // Oder ein deutlicher Lastsprung
-    // wird direkt erkannt.
+    // Schnelles Lupfen direkt erkennen.
     (
       lastAccel > abruptLastAccel &&
       accelDrop > abruptAccelDrop
@@ -1583,6 +1567,7 @@ if (bovRelease) {
   // vollständig.
   bovPressure = 0;
   bovArmed = false;
+  bovPeakAccel = 0;
 }
 
 lastAccel = accel;
@@ -1609,6 +1594,7 @@ lastAccel = accel;
   
     bovPressure = 0;
     bovArmed = false;
+    bovPeakAccel = 0;
   
     steadySince = null;
     cruiseQuiet = 0;
