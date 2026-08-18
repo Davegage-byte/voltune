@@ -5,7 +5,10 @@ window.VoltuneAudio = (() => {
   let ctx = null;
   let master = null;
   let compressor = null;
+  let loudnessGain = null;
+  let limiter = null;
   let started = false;
+  
   let muted = false;
 
   let base1, base2, sub;
@@ -116,15 +119,33 @@ window.VoltuneAudio = (() => {
 
     compressor =
       ctx.createDynamicsCompressor();
-
+    
     compressor.threshold.value = -13;
     compressor.knee.value = 16;
     compressor.ratio.value = 5;
     compressor.attack.value = 0.004;
     compressor.release.value = 0.15;
-
+    
+    // Zusätzliche Ausgangsverstärkung.
+    // Damit können wir nach dem normalen Compressor
+    // den gesamten Mix gezielt lauter machen.
+    loudnessGain = ctx.createGain();
+    loudnessGain.gain.value = 0.0001;
+    
+    // Letzte Schutzstufe direkt vor dem Ausgang.
+    // Sie fängt nur sehr hohe Spitzen ab.
+    limiter = ctx.createDynamicsCompressor();
+    
+    limiter.threshold.value = -1;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.001;
+    limiter.release.value = 0.08;
+    
     master
       .connect(compressor)
+      .connect(loudnessGain)
+      .connect(limiter)
       .connect(ctx.destination);
 
 
@@ -423,14 +444,15 @@ function stop() {
   if (!ctx) return;
 
   try {
-    if (master) {
-      master.gain.cancelScheduledValues(
-        ctx.currentTime
-      );
+    if (loudnessGain) {
+      const now = ctx.currentTime;
 
-      master.gain.setValueAtTime(
+      loudnessGain.gain.cancelScheduledValues(now);
+
+      loudnessGain.gain.setTargetAtTime(
         0.0001,
-        ctx.currentTime
+        now,
+        0.03
       );
     }
   } catch (error) {
@@ -441,7 +463,7 @@ function stop() {
   }
 
   // AudioContext absichtlich weiterlaufen lassen.
-  // Nur der Master wird stumm geschaltet.
+  // Nur die Ausgangsstufe wird stumm geschaltet.
   muted = false;
   lastAccel = 0;
   lastBovAt = -9999;
@@ -451,35 +473,54 @@ function stop() {
 }
 
   function setMasterVolume(percent) {
-    if (!started || !master || !ctx) return;
+    if (
+      !started ||
+      !master ||
+      !loudnessGain ||
+      !ctx
+    ) {
+      return;
+    }
   
-      const target =
-        muted
-          ? 0.0001
-          : clamp(
-              (Number(percent) / 100) * 15.0,
-              0.0001,
-              15.0
-            );
+    const volume =
+      clamp(
+        Number(percent) / 100,
+        0,
+        1
+      );
   
     const now = ctx.currentTime;
   
-    const current =
-      Math.max(
-        0.0001,
-        Number(master.gain.value) || 0.0001
-      );
-  
+    // Fester interner Pegel vor dem Compressor.
+    // Dadurch arbeitet die Dynamik unabhängig
+    // von der eingestellten Benutzer-Lautstärke.
     master.gain.cancelScheduledValues(now);
-  
-    master.gain.setValueAtTime(
-      current,
-      now
+    master.gain.setTargetAtTime(
+      15.0,
+      now,
+      0.04
     );
   
-    master.gain.linearRampToValueAtTime(
+    // Eigentliche Benutzer-Lautstärke
+    // NACH dem Compressor.
+    //
+    // 50 % = Gain 1.0
+    // 100 % = Gain 2.0
+    //
+    // Der nachfolgende Limiter fängt Spitzen ab.
+    const target =
+      muted
+        ? 0.0001
+        : Math.max(
+            0.0001,
+            volume * 2.0
+          );
+  
+    loudnessGain.gain.cancelScheduledValues(now);
+    loudnessGain.gain.setTargetAtTime(
       target,
-      now + 0.12
+      now,
+      0.06
     );
   }
 
