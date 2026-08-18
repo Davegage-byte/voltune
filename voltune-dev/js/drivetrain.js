@@ -8,8 +8,10 @@ window.VoltuneDrivetrain = (() => {
   let virtualRpm = 0;
   let currentShiftTarget = 0;
   let lastShiftAt = -9999;
-
+  let lastKickdownAt = -9999;
+  
   const SHIFT_COOLDOWN_MS = 350;
+  const KICKDOWN_HOLD_MS = 1200;
 
   let shiftDemand = 0;
   let lastDemandUpdate = performance.now();
@@ -24,6 +26,7 @@ window.VoltuneDrivetrain = (() => {
     virtualRpm = 0;
     currentShiftTarget = 0;
     lastShiftAt = -9999;
+    lastKickdownAt = -9999;
   
     shiftDemand = 0;
     lastDemandUpdate = performance.now();
@@ -227,12 +230,13 @@ function updateDrivingStyle(accel) {
 
     const nowMs = performance.now();
 
-  if (
-    currentGear < gearRatios.length &&
-    accel > -0.08 &&
-    rpm >= currentShiftTarget &&
-    nowMs - lastShiftAt >= SHIFT_COOLDOWN_MS
-  ) {
+    if (
+      currentGear < gearRatios.length &&
+      accel > -0.08 &&
+      rpm >= currentShiftTarget &&
+      nowMs - lastShiftAt >= SHIFT_COOLDOWN_MS &&
+      nowMs - lastKickdownAt >= KICKDOWN_HOLD_MS
+    ) {
     currentGear++;
   
     rpm = rpmForGear(
@@ -242,6 +246,7 @@ function updateDrivingStyle(accel) {
     );
   
     lastShiftAt = nowMs;
+    lastKickdownAt = nowMs;
   }
 
   // Beim normalen Rollen nicht zu früh zurückschalten.
@@ -253,6 +258,91 @@ function updateDrivingStyle(accel) {
 
 const canShift =
   nowMs - lastShiftAt >= SHIFT_COOLDOWN_MS;
+
+// =========================
+// Kickdown
+// =========================
+
+let didKickdown = false;
+
+// Ab etwa 0,9 m/s² beginnt die Kickdown-Anforderung.
+// Ab ungefähr 2,5 m/s² gilt sie als volle Last.
+const kickdownDemand = clamp(
+  (accel - 0.90) / 1.60,
+  0,
+  1
+);
+
+if (
+  canShift &&
+  currentGear > 1 &&
+  kickdownDemand > 0
+) {
+  // Leichte Last -> ungefähr 2800 RPM
+  // Vollgas      -> ungefähr 4800 RPM
+  let kickdownTargetRpm =
+    2800 +
+    kickdownDemand * 2000;
+
+  // Nicht so weit zurückschalten,
+  // dass der Gang direkt wieder hochgeschaltet wird.
+  const sportShift =
+    Math.min(
+      Number(config.shiftRpm),
+      maxRpm
+    );
+
+  kickdownTargetRpm =
+    Math.min(
+      kickdownTargetRpm,
+      sportShift * 0.88,
+      maxRpm * 0.88
+    );
+
+  let kickdownGear =
+    currentGear;
+
+  // Niedrigsten sinnvollen Gang suchen.
+  for (
+    let gear = currentGear - 1;
+    gear >= 1;
+    gear--
+  ) {
+    const candidateRpm =
+      rpmForGear(
+        speedKmh,
+        gear,
+        config
+      );
+
+    if (
+      candidateRpm <=
+      kickdownTargetRpm
+    ) {
+      kickdownGear =
+        gear;
+    } else {
+      break;
+    }
+  }
+
+  if (kickdownGear < currentGear) {
+    currentGear =
+      kickdownGear;
+
+    rpm =
+      rpmForGear(
+        speedKmh,
+        currentGear,
+        config
+      );
+
+    lastShiftAt =
+      nowMs;
+
+    didKickdown = true;
+  }
+}
 
 // Gewünschte Drehzahl NACH dem Zurückschalten.
 //
@@ -300,6 +390,7 @@ const downshiftAggression =
 
 if (
   canShift &&
+  !didKickdown &&
   currentGear > 1
 ) {
   const currentRatio =
