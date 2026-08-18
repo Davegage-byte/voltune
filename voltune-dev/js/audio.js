@@ -215,19 +215,6 @@ window.VoltuneAudio = (() => {
       .connect(idleDriftDepth)
       .connect(idlePulseOsc.frequency);
 
-    // Sehr langsame Bewegung der Klangfarbe.
-    // Der Idle wird dadurch etwas lebendiger,
-    // ohne dass man einen eigenen Effekt heraushört.
-    idleToneOsc = createOsc("sine");
-    idleToneOsc.frequency.value = 0.09;
-    
-    idleToneDepth = ctx.createGain();
-    idleToneDepth.gain.value = 18;
-    
-    idleToneOsc
-      .connect(idleToneDepth)
-      .connect(idleFilter.frequency);
-    
     idleFilter =
       ctx.createBiquadFilter();
     
@@ -239,6 +226,19 @@ window.VoltuneAudio = (() => {
     
     idleFilter.Q.value =
       0.7;
+
+        // Sehr langsame Bewegung der Klangfarbe.
+        // Der Idle wird dadurch etwas lebendiger,
+        // ohne dass man einen eigenen Effekt heraushört.
+        idleToneOsc = createOsc("sine");
+        idleToneOsc.frequency.value = 0.09;
+        
+        idleToneDepth = ctx.createGain();
+        idleToneDepth.gain.value = 18;
+        
+        idleToneOsc
+          .connect(idleToneDepth)
+          .connect(idleFilter.frequency);
     
     idle1
       .connect(idleGain)
