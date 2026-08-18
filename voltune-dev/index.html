@@ -168,6 +168,26 @@
     >
   </div>
 
+<div class="control control-driving">
+  <div class="top">
+    <span>Konstantfahrt-Dämpfung</span>
+    <span id="cruiseDampingLabel">70 %</span>
+  </div>
+
+  <input
+    id="cruiseDamping"
+    type="range"
+    min="0"
+    max="100"
+    step="1"
+    value="70"
+  >
+
+  <small style="color:#7f8b9b">
+    0 % = keine Dämpfung · 100 % = bei Konstantfahrt stumm
+  </small>
+</div>
+    
     <div class="control control-rpm">
       <div class="top"><span>Drehzahl-Pitch</span><span id="pitchLabel">2.1×</span></div>
       <input id="pitch" type="range" min="8" max="35" value="21">
