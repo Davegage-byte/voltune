@@ -262,6 +262,28 @@ button:hover{
     1px solid #bd3b3b;
 }
 
+/* Debug-Inhalte standardmäßig verstecken */
+.debugOnly{
+  display:none !important;
+}
+
+/* Werden später per Debug-Button eingeblendet */
+body.debugActive .debugOnly{
+  display:block !important;
+}
+
+/* Zentraler Start-Button */
+#gps.mainStartButton{
+  background:#176b4f;
+  color:#effff9;
+  border:1px solid #2fa77e;
+}
+
+#debug{
+  background:#232c38;
+  color:#f4f7fb;
+  border:1px solid #344150;
+}
 
 /* =========================
    GPS / Debug
