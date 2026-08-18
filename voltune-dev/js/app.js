@@ -547,6 +547,8 @@ ui.gpsSmoothAccel.textContent =
       gearsEnabled ? "1" : "Direkt";
     ui.rpmDisplay.textContent = "0 RPM";
     ui.shiftTargetDisplay.textContent = "–";
+    ui.speedBar.style.width = "0%";
+    
     renderVisual(0,0,"Gestoppt");
   }
 
