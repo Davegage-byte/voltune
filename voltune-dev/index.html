@@ -61,17 +61,30 @@
     </div>
   </div>
 
-  <div class="buttons sideButtons">
-    <button id="gps" class="mainStartButton">Start</button>
-  
-    <button id="stop">STOP</button>
-    <button id="mute">Stumm</button>
-    <button id="debug" aria-pressed="false">Debug</button>
-  
-    <button id="start" class="debugOnly">Sound + Demo starten</button>
-    <button id="restart" class="debugOnly">Demo neu starten</button>
-    <button id="controller" class="debugOnly">Controller fahren</button>
-  </div>
+    <div class="buttons sideButtons">
+      <button id="gps" class="mainStartButton">Start</button>
+    
+      <button id="stop">STOP</button>
+      <button id="mute">Stumm</button>
+    
+      <button id="easyBov" class="featureBtn">
+        EasyBOV
+      </button>
+    
+      <button id="gears" class="featureBtn active">
+        Gänge
+      </button>
+    
+      <button id="dynamicShift" class="featureBtn active">
+        Dynamik
+      </button>
+    
+      <button id="debug" aria-pressed="false">Debug</button>
+    
+      <button id="start" class="debugOnly">Sound + Demo starten</button>
+      <button id="restart" class="debugOnly">Demo neu starten</button>
+      <button id="controller" class="debugOnly">Controller fahren</button>
+    </div>
 
     <div class="gpsPanel debugOnly">
       <div class="gpsItem"><span class="label">GPS-Status</span><b id="gpsStatus">nicht gestartet</b></div>
@@ -131,21 +144,6 @@
     </div>
     <input id="speedTest" type="range" min="0" max="270" step="1" value="0">
     <small>0–270 km/h. Beim Bewegen wird die Demo pausiert. Schnell hochziehen erzeugt Beschleunigung, schnell runterziehen Reku/BOV.</small>
-  </div>
-
-  <div class="featureRow">
-    <button id="easyBov" class="featureBtn">
-      EasyBOV: AUS
-      <span class="featureHint">Normale Reku reicht zum Triggern</span>
-    </button>
-    <button id="gears" class="featureBtn active">
-      Virtuelle Gänge: AN
-      <span class="featureHint">6-Gang RPM-Modell</span>
-    </button>
-    <button id="dynamicShift" class="featureBtn active">
-      Dynamische Schalt-RPM: AN
-      <span class="featureHint">Sanft früh · stark spät</span>
-    </button>
   </div>
 
   <div class="controls">
