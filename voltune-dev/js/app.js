@@ -354,7 +354,21 @@ lastTransmissionGear =
     
     ui.speedBar.style.width =
       `${rpmBarPercent}%`;
-  
+      const shiftMarkerPercent =
+  transmission.direct
+    ? 101
+    : clamp(
+        transmission.shiftTarget /
+          transmission.maxRpm *
+          100,
+        0,
+        100
+      );
+
+ui.speedBar.parentElement.style.setProperty(
+  "--shift-marker",
+  `${shiftMarkerPercent}%`
+);
     ui.drivingStyleDisplay.textContent =
       Number(
         transmission.drivingStyle ?? 0
@@ -533,6 +547,11 @@ ui.gpsSmoothAccel.textContent =
     ui.rpmDisplay.textContent = "0 RPM";
     ui.shiftTargetDisplay.textContent = "–";
     ui.speedBar.style.width = "0%";
+
+    ui.speedBar.parentElement.style.setProperty(
+      "--shift-marker",
+      "101%"
+    );
     
     renderVisual(0,0,"Gestoppt");
   }
@@ -1164,6 +1183,25 @@ ui.controller.addEventListener(
     ui.gears.classList.toggle("active", gearsEnabled);
     VoltuneDrivetrain.reset();
 
+    const markerPercent =
+      gearsEnabled
+        ? clamp(
+            Number(ui.shiftRpm.value) /
+              Math.max(
+                1,
+                Number(ui.maxRpm.value)
+              ) *
+              100,
+            0,
+            100
+          )
+        : 101;
+    
+    ui.speedBar.parentElement.style.setProperty(
+      "--shift-marker",
+      `${markerPercent}%`
+    );
+    
     if (soundActive) {
       if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
       else updateVoltuneSound(manualSpeed, manualAccel);
@@ -1336,7 +1374,31 @@ ui.debug.addEventListener("click", () => {
       }
   
       updateLabels();
-  
+
+      if (
+        el === ui.maxRpm ||
+        el === ui.shiftRpm
+      ) {
+        const markerPercent =
+          gearsEnabled
+            ? clamp(
+                Number(ui.shiftRpm.value) /
+                  Math.max(
+                    1,
+                    Number(ui.maxRpm.value)
+                  ) *
+                  100,
+                0,
+                100
+              )
+            : 101;
+      
+        ui.speedBar.parentElement.style.setProperty(
+          "--shift-marker",
+          `${markerPercent}%`
+        );
+      }
+        
       if (el === ui.volume) {
         setMasterVolume();
       }
@@ -1419,6 +1481,25 @@ ui.shiftTargetDisplay.textContent =
     ? `${ui.shiftRpm.value} RPM`
     : "–";
 
+const initialShiftMarkerPercent =
+  gearsEnabled
+    ? clamp(
+        Number(ui.shiftRpm.value) /
+          Math.max(
+            1,
+            Number(ui.maxRpm.value)
+          ) *
+          100,
+        0,
+        100
+      )
+    : 101;
+
+ui.speedBar.parentElement.style.setProperty(
+  "--shift-marker",
+  `${initialShiftMarkerPercent}%`
+);
+  
 renderVisual(
   0,
   0,
