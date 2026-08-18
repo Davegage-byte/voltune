@@ -155,6 +155,74 @@ h1{
   font-variant-numeric:tabular-nums;
 }
 
+.gearInfo b{
+  font-size:46px;
+  line-height:1;
+  font-weight:850;
+}
+
+.gearInfo{
+  background:
+    rgba(155,90,25,.10) !important;
+
+  border-color:
+    rgba(255,169,77,.35) !important;
+}
+
+.gearInfo b{
+  color:#ffc078;
+}
+
+.rpmInfo b{
+  font-size:24px;
+}
+
+.rpmBarLabel{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  margin-top:16px;
+
+  color:var(--muted);
+  font-size:12px;
+  font-weight:650;
+}
+
+.rpmBar{
+  height:14px;
+  margin-top:6px;
+}
+
+.rpmBar > div{
+  box-shadow:
+    0 0 10px rgba(255,169,77,.28);
+}
+
+.rpmBar{
+  position:relative;
+}
+
+.rpmBar::after{
+  content:"";
+
+  position:absolute;
+  top:0;
+  bottom:0;
+
+  left:var(--shift-marker, 92%);
+
+  width:2px;
+
+  background:
+    rgba(255,255,255,.85);
+
+  box-shadow:
+    0 0 5px rgba(255,255,255,.35);
+
+  pointer-events:none;
+}
+
 .stateBox{
   min-width:0;
 }
@@ -181,12 +249,14 @@ h1{
   width:0%;
   height:100%;
 
-    background:
-      linear-gradient(
-        90deg,
-        #ffa94d,
-        #ff6262
-      );
+  background:
+    linear-gradient(
+      90deg,
+      #ffa94d 0%,
+      #ffa94d 72%,
+      #ff8a4d 86%,
+      #ff6262 100%
+    );
 
   transition:
     width .06s linear;
