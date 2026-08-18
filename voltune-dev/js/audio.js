@@ -1297,7 +1297,7 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     setTarget(
       baseGain1.gain,
-      cruiseScale
+      baseAmount *
         cruiseScale *
         (
           0.09 +
@@ -1306,10 +1306,10 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
         ),
       0.08
     );
-
+    
     setTarget(
       baseGain2.gain,
-      cruiseScale
+      baseAmount *
         cruiseScale *
         (
           0.012 +
@@ -1317,11 +1317,11 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
         ),
       0.08
     );
-
+    
     setTarget(
       subGain.gain,
       baseAmount *
-        cruiseScale
+        cruiseScale *
         (
           0.055 -
           speedN * 0.024
