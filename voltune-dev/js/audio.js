@@ -1952,6 +1952,10 @@ lastAccel = accel;
     bovPressure = 0;
     bovArmed = false;
     bovPeakAccel = 0;
+
+    lastOverrunAt = -9999;
+    overrunPeakAccel = 0;
+    overrunArmed = false;
   
     steadySince = null;
     cruiseQuiet = 0;
@@ -1966,8 +1970,9 @@ lastAccel = accel;
     update,
 
     triggerBov,
+    triggerOverrun,
     triggerShiftBurble,
-
+    
     setMasterVolume,
     setMuted,
 
