@@ -30,14 +30,14 @@
     cruiseDamping:$("cruiseDamping"),
     gearRange:$("gearRange"), maxRpm:$("maxRpm"), shiftRpm:$("shiftRpm"), shiftBurble:$("shiftBurble"),
     baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
-    regen:$("regen"), air:$("air"), bov:$("bov"),
+    regen:$("regen"), air:$("air"), bov:$("bov"), overrun:$("overrun"),
 
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
     cruiseDampingLabel:$("cruiseDampingLabel"),
     gearRangeLabel:$("gearRangeLabel"), maxRpmLabel:$("maxRpmLabel"), shiftRpmLabel:$("shiftRpmLabel"), shiftBurbleLabel:$("shiftBurbleLabel"),
     baseVolLabel:$("baseVolLabel"), inverterLabel:$("inverterLabel"),
     driveLabel:$("driveLabel"), regenLabel:$("regenLabel"),
-    airLabel:$("airLabel"), bovLabel:$("bovLabel")
+    airLabel:$("airLabel"), bovLabel:$("bovLabel"), overrunLabel:$("overrunLabel")
   };
 
   let soundActive = false;
@@ -116,7 +116,8 @@
     regenVolume: Number(ui.regen.value),
     airVolume: Number(ui.air.value),
     bovVolume: Number(ui.bov.value),
-
+    overrunVolume: Number(ui.overrun.value),
+    
     easyBovEnabled
   };
 }
@@ -140,6 +141,7 @@ function getPersistentSettings() {
     regenVolume: Number(ui.regen.value),
     airVolume: Number(ui.air.value),
     bovVolume: Number(ui.bov.value),
+    overrunVolume: Number(ui.overrun.value),
 
     easyBovEnabled,
     gearsEnabled,
@@ -187,6 +189,7 @@ function applyPersistentSettings(settings) {
   setNumber(ui.regen, settings.regenVolume);
   setNumber(ui.air, settings.airVolume);
   setNumber(ui.bov, settings.bovVolume);
+  setNumber(ui.overrun, settings.overrunVolume);
 
   if (typeof settings.easyBovEnabled === "boolean") {
     easyBovEnabled = settings.easyBovEnabled;
@@ -1267,6 +1270,7 @@ ui.controller.addEventListener(
     ui.regenLabel.textContent = `${ui.regen.value} %`;
     ui.airLabel.textContent = `${ui.air.value} %`;
     ui.bovLabel.textContent = `${ui.bov.value} %`;
+    ui.overrunLabel.textContent = `${ui.overrun.value} %`;
   };
 
   [
@@ -1284,7 +1288,8 @@ ui.controller.addEventListener(
     ui.drive,
     ui.regen,
     ui.air,
-    ui.bov
+    ui.bov,
+    ui.overrun
   ].forEach(el => {
     el.addEventListener("input", () => {
   
