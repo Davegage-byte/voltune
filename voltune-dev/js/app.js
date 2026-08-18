@@ -93,6 +93,7 @@
   let lastTransmissionGear = 1;
 
   let lastState = "idle";
+  let overrunFlashUntil = 0;
 
   // ----- Experimentelle Komfortfunktionen -----
   let easyBovEnabled = false;
@@ -376,6 +377,10 @@ lastTransmissionGear =
 
   // Anzeigen der einzelnen Sound-Layer
   if (soundState) {
+    if (soundState.overrunTriggered) {
+      overrunFlashUntil =
+        performance.now() + 800;
+    }
     ui.baseHz.textContent =
       `${Math.round(soundState.fundamentalHz)} Hz`;
 
@@ -544,7 +549,10 @@ ui.gpsSmoothAccel.textContent =
   function renderVisual(speedKmh, accel, state) {
     ui.speed.textContent = Math.round(speedKmh);
     ui.accel.textContent = accel.toFixed(2);
-    ui.state.textContent = state;
+    ui.state.textContent =
+      performance.now() < overrunFlashUntil
+        ? "SCHUBKNALLEN"
+        : state;
     ui.speedBar.style.width = `${clamp(speedKmh/270*100,0,100)}%`;
   }
 
