@@ -399,6 +399,9 @@ function stop() {
   muted = false;
   lastAccel = 0;
   lastBovAt = -9999;
+  bovPressure = 0;
+  bovArmed = false;
+  bovPeakAccel = 0;
 }
 
   function setMasterVolume(percent) {
@@ -1107,10 +1110,10 @@ lastSoundUpdate = nowMs;
 // baut weniger Druck auf und lädt langsamer.
 const easyBov = settings.easyBovEnabled;
 
-const pressureStart = easyBov ? 0.20 : 0.35;
-const pressureOffset = easyBov ? 0.15 : 0.30;
-const pressureRange = easyBov ? 2.8 : 3.4;
-const chargeTime = easyBov ? 0.55 : 0.95;
+const pressureStart = easyBov ? 0.20 : 0.45;
+const pressureOffset = easyBov ? 0.15 : 0.40;
+const pressureRange = easyBov ? 2.8 : 3.8;
+const chargeTime = easyBov ? 0.55 : 1.20;
 
   if (accel > pressureStart) {
     bovPeakAccel = Math.max(bovPeakAccel, accel);
@@ -1131,16 +1134,23 @@ const chargeTime = easyBov ? 0.55 : 0.95;
   // EasyBOV wird weiterhin sehr früh scharf.
   // Normal-BOV benötigt deutlich mehr Druck
   // und eine stärkere Beschleunigung.
-  const armPressure = easyBov ? 0.05 : 0.18;
-  const armAccel = easyBov ? 0.25 : 0.55;
+  const armPressure = easyBov ? 0.05 : 0.22;
+  const armAccel = easyBov ? 0.25 : 0.65;
 
   if (bovPressure > armPressure && accel > armAccel) {
     bovArmed = true;
   }
 
 } else if (!bovArmed) {
-  // Nur ungenutzten Restdruck langsam abbauen.
+  // Ungenutzten Restdruck langsam abbauen.
   bovPressure *= Math.exp(-dt / 3.5);
+
+  // Wenn praktisch kein Druck mehr vorhanden ist,
+  // auch die alte Beschleunigungsphase vergessen.
+  if (bovPressure < 0.01) {
+    bovPressure = 0;
+    bovPeakAccel = 0;
+  }
 }
 
 bovPressure =
@@ -1519,8 +1529,19 @@ const peakAccelDrop = bovPeakAccel - accel;
 // auch bei noch positiver Beschleunigung auslösen.
 // Entscheidend ist die deutliche Lastwegnahme.
 const releasePressure = easyBov ? 0.025 : 0.14;
-const releaseAccel = easyBov ? 0.55 : 0.40;
+const releaseAccel = easyBov ? 0.55 : 0.45;
 const peakDropNeeded = easyBov ? 0.25 : 0.45;
+
+// Wie viel von der vorherigen Last noch übrig ist.
+// Beispiel:
+// Peak 3,0 m/s² -> aktuell 0,6 m/s² = 20 %
+const remainingLoad = bovPeakAccel > 0
+  ? accel / bovPeakAccel
+  : 1;
+
+const relativeLoadDrop = easyBov
+  ? remainingLoad < 0.45
+  : remainingLoad < 0.35;
 
 // Sehr schnelle Lastwegnahme zusätzlich direkt erkennen.
 const abruptLastAccel = easyBov ? 0.35 : 0.70;
@@ -1533,8 +1554,11 @@ const bovRelease =
     // Die starke Beschleunigungsphase ist vorbei.
     // Das Fahrzeug darf dabei noch leicht weiterbeschleunigen.
     (
-      accel < releaseAccel &&
-      peakAccelDrop > peakDropNeeded
+      peakAccelDrop > peakDropNeeded &&
+      (
+        accel < releaseAccel ||
+        relativeLoadDrop
+      )
     ) ||
 
     // Schnelles Lupfen direkt erkennen.
