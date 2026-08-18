@@ -23,7 +23,22 @@
       <div class="label">Geschwindigkeit</div>
       <div class="speed" id="speed">0</div>
       <div class="unit">km/h</div>
-      <div class="bar"><div id="speedBar"></div></div>
+    
+      <div class="driveInfo">
+        <div>
+          <span class="label">Gang</span>
+          <b id="gearDisplay">–</b>
+        </div>
+    
+        <div>
+          <span class="label">Drehzahl</span>
+          <b id="rpmDisplay">0 RPM</b>
+        </div>
+      </div>
+    
+      <div class="bar">
+        <div id="speedBar"></div>
+      </div>
     </div>
 
     <div class="stateBox">
@@ -31,14 +46,12 @@
       <div class="state" id="state">Bereit</div>
       <div class="accel"><span id="accel">0.00</span> m/s²</div>
 
-      <div class="meter">
+      <div class="meter debugOnly">
         <div><span class="label">Base</span><b id="baseHz">55 Hz</b></div>
         <div><span class="label">Inverter</span><b id="invHz">240 Hz</b></div>
         <div><span class="label">Drive</span><b id="drivePct">0 %</b></div>
         <div><span class="label">Reku</span><b id="regenPct">0 %</b></div>
         <div><span class="label">Ladedruck</span><b id="bovPressureDisplay">0 %</b></div>
-        <div><span class="label">Gang</span><b id="gearDisplay">–</b></div>
-        <div><span class="label">RPM</span><b id="rpmDisplay">0 RPM</b></div>
         <div><span class="label">Schaltziel</span><b id="shiftTargetDisplay">–</b></div>
         <div>
           <span class="label">Fahrstil</span>
@@ -49,24 +62,28 @@
   </div>
 
   <div class="buttons sideButtons">
-    <button id="start">Sound + Demo starten</button>
-    <button id="gps">GPS fahren</button>
-    <button id="controller">Controller fahren</button>
-    <button id="restart">Demo neu starten</button>
+    <button id="gps" class="mainStartButton">Start</button>
+  
     <button id="stop">STOP</button>
     <button id="mute">Stumm</button>
+    <button id="debug" aria-pressed="false">Debug</button>
+  
+    <button id="start" class="debugOnly">Sound + Demo starten</button>
+    <button id="restart" class="debugOnly">Demo neu starten</button>
+    <button id="controller" class="debugOnly">Controller fahren</button>
   </div>
 
   <div class="gpsPanel">
+    <div class="gpsPanel debugOnly">
     <div class="gpsItem"><span class="label">GPS-Status</span><b id="gpsStatus">nicht gestartet</b></div>
     <div class="gpsItem"><span class="label">Genauigkeit</span><b id="gpsAccuracy">–</b></div>
     <div class="gpsItem"><span class="label">GPS-Rate</span><b id="gpsHz">0.0 Hz</b></div>
     <div class="gpsItem"><span class="label">Kontext</span><b id="secureContext">–</b></div>
       </div>
       
-      <div class="gpsPanel">
-        <div class="gpsItem">
-          <span class="label">Raw Speed</span>
+    <div class="gpsPanel debugOnly">
+      <div class="gpsItem">
+        <span class="label">Raw Speed</span>
           <b id="gpsRawSpeed">0.0 km/h</b>
         </div>
       
@@ -86,9 +103,9 @@
         </div>
       </div>
       
-        <div class="gpsPanel">
-        <div class="gpsItem">
-          <span class="label">Controller</span>
+    <div class="gpsPanel debugOnly">
+      <div class="gpsItem">
+        <span class="label">Controller</span>
           <b id="gamepadStatus">nicht verbunden</b>
         </div>
       
