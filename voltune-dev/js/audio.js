@@ -1631,10 +1631,19 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       0.04
     );
 
+    const subFrequency =
+      clamp(
+        30 +
+          rpmN * 12 +
+          pos * 6,
+        30,
+        48
+      );
+    
     setTarget(
       sub.frequency,
-      fundamental * 0.5,
-      0.05
+      subFrequency,
+      0.07
     );
 
     setTarget(
@@ -1670,16 +1679,23 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
         ),
       0.08
     );
+
+    const subLevel =
+      clamp(
+        0.045 +
+          rpmN * 0.018 +
+          pos * 0.040 -
+          speedN * 0.018,
+        0.035,
+        0.105
+      );
     
     setTarget(
       subGain.gain,
       baseAmount *
         driveMix *
         cruiseScale *
-        (
-          0.055 -
-          speedN * 0.024
-        ),
+        subLevel,
       0.08
     );
 
