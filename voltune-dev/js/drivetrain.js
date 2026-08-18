@@ -204,7 +204,6 @@ function updateDrivingStyle(accel) {
 
     if (!config.gearsEnabled) {
       currentGear = 1;
-      drivingStyle,
 
       virtualRpm = clamp(
         (speedKmh / rangeKmh) * maxRpm,
@@ -246,7 +245,6 @@ function updateDrivingStyle(accel) {
     );
   
     lastShiftAt = nowMs;
-    lastKickdownAt = nowMs;
   }
 
   // Beim normalen Rollen nicht zu früh zurückschalten.
@@ -337,9 +335,9 @@ if (
         config
       );
 
-    lastShiftAt =
-      nowMs;
-
+    lastShiftAt = nowMs;
+    lastKickdownAt = nowMs;
+    
     didKickdown = true;
   }
 }
