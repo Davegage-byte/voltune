@@ -35,6 +35,9 @@ window.VoltuneAudio = (() => {
   let bovPressure = 0;
   let bovArmed = false;
   let bovPeakAccel = 0;
+  let lastOverrunAt = -9999;
+  let overrunPeakAccel = 0;
+  let overrunArmed = false;
 
     // Konstantfahrt-Erkennung
   let steadySince = null;
@@ -470,6 +473,10 @@ function stop() {
   bovPressure = 0;
   bovArmed = false;
   bovPeakAccel = 0;
+  
+  lastOverrunAt = -9999;
+  overrunPeakAccel = 0;
+  overrunArmed = false;
 }
 
   function setMasterVolume(percent) {
@@ -768,10 +775,164 @@ function stop() {
 
     zap.stop(
       now + 0.3
-    );
+    ); 
   }
 
+// =========================
+// Schubknallen / Nachblubbern
+// =========================
 
+function triggerOverrun(
+  intensity = 1,
+  volumePercent = 50
+) {
+  if (
+    !started ||
+    !ctx ||
+    !master
+  ) {
+    return;
+  }
+
+  const amount =
+    clamp(
+      Number(intensity) || 0,
+      0,
+      1
+    );
+
+  const volume =
+    clamp(
+      Number(volumePercent) / 100,
+      0,
+      1
+    );
+
+  if (
+    amount <= 0.01 ||
+    volume <= 0.001
+  ) {
+    return;
+  }
+
+  const now =
+    ctx.currentTime;
+
+  // Stärkere vorherige Last erzeugt
+  // einen längeren Nachlauf mit mehr Impulsen.
+  const duration =
+    0.45 +
+    amount * 0.45;
+
+  const popCount =
+    2 +
+    Math.round(
+      amount * 4
+    );
+
+  for (
+    let i = 0;
+    i < popCount;
+    i++
+  ) {
+    // Nicht perfekt gleichmäßig verteilen.
+    // Dadurch entsteht eher ein natürliches
+    // Brabbeln als ein Metronom.
+    const progress =
+      (i + 1) /
+      (popCount + 1);
+
+    const randomOffset =
+      (Math.random() - 0.5) *
+      0.08;
+
+    const popTime =
+      now +
+      0.04 +
+      progress * duration +
+      randomOffset;
+
+    const popDuration =
+      0.10 +
+      Math.random() * 0.07;
+
+    const pop =
+      ctx.createOscillator();
+
+    pop.type =
+      "sawtooth";
+
+    pop.frequency.setValueAtTime(
+      62 +
+        Math.random() * 24 +
+        amount * 12,
+      popTime
+    );
+
+    pop.frequency.exponentialRampToValueAtTime(
+      38 +
+        Math.random() * 10,
+      popTime + popDuration
+    );
+
+    const filter =
+      ctx.createBiquadFilter();
+
+    filter.type =
+      "lowpass";
+
+    filter.frequency.value =
+      280 +
+      amount * 260;
+
+    filter.Q.value =
+      0.8;
+
+    const gain =
+      ctx.createGain();
+
+    const randomStrength =
+      0.70 +
+      Math.random() * 0.30;
+
+    const peak =
+      (
+        0.018 +
+        amount * 0.070
+      ) *
+      volume *
+      randomStrength;
+
+    gain.gain.setValueAtTime(
+      0.0001,
+      popTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      peak,
+      popTime + 0.008
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      popTime + popDuration
+    );
+
+    pop
+      .connect(filter)
+      .connect(gain)
+      .connect(master);
+
+    pop.start(popTime);
+
+    pop.stop(
+      popTime +
+      popDuration +
+      0.02
+    );
+  }
+}
+  
 // =========================
 // DSG-Schaltblubbern
 // =========================
@@ -1242,6 +1403,43 @@ const chargeTime = easyBov ? 0.55 : 1.20;
 
 bovPressure =
   clamp(bovPressure, 0, 1);
+
+// =========================
+// Schubknallen vorbereiten
+// =========================
+
+// Kräftige Beschleunigung merken.
+// Das Schubknallen arbeitet bewusst
+// unabhängig von EasyBOV und BOV-Druck.
+if (accel > 0.65) {
+  overrunPeakAccel =
+    Math.max(
+      overrunPeakAccel,
+      accel
+    );
+}
+
+// Erst nach deutlich spürbarer Last
+// darf beim späteren Lupfen geknallt werden.
+if (
+  overrunPeakAccel > 0.95
+) {
+  overrunArmed = true;
+}
+
+// Wenn nie genug Last aufgebaut wurde,
+// einen kleinen Restwert langsam vergessen.
+if (
+  !overrunArmed &&
+  accel < 0.25
+) {
+  overrunPeakAccel *=
+    Math.exp(-dt / 2.5);
+
+  if (overrunPeakAccel < 0.05) {
+    overrunPeakAccel = 0;
+  }
+}
 // Erst ab etwas Geschwindigkeit.
 // An der Ampel soll das Brummen bestehen bleiben.
 // =========================
@@ -1682,6 +1880,53 @@ if (bovRelease) {
   bovPeakAccel = 0;
 }
 
+// =========================
+// Schubknallen auslösen
+// =========================
+
+const overrunDrop =
+  overrunPeakAccel - accel;
+
+const overrunRelease =
+  overrunArmed &&
+  (
+    // Deutliches Lupfen nach stärkerer Last.
+    (
+      overrunDrop > 0.65 &&
+      accel < 0.45
+    ) ||
+
+    // Sehr schnelle Lastwegnahme direkt erkennen.
+    (
+      lastAccel > 0.75 &&
+      accelDrop > 0.40
+    )
+  );
+
+if (
+  overrunRelease &&
+  nowMs - lastOverrunAt > 700
+) {
+  const overrunIntensity =
+    clamp(
+      (overrunPeakAccel - 0.8) / 2.5,
+      0.15,
+      1
+    );
+
+  triggerOverrun(
+    overrunIntensity,
+    settings.overrunVolume
+  );
+
+  lastOverrunAt = nowMs;
+
+  // Die gespeicherte Last ist nach einem
+  // Schubknallen verbraucht.
+  overrunPeakAccel = 0;
+  overrunArmed = false;
+}
+    
 lastAccel = accel;
 
     // Diese Werte braucht app.js
