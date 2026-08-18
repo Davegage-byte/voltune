@@ -1206,17 +1206,10 @@ if (quietTarget) {
 cruiseQuiet =
   clamp(cruiseQuiet, 0, 1);
 
-// Bei voller Beruhigung:
-// Base noch ca. 32 %
-// Inverter noch ca. 22 %
-const baseCruiseScale =
-  1 - cruiseQuiet * 0.68;
-
-const inverterCruiseScale =
-  1 - cruiseQuiet * 0.78;
-
-const subCruiseScale =
-  1 - cruiseQuiet * 0.35;
+// 0 % = keine Dämpfung
+// 100 % = bei voller Konstantfahrt stumm
+const cruiseDamping = clamp(Number(settings.cruiseDamping ?? 70) / 100, 0, 1);
+const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     // =========================
     // Stillstand / Idle
@@ -1309,8 +1302,8 @@ const subCruiseScale =
 
     setTarget(
       baseGain1.gain,
-      baseAmount *
-        baseCruiseScale *
+      cruiseScale
+        cruiseScale *
         (
           0.09 +
           speedN * 0.07 +
@@ -1321,8 +1314,8 @@ const subCruiseScale =
 
     setTarget(
       baseGain2.gain,
-      baseAmount *
-        baseCruiseScale *
+      cruiseScale
+        cruiseScale *
         (
           0.012 +
           speedN * 0.018
@@ -1333,7 +1326,7 @@ const subCruiseScale =
     setTarget(
       subGain.gain,
       baseAmount *
-        subCruiseScale *
+        cruiseScale
         (
           0.055 -
           speedN * 0.024
@@ -1379,9 +1372,9 @@ const subCruiseScale =
       0.06
     );
 
-    const invLevel =
-      inverterAmount *
-      inverterCruiseScale *
+      const invLevel =
+        inverterAmount *
+        cruiseScale *
       (
         0.006 +
         speedN * 0.027 +
@@ -1499,6 +1492,7 @@ const subCruiseScale =
 
     const airLevel =
       airAmount *
+      cruiseScale *
       (
         speedN * 0.005 +
         pos * 0.011 +
