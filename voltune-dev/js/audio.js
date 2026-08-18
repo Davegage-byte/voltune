@@ -12,7 +12,11 @@ window.VoltuneAudio = (() => {
   let baseGain1, baseGain2, subGain, baseFilter;
 
   let idle1, idle2;
-  let idleGain, idleFilter;
+  let idleGain, idle2Gain, idleFilter;
+  
+  let idlePulseOsc, idlePulseDepth, idlePulseGain;
+  let idleDriftOsc, idleDriftDepth;
+  let idleToneOsc, idleToneDepth;
 
   let inv1, inv2, inv3;
   let invGain1, invGain2, invGain3, invFilter;
@@ -170,23 +174,59 @@ window.VoltuneAudio = (() => {
     // Zwei eng benachbarte Frequenzen.
     // Durch ihre Überlagerung entsteht
     // ein langsames rhythmisches Wummern.
-    idle1 =
-      createOsc("sine");
+    idle1 = createOsc("sine");
+    idle2 = createOsc("triangle");
     
-    idle2 =
-      createOsc("sine");
-    
-    idle1.frequency.value =
-      42;
-    
-    idle2.frequency.value =
-      44;
+    idle1.frequency.value = 39;
+    idle2.frequency.value = 78;
     
     idleGain =
       ctx.createGain();
     
     idleGain.gain.value =
       0.0001;
+
+    idle2Gain = ctx.createGain();
+    idle2Gain.gain.value = 0.22;
+
+    idlePulseGain = ctx.createGain();
+    idlePulseGain.gain.value = 0.82;
+    
+    idlePulseOsc = createOsc("sine");
+    idlePulseOsc.frequency.value = 1.35;
+    
+    idlePulseDepth = ctx.createGain();
+    idlePulseDepth.gain.value = 0.18;
+    
+    idlePulseOsc
+      .connect(idlePulseDepth)
+      .connect(idlePulseGain.gain);
+
+    // Sehr langsames Wandern der Pulsrate.
+    // Dadurch wirkt der Idle weniger synthetisch
+    // und nicht wie ein perfektes Metronom.
+    idleDriftOsc = createOsc("sine");
+    idleDriftOsc.frequency.value = 0.17;
+    
+    idleDriftDepth = ctx.createGain();
+    idleDriftDepth.gain.value = 0.18;
+    
+    idleDriftOsc
+      .connect(idleDriftDepth)
+      .connect(idlePulseOsc.frequency);
+
+    // Sehr langsame Bewegung der Klangfarbe.
+    // Der Idle wird dadurch etwas lebendiger,
+    // ohne dass man einen eigenen Effekt heraushört.
+    idleToneOsc = createOsc("sine");
+    idleToneOsc.frequency.value = 0.09;
+    
+    idleToneDepth = ctx.createGain();
+    idleToneDepth.gain.value = 18;
+    
+    idleToneOsc
+      .connect(idleToneDepth)
+      .connect(idleFilter.frequency);
     
     idleFilter =
       ctx.createBiquadFilter();
@@ -205,10 +245,13 @@ window.VoltuneAudio = (() => {
       .connect(idleFilter);
     
     idle2
+      .connect(idle2Gain)
       .connect(idleGain)
       .connect(idleFilter);
     
-    idleFilter.connect(master);
+    idleFilter
+      .connect(idlePulseGain)
+      .connect(master);
 
 
     // =========================
@@ -348,6 +391,9 @@ window.VoltuneAudio = (() => {
       sub,
       idle1,
       idle2,
+      idlePulseOsc,
+      idleDriftOsc,
+      idleToneOsc,
       inv1,
       inv2,
       inv3,
@@ -1217,23 +1263,21 @@ const cruiseDamping = clamp(Number(settings.cruiseDamping ?? 70) / 100, 0, 1);
 const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     // =========================
-    // Stillstand / Idle
+    // Idle ↔ Fahrsound Crossfade
     // =========================
     
-    // Bei 0 km/h volle Stärke.
-    // Bis etwa 5 km/h weich ausblenden.
-    const idleAmount =
-      1 -
-      clamp(
-        speedKmh / 5,
-        0,
-        1
-      );
+    // 0 km/h:
+    // Idle 100 % · Grundsound 0 %
+    //
+    // 5 km/h:
+    // Idle 0 % · Grundsound 100 %
+    const driveMix = clamp(speedKmh / 5, 0, 1);
+    const idleMix = 1 - driveMix;
     
     setTarget(
       idleGain.gain,
       baseAmount *
-        idleAmount *
+        idleMix *
         0.060,
       0.12
     );
@@ -1308,6 +1352,7 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     setTarget(
       baseGain1.gain,
       baseAmount *
+        driveMix *
         cruiseScale *
         (
           0.09 +
@@ -1320,6 +1365,7 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     setTarget(
       baseGain2.gain,
       baseAmount *
+        driveMix *
         cruiseScale *
         (
           0.012 +
@@ -1331,6 +1377,7 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     setTarget(
       subGain.gain,
       baseAmount *
+        driveMix *
         cruiseScale *
         (
           0.055 -
