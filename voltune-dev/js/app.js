@@ -210,30 +210,15 @@ function applyPersistentSettings(settings) {
     easyBovEnabled
   );
 
-  ui.easyBov.childNodes[0].nodeValue =
-    easyBovEnabled
-      ? "EasyBOV: AN\n      "
-      : "EasyBOV: AUS\n      ";
-
   ui.gears.classList.toggle(
     "active",
     gearsEnabled
   );
 
-  ui.gears.childNodes[0].nodeValue =
-    gearsEnabled
-      ? "Virtuelle Gänge: AN\n      "
-      : "Virtuelle Gänge: AUS\n      ";
-
   ui.dynamicShift.classList.toggle(
     "active",
     dynamicShiftEnabled
   );
-
-  ui.dynamicShift.childNodes[0].nodeValue =
-    dynamicShiftEnabled
-      ? "Dynamische Schalt-RPM: AN\n      "
-      : "Dynamische Schalt-RPM: AUS\n      ";
 }
   
 async function ensureVoltuneAudio() {
@@ -1171,14 +1156,12 @@ ui.controller.addEventListener(
   ui.easyBov.addEventListener("click", () => {
     easyBovEnabled = !easyBovEnabled;
     ui.easyBov.classList.toggle("active", easyBovEnabled);
-    ui.easyBov.childNodes[0].nodeValue = easyBovEnabled ? "EasyBOV: AN\n      " : "EasyBOV: AUS\n      ";
     scheduleSettingsSave();
   });
 
   ui.gears.addEventListener("click", () => {
     gearsEnabled = !gearsEnabled;
     ui.gears.classList.toggle("active", gearsEnabled);
-    ui.gears.childNodes[0].nodeValue = gearsEnabled ? "Virtuelle Gänge: AN\n      " : "Virtuelle Gänge: AUS\n      ";
     VoltuneDrivetrain.reset();
 
     if (soundActive) {
@@ -1196,8 +1179,6 @@ ui.controller.addEventListener(
   ui.dynamicShift.addEventListener("click", () => {
     dynamicShiftEnabled = !dynamicShiftEnabled;
     ui.dynamicShift.classList.toggle("active", dynamicShiftEnabled);
-    ui.dynamicShift.childNodes[0].nodeValue =
-      dynamicShiftEnabled ? "Dynamische Schalt-RPM: AN\n      " : "Dynamische Schalt-RPM: AUS\n      ";
 
     if (soundActive) {
       if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
