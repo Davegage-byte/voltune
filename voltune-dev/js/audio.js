@@ -882,8 +882,8 @@ function triggerOverrun(
       "lowpass";
 
     filter.frequency.value =
-      280 +
-      amount * 260;
+      420 +
+      amount * 480;
 
     filter.Q.value =
       0.8;
@@ -897,8 +897,8 @@ function triggerOverrun(
 
     const peak =
       (
-        0.018 +
-        amount * 0.070
+        0.07 +
+        amount * 0.24
       ) *
       volume *
       randomStrength;
@@ -922,14 +922,70 @@ function triggerOverrun(
       .connect(filter)
       .connect(gain)
       .connect(master);
-
-    pop.start(popTime);
-
-    pop.stop(
-      popTime +
-      popDuration +
-      0.02
-    );
+      // Kurzer Crackle-Anteil.
+      // Gibt jedem tiefen Impuls etwas Kontur,
+      // ohne daraus ein hartes PENG zu machen.
+      const crackle =
+        ctx.createBufferSource();
+      
+      crackle.buffer =
+        sharedNoiseBuffer;
+      
+      const crackleFilter =
+        ctx.createBiquadFilter();
+      
+      crackleFilter.type =
+        "bandpass";
+      
+      crackleFilter.frequency.value =
+        900 +
+        Math.random() * 700;
+      
+      crackleFilter.Q.value =
+        1.2;
+      
+      const crackleGain =
+        ctx.createGain();
+      
+      const cracklePeak =
+        (
+          0.012 +
+          amount * 0.045
+        ) *
+        volume *
+        randomStrength;
+      
+      crackleGain.gain.setValueAtTime(
+        0.0001,
+        popTime
+      );
+      
+      crackleGain.gain.exponentialRampToValueAtTime(
+        cracklePeak,
+        popTime + 0.004
+      );
+      
+      crackleGain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        popTime + 0.045
+      );
+      
+      crackle
+        .connect(crackleFilter)
+        .connect(crackleGain)
+        .connect(master);
+      pop.start(popTime);
+      crackle.start(popTime);
+      
+      pop.stop(
+        popTime +
+        popDuration +
+        0.02
+      );
+      
+      crackle.stop(
+        popTime + 0.06
+      );
   }
 }
   
@@ -1342,6 +1398,8 @@ const accelSpeedRise =
 // =========================
 
 const nowMs = performance.now();
+
+let overrunTriggered = false;
 
 const dt = clamp(
   (nowMs - lastSoundUpdate) / 1000,
@@ -1918,7 +1976,7 @@ if (
     overrunIntensity,
     settings.overrunVolume
   );
-
+  overrunTriggered = true;
   lastOverrunAt = nowMs;
 
   // Die gespeicherte Last ist nach einem
@@ -1942,7 +2000,9 @@ lastAccel = accel;
         Math.round(neg * 100),
     
       bovPressurePercent:
-        Math.round(bovPressure * 100)
+        Math.round(bovPressure * 100),
+      
+      overrunTriggered
     };
   }
 
