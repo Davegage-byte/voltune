@@ -901,7 +901,8 @@ function triggerOverrun(
         amount * 0.24
       ) *
       volume *
-      randomStrength;
+      randomStrength *
+      2.5;
 
     gain.gain.setValueAtTime(
       0.0001,
@@ -953,7 +954,8 @@ function triggerOverrun(
           amount * 0.045
         ) *
         volume *
-        randomStrength;
+        randomStrength *
+        2.5;
       
       crackleGain.gain.setValueAtTime(
         0.0001,
