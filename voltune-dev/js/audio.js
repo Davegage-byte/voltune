@@ -1994,7 +1994,7 @@ if (
 ) {
   const overrunIntensity =
     clamp(
-      (overrunPeakAccel - 0.8) / 2.5,
+      (overrunPeakAccel - 0.8) / 1.7,
       0.15,
       1
     );
