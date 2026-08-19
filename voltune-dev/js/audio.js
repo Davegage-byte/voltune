@@ -6,6 +6,7 @@ window.VoltuneAudio = (() => {
   let master = null;
   let compressor = null;
   let loudnessGain = null;
+  let overrunBus = null;
   let limiter = null;
   let started = false;
   
@@ -135,6 +136,13 @@ window.VoltuneAudio = (() => {
     loudnessGain = ctx.createGain();
     loudnessGain.gain.value = 0.0001;
     
+    // Eigener Ausgang für das Schubknallen.
+    // Umgeht den normalen Master-Compressor,
+    // läuft aber weiterhin durch Lautstärkeregler
+    // und Limiter.
+    overrunBus = ctx.createGain();
+    overrunBus.gain.value = 2.0;
+    
     // Letzte Schutzstufe direkt vor dem Ausgang.
     // Sie fängt nur sehr hohe Spitzen ab.
     limiter = ctx.createDynamicsCompressor();
@@ -150,6 +158,7 @@ window.VoltuneAudio = (() => {
       .connect(loudnessGain)
       .connect(limiter)
       .connect(ctx.destination);
+    overrunBus.connect(loudnessGain);
 
 
     // =========================
@@ -919,10 +928,10 @@ function triggerOverrun(
       popTime + popDuration
     );
 
-    pop
-      .connect(filter)
-      .connect(gain)
-      .connect(master);
+      pop
+        .connect(filter)
+        .connect(gain)
+        .connect(overrunBus);
       // Kurzer Crackle-Anteil.
       // Gibt jedem tiefen Impuls etwas Kontur,
       // ohne daraus ein hartes PENG zu machen.
@@ -975,7 +984,7 @@ function triggerOverrun(
       crackle
         .connect(crackleFilter)
         .connect(crackleGain)
-        .connect(master);
+        .connect(overrunBus);
       pop.start(popTime);
       crackle.start(popTime);
       
