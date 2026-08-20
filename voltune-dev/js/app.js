@@ -17,7 +17,10 @@
 
     start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
-    testShiftBurble:$("testShiftBurble"), testBov:$("testBov"), testOverrun:$("testOverrun"),
+    testShiftBurble:$("testShiftBurble"),
+    testDownshiftBlip:$("testDownshiftBlip"),
+    testBov:$("testBov"),
+    testOverrun:$("testOverrun"),
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
     gpsRawSpeed:$("gpsRawSpeed"),
@@ -33,13 +36,21 @@
     speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
     volume:$("volume"), base:$("base"), maxBase:$("maxBase"), pitch:$("pitch"),
     cruiseDamping:$("cruiseDamping"),
-    gearRange:$("gearRange"), maxRpm:$("maxRpm"), shiftRpm:$("shiftRpm"), shiftBurble:$("shiftBurble"),
+    gearRange:$("gearRange"),
+    maxRpm:$("maxRpm"),
+    shiftRpm:$("shiftRpm"),
+    shiftBurble:$("shiftBurble"),
+    downshiftBlip:$("downshiftBlip"),
     baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
     regen:$("regen"), air:$("air"), bov:$("bov"), overrun:$("overrun"),
 
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
     cruiseDampingLabel:$("cruiseDampingLabel"),
-    gearRangeLabel:$("gearRangeLabel"), maxRpmLabel:$("maxRpmLabel"), shiftRpmLabel:$("shiftRpmLabel"), shiftBurbleLabel:$("shiftBurbleLabel"),
+    gearRangeLabel:$("gearRangeLabel"),
+    maxRpmLabel:$("maxRpmLabel"),
+    shiftRpmLabel:$("shiftRpmLabel"),
+    shiftBurbleLabel:$("shiftBurbleLabel"),
+    downshiftBlipLabel:$("downshiftBlipLabel"),
     baseVolLabel:$("baseVolLabel"), inverterLabel:$("inverterLabel"),
     driveLabel:$("driveLabel"), regenLabel:$("regenLabel"),
     airLabel:$("airLabel"), bovLabel:$("bovLabel"), overrunLabel:$("overrunLabel")
@@ -181,7 +192,8 @@ function getPersistentSettings() {
     maxRpm: Number(ui.maxRpm.value),
     shiftRpm: Number(ui.shiftRpm.value),
     shiftBurbleVolume: Number(ui.shiftBurble.value),
-
+    downshiftBlipVolume: Number(ui.downshiftBlip.value),
+    
     baseVolume: Number(ui.baseVol.value),
     inverterVolume: Number(ui.inverter.value),
     driveVolume: Number(ui.drive.value),
@@ -229,6 +241,10 @@ function applyPersistentSettings(settings) {
   setNumber(ui.maxRpm, settings.maxRpm);
   setNumber(ui.shiftRpm, settings.shiftRpm);
   setNumber(ui.shiftBurble, settings.shiftBurbleVolume);
+  setNumber(
+    ui.downshiftBlip,
+    settings.downshiftBlipVolume
+  );
 
   setNumber(ui.baseVol, settings.baseVolume);
   setNumber(ui.inverter, settings.inverterVolume);
@@ -1910,6 +1926,8 @@ ui.speedTest.addEventListener(
     ui.maxRpmLabel.textContent = `${ui.maxRpm.value} RPM`;
     ui.shiftBurbleLabel.textContent =
      `${ui.shiftBurble.value} %`;
+    ui.downshiftBlipLabel.textContent =
+    `${ui.downshiftBlip.value} %`;
     
     // Schalt-RPM darf Max-RPM nie überschreiten.
     ui.shiftRpm.max = ui.maxRpm.value;
@@ -1937,6 +1955,7 @@ ui.speedTest.addEventListener(
     ui.maxRpm,
     ui.shiftRpm,
     ui.shiftBurble,
+    ui.downshiftBlip,
     ui.baseVol,
     ui.inverter,
     ui.drive,
