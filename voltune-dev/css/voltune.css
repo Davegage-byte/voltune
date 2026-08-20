@@ -483,6 +483,10 @@ body.debugActive .manual.debugOnly{
   display:block !important;
 }
 
+body.debugActive .note.debugOnly{
+  display:block !important;
+}
+
 body.debugActive .meter.debugOnly{
   display:grid !important;
 }
