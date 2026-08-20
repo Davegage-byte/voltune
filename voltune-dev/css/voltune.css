@@ -40,6 +40,23 @@ body{
     sans-serif;
 }
 
+/* =========================
+   Hauptbereich
+   ========================= */
+
+main{
+  width:
+    calc(100vw - 180px);
+
+  margin:
+    18px
+    12px
+    24px
+    168px;
+
+  padding:18px;
+}
+
 
 /* =========================
    Kompaktes Fahr-HUD
@@ -207,7 +224,7 @@ body{
 
 
 /* =========================
-   Rechte Button-Leiste
+   Linke Button-Leiste
    ========================= */
 
 .sideButtons{
