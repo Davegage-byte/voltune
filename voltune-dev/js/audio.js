@@ -26,6 +26,8 @@ window.VoltuneAudio = (() => {
   let invGain1, invGain2, invGain3, invFilter;
 
   let driveOsc, driveGain, driveFilter;
+  let drivePulseOsc, drivePulseDepth, drivePulseGain;
+  
   let regenOsc1, regenOsc2, regenGain, regenFilter;
 
   let airSource, airGain, airFilter;
@@ -343,10 +345,40 @@ window.VoltuneAudio = (() => {
     driveFilter.type = "bandpass";
     driveFilter.frequency.value = 900;
     driveFilter.Q.value = 1.8;
-
+    
+    
+    // =========================
+    // Beschleunigungs-Puls
+    // =========================
+    
+    // Langsamer Modulator, der den bestehenden
+    // Beschleunigungssound rhythmisch atmen lässt.
+    drivePulseOsc =
+      createOsc("sine");
+    
+    drivePulseOsc.frequency.value =
+      2.0;
+    
+    drivePulseDepth =
+      ctx.createGain();
+    
+    drivePulseDepth.gain.value =
+      0.10;
+    
+    drivePulseGain =
+      ctx.createGain();
+    
+    drivePulseGain.gain.value =
+      0.90;
+    
+    drivePulseOsc
+      .connect(drivePulseDepth)
+      .connect(drivePulseGain.gain);
+    
     driveOsc
       .connect(driveGain)
       .connect(driveFilter)
+      .connect(drivePulseGain)
       .connect(master);
 
 
@@ -431,6 +463,7 @@ window.VoltuneAudio = (() => {
       inv2,
       inv3,
       driveOsc,
+      drivePulseOsc,
       regenOsc1,
       regenOsc2
     ].forEach(osc => osc.start());
@@ -1789,6 +1822,72 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       // speziell im Beschleunigungs-Layer.
       accelSpeedRise * 380;
 
+      // =========================
+      // Beschleunigungs-Pulsierung
+      // =========================
+      
+      // Schon mittlere Beschleunigung soll
+      // deutlich auf den Puls reagieren.
+      // Ab ca. 2,8 m/s² gilt die Last
+      // für diesen Effekt praktisch als voll.
+      const drivePulseLoad =
+        clamp(
+          accel / 2.8,
+          0,
+          1
+        );
+      
+      // Puls wird mit dem Tempo schneller.
+      //
+      // Niedriges Tempo:
+      // einzelne, fühlbare Schläge.
+      //
+      // Hohes Tempo:
+      // zunehmend dichter und hektischer.
+      const drivePulseHz =
+        1.4 +
+        Math.pow(speedN, 0.75) * 5.5 +
+        Math.pow(drivePulseLoad, 0.75) * 2.2;
+      
+      setTarget(
+        drivePulseOsc.frequency,
+        drivePulseHz,
+        0.10
+      );
+      
+      // Wie tief der Sound zwischen zwei
+      // Pulsen absinkt.
+      //
+      // Leichte Beschleunigung:
+      // nur sanftes Atmen.
+      //
+      // Mittlere/starke Beschleunigung:
+      // deutliches rhythmisches Pumpen.
+      const drivePulseAmount =
+        clamp(
+          0.06 +
+            drivePulseLoad * 0.30 +
+            speedN * 0.05,
+          0.06,
+          0.42
+        );
+      
+      // Der LFO läuft bipolar.
+      // Basis 1 - Tiefe sorgt dafür,
+      // dass die Oberkante immer ungefähr
+      // bei Gain 1 bleibt.
+      setTarget(
+        drivePulseGain.gain,
+        1 - drivePulseAmount,
+        0.10
+      );
+      
+      setTarget(
+        drivePulseDepth.gain,
+        drivePulseAmount,
+        0.10
+      );
+    
     setTarget(
       driveOsc.frequency,
       driveFreq,
