@@ -264,10 +264,10 @@ const canShift =
 
 let didKickdown = false;
 
-// Ab etwa 0,9 m/s² beginnt die Kickdown-Anforderung.
-// Ab ungefähr 2,5 m/s² gilt sie als volle Last.
+// Ab etwa 1,2 m/s² beginnt die Kickdown-Anforderung.
+// Ab ungefähr 3,0 m/s² gilt sie als volle Last.
 const kickdownDemand = clamp(
-  (accel - 0.90) / 1.60,
+  (accel - 1.20) / 1.80,
   0,
   1
 );
@@ -304,7 +304,7 @@ if (
   // Niedrigsten sinnvollen Gang suchen.
   for (
     let gear = currentGear - 1;
-    gear >= 1;
+    gear >= 2;
     gear--
   ) {
     const candidateRpm =
@@ -382,8 +382,8 @@ const brakingDemand =
 
 const downshiftAggression =
   clamp(
-    drivingStyle +
-      brakingDemand * 0.25,
+    drivingStyle * 0.80 +
+      brakingDemand * 0.18,
     0,
     1
   );
