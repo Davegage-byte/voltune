@@ -211,14 +211,15 @@ function updateDrivingStyle(accel) {
         maxRpm * 1.08
       );
 
-      return {
-        gear: 1,
-        ratio: null,
-        rpm: virtualRpm,
-        maxRpm,
-        shiftTarget: null,
-        direct: true
-      };
+        return {
+          gear: 1,
+          ratio: null,
+          rpm: virtualRpm,
+          maxRpm,
+          shiftTarget: null,
+          downshiftTarget: null,
+          direct: true
+        };
     }
 
     let rpm = rpmForGear(
@@ -345,11 +346,12 @@ if (
 // Gewünschte Drehzahl NACH dem Zurückschalten.
 //
 // Index entspricht dem aktuellen Gang:
-// 2 -> 1 = 2350 RPM
-// 3 -> 2 = 2100 RPM
-// 4 -> 3 = 1900 RPM
-// 5 -> 4 = 1750 RPM
-// 6 -> 5 = 1600 RPM
+// 2 -> 1
+// 3 -> 2
+// 4 -> 3
+// 5 -> 4
+// 6 -> 5
+
 // Entspannte Ziel-RPM nach dem Zurückschalten.
 const relaxedDownshiftRpm = {
   2: 2200,
@@ -386,37 +388,41 @@ const downshiftAggression =
     1
   );
 
-if (
-  canShift &&
-  !didKickdown &&
-  currentGear > 1
-) {
+// Aktuelles Rückschaltziel im derzeitigen Gang.
+// Dieser Wert wird zusätzlich an app.js ausgegeben,
+// damit er im RPM-Balken angezeigt werden kann.
+let downshiftTarget = null;
+
+if (currentGear > 1) {
   const currentRatio =
     gearRatios[currentGear - 1];
 
   const lowerRatio =
     gearRatios[currentGear - 2];
 
-const relaxedRpm =
-  relaxedDownshiftRpm[currentGear];
+  const relaxedRpm =
+    relaxedDownshiftRpm[currentGear];
 
-const sportRpm =
-  sportDownshiftRpm[currentGear];
+  const sportRpm =
+    sportDownshiftRpm[currentGear];
 
-const targetLandingRpm =
-  relaxedRpm +
-  (sportRpm - relaxedRpm) *
-    downshiftAggression;
+  const targetLandingRpm =
+    relaxedRpm +
+    (sportRpm - relaxedRpm) *
+      downshiftAggression;
 
-  // Berechnet, bei welcher Drehzahl im aktuellen
-  // Gang heruntergeschaltet werden muss, damit
-  // der niedrigere Gang ungefähr bei seiner
-  // gewünschten Ziel-RPM landet.
-  const downshiftTriggerRpm =
+  downshiftTarget =
     targetLandingRpm *
     (currentRatio / lowerRatio);
+}
 
-  if (rpm <= downshiftTriggerRpm) {
+if (
+  canShift &&
+  !didKickdown &&
+  currentGear > 1 &&
+  downshiftTarget !== null
+) {
+  if (rpm <= downshiftTarget) {
     const nextGear =
       currentGear - 1;
 
@@ -501,15 +507,16 @@ const displayedIdleRpm =
       maxRpm * 1.08
     );
 
-    return {
-      gear: currentGear,
-      ratio: gearRatios[currentGear - 1],
-      rpm: virtualRpm,
-      maxRpm,
-      shiftTarget: currentShiftTarget,
-      drivingStyle,
-      direct: false
-    };
+      return {
+        gear: currentGear,
+        ratio: gearRatios[currentGear - 1],
+        rpm: virtualRpm,
+        maxRpm,
+        shiftTarget: currentShiftTarget,
+        downshiftTarget,
+        drivingStyle,
+        direct: false
+      };
   }
 
   return {
