@@ -1834,6 +1834,20 @@ ui.testShiftBurble.addEventListener(
   }
 );
 
+  ui.testDownshiftBlip.addEventListener(
+  "click",
+  async () => {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+
+    VoltuneAudio.triggerDownshiftBlip(
+      1.0,
+      Number(ui.downshiftBlip.value)
+    );
+  }
+);
+
 ui.testBov.addEventListener(
   "click",
   async () => {
