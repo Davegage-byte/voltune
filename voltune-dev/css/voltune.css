@@ -380,6 +380,14 @@ body.debugActive .gpsPanel.debugOnly{
   display:grid !important;
 }
 
+body.debugActive .stateBox.debugOnly{
+  display:block !important;
+}
+
+body.debugActive .manual.debugOnly{
+  display:block !important;
+}
+
 body.debugActive .meter.debugOnly{
   display:grid !important;
 }
@@ -589,6 +597,21 @@ body.debugActive .meter.debugOnly{
     #35404e;
 }
 
+/* Master-Lautstärke = globale Einstellung */
+
+.control-master{
+  background:#f5f7fa;
+  border-color:#ffffff;
+  color:#0a0d11;
+}
+
+.control-master .top{
+  color:#0a0d11;
+}
+
+.control-master input[type=range]{
+  accent-color:#0a0d11;
+}
 
 /* Fahren = Blau */
 
@@ -674,6 +697,119 @@ input[type=range]{
   width:100%;
 }
 
+/* =========================
+   Doppelregler Grundfrequenz
+   ========================= */
+
+.control-frequency .frequencyValues{
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+
+.dualRange{
+  position:relative;
+
+  height:28px;
+
+  margin-top:2px;
+}
+
+/* Gemeinsame sichtbare Schiene */
+.dualRange::before{
+  content:"";
+
+  position:absolute;
+
+  left:0;
+  right:0;
+  top:50%;
+
+  height:4px;
+
+  transform:
+    translateY(-50%);
+
+  background:#656b72;
+
+  border-radius:99px;
+}
+
+/* Beide Regler exakt übereinander */
+.dualRange input[type=range]{
+  position:absolute;
+
+  left:0;
+  top:0;
+
+  width:100%;
+  height:28px;
+
+  margin:0;
+
+  background:transparent;
+
+  pointer-events:none;
+
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+/* Unsichtbare native Schiene */
+.dualRange input[type=range]::-webkit-slider-runnable-track{
+  height:4px;
+
+  background:transparent;
+}
+
+/* Beide Griffe bleiben bedienbar */
+.dualRange input[type=range]::-webkit-slider-thumb{
+  width:18px;
+  height:18px;
+
+  margin-top:-7px;
+
+  border:0;
+  border-radius:50%;
+
+  background:var(--blue);
+
+  pointer-events:auto;
+
+  cursor:pointer;
+
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+/* Firefox */
+.dualRange input[type=range]::-moz-range-track{
+  height:4px;
+
+  background:transparent;
+}
+
+.dualRange input[type=range]::-moz-range-thumb{
+  width:18px;
+  height:18px;
+
+  border:0;
+  border-radius:50%;
+
+  background:var(--blue);
+
+  pointer-events:auto;
+
+  cursor:pointer;
+}
+
+#base{
+  z-index:2;
+}
+
+#maxBase{
+  z-index:3;
+}
 
 /* =========================
    Messwerte
