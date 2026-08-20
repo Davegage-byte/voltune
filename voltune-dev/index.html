@@ -288,6 +288,36 @@
         Lautstärke des Schaltblubberns beim Hochschalten
       </small>
     </div>
+
+    <div class="control control-driving">
+      <div class="top">
+        <span>Rückschalt-Blip</span>
+    
+        <span class="effectControlActions">
+          <span id="downshiftBlipLabel">55 %</span>
+    
+          <button
+            id="testDownshiftBlip"
+            class="effectTestBtn"
+            type="button"
+            title="Rückschalt-Blip testen"
+          >▶</button>
+        </span>
+      </div>
+    
+      <input
+        id="downshiftBlip"
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value="55"
+      >
+    
+      <small class="controlHint">
+        Lautstärke des kurzen Zwischengasstoßes beim Zurückschalten
+      </small>
+    </div>    
     
     <div class="control control-driving">
       <div class="top"><span>Grundsound-Layer</span><span id="baseVolLabel">65 %</span></div>
