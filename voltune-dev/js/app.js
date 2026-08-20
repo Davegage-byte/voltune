@@ -92,6 +92,7 @@
   let lastGpsRenderTime = performance.now();
 
   let manualSpeed = 0;
+  let manualTargetSpeed = 0;
   let lastManualSpeed = 0;
   let lastManualTime = performance.now();
   let manualAccel = 0;
@@ -594,6 +595,7 @@ ui.gpsSmoothAccel.textContent =
     ui.mute.textContent = "Stumm";
 
     manualSpeed = 0;
+    manualTargetSpeed = 0;
     lastManualSpeed = 0;
     manualAccel = 0;
     ui.speedTest.value = 0;
@@ -1394,17 +1396,151 @@ function updateControllerDrive(now) {
   );
 
 } else if (soundActive && !gpsActive) {
-      // manuelle Beschleunigung weich gegen 0 auslaufen lassen
-      manualAccel *= 0.86;
-      if (Math.abs(manualAccel) < 0.03) manualAccel = 0;
 
-      const state =
-        manualAccel > 0.25 ? "Manuell · Beschleunigen" :
-        manualAccel < -0.25 ? "Manuell · Reku" :
-        "Manuell · Konstant";
+  const dt =
+    clamp(
+      (now - lastManualTime) / 1000,
+      0,
+      0.05
+    );
 
-      render(manualSpeed,manualAccel,state);
-    }
+  lastManualTime = now;
+
+  const speedError =
+    manualTargetSpeed -
+    manualSpeed;
+
+  const speedN =
+    clamp(
+      manualSpeed / 270,
+      0,
+      1
+    );
+
+  let targetAccel = 0;
+
+
+  // =========================
+  // Beschleunigen
+  // =========================
+
+  if (speedError > 0.15) {
+
+    // Bei niedrigem Tempo kräftiger,
+    // bei höherem Tempo zunehmend weniger Schub.
+    const maxAccel =
+      6.0 -
+      speedN * 4.0;
+
+    // Kurz vor dem Ziel automatisch
+    // sanfter werden.
+    const approach =
+      clamp(
+        speedError / 30,
+        0.12,
+        1
+      );
+
+    targetAccel =
+      maxAccel *
+      approach;
+  }
+
+
+  // =========================
+  // Verzögern / Reku
+  // =========================
+
+  else if (speedError < -0.15) {
+
+    const approach =
+      clamp(
+        -speedError / 25,
+        0.15,
+        1
+      );
+
+    targetAccel =
+      -3.0 *
+      approach;
+  }
+
+
+  // =========================
+  // Beschleunigung glätten
+  // =========================
+
+  const accelResponse =
+    1 -
+    Math.exp(
+      -dt / 0.18
+    );
+
+  manualAccel +=
+    (
+      targetAccel -
+      manualAccel
+    ) *
+    accelResponse;
+
+
+  // =========================
+  // Geschwindigkeit bewegen
+  // =========================
+
+  const previousSpeed =
+    manualSpeed;
+
+  manualSpeed +=
+    manualAccel *
+    dt *
+    3.6;
+
+  manualSpeed =
+    clamp(
+      manualSpeed,
+      0,
+      270
+    );
+
+
+  // Ziel erreicht bzw. überschritten:
+  // exakt auf die gewünschte Geschwindigkeit setzen.
+  if (
+    (
+      previousSpeed <
+        manualTargetSpeed &&
+      manualSpeed >=
+        manualTargetSpeed
+    ) ||
+    (
+      previousSpeed >
+        manualTargetSpeed &&
+      manualSpeed <=
+        manualTargetSpeed
+    ) ||
+    Math.abs(speedError) <= 0.15
+  ) {
+    manualSpeed =
+      manualTargetSpeed;
+
+    manualAccel = 0;
+  }
+
+
+  const state =
+    manualAccel > 0.25
+      ? "Manuell · Beschleunigen"
+      : manualAccel < -0.25
+        ? "Manuell · Reku"
+        : "Manuell · Konstant";
+
+  render(
+    manualSpeed,
+    manualAccel,
+    state
+  );
+}
 
     requestAnimationFrame(loop);
   }
@@ -1711,40 +1847,47 @@ ui.testOverrun.addEventListener(
   }
 );
 
-  // Manuelle Geschwindigkeit:
-  // Die Änderungsrate des Sliders wird als Beschleunigung interpretiert.
-  ui.speedTest.addEventListener("input", async () => {
-    if (!await ensureVoltuneAudio()) return;
+// =========================
+// Manuelle Zielgeschwindigkeit
+// =========================
+//
+// Der Slider setzt nur noch das gewünschte Tempo.
+// Die tatsächliche Geschwindigkeit wird im
+// Animations-Loop realistisch dorthin bewegt.
+
+ui.speedTest.addEventListener(
+  "input",
+  async () => {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+
     saveLastDriveMode("manual");
-    
+
     demoActive = false;
+    controllerActive = false;
+
     stopGps(false);
-    ui.gps.textContent = "Start";
 
-    const now = performance.now();
-    const nextSpeed = Number(ui.speedTest.value);
-    const dt = clamp((now-lastManualTime)/1000,0.035,0.35);
+    ui.gps.textContent =
+      "Start";
 
-    const dvMs = (nextSpeed-lastManualSpeed)/3.6;
-    const rawAccel = dvMs/dt;
+    ui.controller.textContent =
+      "Controller fahren";
 
-    manualAccel = clamp(rawAccel,-5.7,5.7);
-    manualSpeed = nextSpeed;
+    manualTargetSpeed =
+      Number(ui.speedTest.value);
 
-    lastManualSpeed = nextSpeed;
-    lastManualTime = now;
+    lastManualTime =
+      performance.now();
 
-    ui.speedTestLabel.textContent = `${Math.round(nextSpeed)} km/h`;
-    ui.start.textContent = "Sound läuft · Manuell";
+    ui.speedTestLabel.textContent =
+      `Ziel: ${Math.round(manualTargetSpeed)} km/h`;
 
-    render(
-      manualSpeed,
-      manualAccel,
-      manualAccel > 0.25 ? "Manuell · Beschleunigen" :
-      manualAccel < -0.25 ? "Manuell · Reku" :
-      "Manuell · Konstant"
-    );
-  });
+    ui.start.textContent =
+      "Sound läuft · Manuell";
+  }
+);
 
   ui.secureContext.textContent = window.isSecureContext ? 'HTTPS / sicher' : `${location.protocol} unsicher`;
   ui.secureContext.className = window.isSecureContext ? 'okText' : 'warnText';
