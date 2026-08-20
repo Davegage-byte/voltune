@@ -384,6 +384,76 @@ if (
   );
 }
 
+  // =========================
+// Rückschalt-Blip
+// =========================
+
+if (
+  !transmission.direct &&
+  transmission.gear < lastTransmissionGear
+) {
+  const gearDrop =
+    lastTransmissionGear -
+    transmission.gear;
+
+  const drivingStyle =
+    clamp(
+      Number(
+        transmission.drivingStyle ?? 0
+      ),
+      0,
+      1
+    );
+
+  // Rückschaltungen können entweder beim
+  // Bremsen/Reku oder beim Kickdown entstehen.
+  const downshiftLoad =
+    clamp(
+      Math.max(
+        -accel / 3.2,
+        accel / 4.5
+      ),
+      0,
+      1
+    );
+
+  // 2 -> 1 bei niedriger Geschwindigkeit
+  // soll praktisch geräuschlos bleiben.
+  const quietFirstGear =
+    transmission.gear === 1 &&
+    speedKmh < 25;
+
+  if (!quietFirstGear) {
+    const blipIntensity =
+      clamp(
+        0.28 +
+
+        // Sportliche Fahrweise:
+        drivingStyle * 0.32 +
+
+        // Stärkere Reku oder Kickdown:
+        downshiftLoad * 0.25 +
+
+        // Mehrere übersprungene Gänge
+        // ergeben einen kräftigeren Blip.
+        Math.max(
+          0,
+          gearDrop - 1
+        ) * 0.18,
+
+        0.20,
+        1
+      );
+
+    VoltuneAudio.triggerDownshiftBlip(
+      blipIntensity,
+      Number(
+        ui.downshiftBlip.value
+      )
+    );
+  }
+}
+
 lastTransmissionGear =
   transmission.direct
     ? 1
