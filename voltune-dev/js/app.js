@@ -510,6 +510,7 @@ if (!quietFirstGear) {
     blipVolume
   );
 }
+}
 
 lastTransmissionGear =
   transmission.direct
