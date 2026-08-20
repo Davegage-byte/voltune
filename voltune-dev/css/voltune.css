@@ -237,6 +237,54 @@ main{
 
 
 /* =========================
+   Drehzahl-Schaltmarker
+   ========================= */
+
+.rpmBar{
+  position:relative;
+}
+
+/* Beide Marker liegen über dem RPM-Balken */
+.rpmMarker{
+  position:absolute;
+
+  top:0;
+
+  width:3px;
+  height:100%;
+
+  transform:
+    translateX(-50%);
+
+  pointer-events:none;
+
+  z-index:5;
+
+  display:none;
+}
+
+
+/* Hochschaltziel */
+.rpmMarkerUp{
+  background:#ff5c5c;
+
+  box-shadow:
+    0 0 5px
+    rgba(255,92,92,.9);
+}
+
+
+/* Rückschaltziel */
+.rpmMarkerDown{
+  background:#55d68b;
+
+  box-shadow:
+    0 0 5px
+    rgba(85,214,139,.9);
+}
+
+
+/* =========================
    Linke Button-Leiste
    ========================= */
 
