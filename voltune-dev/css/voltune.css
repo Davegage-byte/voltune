@@ -140,8 +140,7 @@ main{
   display:grid;
 
   grid-template-columns:
-    .65fr
-    1.35fr;
+    1fr;
 
   gap:7px;
 }
@@ -356,6 +355,10 @@ button:hover{
 /* Werden später per Debug-Button eingeblendet */
 body.debugActive .sideButtons .debugOnly{
   display:block !important;
+}
+
+body.debugActive .driveHudSpeed.debugOnly{
+  display:flex !important;
 }
 
 body.debugActive .gpsPanel.debugOnly{
