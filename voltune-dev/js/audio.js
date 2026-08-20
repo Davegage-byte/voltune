@@ -1131,8 +1131,8 @@ function triggerShiftBurble(
     "sawtooth";
 
   burble.frequency.setValueAtTime(
-    68 +
-      effectAmount * 10,
+    58 +
+      effectAmount * 8,
     now
   );
 
@@ -1176,8 +1176,8 @@ function triggerShiftBurble(
     "lowpass";
 
   filter.frequency.setValueAtTime(
-    320 +
-      effectAmount * 160,
+    260 +
+      effectAmount * 110,
     now
   );
 
