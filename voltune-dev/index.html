@@ -165,6 +165,9 @@
     <div class="control control-neutral control-master">
       <div class="top"><span>Master-Lautstärke</span><span id="volumeLabel">32 %</span></div>
       <input id="volume" type="range" min="0" max="100" value="32">
+        <small class="controlHint">
+          Gesamtlautstärke aller Voltune-Sounds
+        </small>
     </div>
 
 <div class="control control-driving control-frequency">
@@ -201,8 +204,8 @@
 
   </div>
 
-  <small style="color:#7f8b9b">
-    Min. und Max. Grundfrequenz
+  <small class="controlHint">
+    Unterer und oberer Frequenzbereich des Grundsounds
   </small>
 
 </div>
@@ -222,32 +225,35 @@
     value="70"
   >
 
-  <small style="color:#7f8b9b">
-    0 % = keine Dämpfung · 100 % = bei Konstantfahrt stumm
+  <small class="controlHint">
+    Reduziert den Fahrsound bei gleichbleibender Geschwindigkeit
   </small>
 </div>
     
     <div class="control control-rpm">
       <div class="top"><span>Drehzahl-Pitch</span><span id="pitchLabel">2.1×</span></div>
       <input id="pitch" type="range" min="8" max="35" value="21">
-      <small style="color:#7f8b9b">Wie stark die Tonhöhe innerhalb eines Gangs ansteigt</small>
+      <small class="controlHint">Bestimmt, wie stark die Tonhöhe mit der Drehzahl ansteigt</small>
     </div>
 
     <div class="control control-rpm">
       <div class="top"><span>Getriebe-Reichweite</span><span id="gearRangeLabel">270 km/h</span></div>
       <input id="gearRange" type="range" min="80" max="300" step="1" value="270">
-      <small style="color:#7f8b9b">6. Gang erreicht Max-RPM ungefähr bei dieser Geschwindigkeit</small>
+      <small class="controlHint">Verteilt die sechs virtuellen Gänge über den Geschwindigkeitsbereich</small>
     </div>
 
     <div class="control control-rpm">
       <div class="top"><span>Max. virtuelle Drehzahl</span><span id="maxRpmLabel">6500 RPM</span></div>
       <input id="maxRpm" type="range" min="3000" max="9000" step="100" value="6500">
+        <small class="controlHint">
+          Legt die maximale virtuelle Motordrehzahl fest
+        </small>
     </div>
 
     <div class="control control-rpm">
       <div class="top"><span>Schalt-Drehzahl</span><span id="shiftRpmLabel">6000 RPM</span></div>
       <input id="shiftRpm" type="range" min="1500" max="6500" step="100" value="6000">
-      <small style="color:#7f8b9b">Bei Dynamik AN ist das der Sport-/Vollgas-Schaltpunkt</small>
+      <small class="controlHint">Oberes Schaltziel bei sportlicher Fahrweise und Vollgas</small>
     </div>
 
     <div class="control control-rpm">
@@ -274,34 +280,49 @@
         value="60"
       >
     
-      <small style="color:#7f8b9b">
-        Lautstärke des Schaltblubberns
+      <small class="controlHint">
+        Lautstärke des Schaltblubberns beim Hochschalten
       </small>
     </div>
     
     <div class="control control-driving">
       <div class="top"><span>Grundsound-Layer</span><span id="baseVolLabel">65 %</span></div>
       <input id="baseVol" type="range" min="0" max="100" value="65">
+        <small class="controlHint">
+          Lautstärke des grundlegenden Motorsounds
+        </small>
     </div>
 
     <div class="control control-driving">
       <div class="top"><span>Inverter-Layer</span><span id="inverterLabel">42 %</span></div>
       <input id="inverter" type="range" min="0" max="100" value="42">
+        <small class="controlHint">
+          Lautstärke des hochfrequenten Elektro- und Inverterklangs
+        </small>
     </div>
 
     <div class="control control-accel">
       <div class="top"><span>Beschleunigungs-Layer</span><span id="driveLabel">55 %</span></div>
       <input id="drive" type="range" min="0" max="100" value="55">
+        <small class="controlHint">
+          Zusätzlicher Sound bei positiver Beschleunigung
+        </small>
     </div>
 
     <div class="control control-regen">
       <div class="top"><span>Reku-Layer</span><span id="regenLabel">48 %</span></div>
       <input id="regen" type="range" min="0" max="100" value="48">
+        <small class="controlHint">
+          Zusätzlicher Sound beim Verzögern durch Rekuperation
+        </small>
     </div>
 
     <div class="control control-driving">
       <div class="top"><span>Luft/Textur-Layer</span><span id="airLabel">30 %</span></div>
       <input id="air" type="range" min="0" max="100" value="30">
+        <small class="controlHint">
+          Fügt dem Fahrsound Luft, Rauschen und zusätzliche Textur hinzu
+        </small>
     </div>
 
     <div class="control control-accel">
@@ -319,6 +340,9 @@
         </span>
       </div>
       <input id="bov" type="range" min="0" max="100" value="60">
+        <small class="controlHint">
+          Lautstärke des Entladungsgeräuschs beim Lupfen
+        </small>
     </div>
 
     <div class="control control-accel">
@@ -345,8 +369,8 @@
         value="50"
       >
     
-      <small style="color:#7f8b9b">
-        Knurren und Nachblubbern beim Lupfen nach stärkerer Beschleunigung
+      <small class="controlHint">
+        Lautstärke von Knurren und Nachblubbern nach stärkerer Last
       </small>
     </div>
     
