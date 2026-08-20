@@ -29,6 +29,7 @@ window.VoltuneAudio = (() => {
   let drivePulseOsc, drivePulseDepth, drivePulseGain;
   
   let regenOsc1, regenOsc2, regenGain, regenFilter;
+  let regenPulseOsc, regenPulseDepth, regenPulseGain;
 
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
@@ -415,8 +416,38 @@ window.VoltuneAudio = (() => {
       .connect(rg2)
       .connect(regenGain);
 
+    // =========================
+    // Reku-Puls
+    // =========================
+    
+    // Etwas ruhiger als der Beschleunigungs-Puls.
+    // Soll eher wie ein arbeitender Generator
+    // beziehungsweise ein ziehender Reku-Antrieb wirken.
+    regenPulseOsc =
+      createOsc("sine");
+    
+    regenPulseOsc.frequency.value =
+      1.5;
+    
+    regenPulseDepth =
+      ctx.createGain();
+    
+    regenPulseDepth.gain.value =
+      0.08;
+    
+    regenPulseGain =
+      ctx.createGain();
+    
+    regenPulseGain.gain.value =
+      0.92;
+    
+    regenPulseOsc
+      .connect(regenPulseDepth)
+      .connect(regenPulseGain.gain);
+    
     regenGain
       .connect(regenFilter)
+      .connect(regenPulseGain)
       .connect(master);
 
 
@@ -465,7 +496,8 @@ window.VoltuneAudio = (() => {
       driveOsc,
       drivePulseOsc,
       regenOsc1,
-      regenOsc2
+      regenOsc2,
+      regenPulseOsc
     ].forEach(osc => osc.start());
 
     airSource.start();
@@ -1998,6 +2030,79 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       0.06
     );
 
+    // =========================
+    // Reku-Pulsierung
+    // =========================
+    
+    // Schon normale Tesla-Reku soll hörbar
+    // auf den Effekt wirken.
+    // Bei ungefähr 2,6 m/s² Verzögerung ist
+    // die Reku für die Pulsierung praktisch voll.
+    const regenPulseLoad =
+      clamp(
+        -accel / 2.6,
+        0,
+        1
+      );
+    
+    const regenPulseStyle =
+      Math.pow(
+        drivingStyle,
+        0.85
+      );
+    
+    // Bewusst etwas langsamer als die
+    // Beschleunigungspulsierung.
+    //
+    // Geschwindigkeit sorgt für zunehmende Dichte,
+    // starke Reku und sportlicher Fahrstil
+    // verstärken sie zusätzlich.
+    const regenPulseHz =
+      1.1 +
+      Math.pow(speedN, 0.72) * 4.2 +
+      Math.pow(regenPulseLoad, 0.80) * 1.6 +
+      regenPulseStyle *
+        (
+          0.3 +
+          regenPulseLoad * 1.6
+        );
+    
+    setTarget(
+      regenPulseOsc.frequency,
+      regenPulseHz,
+      0.12
+    );
+    
+    // Weniger tiefe Modulation als beim
+    // Beschleunigen.
+    //
+    // Dadurch bleibt Reku eher ein gleichmäßiges
+    // Ziehen mit hörbaren Pulsen statt eines
+    // aggressiven Hämmerns.
+    const regenPulseAmount =
+      clamp(
+        0.04 +
+          regenPulseLoad * 0.20 +
+          speedN * 0.03 +
+          regenPulseStyle *
+            regenPulseLoad *
+            0.08,
+        0.04,
+        0.34
+      );
+    
+    setTarget(
+      regenPulseGain.gain,
+      1 - regenPulseAmount,
+      0.12
+    );
+    
+    setTarget(
+      regenPulseDepth.gain,
+      regenPulseAmount,
+      0.12
+    );
+    
     setTarget(
       regenGain.gain,
       regenAmount *
