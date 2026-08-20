@@ -388,10 +388,10 @@ window.VoltuneAudio = (() => {
     // =========================
 
     regenOsc1 =
-      createOsc("triangle");
-
-    regenOsc2 =
       createOsc("sine");
+    
+    regenOsc2 =
+      createOsc("triangle");
 
     regenGain =
       ctx.createGain();
@@ -408,7 +408,7 @@ window.VoltuneAudio = (() => {
     const rg2 =
       ctx.createGain();
 
-    rg2.gain.value = 0.36;
+    rg2.gain.value = 0.20;
 
     regenOsc1.connect(regenGain);
 
@@ -2015,7 +2015,7 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     setTarget(
       regenOsc2.frequency,
-      regenFreq * 1.49,
+      regenFreq * 2.02,
       0.045
     );
 
