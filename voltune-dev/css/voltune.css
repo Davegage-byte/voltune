@@ -42,198 +42,141 @@ body{
 
 
 /* =========================
-   Hauptbereich
+   Kompaktes Fahr-HUD
    ========================= */
-
-main{
-  width:min(
-    1120px,
-    calc(100vw - 190px)
-  );
-
-  margin:
-    18px
-    auto
-    24px
-    165px;
-
-  padding:22px;
-
-  background:
-    rgba(17,21,28,.96);
-
-  border:
-    1px solid var(--line);
-
-  border-radius:22px;
-}
-
-h1{
-  margin:0;
-  font-size:30px;
-}
-
-.sub{
-  color:var(--muted);
-  margin:6px 0 22px;
-}
-
-
-/* =========================
-   Hauptanzeige
-   ========================= */
-
-.hero{
-  display:grid;
-
-  grid-template-columns:
-    .85fr
-    1.65fr;
-
-  gap:14px;
-  margin-bottom:14px;
-}
-
-.speedBox,
-.stateBox{
-  background:var(--panel2);
-
-  border:
-    1px solid var(--line);
-
-  border-radius:18px;
-  padding:18px;
-}
-
-.speed{
-  font-size:
-    clamp(
-      72px,
-      10vw,
-      128px
-    );
-
-  font-weight:800;
-  line-height:.9;
-  letter-spacing:-.06em;
-}
 
 .unit,
 .label{
   color:var(--muted);
 }
 
-.state{
-  font-size:28px;
-  font-weight:750;
-  margin-top:8px;
-}
+.sideRail{
+  position:fixed;
 
-.accel{
-  font-size:18px;
-  margin-top:10px;
-}
+  right:14px;
+  top:14px;
 
-.driveInfo{
+  width:148px;
+
   display:grid;
-  grid-template-columns:1fr 1fr;
   gap:10px;
-  margin-top:18px;
+
+  max-height:
+    calc(100vh - 28px);
+
+  overflow-y:auto;
+
+  z-index:20;
 }
 
-.driveInfo > div{
-  padding:10px 12px;
-  background:#0d1117;
-  border:1px solid #202936;
-  border-radius:12px;
+
+/* Fahranzeige über den Buttons */
+
+.driveHud{
+  padding:12px;
+
+  background:var(--panel2);
+
+  border:
+    1px solid var(--line);
+
+  border-radius:16px;
 }
 
-.driveInfo b{
-  display:block;
-  margin-top:3px;
-  font-size:20px;
-  font-variant-numeric:tabular-nums;
-}
-
-.gearInfo b{
-  font-size:46px;
-  line-height:1;
-  font-weight:850;
-}
-
-.gearInfo{
-  background:
-    rgba(155,90,25,.10) !important;
-
-  border-color:
-    rgba(255,169,77,.35) !important;
-}
-
-.gearInfo b{
-  color:#ffc078;
-}
-
-.rpmInfo b{
-  font-size:24px;
-}
-
-.rpmBarLabel{
+.driveHudSpeed{
   display:flex;
-  justify-content:space-between;
-  align-items:center;
 
-  margin-top:16px;
+  align-items:baseline;
+  justify-content:center;
 
+  gap:5px;
+
+  margin-bottom:10px;
+}
+
+.driveHudSpeed #speed{
+  font-size:48px;
+  font-weight:800;
+
+  line-height:.9;
+
+  letter-spacing:-.05em;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+.driveHudSpeed small{
   color:var(--muted);
+
   font-size:12px;
   font-weight:650;
 }
 
-.rpmBar{
-  height:14px;
-  margin-top:6px;
+
+/* Gang + Drehzahl */
+
+.driveHudInfo{
+  display:grid;
+
+  grid-template-columns:
+    .65fr
+    1.35fr;
+
+  gap:7px;
 }
 
-.rpmBar > div{
-  box-shadow:
-    0 0 10px rgba(255,169,77,.28);
-}
+.driveHudInfo > div{
+  padding:7px 6px;
 
-.rpmBar{
-  position:relative;
-}
+  background:#0d1318;
 
-.rpmBar::after{
-  content:"";
+  border:
+    1px solid #26323c;
 
-  position:absolute;
-  top:0;
-  bottom:0;
+  border-radius:10px;
 
-  left:var(--shift-marker, 92%);
-
-  width:2px;
-
-  background:
-    rgba(255,255,255,.85);
-
-  box-shadow:
-    0 0 5px rgba(255,255,255,.35);
-
-  pointer-events:none;
-}
-
-.stateBox{
   min-width:0;
 }
 
+.driveHudInfo .label{
+  display:block;
 
-/* =========================
-   Speed-Bar
-   ========================= */
+  font-size:10px;
+
+  margin-bottom:2px;
+}
+
+#gearDisplay{
+  display:block;
+
+  font-size:28px;
+  line-height:1;
+
+  font-weight:850;
+
+  text-align:center;
+}
+
+#rpmDisplay{
+  display:block;
+
+  font-size:13px;
+  line-height:1.2;
+
+  font-weight:750;
+
+  white-space:nowrap;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+/* Drehzahlbalken */
 
 .bar{
-  height:9px;
+  height:8px;
 
   background:#0b0f14;
 
@@ -241,8 +184,10 @@ h1{
     1px solid #27313d;
 
   border-radius:99px;
+
   overflow:hidden;
-  margin-top:16px;
+
+  margin-top:10px;
 }
 
 .bar > div{
@@ -252,10 +197,8 @@ h1{
   background:
     linear-gradient(
       90deg,
-      #ffa94d 0%,
-      #ffa94d 72%,
-      #ff8a4d 86%,
-      #ff6262 100%
+      #3cc6ff,
+      #8dffdf
     );
 
   transition:
@@ -264,28 +207,60 @@ h1{
 
 
 /* =========================
-   Linke Button-Leiste
+   Rechte Button-Leiste
    ========================= */
 
 .sideButtons{
-  position:fixed;
+  position:static;
 
-  left:14px;
-  top:50%;
-
-  transform:
-    translateY(-50%);
-
-  width:138px;
+  width:100%;
 
   display:grid;
   grid-template-columns:1fr;
 
-  gap:9px;
+  gap:8px;
 
   margin:0;
 
-  z-index:20;
+  transform:none;
+}
+
+.sideRail button{
+  min-height:48px;
+}
+
+
+/* =========================
+   Debug-Fahrzustand
+   ========================= */
+
+.stateBox{
+  min-width:0;
+
+  padding:14px;
+
+  margin-bottom:14px;
+
+  background:var(--panel2);
+
+  border:
+    1px solid var(--line);
+
+  border-radius:16px;
+}
+
+.state{
+  font-size:28px;
+
+  font-weight:750;
+
+  margin-top:8px;
+}
+
+.accel{
+  font-size:18px;
+
+  margin-top:10px;
 }
 
 button{
@@ -750,23 +725,27 @@ input[type=range]{
     padding:16px;
   }
 
-  .sideButtons{
+  .sideRail{
     position:static;
-
+  
     width:auto;
-
-    transform:none;
-
-    display:grid;
-
+  
+    max-height:none;
+  
+    overflow:visible;
+  
+    margin-bottom:14px;
+  }
+  
+  .driveHud{
+    max-width:none;
+  }
+  
+  .sideButtons{
     grid-template-columns:
       1fr 1fr;
-
-    margin:
-      14px 0 18px;
   }
 
-  .hero,
   .controls{
     grid-template-columns:
       1fr;
