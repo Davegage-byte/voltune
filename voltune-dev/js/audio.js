@@ -229,7 +229,7 @@ window.VoltuneAudio = (() => {
     idlePulseGain.gain.value = 0.82;
     
     idlePulseOsc = createOsc("sine");
-    idlePulseOsc.frequency.value = 1.35;
+    idlePulseOsc.frequency.value = 1.60;
     
     idlePulseDepth = ctx.createGain();
     idlePulseDepth.gain.value = 0.18;
