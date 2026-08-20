@@ -13,26 +13,46 @@
 <div class="sideRail">
 
   <div class="driveHud">
-    <div class="driveHudSpeed debugOnly">
-      <span id="speed">0</span>
-      <small>km/h</small>
-    </div>
-
+  
     <div class="driveHudInfo">
-      <div>
+  
+      <div class="driveHudItem driveHudSpeed debugOnly">
+        <span class="label">Geschwindigkeit</span>
+  
+        <div class="driveHudSpeedValue">
+          <b id="speed">0</b>
+          <small>km/h</small>
+        </div>
+      </div>
+  
+      <div class="driveHudItem">
         <span class="label">Gang</span>
         <b id="gearDisplay">–</b>
       </div>
-
-      <div>
+  
+      <div class="driveHudItem">
         <span class="label">Drehzahl</span>
         <b id="rpmDisplay">0 RPM</b>
       </div>
+  
     </div>
-
+  
     <div class="bar rpmBar">
       <div id="speedBar"></div>
+  
+      <span
+        id="downshiftMarker"
+        class="rpmMarker rpmMarkerDown"
+        title="Rückschaltziel"
+      ></span>
+  
+      <span
+        id="shiftMarker"
+        class="rpmMarker rpmMarkerUp"
+        title="Hochschaltziel"
+      ></span>
     </div>
+  
   </div>
 
   <div class="buttons sideButtons">
@@ -142,40 +162,50 @@
   </div>
 
   <div class="controls">
-    <div class="control control-neutral">
+    <div class="control control-neutral control-master">
       <div class="top"><span>Master-Lautstärke</span><span id="volumeLabel">32 %</span></div>
       <input id="volume" type="range" min="0" max="100" value="32">
     </div>
 
-  <div class="control control-driving">
-    <div class="top">
-      <span>Min. Grundfrequenz</span>
+<div class="control control-driving control-frequency">
+
+  <div class="top">
+    <span>Grundfrequenz</span>
+
+    <span class="frequencyValues">
       <span id="baseLabel">35 Hz</span>
-    </div>
+      <span>–</span>
+      <span id="maxBaseLabel">70 Hz</span>
+    </span>
+  </div>
+
+  <div class="dualRange">
+
     <input
       id="base"
       type="range"
       min="20"
-      max="80"
+      max="150"
       step="1"
       value="35"
     >
-  </div>
-  
-  <div class="control control-driving">
-    <div class="top">
-      <span>Max. Grundfrequenz</span>
-      <span id="maxBaseLabel">70 Hz</span>
-    </div>
+
     <input
       id="maxBase"
       type="range"
-      min="40"
+      min="20"
       max="150"
       step="1"
       value="70"
     >
+
   </div>
+
+  <small style="color:#7f8b9b">
+    Min. und Max. Grundfrequenz
+  </small>
+
+</div>
 
 <div class="control control-driving">
   <div class="top">
