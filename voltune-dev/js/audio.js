@@ -1820,14 +1820,36 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       0.06
     );
 
-      const invLevel =
-        inverterAmount *
-        cruiseScale *
-      (
-        0.006 +
-        speedN * 0.027 +
-        pos * 0.010
-      );
+const inverterLoadPresence =
+  clamp(
+    pos / 0.55,
+    0,
+    1
+  );
+
+const invLevel =
+  inverterAmount *
+  cruiseScale *
+  (
+    // Sehr leiser Grundanteil.
+    0.002 +
+
+    // Geschwindigkeit macht den Inverter
+    // etwas präsenter, aber nicht mehr dominant.
+    speedN * 0.010 +
+
+    // Unter Last darf das elektrische
+    // Surren deutlich stärker hervortreten.
+    inverterLoadPresence * 0.022
+  ) *
+
+  // Bei Reku etwas zurücknehmen,
+  // damit Inverter- und Reku-Layer
+  // nicht gegeneinander arbeiten.
+  (
+    1 -
+    neg * 0.45
+  );
 
     setTarget(
       invGain1.gain,
