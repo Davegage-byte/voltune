@@ -1111,13 +1111,6 @@ function demoValues(t) {
   };
 }
 
-  return {
-    kmh,
-    a,
-    state
-  };
-}
-
   function updateGamepadDebug() {
   const gamepads =
     navigator.getGamepads
