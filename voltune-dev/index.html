@@ -18,53 +18,76 @@
   </h1>
   <p class="sub">Sound-Labor: Demo, manueller Regler oder echtes GPS direkt im Tesla.</p>
 
-  <div class="hero">
-    <div class="speedBox">
-      <div class="label">Geschwindigkeit</div>
-      <div class="speed" id="speed">0</div>
-      <div class="unit">km/h</div>
-    
-      <div class="driveInfo">
-        <div class="gearInfo">
-          <span class="label">Gang</span>
-          <b id="gearDisplay">–</b>
-        </div>
-      
-        <div class="rpmInfo">
-          <span class="label">Drehzahl</span>
-          <b id="rpmDisplay">0 RPM</b>
-        </div>
+<div class="sideRail">
+
+  <div class="driveHud">
+    <div class="driveHudSpeed">
+      <span id="speed">0</span>
+      <small>km/h</small>
+    </div>
+
+    <div class="driveHudInfo">
+      <div>
+        <span class="label">Gang</span>
+        <b id="gearDisplay">–</b>
       </div>
-      
-      <div class="rpmBarLabel">
-        <span>Drehzahlbereich</span>
-        <span>RPM</span>
-      </div>
-      
-      <div class="bar rpmBar">
-        <div id="speedBar"></div>
+
+      <div>
+        <span class="label">Drehzahl</span>
+        <b id="rpmDisplay">0 RPM</b>
       </div>
     </div>
 
-    <div class="stateBox">
-      <div class="label">Fahrzustand</div>
-      <div class="state" id="state">Bereit</div>
-      <div class="accel"><span id="accel">0.00</span> m/s²</div>
-
-      <div class="meter debugOnly">
-        <div><span class="label">Base</span><b id="baseHz">55 Hz</b></div>
-        <div><span class="label">Inverter</span><b id="invHz">240 Hz</b></div>
-        <div><span class="label">Drive</span><b id="drivePct">0 %</b></div>
-        <div><span class="label">Reku</span><b id="regenPct">0 %</b></div>
-        <div><span class="label">Ladedruck</span><b id="bovPressureDisplay">0 %</b></div>
-        <div><span class="label">Schaltziel</span><b id="shiftTargetDisplay">–</b></div>
-        <div>
-          <span class="label">Fahrstil</span>
-          <b id="drivingStyleDisplay">0.00</b>
-        </div>
-      </div>
+    <div class="bar rpmBar">
+      <div id="speedBar"></div>
     </div>
   </div>
+
+  <div class="buttons sideButtons">
+    <button id="gps" class="mainStartButton">Start</button>
+
+    <button id="stop">STOP</button>
+    <button id="mute">Stumm</button>
+
+    <button id="easyBov" class="featureBtn">
+      EasyBOV
+    </button>
+
+    <button id="gears" class="featureBtn active">
+      Gänge
+    </button>
+
+    <button id="dynamicShift" class="featureBtn active">
+      Dynamik
+    </button>
+
+    <button id="debug" aria-pressed="false">Debug</button>
+
+    <button id="start" class="debugOnly">Sound + Demo starten</button>
+    <button id="restart" class="debugOnly">Demo neu starten</button>
+    <button id="controller" class="debugOnly">Controller fahren</button>
+  </div>
+
+</div>
+
+<div class="stateBox debugOnly">
+  <div class="label">Fahrzustand</div>
+  <div class="state" id="state">Bereit</div>
+  <div class="accel"><span id="accel">0.00</span> m/s²</div>
+
+  <div class="meter">
+    <div><span class="label">Base</span><b id="baseHz">55 Hz</b></div>
+    <div><span class="label">Inverter</span><b id="invHz">240 Hz</b></div>
+    <div><span class="label">Drive</span><b id="drivePct">0 %</b></div>
+    <div><span class="label">Reku</span><b id="regenPct">0 %</b></div>
+    <div><span class="label">Ladedruck</span><b id="bovPressureDisplay">0 %</b></div>
+    <div><span class="label">Schaltziel</span><b id="shiftTargetDisplay">–</b></div>
+    <div>
+      <span class="label">Fahrstil</span>
+      <b id="drivingStyleDisplay">0.00</b>
+    </div>
+  </div>
+</div>
 
     <div class="buttons sideButtons">
       <button id="gps" class="mainStartButton">Start</button>
