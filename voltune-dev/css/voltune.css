@@ -104,6 +104,10 @@ main{
 }
 
 .driveHudSpeed{
+  display:block;
+}
+
+.driveHudSpeedValue{
   display:flex;
 
   align-items:baseline;
@@ -111,10 +115,10 @@ main{
 
   gap:5px;
 
-  margin-bottom:10px;
+  margin-top:4px;
 }
 
-.driveHudSpeed #speed{
+.driveHudSpeedValue #speed{
   font-size:48px;
   font-weight:800;
 
@@ -126,7 +130,7 @@ main{
     tabular-nums;
 }
 
-.driveHudSpeed small{
+.driveHudSpeedValue small{
   color:var(--muted);
 
   font-size:12px;
@@ -358,7 +362,7 @@ body.debugActive .sideButtons .debugOnly{
 }
 
 body.debugActive .driveHudSpeed.debugOnly{
-  display:flex !important;
+  display:block !important;
 }
 
 body.debugActive .gpsPanel.debugOnly{
