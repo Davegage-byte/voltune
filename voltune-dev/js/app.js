@@ -405,53 +405,110 @@ if (
       1
     );
 
-  // Rückschaltungen können entweder beim
-  // Bremsen/Reku oder beim Kickdown entstehen.
-  const downshiftLoad =
-    clamp(
-      Math.max(
-        -accel / 3.2,
-        accel / 4.5
-      ),
-      0,
-      1
-    );
+// =========================
+// Art der Rückschaltung
+// =========================
 
-  // 2 -> 1 bei niedriger Geschwindigkeit
-  // soll praktisch geräuschlos bleiben.
-  const quietFirstGear =
-    transmission.gear === 1 &&
-    speedKmh < 25;
+// Positive Beschleunigung:
+// Rückschaltung wegen Leistungsanforderung / Kickdown.
+const kickdownLoad =
+  clamp(
+    accel / 3.5,
+    0,
+    1
+  );
 
-  if (!quietFirstGear) {
-    const blipIntensity =
+// Negative Beschleunigung:
+// normales Zurückschalten beim Verzögern.
+const brakingLoad =
+  clamp(
+    (-accel - 0.8) / 2.4,
+    0,
+    1
+  );
+
+const kickdownDownshift =
+  accel > 0.8;
+
+
+// 2 -> 1 bei niedriger Geschwindigkeit
+// soll komplett unauffällig bleiben.
+const quietFirstGear =
+  transmission.gear === 1 &&
+  speedKmh < 25;
+
+if (!quietFirstGear) {
+
+  let blipIntensity;
+  let blipVolume;
+
+
+  if (kickdownDownshift) {
+
+    // =========================
+    // Kickdown / Beschleunigung
+    // =========================
+    //
+    // Hier soll der Zwischengasstoß
+    // deutlich hörbar sein.
+
+    blipIntensity =
       clamp(
-        0.28 +
-
-        // Sportliche Fahrweise:
-        drivingStyle * 0.32 +
-
-        // Stärkere Reku oder Kickdown:
-        downshiftLoad * 0.25 +
-
-        // Mehrere übersprungene Gänge
-        // ergeben einen kräftigeren Blip.
+        0.35 +
+        kickdownLoad * 0.42 +
+        drivingStyle * 0.18 +
         Math.max(
           0,
           gearDrop - 1
-        ) * 0.18,
-
-        0.20,
+        ) * 0.15,
+        0.25,
         1
       );
 
-    VoltuneAudio.triggerDownshiftBlip(
-      blipIntensity,
+    blipVolume =
       Number(
         ui.downshiftBlip.value
-      )
-    );
+      );
+
+  } else {
+
+    // =========================
+    // Reku / Bremsen
+    // =========================
+    //
+    // Beim normalen Verzögern soll der
+    // Blip fast verschwinden.
+    //
+    // Erst bei kräftiger Verzögerung
+    // darf ein sehr kleiner Hinweis
+    // hörbar werden.
+
+    blipIntensity =
+      clamp(
+        0.08 +
+        brakingLoad * 0.12 +
+        drivingStyle * 0.04,
+        0.05,
+        0.22
+      );
+
+    // Nur ein kleiner Bruchteil der
+    // eingestellten Blip-Lautstärke.
+    blipVolume =
+      Number(
+        ui.downshiftBlip.value
+      ) *
+      (
+        0.05 +
+        brakingLoad * 0.10
+      );
   }
+
+
+  VoltuneAudio.triggerDownshiftBlip(
+    blipIntensity,
+    blipVolume
+  );
 }
 
 lastTransmissionGear =
