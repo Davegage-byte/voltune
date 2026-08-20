@@ -13,6 +13,7 @@
 
     start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
+    testShiftBurble:$("testShiftBurble"), testBov:$("testBov"), testOverrun:$("testOverrun"),
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
     gpsRawSpeed:$("gpsRawSpeed"),
@@ -1320,6 +1321,53 @@ ui.debug.addEventListener("click", () => {
     ui.mute.textContent =
       nextMuted ? "Ton an" : "Stumm";
   });
+
+  // =========================
+// Effekt-Testbuttons
+// =========================
+
+ui.testShiftBurble.addEventListener(
+  "click",
+  async () => {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+
+    VoltuneAudio.triggerShiftBurble(
+      1.0,
+      Number(ui.shiftBurble.value)
+    );
+  }
+);
+
+ui.testBov.addEventListener(
+  "click",
+  async () => {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+
+    VoltuneAudio.triggerBov(
+      1.0,
+      Number(ui.bov.value),
+      0
+    );
+  }
+);
+
+ui.testOverrun.addEventListener(
+  "click",
+  async () => {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+
+    VoltuneAudio.triggerOverrun(
+      1.0,
+      Number(ui.overrun.value)
+    );
+  }
+);
 
   // Manuelle Geschwindigkeit:
   // Die Änderungsrate des Sliders wird als Beschleunigung interpretiert.
