@@ -253,7 +253,16 @@
     <div class="control control-rpm">
       <div class="top">
         <span>DSG-Furzen</span>
-        <span id="shiftBurbleLabel">60 %</span>
+      
+        <span class="effectControlActions">
+          <span id="shiftBurbleLabel">60 %</span>
+          <button
+            id="testShiftBurble"
+            class="effectTestBtn"
+            type="button"
+            title="DSG-Furzen testen"
+          >▶</button>
+        </span>
       </div>
     
       <input
@@ -296,14 +305,35 @@
     </div>
 
     <div class="control control-accel">
-      <div class="top"><span>BOV/Entladung-Layer</span><span id="bovLabel">60 %</span></div>
+      <div class="top">
+        <span>BOV/Entladung-Layer</span>
+      
+        <span class="effectControlActions">
+          <span id="bovLabel">60 %</span>
+          <button
+            id="testBov"
+            class="effectTestBtn"
+            type="button"
+            title="BOV testen"
+          >▶</button>
+        </span>
+      </div>
       <input id="bov" type="range" min="0" max="100" value="60">
     </div>
 
     <div class="control control-accel">
       <div class="top">
         <span>Schubknallen</span>
-        <span id="overrunLabel">50 %</span>
+      
+        <span class="effectControlActions">
+          <span id="overrunLabel">50 %</span>
+          <button
+            id="testOverrun"
+            class="effectTestBtn"
+            type="button"
+            title="Schubknallen testen"
+          >▶</button>
+        </span>
       </div>
     
       <input
