@@ -601,17 +601,21 @@ body.debugActive .meter.debugOnly{
 /* Master-Lautstärke = globale Einstellung */
 
 .control-master{
-  background:#f5f7fa;
-  border-color:#ffffff;
-  color:#0a0d11;
+  background:
+    rgba(245,247,250,.10);
+
+  border-color:
+    rgba(245,247,250,.38);
+
+  color:#f4f7fb;
 }
 
 .control-master .top{
-  color:#0a0d11;
+  color:#f4f7fb;
 }
 
 .control-master input[type=range]{
-  accent-color:#0a0d11;
+  accent-color:#f5f7fa;
 }
 
 /* Fahren = Blau */
