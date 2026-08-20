@@ -9,7 +9,11 @@
     drivePct:$("drivePct"),
     regenPct:$("regenPct"),
     bovPressureDisplay:$("bovPressureDisplay"),
-    gearDisplay:$("gearDisplay"), rpmDisplay:$("rpmDisplay"), shiftTargetDisplay:$("shiftTargetDisplay"),drivingStyleDisplay:$("drivingStyleDisplay"),
+    gearDisplay:$("gearDisplay"),
+    rpmDisplay:$("rpmDisplay"),
+    shiftTargetDisplay:$("shiftTargetDisplay"),
+    downshiftTargetDisplay:$("downshiftTargetDisplay"),
+    drivingStyleDisplay:$("drivingStyleDisplay"),
 
     start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
     easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
@@ -370,15 +374,26 @@ lastTransmissionGear =
   
   // Getriebeanzeige aktualisieren
   if (transmission.direct) {
-    ui.gearDisplay.textContent = "Direkt";
-    ui.shiftTargetDisplay.textContent = "–";
-
+    ui.gearDisplay.textContent =
+      "Direkt";
+  
+    ui.shiftTargetDisplay.textContent =
+      "–";
+  
+    ui.downshiftTargetDisplay.textContent =
+      "–";
+  
   } else {
     ui.gearDisplay.textContent =
       `${transmission.gear}`;
-
+  
     ui.shiftTargetDisplay.textContent =
       `${Math.round(transmission.shiftTarget)} RPM`;
+  
+    ui.downshiftTargetDisplay.textContent =
+      transmission.downshiftTarget == null
+        ? "–"
+        : `${Math.round(transmission.downshiftTarget)} RPM`;
   }
 
     ui.rpmDisplay.textContent =
@@ -587,6 +602,7 @@ ui.gpsSmoothAccel.textContent =
       gearsEnabled ? "1" : "Direkt";
     ui.rpmDisplay.textContent = "0 RPM";
     ui.shiftTargetDisplay.textContent = "–";
+    ui.downshiftTargetDisplay.textContent = "–";
     ui.speedBar.style.width = "0%";
 
     setRpmMarker(
@@ -1269,6 +1285,8 @@ ui.gears.addEventListener("click", () => {
 
     ui.shiftTargetDisplay.textContent =
       "–";
+    ui.downshiftTargetDisplay.textContent =
+      "–";
   }
 
   scheduleSettingsSave();
@@ -1582,6 +1600,8 @@ ui.shiftTargetDisplay.textContent =
   gearsEnabled
     ? `${ui.shiftRpm.value} RPM`
     : "–";
+  ui.downshiftTargetDisplay.textContent =
+  "–";
 
 setRpmMarker(
   ui.shiftMarker,
