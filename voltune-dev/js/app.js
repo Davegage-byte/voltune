@@ -437,6 +437,7 @@ lastTransmissionGear =
       acceleration: accel,
       rpm: transmission.rpm,
       maxRpm: transmission.maxRpm
+      drivingStyle: transmission.drivingStyle ?? 0
     },
     getAudioSettings()
   );
