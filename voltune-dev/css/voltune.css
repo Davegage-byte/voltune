@@ -376,6 +376,18 @@ body.debugActive .meter.debugOnly{
   border:1px solid #344150;
 }
 
+/* Debug-Steuerung einheitlich hervorheben */
+#debug,
+#start,
+#restart,
+#controller{
+  background:#f5f7fa;
+  color:#0a0d11;
+
+  border:
+    1px solid #ffffff;
+}
+
 /* Fahrfunktionen leicht von Audio-Steuerung trennen */
 #easyBov{
   margin-top:5px;
