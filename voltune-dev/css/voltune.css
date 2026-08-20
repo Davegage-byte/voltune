@@ -365,6 +365,11 @@ body.debugActive .driveHudSpeed.debugOnly{
   display:block !important;
 }
 
+.driveHudSpeed > .label{
+  display:block;
+  margin-bottom:4px;
+}
+
 body.debugActive .gpsPanel.debugOnly{
   display:grid !important;
 }
