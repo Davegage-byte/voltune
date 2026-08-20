@@ -403,7 +403,7 @@ window.VoltuneAudio = (() => {
 
     regenFilter.type = "bandpass";
     regenFilter.frequency.value = 1050;
-    regenFilter.Q.value = 1.25;
+    regenFilter.Q.value = 0.80;
 
     const rg2 =
       ctx.createGain();
@@ -2004,8 +2004,19 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     // =========================
 
     const regenFreq =
-      520 +
-      rpmN * 1250;
+      360 +
+    
+      // Reku folgt hauptsächlich der realen
+      // Fahrzeuggeschwindigkeit und nicht
+      // den virtuellen Gangwechseln.
+      Math.pow(
+        speedN,
+        0.72
+      ) * 1050 +
+    
+      // Stärkere Reku zieht den elektrischen
+      // Ton leicht nach oben.
+      neg * 140;
 
     setTarget(
       regenOsc1.frequency,
@@ -2022,12 +2033,16 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     setTarget(
       regenFilter.frequency,
       clamp(
-        800 +
-          rpmN * 1450,
-        700,
-        2600
+        650 +
+          Math.pow(
+            speedN,
+            0.70
+          ) * 1650 +
+          neg * 350,
+        650,
+        2800
       ),
-      0.06
+      0.08
     );
 
     // =========================
