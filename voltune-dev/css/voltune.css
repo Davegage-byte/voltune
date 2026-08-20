@@ -227,8 +227,8 @@ main{
   background:
     linear-gradient(
       90deg,
-      #3cc6ff,
-      #8dffdf
+      #6f3fa0,
+      #a86be0
     );
 
   transition:
@@ -265,22 +265,13 @@ main{
 
 
 /* Hochschaltziel */
-.rpmMarkerUp{
-  background:#ff5c5c;
-
-  box-shadow:
-    0 0 5px
-    rgba(255,92,92,.9);
-}
-
-
-/* Rückschaltziel */
+.rpmMarkerUp,
 .rpmMarkerDown{
-  background:#55d68b;
+  background:#ffffff;
 
   box-shadow:
     0 0 5px
-    rgba(85,214,139,.9);
+    rgba(255,255,255,.9);
 }
 
 
