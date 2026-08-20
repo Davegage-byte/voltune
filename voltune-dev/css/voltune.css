@@ -131,10 +131,16 @@ main{
 }
 
 .driveHudSpeedValue small{
-  color:var(--muted);
+  display:none;
+}
 
-  font-size:12px;
-  font-weight:650;
+.driveHudSpeed > .label::after{
+  content:" · km/h";
+
+  font-size:9px;
+  font-weight:600;
+
+  opacity:.75;
 }
 
 
