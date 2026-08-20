@@ -1221,11 +1221,15 @@ ui.controller.addEventListener(
     stopAudio();
   });
 
-  ui.easyBov.addEventListener("click", () => {
-    easyBovEnabled = !easyBovEnabled;
-    ui.easyBov.classList.toggle("active", easyBovEnabled);
-    scheduleSettingsSave();
-  });
+ui.gears.addEventListener("click", () => {
+  gearsEnabled = !gearsEnabled;
+
+  ui.gears.classList.toggle(
+    "active",
+    gearsEnabled
+  );
+
+  VoltuneDrivetrain.reset();
 
   setRpmMarker(
     ui.shiftMarker,
@@ -1234,24 +1238,40 @@ ui.controller.addEventListener(
       : null,
     ui.maxRpm.value
   );
-  
+
   setRpmMarker(
     ui.downshiftMarker,
     null,
     ui.maxRpm.value
   );
-    
-    if (soundActive) {
-      if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
-      else updateVoltuneSound(manualSpeed, manualAccel);
+
+  if (soundActive) {
+    if (gpsActive) {
+      updateVoltuneSound(
+        gpsSpeedKmh,
+        gpsAccel
+      );
     } else {
-      ui.gearDisplay.textContent =
-        gearsEnabled ? "1" : "Direkt";
-      ui.rpmDisplay.textContent = "0 RPM";
-      ui.shiftTargetDisplay.textContent = "–";
+      updateVoltuneSound(
+        manualSpeed,
+        manualAccel
+      );
     }
-    scheduleSettingsSave();
-  });
+  } else {
+    ui.gearDisplay.textContent =
+      gearsEnabled
+        ? "1"
+        : "Direkt";
+
+    ui.rpmDisplay.textContent =
+      "0 RPM";
+
+    ui.shiftTargetDisplay.textContent =
+      "–";
+  }
+
+  scheduleSettingsSave();
+});
 
   ui.dynamicShift.addEventListener("click", () => {
     dynamicShiftEnabled = !dynamicShiftEnabled;
@@ -1432,25 +1452,6 @@ if (
     ui.maxRpm.value
   );
 }
-        const markerPercent =
-          gearsEnabled
-            ? clamp(
-                Number(ui.shiftRpm.value) /
-                  Math.max(
-                    1,
-                    Number(ui.maxRpm.value)
-                  ) *
-                  100,
-                0,
-                100
-              )
-            : 101;
-      
-        ui.speedBar.parentElement.style.setProperty(
-          "--shift-marker",
-          `${markerPercent}%`
-        );
-      }
         
       if (el === ui.volume) {
         setMasterVolume();
