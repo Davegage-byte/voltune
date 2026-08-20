@@ -1356,6 +1356,13 @@ function triggerShiftBurble(
         Number(data.maxRpm) || 1
       );
 
+      const drivingStyle =
+        clamp(
+          Number(data.drivingStyle) || 0,
+          0,
+          1
+        );
+
     const baseStart =
       Number(settings.baseFrequency);
     
@@ -1836,6 +1843,17 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
           0,
           1
         );
+
+      // Fahrstil reagiert absichtlich nicht linear.
+      //
+      // Kleine Werte verändern den Sound nur wenig.
+      // Erst bei sportlicher Fahrweise wird der
+      // zusätzliche Pulscharakter deutlich.
+      const drivePulseStyle =
+        Math.pow(
+          drivingStyle,
+          0.80
+        );
       
       // Puls wird mit dem Tempo schneller.
       //
@@ -1844,10 +1862,27 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       //
       // Hohes Tempo:
       // zunehmend dichter und hektischer.
-      const drivePulseHz =
-        1.4 +
-        Math.pow(speedN, 0.75) * 5.5 +
-        Math.pow(drivePulseLoad, 0.75) * 2.2;
+    const drivePulseHz =
+      1.3 +
+    
+      // Grundanstieg mit Geschwindigkeit.
+      Math.pow(speedN, 0.75) * 5.0 +
+    
+      // Aktuelle Beschleunigung macht
+      // den Puls unmittelbar schneller.
+      Math.pow(drivePulseLoad, 0.75) * 2.0 +
+    
+      // Sportlicher Fahrstil erhöht die
+      // Frequenz zusätzlich.
+      //
+      // Bei wenig Last bleibt der Einfluss klein,
+      // damit ein zuvor aufgebauter Fahrstil
+      // nicht dauerhaft hektisch klingt.
+      drivePulseStyle *
+        (
+          0.5 +
+          drivePulseLoad * 2.5
+        );
       
       setTarget(
         drivePulseOsc.frequency,
@@ -1866,10 +1901,24 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       const drivePulseAmount =
         clamp(
           0.06 +
-            drivePulseLoad * 0.30 +
-            speedN * 0.05,
+      
+            // Hauptanteil kommt weiterhin
+            // von der aktuellen Beschleunigung.
+            drivePulseLoad * 0.27 +
+      
+            // Geschwindigkeit verstärkt den
+            // Effekt nur leicht.
+            speedN * 0.04 +
+      
+            // Bei sportlicher Fahrweise werden
+            // die einzelnen Pulse ausgeprägter.
+            // Auch dieser Anteil braucht Last.
+            drivePulseStyle *
+              drivePulseLoad *
+              0.12,
+      
           0.06,
-          0.42
+          0.48
         );
       
       // Der LFO läuft bipolar.
