@@ -1365,6 +1365,212 @@ function triggerShiftBurble(
     now + 0.27
   );
 }
+
+// =========================
+// Rückschalt-Blip / Zwischengas
+// =========================
+
+function triggerDownshiftBlip(
+  intensity = 0.7,
+  volumePercent = 55
+) {
+  if (
+    !started ||
+    !ctx ||
+    !master
+  ) {
+    return;
+  }
+
+  const amount =
+    clamp(
+      Number(intensity) || 0,
+      0,
+      1
+    );
+
+  const volume =
+    clamp(
+      Number(volumePercent) / 100,
+      0,
+      1
+    );
+
+  if (
+    amount <= 0.01 ||
+    volume <= 0.001
+  ) {
+    return;
+  }
+
+  const now =
+    ctx.currentTime;
+
+  // Sportliche Rückschaltungen werden
+  // etwas länger und kräftiger.
+  const duration =
+    0.18 +
+    amount * 0.16;
+
+
+  // =========================
+  // Haupt-Blip
+  // =========================
+
+  const blip =
+    ctx.createOscillator();
+
+  blip.type =
+    "sawtooth";
+
+  const startFreq =
+    95 +
+    amount * 25;
+
+  const peakFreq =
+    175 +
+    amount * 105;
+
+  blip.frequency.setValueAtTime(
+    startFreq,
+    now
+  );
+
+  // Schneller Drehzahlsprung nach oben.
+  blip.frequency.exponentialRampToValueAtTime(
+    peakFreq,
+    now + 0.055
+  );
+
+  // Danach wieder leicht zurückfallen.
+  blip.frequency.exponentialRampToValueAtTime(
+    105 + amount * 35,
+    now + duration
+  );
+
+
+  // =========================
+  // Tiefer Körper
+  // =========================
+
+  const body =
+    ctx.createOscillator();
+
+  body.type =
+    "triangle";
+
+  body.frequency.setValueAtTime(
+    62 + amount * 12,
+    now
+  );
+
+  body.frequency.exponentialRampToValueAtTime(
+    92 + amount * 28,
+    now + 0.06
+  );
+
+  body.frequency.exponentialRampToValueAtTime(
+    68 + amount * 10,
+    now + duration
+  );
+
+
+  // =========================
+  // Filter
+  // =========================
+
+  const filter =
+    ctx.createBiquadFilter();
+
+  filter.type =
+    "lowpass";
+
+  filter.frequency.setValueAtTime(
+    650 +
+      amount * 650,
+    now
+  );
+
+  filter.frequency.exponentialRampToValueAtTime(
+    420 +
+      amount * 180,
+    now + duration
+  );
+
+  filter.Q.value =
+    0.8;
+
+
+  // =========================
+  // Lautstärke-Hüllkurve
+  // =========================
+
+  const gain =
+    ctx.createGain();
+
+  const peak =
+    (
+      0.045 +
+      amount * 0.145
+    ) *
+    volume;
+
+  gain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+  // Sehr schneller Zwischengasstoß.
+  gain.gain.exponentialRampToValueAtTime(
+    peak,
+    now + 0.018
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    peak * 0.72,
+    now + 0.075
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now + duration
+  );
+
+
+  const bodyGain =
+    ctx.createGain();
+
+  bodyGain.gain.value =
+    0.55;
+
+
+  blip
+    .connect(filter);
+
+  body
+    .connect(bodyGain)
+    .connect(filter);
+
+  filter
+    .connect(gain)
+    .connect(master);
+
+
+  // =========================
+  // Start / Stop
+  // =========================
+
+  blip.start(now);
+  body.start(now);
+
+  blip.stop(
+    now + duration + 0.03
+  );
+
+  body.stop(
+    now + duration + 0.03
+  );
+}
   
   // =========================
   // Sound-Layer aktualisieren
@@ -2349,6 +2555,7 @@ lastAccel = accel;
     triggerBov,
     triggerOverrun,
     triggerShiftBurble,
+    triggerDownshiftBlip,
     
     setMasterVolume,
     setMuted,
