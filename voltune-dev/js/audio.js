@@ -296,7 +296,7 @@ window.VoltuneAudio = (() => {
 
     inv1 = createOsc("sine");
     inv2 = createOsc("sine");
-    inv3 = createOsc("triangle");
+    inv3 = createOsc("sine");
 
     invGain1 = ctx.createGain();
     invGain2 = ctx.createGain();
@@ -311,7 +311,7 @@ window.VoltuneAudio = (() => {
 
     invFilter.type = "bandpass";
     invFilter.frequency.value = 1500;
-    invFilter.Q.value = 0.7;
+    invFilter.Q.value = 0.45;
 
     inv1
       .connect(invGain1)
@@ -1800,13 +1800,13 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     setTarget(
       inv2.frequency,
-      inverterHz * 1.502,
+      inverterHz * 2.01,
       0.035
     );
-
+    
     setTarget(
       inv3.frequency,
-      inverterHz * 2.017,
+      inverterHz * 3.02,
       0.035
     );
 
@@ -1837,13 +1837,13 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     setTarget(
       invGain2.gain,
-      invLevel * 0.44,
+      invLevel * 0.18,
       0.06
     );
-
+    
     setTarget(
       invGain3.gain,
-      invLevel * 0.20,
+      invLevel * 0.07,
       0.06
     );
 
