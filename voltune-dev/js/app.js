@@ -302,15 +302,19 @@ function updateAccelerationFx(
   if (!animationsEnabled) {
     accelerationFxIntensity = 0;
     accelerationFxTargetIntensity = 0;
+  
+    regenFxIntensity = 0;
+    regenFxTargetIntensity = 0;
+  
     accelerationFxLastTime = now;
-
+  
     accelerationFxCtx.clearRect(
       0,
       0,
       accelerationFxWidth,
       accelerationFxHeight
     );
-
+  
     return;
   }
 
@@ -2767,46 +2771,36 @@ ui.gears.addEventListener("click", () => {
   scheduleSettingsSave();
 });
 
-  ui.dynamicShift.addEventListener("click", () => {
-    dynamicShiftEnabled = !dynamicShiftEnabled;
-    ui.dynamicShift.classList.toggle("active", dynamicShiftEnabled);
-
-    if (soundActive) {
-      if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
-      else updateVoltuneSound(manualSpeed, manualAccel);
-    }
-    scheduleSettingsSave();
-  });
-
-  ui.animations.addEventListener(
-  "click",
-  () => {
-    animationsEnabled =
-      !animationsEnabled;
-
-    ui.animations.classList.toggle(
-      "active",
-      animationsEnabled
-    );
-
-    // Beim Ausschalten laufende visuelle
-    // Effekte sofort vollständig entfernen.
-    if (!animationsEnabled) {
-      accelerationFxIntensity = 0;
-      accelerationFxTargetIntensity = 0;
-
-      if (
-        accelerationFxCtx &&
-        accelerationFxCanvas
-      ) {
-        accelerationFxCtx.clearRect(
-          0,
-          0,
-          accelerationFxWidth,
-          accelerationFxHeight
-        );
+    ui.dynamicShift.addEventListener("click", () => {
+      dynamicShiftEnabled = !dynamicShiftEnabled;
+      ui.dynamicShift.classList.toggle("active", dynamicShiftEnabled);
+  
+      if (soundActive) {
+        if (gpsActive) updateVoltuneSound(gpsSpeedKmh, gpsAccel);
+        else updateVoltuneSound(manualSpeed, manualAccel);
       }
+      scheduleSettingsSave();
+    });
+  
+  if (!animationsEnabled) {
+    accelerationFxIntensity = 0;
+    accelerationFxTargetIntensity = 0;
+  
+    regenFxIntensity = 0;
+    regenFxTargetIntensity = 0;
+  
+    if (
+      accelerationFxCtx &&
+      accelerationFxCanvas
+    ) {
+      accelerationFxCtx.clearRect(
+        0,
+        0,
+        accelerationFxWidth,
+        accelerationFxHeight
+      );
     }
+  }
 
     scheduleSettingsSave();
   }
