@@ -134,7 +134,7 @@
   
   resizeAccelerationFx();
 
-  // =========================
+// =========================
 // Beschleunigungs-Partikel
 // =========================
 
@@ -215,7 +215,7 @@ for (
   );
 }
 
-  // =========================
+// =========================
 // Rekuperations-Partikel
 // =========================
 //
@@ -2782,30 +2782,40 @@ ui.gears.addEventListener("click", () => {
       scheduleSettingsSave();
     });
   
-  if (!animationsEnabled) {
-    accelerationFxIntensity = 0;
-    accelerationFxTargetIntensity = 0;
-  
-    regenFxIntensity = 0;
-    regenFxTargetIntensity = 0;
-  
-    if (
-      accelerationFxCtx &&
-      accelerationFxCanvas
-    ) {
-      accelerationFxCtx.clearRect(
-        0,
-        0,
-        accelerationFxWidth,
-        accelerationFxHeight
-      );
+ui.animations.addEventListener(
+  "click",
+  () => {
+    animationsEnabled =
+      !animationsEnabled;
+
+    ui.animations.classList.toggle(
+      "active",
+      animationsEnabled
+    );
+
+    if (!animationsEnabled) {
+      accelerationFxIntensity = 0;
+      accelerationFxTargetIntensity = 0;
+
+      regenFxIntensity = 0;
+      regenFxTargetIntensity = 0;
+
+      if (
+        accelerationFxCtx &&
+        accelerationFxCanvas
+      ) {
+        accelerationFxCtx.clearRect(
+          0,
+          0,
+          accelerationFxWidth,
+          accelerationFxHeight
+        );
+      }
     }
-  }
 
     scheduleSettingsSave();
   }
 );
-
   ui.driveModeNormal.addEventListener(
   "click",
   () => setDriveMode("normal")
