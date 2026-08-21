@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Voltune – Launch Mode Demo</title>
+  <style>
+    :root {
+      --bg: #050608;
+      --panel: rgba(18, 21, 26, .72);
+      --text: #f5f7fa;
+      --muted: #8c949f;
+      --accent: #ff3b30;
+      --accent2: #ff8a00;
+      --line: rgba(255,255,255,.10);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { overflow: hidden; }
+
+    button { font: inherit; }
+
+    #app {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255,59,48,.10), transparent 32%),
+        linear-gradient(180deg, #080a0d 0%, #030405 100%);
+    }
+
+    .noise {
+      position: absolute;
+      inset: 0;
+      opacity: .05;
+      pointer-events: none;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.08) 0 1px, transparent 1px 3px);
+      mix-blend-mode: screen;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      transition: opacity .35s ease, transform .35s ease;
+    }
+
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.02);
+    }
+
+    /* START */
+    #startScreen {
+      padding: 28px;
+      text-align: center;
+    }
+
+    .start-wrap {
+      width: min(560px, 92vw);
+    }
+
+    .eyebrow {
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(46px, 9vw, 86px);
+      line-height: .95;
+      letter-spacing: -.055em;
+      font-weight: 850;
+    }
+
+    .sub {
+      color: var(--muted);
+      max-width: 460px;
+      margin: 20px auto 34px;
+      line-height: 1.55;
+    }
+
+    .launch-btn {
+      border: 1px solid rgba(255,255,255,.16);
+      color: white;
+      background: rgba(255,59,48,.16);
+      border-radius: 999px;
+      padding: 17px 34px;
+      min-width: 220px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 750;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .launch-btn:hover {
+      background: rgba(255,59,48,.25);
+      border-color: rgba(255,59,48,.55);
+      transform: translateY(-1px);
+    }
+
+    .launch-btn:active { transform: scale(.98); }
+
+    /* COUNTDOWN */
+    #countdownScreen {
+      background:
+        radial-gradient(circle at center, rgba(255,59,48,.14), transparent 32%),
+        #050608;
+    }
+
+    #countNumber {
+      font-size: clamp(120px, 35vw, 340px);
+      font-weight: 900;
+      letter-spacing: -.08em;
+      line-height: .8;
+      text-shadow: 0 0 55px rgba(255,59,48,.35);
+      transform: scale(.7);
+      opacity: 0;
+    }
+
+    #countNumber.pop {
+      animation: countPop .72s cubic-bezier(.2,.85,.2,1);
+    }
+
+    @keyframes countPop {
+      0% { opacity: 0; transform: scale(.55); filter: blur(10px); }
+      18% { opacity: 1; transform: scale(1.08); filter: blur(0); }
+      70% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.22); filter: blur(4px); }
+    }
+
+    #countNumber.go {
+      color: white;
+      text-shadow: 0 0 30px rgba(255,59,48,.8), 0 0 90px rgba(255,59,48,.5);
+    }
+
+    /* LAUNCH */
+    #launchScreen {
+      overflow: hidden;
+      background: #050608;
+    }
+
+    .speed-tunnel {
+      position: absolute;
+      inset: -25%;
+      opacity: 0;
+      background:
+        repeating-conic-gradient(
+          from 0deg at 50% 50%,
+          rgba(255,255,255,.9) 0deg .12deg,
+          transparent .12deg 7deg
+        );
+      mask-image: radial-gradient(circle at center, transparent 0 8%, black 17% 100%);
+      -webkit-mask-image: radial-gradient(circle at center, transparent 0 8%, black 17% 100%);
+      transform: scale(.5) rotate(0deg);
+      filter: blur(.4px);
+    }
+
+    #launchScreen.active .speed-tunnel {
+      animation: tunnel 1s linear infinite;
+      opacity: .18;
+    }
+
+    @keyframes tunnel {
+      from { transform: scale(.58) rotate(0deg); }
+      to   { transform: scale(1.18) rotate(3deg); }
+    }
+
+    .pulse {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: radial-gradient(circle at 50% 50%, transparent 0 20%, rgba(255,59,48,.10) 43%, rgba(255,59,48,.34) 100%);
+    }
+
+    #launchScreen.active .pulse {
+      animation: pulse 540ms ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: .2; transform: scale(.98); }
+      to { opacity: .85; transform: scale(1.03); }
+    }
+
+    .speed-lines {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    #launchScreen.active .speed-lines { opacity: 1; }
+
+    .line {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 2px;
+      height: var(--len);
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,.85));
+      transform-origin: 50% 0;
+      transform: rotate(var(--rot)) translateY(80px);
+      animation: rush var(--dur) linear infinite;
+      animation-delay: var(--delay);
+      opacity: var(--op);
+    }
+
+    @keyframes rush {
+      from { transform: rotate(var(--rot)) translateY(35px) scaleY(.15); opacity: 0; }
+      20% { opacity: var(--op); }
+      to { transform: rotate(var(--rot)) translateY(75vh) scaleY(2.2); opacity: 0; }
+    }
+
+    .launch-center {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translateY(-1vh);
+    }
+
+    .launch-label {
+      letter-spacing: .42em;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: rgba(255,255,255,.55);
+      margin-bottom: 6px;
+    }
+
+    #speed {
+      font-size: clamp(112px, 28vw, 280px);
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      line-height: .82;
+      letter-spacing: -.08em;
+      text-shadow: 0 0 50px rgba(255,59,48,.24);
+    }
+
+    .unit {
+      margin-top: 12px;
+      font-size: clamp(14px, 2vw, 18px);
+      color: rgba(255,255,255,.55);
+      letter-spacing: .32em;
+      text-transform: uppercase;
+    }
+
+    .progress {
+      position: absolute;
+      left: 7vw;
+      right: 7vw;
+      bottom: max(34px, env(safe-area-inset-bottom));
+      height: 3px;
+      background: rgba(255,255,255,.12);
+      overflow: hidden;
+      border-radius: 99px;
+    }
+
+    #progressFill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 18px rgba(255,59,48,.75);
+    }
+
+    .launch-meta {
+      position: absolute;
+      top: max(28px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,.52);
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      font-size: 11px;
+      z-index: 3;
+    }
+
+    /* RESULT */
+    #resultScreen {
+      background:
+        radial-gradient(circle at 50% 15%, rgba(255,59,48,.12), transparent 35%),
+        linear-gradient(180deg, #080a0d 0%, #030405 100%);
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    .result-card {
+      width: min(760px, 94vw);
+      max-height: 92vh;
+      max-height: 92dvh;
+      position: relative;
+      border: 1px solid var(--line);
+      background: rgba(12,14,18,.82);
+      backdrop-filter: blur(18px);
+      border-radius: 28px;
+      padding: clamp(24px, 5vw, 46px);
+      box-shadow: 0 30px 90px rgba(0,0,0,.5);
+    }
+
+    .close {
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+      color: white;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .result-title {
+      font-size: clamp(30px, 6vw, 52px);
+      letter-spacing: -.045em;
+      font-weight: 850;
+      margin: 4px 0 8px;
+    }
+
+    .result-sub {
+      color: var(--muted);
+      margin-bottom: 30px;
+    }
+
+    .hero-stat {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 22px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 24px 0;
+      margin-bottom: 8px;
+    }
+
+    .hero-stat .name {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: 12px;
+    }
+
+    .hero-stat .value {
+      font-size: clamp(42px, 9vw, 76px);
+      line-height: .9;
+      font-weight: 900;
+      letter-spacing: -.06em;
+      white-space: nowrap;
+    }
+
+    .hero-stat .value span {
+      font-size: .28em;
+      font-weight: 650;
+      color: var(--muted);
+      letter-spacing: 0;
+      margin-left: 6px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .stat {
+      padding: 20px 4px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stat:nth-child(odd) {
+      padding-right: 24px;
+      border-right: 1px solid var(--line);
+    }
+
+    .stat:nth-child(even) { padding-left: 24px; }
+
+    .stat-name {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 7px;
+    }
+
+    .stat-value {
+      font-size: clamp(26px, 5vw, 38px);
+      font-weight: 780;
+      letter-spacing: -.035em;
+    }
+
+    .stat-value span {
+      color: var(--muted);
+      font-size: .48em;
+      font-weight: 600;
+      letter-spacing: 0;
+      margin-left: 3px;
+    }
+
+    .result-foot {
+      margin-top: 24px;
+      font-size: 12px;
+      color: rgba(255,255,255,.35);
+      text-align: center;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 520px) {
+      .result-card { border-radius: 22px; }
+      .stats { grid-template-columns: 1fr; }
+      .stat:nth-child(odd), .stat:nth-child(even) {
+        padding: 16px 0;
+        border-right: 0;
+      }
+      .hero-stat { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main id="app">
+    <div class="noise"></div>
+
+    <section id="startScreen" class="screen">
+      <div class="start-wrap">
+        <div class="eyebrow">Voltune Prototype</div>
+        <h1>LAUNCH</h1>
+        <p class="sub">Reine Optik-Demo: Countdown, simulierte Beschleunigung, Abbremsen und anschließendes Launch Result.</p>
+        <button id="startBtn" class="launch-btn" type="button">Launch starten</button>
+      </div>
+    </section>
+
+    <section id="countdownScreen" class="screen hidden" aria-live="polite">
+      <div id="countNumber">3</div>
+    </section>
+
+    <section id="launchScreen" class="screen hidden">
+      <div class="speed-tunnel"></div>
+      <div class="pulse"></div>
+      <div id="speedLines" class="speed-lines"></div>
+
+      <div class="launch-meta">Launch active</div>
+
+      <div class="launch-center">
+        <div class="launch-label">Speed</div>
+        <div id="speed">0</div>
+        <div class="unit">km/h</div>
+      </div>
+
+      <div class="progress"><div id="progressFill"></div></div>
+    </section>
+
+    <section id="resultScreen" class="screen hidden">
+      <div class="result-card">
+        <button id="closeBtn" class="close" type="button" aria-label="Launch Result schließen">×</button>
+
+        <div class="eyebrow">Voltune</div>
+        <div class="result-title">LAUNCH RESULT</div>
+        <div class="result-sub">Run abgeschlossen</div>
+
+        <div class="hero-stat">
+          <div>
+            <div class="name">0–100 km/h</div>
+          </div>
+          <div class="value">3,8<span>s</span></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-name">Reaktionszeit</div>
+            <div class="stat-value">0,42<span>s</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-name">0–50 km/h</div>
+            <div class="stat-value">1,7<span>s</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-name">0–150 km/h</div>
+            <div class="stat-value">6,1<span>s</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-name">0–200 km/h</div>
+            <div class="stat-value">9,7<span>s</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-name">100–200 km/h</div>
+            <div class="stat-value">5,9<span>s</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-name">Top Speed</div>
+            <div class="stat-value">217<span>km/h</span></div>
+          </div>
+        </div>
+
+        <div class="result-foot">Demo-Werte · keine echte Fahrzeugmessung</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const startScreen = document.getElementById('startScreen');
+    const countdownScreen = document.getElementById('countdownScreen');
+    const launchScreen = document.getElementById('launchScreen');
+    const resultScreen = document.getElementById('resultScreen');
+
+    const startBtn = document.getElementById('startBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const countNumber = document.getElementById('countNumber');
+    const speedEl = document.getElementById('speed');
+    const progressFill = document.getElementById('progressFill');
+    const speedLines = document.getElementById('speedLines');
+
+    let running = false;
+    let audioCtx = null;
+
+    function show(screen) {
+      [startScreen, countdownScreen, launchScreen, resultScreen].forEach(s => {
+        s.classList.toggle('hidden', s !== screen);
+      });
+    }
+
+    function beep(freq, duration = 0.12, gain = 0.07) {
+      try {
+        audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(gain, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(g).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (_) {}
+    }
+
+    function makeSpeedLines() {
+      speedLines.innerHTML = '';
+      for (let i = 0; i < 44; i++) {
+        const line = document.createElement('i');
+        line.className = 'line';
+        line.style.setProperty('--rot', `${(360 / 44) * i + (Math.random() * 5 - 2.5)}deg`);
+        line.style.setProperty('--len', `${80 + Math.random() * 190}px`);
+        line.style.setProperty('--dur', `${0.28 + Math.random() * 0.42}s`);
+        line.style.setProperty('--delay', `${-Math.random() * 0.8}s`);
+        line.style.setProperty('--op', `${0.15 + Math.random() * 0.55}`);
+        speedLines.appendChild(line);
+      }
+    }
+
+    function playCount(value, isGo = false) {
+      return new Promise(resolve => {
+        countNumber.textContent = value;
+        countNumber.classList.remove('pop', 'go');
+        void countNumber.offsetWidth;
+        if (isGo) countNumber.classList.add('go');
+        countNumber.classList.add('pop');
+        beep(isGo ? 880 : 430 + (3 - Number(value || 3)) * 55, isGo ? 0.28 : 0.13, isGo ? 0.11 : 0.07);
+        setTimeout(resolve, isGo ? 760 : 820);
+      });
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function easeInOutCubic(t) {
+      return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+    }
+
+    function animateRun() {
+      show(launchScreen);
+      launchScreen.classList.add('active');
+      makeSpeedLines();
+
+      const accelMs = 7000;
+      const holdMs = 750;
+      const brakeMs = 2600;
+      const maxSpeed = 217;
+      const start = performance.now();
+
+      function frame(now) {
+        const elapsed = now - start;
+        let speed = 0;
+        let progress = 0;
+
+        if (elapsed <= accelMs) {
+          const t = elapsed / accelMs;
+          speed = maxSpeed * easeOutCubic(t);
+          progress = t * 82;
+        } else if (elapsed <= accelMs + holdMs) {
+          speed = maxSpeed;
+          progress = 82 + ((elapsed - accelMs) / holdMs) * 5;
+        } else if (elapsed <= accelMs + holdMs + brakeMs) {
+          const t = (elapsed - accelMs - holdMs) / brakeMs;
+          speed = maxSpeed * (1 - easeInOutCubic(t));
+          progress = 87 + t * 13;
+        } else {
+          speedEl.textContent = '0';
+          progressFill.style.width = '100%';
+          launchScreen.classList.remove('active');
+          setTimeout(() => {
+            show(resultScreen);
+            running = false;
+          }, 450);
+          return;
+        }
+
+        speedEl.textContent = Math.max(0, Math.round(speed));
+        progressFill.style.width = `${progress}%`;
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    async function startDemo() {
+      if (running) return;
+      running = true;
+      speedEl.textContent = '0';
+      progressFill.style.width = '0%';
+
+      show(countdownScreen);
+      await new Promise(r => setTimeout(r, 250));
+      await playCount('3');
+      await playCount('2');
+      await playCount('1');
+      await playCount('GO', true);
+
+      animateRun();
+    }
+
+    function resetDemo() {
+      running = false;
+      launchScreen.classList.remove('active');
+      speedEl.textContent = '0';
+      progressFill.style.width = '0%';
+      show(startScreen);
+    }
+
+    startBtn.addEventListener('click', startDemo);
+    closeBtn.addEventListener('click', resetDemo);
+  </script>
+</body>
+</html>
