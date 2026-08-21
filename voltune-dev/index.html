@@ -3,12 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    html,
+    body {
+      background: #05070a;
+    }
+  
+    #startupOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20000;
+      background: rgba(5, 7, 10, 0.96);
+      pointer-events: none;
+    }
+  </style>
 <title>Voltune Sound Test GPS v6</title>
   
 <link rel="stylesheet" href="css/voltune.css">
 
 </head>
 <body>
+
+  <div
+    id="startupOverlay"
+    aria-hidden="true"
+  >
+    <div id="startupGlow"></div>
+  
+    <div id="startupRing"></div>
+  
+    <div id="startupLogo">
+      VOLTUNE
+    </div>
+  </div>
 
 <canvas
   id="accelerationFx"
