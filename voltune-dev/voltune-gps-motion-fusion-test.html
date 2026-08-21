@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b10">
+<title>Voltune GPS + Motion Fusion Test</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#090b10;--panel:#121722;--panel2:#0d121b;--line:#293548;
+  --text:#f2f6fa;--muted:#93a4b8;--raw:#ffcf66;--pred:#b58cff;--fusion:#69d2ff;
+  --ok:#65e6a5;--warn:#ffd36d;--bad:#ff7b7b;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
+  font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1000px;margin:auto;padding:max(16px,env(safe-area-inset-top)) 14px max(28px,env(safe-area-inset-bottom))}
+h1{font-size:24px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--text);
+  padding:11px 14px;font-size:14px;font-weight:750;cursor:pointer}
+button.primary{border-color:var(--fusion)}button:disabled{opacity:.45}
+.status{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 12px;color:var(--muted);margin-bottom:10px}
+.status.ok{color:var(--ok)}.status.warn{color:var(--warn)}.status.bad{color:var(--bad)}
+.badges{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.badge{border:1px solid var(--line);border-radius:999px;background:var(--panel2);padding:6px 9px;color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;min-width:0}
+.big{min-height:140px}.label{text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-size:11px}
+.value{font-size:clamp(32px,8vw,58px);font-weight:850;line-height:1.05;margin-top:5px;font-variant-numeric:tabular-nums}
+.unit{font-size:13px;color:var(--muted);font-weight:650}.mini{margin-top:7px;color:var(--muted);font-variant-numeric:tabular-nums}
+.span3{grid-column:1/-1}.diaggrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+.diag{background:var(--panel2);border-radius:10px;padding:9px;min-width:0}
+.diag .v{font-size:17px;font-weight:750;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+canvas{width:100%;height:280px;display:block;background:#090d13;border-radius:10px;margin-top:8px}
+.legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:7px;color:var(--muted);font-size:12px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.raw{background:var(--raw)}.pred{background:var(--pred)}.fusion{background:var(--fusion)}
+.settings{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+input[type=range]{width:100%}
+details{margin-top:10px;color:var(--muted)}summary{cursor:pointer}
+pre{background:#070a0f;border-radius:9px;padding:10px;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+.note{color:var(--muted);font-size:12px;margin-top:10px}
+@media(max-width:720px){
+  .grid{grid-template-columns:1fr}.span3{grid-column:auto}
+  .diaggrid{grid-template-columns:1fr 1fr}.big{min-height:120px}
+  canvas{height:230px}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Voltune – GPS + Motion Fusion Test</h1>
+  <p class="sub">1-Hz-GPS als Anker, Bewegungssensor für schnelle Zwischenwerte.</p>
+
+  <div class="toolbar">
+    <button id="start" class="primary">GPS + Motion starten</button>
+    <button id="stop" disabled>Stop</button>
+    <button id="demo">1-Hz-Fusionsdemo</button>
+    <button id="recal">Motion neu kalibrieren</button>
+    <button id="clear">Diagramm leeren</button>
+    <button id="csv">CSV speichern</button>
+  </div>
+
+  <div id="status" class="status">Bereit. Für den Fahrtest über HTTPS öffnen und im Stand starten.</div>
+
+  <div class="badges">
+    <span class="badge" id="secureBadge">HTTPS: prüfe …</span>
+    <span class="badge" id="motionBadge">Motion: prüfe …</span>
+    <span class="badge" id="calBadge">Kalibrierung: wartet</span>
+  </div>
+
+  <div class="grid">
+    <section class="card big">
+      <div class="label">Roh-GPS</div>
+      <div class="value"><span id="rawSpeed">0.0</span> <span class="unit">km/h</span></div>
+      <div class="mini">Springt bei langsamem GPS sichtbar.</div>
+    </section>
+
+    <section class="card big">
+      <div class="label">GPS-Prognose</div>
+      <div class="value"><span id="predSpeed">0.0</span> <span class="unit">km/h</span></div>
+      <div class="mini">Nur aus den letzten GPS-Fixes geschätzt.</div>
+    </section>
+
+    <section class="card big">
+      <div class="label">GPS + Motion</div>
+      <div class="value"><span id="fusionSpeed">0.0</span> <span class="unit">km/h</span></div>
+      <div class="mini">Zielwert für Voltune.</div>
+    </section>
+
+    <section class="card span3">
+      <div class="label">Diagnose</div>
+      <div class="diaggrid">
+        <div class="diag"><div class="label">GPS-Rate</div><div class="v"><span id="gpsHz">0.00</span> Hz</div></div>
+        <div class="diag"><div class="label">Motion-Rate</div><div class="v"><span id="motionHz">0</span> Hz</div></div>
+        <div class="diag"><div class="label">GPS-Beschl.</div><div class="v"><span id="gpsAccel">0.00</span> m/s²</div></div>
+        <div class="diag"><div class="label">Motion-Beschl.</div><div class="v"><span id="motionAccel">–</span> m/s²</div></div>
+        <div class="diag"><div class="label">GPS-Genauigkeit</div><div class="v"><span id="accuracy">–</span> m</div></div>
+        <div class="diag"><div class="label">GPS-Fix-Abstand</div><div class="v"><span id="fixGap">–</span> ms</div></div>
+        <div class="diag"><div class="label">Kalibrierung</div><div class="v" id="calState">wartet</div></div>
+        <div class="diag"><div class="label">GPS-Korrektur</div><div class="v"><span id="correction">0.00</span> km/h</div></div>
+      </div>
+    </section>
+
+    <section class="card span3">
+      <div class="label">Feinabstimmung</div>
+      <div class="settings">
+        <label for="corrTau">GPS-Korrektur weich verteilen</label>
+        <span><span id="corrTauLabel">0.30</span> s</span>
+        <input id="corrTau" type="range" min="0.08" max="1.00" value="0.30" step="0.02"><span></span>
+
+        <label for="motionSmooth">Motion-Glättung</label>
+        <span><span id="motionSmoothLabel">0.30</span></span>
+        <input id="motionSmooth" type="range" min="0.08" max="0.70" value="0.30" step="0.02"><span></span>
+
+        <label for="maxPredict">GPS-Prognose maximal</label>
+        <span><span id="maxPredictLabel">1.30</span> s</span>
+        <input id="maxPredict" type="range" min="0.50" max="2.00" value="1.30" step="0.05"><span></span>
+      </div>
+    </section>
+
+    <section class="card span3">
+      <div class="label">Verlauf – letzte 30 Sekunden</div>
+      <canvas id="chart"></canvas>
+      <div class="legend">
+        <span><i class="dot raw"></i>Roh-GPS</span>
+        <span><i class="dot pred"></i>GPS-Prognose</span>
+        <span><i class="dot fusion"></i>GPS + Motion</span>
+      </div>
+    </section>
+  </div>
+
+  <details>
+    <summary>Debug-Log</summary>
+    <pre id="log"></pre>
+  </details>
+
+  <p class="note">
+    Die Seite sendet keine Standort- oder Sensordaten. Beim echten Test das Handy möglichst fest im Fahrzeug montieren.
+    Für die automatische Richtungs-Kalibrierung reichen normalerweise mehrere klare Beschleunigungs-/Bremsphasen.
+  </p>
+</main>
+
+<script>
+(() => {
+"use strict";
+
+const $ = id => document.getElementById(id);
+const ui = {
+  start:$("start"), stop:$("stop"), demo:$("demo"), recal:$("recal"), clear:$("clear"), csv:$("csv"),
+  status:$("status"), secureBadge:$("secureBadge"), motionBadge:$("motionBadge"), calBadge:$("calBadge"),
+  rawSpeed:$("rawSpeed"), predSpeed:$("predSpeed"), fusionSpeed:$("fusionSpeed"),
+  gpsHz:$("gpsHz"), motionHz:$("motionHz"), gpsAccel:$("gpsAccel"), motionAccel:$("motionAccel"),
+  accuracy:$("accuracy"), fixGap:$("fixGap"), calState:$("calState"), correction:$("correction"),
+  corrTau:$("corrTau"), corrTauLabel:$("corrTauLabel"),
+  motionSmooth:$("motionSmooth"), motionSmoothLabel:$("motionSmoothLabel"),
+  maxPredict:$("maxPredict"), maxPredictLabel:$("maxPredictLabel"),
+  chart:$("chart"), log:$("log")
+};
+
+const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+const finite = Number.isFinite;
+const kmh = mps => mps*3.6;
+
+const state = {
+  watchId:null, demoTimer:null, demoMotionTimer:null, demo:false, started:false,
+  lastPos:null, lastGpsTs:null, lastGpsArrival:null, gpsSpeed:0, prevGpsSpeed:0,
+  gpsAccel:0, gpsHz:0, fixCount:0, accuracy:null,
+  gpsPredict:0, fusionSpeed:0, correctionPending:0,
+  lastFrame:performance.now(),
+
+  motionAvailable:"DeviceMotionEvent" in window,
+  motionReceived:false, motionType:"–", lastMotionPerf:null, motionHz:0,
+  gravity:[0,0,0], gravityReady:false, bias:[0,0,0],
+  motionVec:[0,0,0], motionAccel:0,
+  motionSum:[0,0,0], motionCount:0,
+
+  // Fahrzeug-Längsrichtung im Koordinatensystem des Handys.
+  direction:null,
+  calCorr:[0,0,0], calSensorEnergy:0, calGpsEnergy:0, calSamples:0, calConfidence:0,
+
+  samples:[], csv:[],
+  demoSpeed:0, demoAccel:0, demoPhaseStart:performance.now()
+};
+
+function log(msg){
+  const t=new Date().toLocaleTimeString();
+  ui.log.textContent=`[${t}] ${msg}\n`+ui.log.textContent.slice(0,12000);
+}
+function status(text,type=""){
+  ui.status.className="status "+type;
+  ui.status.textContent=text;
+}
+function norm(v){ return Math.hypot(v[0],v[1],v[2]); }
+function dot(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+
+function haversine(a,b){
+  const R=6371000, rad=Math.PI/180;
+  const p1=a.lat*rad,p2=b.lat*rad,dp=(b.lat-a.lat)*rad,dl=(b.lon-a.lon)*rad;
+  const h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+
+function resetCalibration(){
+  state.direction=null;
+  state.calCorr=[0,0,0];
+  state.calSensorEnergy=0;
+  state.calGpsEnergy=0;
+  state.calSamples=0;
+  state.calConfidence=0;
+  state.motionSum=[0,0,0];
+  state.motionCount=0;
+  state.motionAccel=0;
+  ui.calState.textContent="wartet";
+  ui.calBadge.textContent="Kalibrierung: wartet";
+  log("Motion-Kalibrierung zurückgesetzt.");
+}
+
+function addCalibrationInterval(avgVec, refAccel, speedMps){
+  if(!state.motionReceived || speedMps<1.2 || Math.abs(refAccel)<0.22) return;
+
+  state.calSamples++;
+  for(let i=0;i<3;i++) state.calCorr[i]+=avgVec[i]*refAccel;
+  state.calSensorEnergy+=dot(avgVec,avgVec);
+  state.calGpsEnergy+=refAccel*refAccel;
+
+  const cNorm=norm(state.calCorr);
+  const denom=Math.sqrt(Math.max(1e-9,state.calSensorEnergy*state.calGpsEnergy));
+  state.calConfidence=clamp(cNorm/denom,0,1);
+
+  if(state.calSamples>=3 && cNorm>0.01 && state.calConfidence>0.32){
+    const wasMissing=!state.direction;
+    state.direction=state.calCorr.map(v=>v/cNorm);
+
+    ui.calState.textContent=`bereit · ${(state.calConfidence*100).toFixed(0)} %`;
+    ui.calBadge.textContent=`Kalibrierung: bereit · ${(state.calConfidence*100).toFixed(0)} %`;
+
+    if(wasMissing){
+      // Beim Umschalten auf Motion keine alte Abweichung mitschleppen.
+      state.fusionSpeed=state.gpsPredict || state.gpsSpeed;
+      state.correctionPending=0;
+      log(`Fahrzeugrichtung erkannt: [${state.direction.map(v=>v.toFixed(2)).join(", ")}]`);
+    }
+  }else{
+    ui.calState.textContent=`lernt · ${state.calSamples}/3 · ${(state.calConfidence*100).toFixed(0)} %`;
+    ui.calBadge.textContent=`Kalibrierung: lernt · ${state.calSamples}/3`;
+  }
+}
+
+function acceptGps(speedMps, timestamp, accuracy=null, source="GPS"){
+  if(!finite(speedMps) || speedMps<0) return;
+
+  const arrival=performance.now();
+  const hadGps=state.lastGpsTs!=null;
+
+  let dt=1;
+  if(hadGps){
+    dt=clamp((timestamp-state.lastGpsTs)/1000,0.12,8);
+    state.gpsHz=1/dt;
+    ui.fixGap.textContent=Math.round(dt*1000);
+  }
+
+  state.prevGpsSpeed=state.gpsSpeed;
+  state.gpsSpeed=speedMps<0.12 ? 0 : speedMps;
+
+  if(hadGps){
+    const rawA=(state.gpsSpeed-state.prevGpsSpeed)/dt;
+    const bounded=clamp(rawA,-6,5);
+    state.gpsAccel += (bounded-state.gpsAccel)*0.48;
+  }else{
+    state.gpsAccel=0;
+    state.gpsPredict=state.gpsSpeed;
+    state.fusionSpeed=state.gpsSpeed;
+  }
+
+  if(state.motionCount>0 && hadGps){
+    const avg=state.motionSum.map(v=>v/state.motionCount);
+    addCalibrationInterval(avg,state.gpsAccel,state.gpsSpeed);
+  }
+  state.motionSum=[0,0,0];
+  state.motionCount=0;
+
+  // GPS bleibt der absolute Geschwindigkeits-Anker.
+  // Die Abweichung wird nicht als sichtbarer Sprung gesetzt, sondern kurz weich verteilt.
+  if(hadGps && state.direction){
+    state.correctionPending += state.gpsSpeed-state.fusionSpeed;
+    state.correctionPending=clamp(state.correctionPending,-4.0,4.0);
+  }else if(!state.direction){
+    state.fusionSpeed=state.gpsSpeed;
+  }
+
+  state.lastGpsTs=timestamp;
+  state.lastGpsArrival=arrival;
+  state.fixCount++;
+  state.accuracy=accuracy;
+
+  ui.rawSpeed.textContent=kmh(state.gpsSpeed).toFixed(1);
+  ui.gpsAccel.textContent=state.gpsAccel.toFixed(2);
+  ui.accuracy.textContent=accuracy==null?"–":accuracy.toFixed(1);
+  log(`${source} #${state.fixCount}: ${kmh(state.gpsSpeed).toFixed(1)} km/h · ${state.gpsHz.toFixed(2)} Hz`);
+}
+
+function onPosition(pos){
+  if(state.demo) return;
+  const c=pos.coords, ts=pos.timestamp || Date.now();
+  let speed=finite(c.speed)&&c.speed>=0 ? c.speed : null;
+
+  if(speed==null && state.lastPos && state.lastGpsTs){
+    const dt=(ts-state.lastGpsTs)/1000;
+    if(dt>0.12 && dt<10){
+      speed=haversine(state.lastPos,{lat:c.latitude,lon:c.longitude})/dt;
+    }
+  }
+  state.lastPos={lat:c.latitude,lon:c.longitude};
+
+  if(speed==null){
+    status("GPS aktiv, aber noch keine Geschwindigkeit verfügbar …","warn");
+    return;
+  }
+
+  acceptGps(speed,ts,finite(c.accuracy)?c.accuracy:null,finite(c.speed)?"coords.speed":"Position/Zeit");
+  status(state.motionReceived
+    ? "GPS und Bewegungssensor aktiv. Jetzt mehrere klare Beschleunigungs-/Bremsphasen fahren."
+    : "GPS aktiv. Warte auf Bewegungssensor …","ok");
+}
+
+function onGeoError(e){
+  const msg={1:"Standortberechtigung verweigert.",2:"Standort nicht verfügbar.",3:"GPS-Timeout."}[e.code]||e.message;
+  status(`GPS-Fehler: ${msg}`,"bad");
+  log(`GPS-Fehler ${e.code}: ${e.message}`);
+}
+
+function startGps(){
+  if(!navigator.geolocation){
+    status("Geolocation wird von diesem Browser nicht unterstützt.","bad");
+    return;
+  }
+  if(state.watchId!=null) navigator.geolocation.clearWatch(state.watchId);
+  state.watchId=navigator.geolocation.watchPosition(onPosition,onGeoError,{
+    enableHighAccuracy:true,maximumAge:0,timeout:10000
+  });
+}
+
+function processMotionVector(v, now=performance.now()){
+  state.motionReceived=true;
+
+  if(state.lastMotionPerf!=null){
+    const dt=(now-state.lastMotionPerf)/1000;
+    if(dt>0.002 && dt<0.5){
+      const instHz=1/dt;
+      state.motionHz=state.motionHz ? state.motionHz*0.88+instHz*0.12 : instHz;
+    }
+  }
+  state.lastMotionPerf=now;
+
+  // Im Stand langsamen Sensor-Offset lernen.
+  if(state.gpsSpeed<0.35){
+    for(let i=0;i<3;i++) state.bias[i]=state.bias[i]*0.995+v[i]*0.005;
+  }
+
+  const corrected=v.map((x,i)=>clamp(x-state.bias[i],-8,8));
+  const a=Number(ui.motionSmooth.value);
+  for(let i=0;i<3;i++){
+    state.motionVec[i]+= (corrected[i]-state.motionVec[i])*a;
+    state.motionSum[i]+=state.motionVec[i];
+  }
+  state.motionCount++;
+
+  if(state.direction){
+    let longitudinal=dot(state.motionVec,state.direction);
+    if(Math.abs(longitudinal)<0.035) longitudinal=0;
+    state.motionAccel=clamp(longitudinal,-6,5);
+
+    // Der zentrale Unterschied zur alten Testseite:
+    // Beschleunigung wird zwischen den GPS-Fixes tatsächlich in Geschwindigkeit integriert.
+    if(state._lastIntegratePerf!=null){
+      const dt=clamp((now-state._lastIntegratePerf)/1000,0,0.08);
+      state.fusionSpeed=Math.max(0,state.fusionSpeed+state.motionAccel*dt);
+    }
+    state._lastIntegratePerf=now;
+  }
+
+  ui.motionAccel.textContent=state.direction?state.motionAccel.toFixed(2):"lernt";
+  ui.motionHz.textContent=Math.round(state.motionHz);
+  ui.motionBadge.textContent=`Motion: aktiv · ${Math.round(state.motionHz)} Hz`;
+}
+
+function onMotion(e){
+  if(state.demo) return;
+
+  let v=null;
+  if(e.acceleration && finite(e.acceleration.x)&&finite(e.acceleration.y)&&finite(e.acceleration.z)){
+    v=[e.acceleration.x,e.acceleration.y,e.acceleration.z];
+    state.motionType="acceleration";
+  }else if(e.accelerationIncludingGravity &&
+           finite(e.accelerationIncludingGravity.x)&&finite(e.accelerationIncludingGravity.y)&&finite(e.accelerationIncludingGravity.z)){
+    const raw=[e.accelerationIncludingGravity.x,e.accelerationIncludingGravity.y,e.accelerationIncludingGravity.z];
+
+    if(!state.gravityReady){
+      state.gravity=raw.slice();
+      state.gravityReady=true;
+    }
+    // Langsame Gravitation herausfiltern; funktioniert bei fest montiertem Handy deutlich besser.
+    const gAlpha=0.025;
+    for(let i=0;i<3;i++) state.gravity[i]+= (raw[i]-state.gravity[i])*gAlpha;
+    v=raw.map((x,i)=>x-state.gravity[i]);
+    state.motionType="accelerationIncludingGravity / High-Pass";
+  }
+
+  if(v) processMotionVector(v);
+}
+
+async function startMotion(){
+  if(!state.motionAvailable){
+    ui.motionBadge.textContent="Motion: nicht verfügbar";
+    return false;
+  }
+  try{
+    if(typeof DeviceMotionEvent.requestPermission==="function"){
+      const result=await DeviceMotionEvent.requestPermission();
+      if(result!=="granted") throw new Error("Bewegungssensor-Berechtigung nicht erteilt.");
+    }
+    window.removeEventListener("devicemotion",onMotion);
+    window.addEventListener("devicemotion",onMotion,{passive:true});
+    return true;
+  }catch(e){
+    ui.motionBadge.textContent="Motion: keine Berechtigung";
+    status(`GPS kann laufen, Motion aber nicht: ${e.message}`,"warn");
+    return false;
+  }
+}
+
+function stopReal(){
+  if(state.watchId!=null){
+    navigator.geolocation.clearWatch(state.watchId);
+    state.watchId=null;
+  }
+  window.removeEventListener("devicemotion",onMotion);
+}
+
+function resetRunData(){
+  state.lastPos=null;state.lastGpsTs=null;state.lastGpsArrival=null;
+  state.gpsSpeed=0;state.prevGpsSpeed=0;state.gpsAccel=0;state.gpsHz=0;
+  state.gpsPredict=0;state.fusionSpeed=0;state.correctionPending=0;
+  state.fixCount=0;state.samples=[];state.csv=[];
+  state.motionReceived=false;state.lastMotionPerf=null;state.motionHz=0;
+  state.motionVec=[0,0,0];state.motionSum=[0,0,0];state.motionCount=0;
+  state._lastIntegratePerf=null;
+  resetCalibration();
+}
+
+function stopDemo(){
+  if(state.demoTimer){clearInterval(state.demoTimer);state.demoTimer=null}
+  if(state.demoMotionTimer){clearInterval(state.demoMotionTimer);state.demoMotionTimer=null}
+  state.demo=false;
+  ui.demo.textContent="1-Hz-Fusionsdemo";
+}
+
+function demoTrueState(seconds){
+  const p=seconds%32;
+  if(p<3) return {a:0,v:0};
+  if(p<9){const t=p-3;return {a:2.2,v:2.2*t}}
+  if(p<14) return {a:0,v:13.2};
+  if(p<19){const t=p-14;return {a:1.25,v:13.2+1.25*t}}
+  if(p<23) return {a:0,v:19.45};
+  if(p<29){const t=p-23;return {a:-2.7,v:Math.max(0,19.45-2.7*t)}}
+  return {a:0,v:0};
+}
+
+function startDemo(){
+  stopReal();
+  stopDemo();
+  resetRunData();
+
+  state.demo=true;
+  state.started=true;
+  ui.start.disabled=false;
+  ui.stop.disabled=false;
+  ui.demo.textContent="Demo stoppen";
+  status("1-Hz-Demo läuft: GPS nur einmal pro Sekunde, Motion mit ca. 50 Hz.","ok");
+
+  const started=performance.now();
+
+  // Simuliertes Handy: Fahrzeugrichtung liegt schräg über alle drei Geräteachsen.
+  const dir=[0.32,0.91,0.27];
+  const dNorm=norm(dir);
+  const unitDir=dir.map(x=>x/dNorm);
+
+  state.demoMotionTimer=setInterval(()=>{
+    const sec=(performance.now()-started)/1000;
+    const truth=demoTrueState(sec);
+    const wobble=Math.sin(sec*13)*0.025;
+    const vec=unitDir.map((d,i)=>truth.a*d + wobble*(i===1?0.5:1));
+    processMotionVector(vec,performance.now());
+  },20);
+
+  state.demoTimer=setInterval(()=>{
+    const sec=(performance.now()-started)/1000;
+    const truth=demoTrueState(sec);
+    // Kleiner deterministischer GPS-Fehler.
+    const gpsV=Math.max(0,truth.v + Math.sin(sec*1.7)*0.12);
+    acceptGps(gpsV,Date.now(),3.0,"1-Hz-Demo");
+  },1000);
+
+  const initial=demoTrueState(0);
+  acceptGps(initial.v,Date.now(),3.0,"1-Hz-Demo");
+}
+
+function updateFrame(now){
+  const dt=clamp((now-state.lastFrame)/1000,0.001,0.1);
+  state.lastFrame=now;
+
+  if(state.lastGpsArrival!=null){
+    const age=(now-state.lastGpsArrival)/1000;
+    const predictAge=Math.min(age,Number(ui.maxPredict.value));
+    state.gpsPredict=Math.max(0,state.gpsSpeed+state.gpsAccel*predictAge);
+
+    if(!state.direction){
+      // Solange die Fahrzeugrichtung noch gelernt wird, ist Fusion identisch zur GPS-Prognose.
+      state.fusionSpeed += (state.gpsPredict-state.fusionSpeed)*(1-Math.exp(-dt/0.16));
+    }else{
+      // GPS-Driftkorrektur weich verteilen, ohne die Motion-Integration abzuschalten.
+      const tau=Math.max(0.02,Number(ui.corrTau.value));
+      const alpha=1-Math.exp(-dt/tau);
+      const apply=state.correctionPending*alpha;
+      state.fusionSpeed=Math.max(0,state.fusionSpeed+apply);
+      state.correctionPending-=apply;
+    }
+
+    if(state.gpsSpeed===0 && Math.abs(state.motionAccel)<0.10 && age<1.5 && state.fusionSpeed<0.45){
+      state.fusionSpeed=0;
+      state.correctionPending=0;
+    }
+
+    ui.predSpeed.textContent=kmh(state.gpsPredict).toFixed(1);
+    ui.fusionSpeed.textContent=kmh(state.fusionSpeed).toFixed(1);
+    ui.gpsHz.textContent=state.gpsHz.toFixed(2);
+    ui.correction.textContent=kmh(state.correctionPending).toFixed(2);
+
+    const t=performance.now()/1000;
+    const sample={
+      t,
+      raw:kmh(state.gpsSpeed),
+      pred:kmh(state.gpsPredict),
+      fusion:kmh(state.fusionSpeed),
+      gpsAccel:state.gpsAccel,
+      motionAccel:state.direction?state.motionAccel:NaN,
+      gpsHz:state.gpsHz,
+      motionHz:state.motionHz,
+      confidence:state.calConfidence
+    };
+    state.samples.push(sample);
+    state.samples=state.samples.filter(s=>t-s.t<=30);
+
+    const last=state.csv.at(-1);
+    if(!last || t-last.t>=0.045) state.csv.push(sample);
+  }
+
+  drawChart();
+  requestAnimationFrame(updateFrame);
+}
+
+function drawChart(){
+  const c=ui.chart, r=c.getBoundingClientRect(), dpr=Math.max(1,window.devicePixelRatio||1);
+  const W=Math.max(1,Math.round(r.width*dpr)),H=Math.max(1,Math.round(r.height*dpr));
+  if(c.width!==W||c.height!==H){c.width=W;c.height=H}
+  const ctx=c.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w=r.width,h=r.height;
+  ctx.clearRect(0,0,w,h);
+
+  if(state.samples.length<2) return;
+  const tMax=state.samples.at(-1).t,tMin=tMax-30;
+  let vmax=20;
+  for(const s of state.samples) vmax=Math.max(vmax,s.raw,s.pred,s.fusion);
+  vmax=Math.ceil(vmax/20)*20;
+
+  ctx.font="11px system-ui";
+  ctx.lineWidth=1;
+  ctx.strokeStyle="#243044";
+  ctx.fillStyle="#8798ad";
+  for(let i=0;i<=4;i++){
+    const y=8+(h-24)*i/4;
+    ctx.beginPath();ctx.moveTo(36,y);ctx.lineTo(w-7,y);ctx.stroke();
+    ctx.fillText(String(Math.round(vmax*(1-i/4))),4,y+4);
+  }
+
+  const x=t=>36+((t-tMin)/30)*(w-43);
+  const y=v=>8+(1-v/vmax)*(h-24);
+
+  function line(key,color,width){
+    ctx.beginPath();let first=true;
+    for(const s of state.samples){
+      const xx=x(s.t);if(xx<36)continue;
+      const yy=y(s[key]);
+      if(first){ctx.moveTo(xx,yy);first=false}else ctx.lineTo(xx,yy);
+    }
+    ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+  }
+
+  line("raw","#ffcf66",2);
+  line("pred","#b58cff",2);
+  line("fusion","#69d2ff",2.6);
+}
+
+function saveCsv(){
+  if(!state.csv.length){status("Noch keine Daten vorhanden.","warn");return}
+  const t0=state.csv[0].t;
+  const rows=[
+    "time_s;raw_gps_kmh;gps_prediction_kmh;fusion_kmh;gps_accel_mps2;motion_accel_mps2;gps_hz;motion_hz;cal_confidence",
+    ...state.csv.map(s=>[
+      (s.t-t0).toFixed(3),s.raw.toFixed(3),s.pred.toFixed(3),s.fusion.toFixed(3),
+      s.gpsAccel.toFixed(4),finite(s.motionAccel)?s.motionAccel.toFixed(4):"",
+      s.gpsHz.toFixed(3),s.motionHz.toFixed(1),s.confidence.toFixed(3)
+    ].join(";"))
+  ];
+  const blob=new Blob([rows.join("\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;
+  a.download=`voltune-gps-motion-${new Date().toISOString().replace(/[:.]/g,"-")}.csv`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+ui.start.addEventListener("click",async()=>{
+  stopDemo();
+  stopReal();
+  resetRunData();
+
+  state.started=true;
+  ui.start.disabled=true;
+  ui.stop.disabled=false;
+  status("Fordere GPS- und Motion-Berechtigung an …","warn");
+
+  startGps();
+  await startMotion();
+
+  setTimeout(()=>{
+    if(!state.motionReceived){
+      ui.motionBadge.textContent=state.motionAvailable?"Motion: API da, keine Daten":"Motion: nicht verfügbar";
+    }
+  },3000);
+});
+
+ui.stop.addEventListener("click",()=>{
+  stopReal();stopDemo();
+  ui.start.disabled=false;ui.stop.disabled=true;
+  status("Gestoppt.");
+});
+
+ui.demo.addEventListener("click",()=>{
+  if(state.demo){
+    stopDemo();ui.start.disabled=false;ui.stop.disabled=true;status("Demo gestoppt.");
+  }else startDemo();
+});
+
+ui.recal.addEventListener("click",()=>{
+  resetCalibration();
+  state.fusionSpeed=state.gpsPredict||state.gpsSpeed;
+  state.correctionPending=0;
+  status("Kalibrierung zurückgesetzt. Mehrere klare Beschleunigungs-/Bremsphasen fahren.","warn");
+});
+
+ui.clear.addEventListener("click",()=>{state.samples=[];state.csv=[];drawChart()});
+ui.csv.addEventListener("click",saveCsv);
+
+ui.corrTau.addEventListener("input",()=>ui.corrTauLabel.textContent=Number(ui.corrTau.value).toFixed(2));
+ui.motionSmooth.addEventListener("input",()=>ui.motionSmoothLabel.textContent=Number(ui.motionSmooth.value).toFixed(2));
+ui.maxPredict.addEventListener("input",()=>ui.maxPredictLabel.textContent=Number(ui.maxPredict.value).toFixed(2));
+
+ui.secureBadge.textContent=window.isSecureContext?"HTTPS: sicher":"HTTPS: NEIN";
+ui.motionBadge.textContent=state.motionAvailable?"Motion API: vorhanden":"Motion API: nicht vorhanden";
+
+requestAnimationFrame(updateFrame);
+})();
+</script>
+</body>
+</html>
