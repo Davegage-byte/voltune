@@ -47,18 +47,18 @@ body{
 
 main{
   width:
-    calc(100vw - 180px);
+    calc(100vw - 184px);
 
   margin:
-    14px
-    12px
-    24px
-    168px;
+    8px
+    8px
+    16px
+    176px;
 
   padding:
     0
-    18px
-    18px;
+    8px
+    10px;
 }
 
 
@@ -74,16 +74,16 @@ main{
 .sideRail{
   position:fixed;
 
-  left:14px;
-  top:14px;
+  left:8px;
+  top:8px;
 
-  width:148px;
+  width:160px;
 
   display:grid;
-  gap:10px;
+  gap:8px;
 
   max-height:
-    calc(100vh - 28px);
+    calc(100vh - 16px);
 
   overflow-y:auto;
 
@@ -94,14 +94,14 @@ main{
 /* Fahranzeige über den Buttons */
 
 .driveHud{
-  padding:12px;
+  padding:10px;
 
   background:var(--panel2);
 
   border:
     1px solid var(--line);
 
-  border-radius:16px;
+  border-radius:14px;
 }
 
 .driveHudSpeed{
@@ -153,11 +153,11 @@ main{
   grid-template-columns:
     1fr;
 
-  gap:7px;
+  gap:6px;
 }
 
 .driveHudInfo > div{
-  padding:7px 6px;
+  padding:7px 8px;
 
   background:#0d1318;
 
@@ -172,31 +172,56 @@ main{
 .driveHudInfo .label{
   display:block;
 
-  font-size:10px;
+  margin-bottom:3px;
 
-  margin-bottom:2px;
+  font-size:9px;
+  font-weight:800;
+
+  letter-spacing:.10em;
+  text-transform:uppercase;
+}
+
+.driveHudGear{
+  padding:
+    8px 8px 10px !important;
 }
 
 #gearDisplay{
   display:block;
 
-  font-size:28px;
-  line-height:1;
+  margin-top:1px;
 
-  font-weight:850;
+  font-size:64px;
+  line-height:.88;
+
+  font-weight:800;
 
   text-align:center;
+
+  letter-spacing:-.055em;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+.driveHudRpm{
+  padding:
+    8px !important;
 }
 
 #rpmDisplay{
   display:block;
 
-  font-size:13px;
-  line-height:1.2;
+  font-size:24px;
+  line-height:1;
 
-  font-weight:750;
+  font-weight:760;
+
+  text-align:center;
 
   white-space:nowrap;
+
+  letter-spacing:-.025em;
 
   font-variant-numeric:
     tabular-nums;
@@ -217,7 +242,7 @@ main{
 
   overflow:hidden;
 
-  margin-top:10px;
+  margin-top:8px;
 }
 
 .bar > div{
@@ -287,7 +312,7 @@ main{
   display:grid;
   grid-template-columns:1fr;
 
-  gap:8px;
+  gap:6px;
 
   margin:0;
 
@@ -295,7 +320,9 @@ main{
 }
 
 .sideRail button{
-  min-height:48px;
+  min-height:40px;
+
+  border-radius:11px;
 }
 
 
@@ -369,17 +396,17 @@ button:hover{
 }
 
 .control:has(.effectTestBtn) .top{
-  padding-right:30px;
+  padding-right:27px;
 }
 
 .effectTestBtn{
   position:absolute;
 
-  top:9px;
-  right:9px;
+  top:7px;
+  right:7px;
 
-  width:24px;
-  height:24px;
+  width:22px;
+  height:22px;
   min-height:0;
 
   padding:0;
@@ -518,7 +545,7 @@ body.debugActive .meter.debugOnly{
 
 /* Fahrfunktionen leicht von Audio-Steuerung trennen */
 #easyBov{
-  margin-top:5px;
+  margin-top:0;
 }
 
 /* =========================
@@ -528,22 +555,26 @@ body.debugActive .meter.debugOnly{
 .driveModeGroup{
   display:grid;
   grid-template-columns:1fr;
-  gap:6px;
+  gap:5px;
 
-  margin-top:6px;
-  padding-top:9px;
+  margin:0;
+  padding:8px;
 
-  border-top:
-    1px solid rgba(77,163,255,.22);
+  background:var(--panel2);
+
+  border:
+    1px solid rgba(77,163,255,.26);
+
+  border-radius:14px;
 }
 
 .driveModeTitle{
   padding:
-    0 4px 1px;
+    0 3px 2px;
 
   color:#73bfff;
 
-  font-size:10px;
+  font-size:9px;
   font-weight:800;
 
   letter-spacing:.12em;
@@ -551,7 +582,7 @@ body.debugActive .meter.debugOnly{
 }
 
 .sideRail .driveModeBtn{
-  min-height:44px;
+  min-height:36px;
 
   background:
     rgba(25,72,112,.38);
@@ -591,7 +622,7 @@ body.debugActive .meter.debugOnly{
 
 /* Debug als letzte Gruppe absetzen */
 #debug{
-  margin-top:5px;
+  margin-top:2px;
 }
 
 /* =========================
@@ -735,20 +766,20 @@ body.debugActive .meter.debugOnly{
   grid-template-columns:
     repeat(3,1fr);
 
-  gap:12px;
+  gap:9px;
 }
 
 .control{
   position:relative;
 
-  padding:14px;
+  padding:11px 12px;
 
   background:var(--panel2);
 
   border:
     1px solid var(--line);
 
-  border-radius:14px;
+  border-radius:12px;
 
   overflow:hidden;
 }
@@ -857,22 +888,22 @@ body.debugActive .meter.debugOnly{
   justify-content:
     space-between;
 
-  gap:12px;
+  gap:9px;
 
-  font-size:14px;
+  font-size:13px;
 
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 
 .controlHint{
   display:block;
 
-  margin-top:5px;
+  margin-top:4px;
 
   color:
     rgba(255,255,255,.42);
 
-  font-size:11px;
+  font-size:10px;
   line-height:1.25;
 }
 
@@ -1058,22 +1089,6 @@ input[type=range]{
 
 @media(max-width:1050px){
 
-  main{
-    width:
-      calc(100vw - 175px);
-  
-    margin:
-      14px
-      12px
-      18px
-      155px;
-  
-    padding:
-      0
-      18px
-      18px;
-  }
-
   .controls{
     grid-template-columns:
       1fr 1fr;
@@ -1116,6 +1131,16 @@ input[type=range]{
   .sideButtons{
     grid-template-columns:
       1fr 1fr;
+  }
+
+  .driveModeGroup{
+    grid-template-columns:
+      repeat(3,1fr);
+  }
+
+  .driveModeTitle{
+    grid-column:
+      1 / -1;
   }
 
   .controls{
