@@ -213,8 +213,8 @@ window.VoltuneAudio = (() => {
     idle1 = createOsc("sine");
     idle2 = createOsc("triangle");
     
-    idle1.frequency.value = 39;
-    idle2.frequency.value = 78;
+    idle1.frequency.value = 36;
+    idle2.frequency.value = 72;
     
     idleGain =
       ctx.createGain();
