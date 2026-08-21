@@ -333,11 +333,11 @@ for (
 
   const activeParticles =
     Math.round(
-      8 +
+      14 +
       accelerationFxIntensity *
       (
         ACCELERATION_FX_PARTICLE_COUNT -
-        8
+        14
       )
     );
 
@@ -347,9 +347,9 @@ for (
   // =========================
 
   const travelSpeed =
-    70 +
+    90 +
     accelerationFxIntensity *
-    720;
+    850;
 
 
   accelerationFxCtx.lineCap =
@@ -428,9 +428,9 @@ for (
 
     const streakLength =
       (
-        1 +
+        2 +
         accelerationFxIntensity *
-        34
+        52
       ) *
       perspective *
       particle.speed;
@@ -461,14 +461,14 @@ for (
     const alpha =
       clamp(
         (
-          0.05 +
+          0.08 +
           accelerationFxIntensity *
-          0.34
+          0.48
         ) *
         particle.brightness *
         perspective,
         0,
-        0.42
+        0.58
       );
 
 
