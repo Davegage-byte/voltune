@@ -215,7 +215,7 @@ for (
   );
 }
 
-  function updateAccelerationFx(
+function updateAccelerationFx(
   accel,
   now
 ) {
@@ -223,6 +223,24 @@ for (
     !accelerationFxCanvas ||
     !accelerationFxCtx
   ) {
+    return;
+  }
+
+  // Globaler Schalter für visuelle Effekte.
+  // Dieser soll später auch für weitere
+  // Voltune-Animationen verwendet werden.
+  if (!animationsEnabled) {
+    accelerationFxIntensity = 0;
+    accelerationFxTargetIntensity = 0;
+    accelerationFxLastTime = now;
+
+    accelerationFxCtx.clearRect(
+      0,
+      0,
+      accelerationFxWidth,
+      accelerationFxHeight
+    );
+
     return;
   }
 
@@ -2448,6 +2466,40 @@ ui.gears.addEventListener("click", () => {
     }
     scheduleSettingsSave();
   });
+
+  ui.animations.addEventListener(
+  "click",
+  () => {
+    animationsEnabled =
+      !animationsEnabled;
+
+    ui.animations.classList.toggle(
+      "active",
+      animationsEnabled
+    );
+
+    // Beim Ausschalten laufende visuelle
+    // Effekte sofort vollständig entfernen.
+    if (!animationsEnabled) {
+      accelerationFxIntensity = 0;
+      accelerationFxTargetIntensity = 0;
+
+      if (
+        accelerationFxCtx &&
+        accelerationFxCanvas
+      ) {
+        accelerationFxCtx.clearRect(
+          0,
+          0,
+          accelerationFxWidth,
+          accelerationFxHeight
+        );
+      }
+    }
+
+    scheduleSettingsSave();
+  }
+);
 
   ui.driveModeNormal.addEventListener(
   "click",
