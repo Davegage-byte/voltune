@@ -64,6 +64,18 @@
 
   let soundActive = false;
 
+  function setGpsButtonActive(active) {
+    ui.gps.textContent =
+      active
+        ? "Aktiv ✓"
+        : "Start";
+  
+    ui.gps.classList.toggle(
+      "active",
+      active
+    );
+  }
+
   let demoActive = false;
   let demoStart = 0;
 
@@ -816,7 +828,7 @@ ui.gpsSmoothAccel.textContent =
     soundActive = false;
 
     ui.start.textContent = "Sound + Demo starten";
-    ui.gps.textContent = "Start";
+    setGpsButtonActive(false);
     ui.mute.textContent = "Stumm";
 
     manualSpeed = 0;
@@ -1782,7 +1794,7 @@ function updateControllerDrive(now) {
     lastState = "idle";
 
     ui.start.textContent = "Läuft ✓";
-    ui.gps.textContent = "Start";
+    setGpsButtonActive(false);
     ui.mute.textContent = "Stumm";
   });
 
@@ -1806,8 +1818,7 @@ ui.gps.addEventListener("click", async () => {
     ui.start.textContent =
       "Sound läuft · GPS";
 
-    ui.gps.textContent =
-      "Aktiv ✓";
+    setGpsButtonActive(true);
 
     ui.mute.textContent =
       "Stumm";
@@ -1831,8 +1842,7 @@ ui.gps.addEventListener("click", async () => {
     ui.start.textContent =
       "Sound läuft · GPS";
 
-    ui.gps.textContent =
-      "Aktiv ✓";
+    setGpsButtonActive(true);
 
     ui.mute.textContent =
       "Stumm";
@@ -1892,8 +1902,7 @@ ui.controller.addEventListener(
     ui.start.textContent =
       "Sound läuft · Controller";
 
-    ui.gps.textContent =
-      "Start";
+    setGpsButtonActive(false);
 
     ui.mute.textContent =
       "Stumm";
@@ -1916,7 +1925,7 @@ ui.controller.addEventListener(
     saveLastDriveMode("demo");
     demoStart = performance.now();
     lastState = "idle";
-    ui.gps.textContent = "Start";
+    setGpsButtonActive(false);
   });
 
   ui.stop.addEventListener("click", () => {
@@ -2123,8 +2132,7 @@ ui.speedTest.addEventListener(
 
     stopGps(false);
 
-    ui.gps.textContent =
-      "Start";
+    setGpsButtonActive(false);
 
     ui.controller.textContent =
       "Controller fahren";
@@ -2297,8 +2305,7 @@ function restoreLastDriveMode() {
     // aber weiterhin einen echten Benutzerklick.
     // Deshalb erst nach diesem Klick
     // "Aktiv ✓" anzeigen.
-    ui.gps.textContent =
-      "Start";
+    setGpsButtonActive(false);
 
     renderVisual(
       0,
