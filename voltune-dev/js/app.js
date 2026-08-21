@@ -16,7 +16,13 @@
     drivingStyleDisplay:$("drivingStyleDisplay"),
 
     start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
-    easyBov:$("easyBov"), gears:$("gears"), dynamicShift:$("dynamicShift"),
+    easyBov:$("easyBov"),
+    gears:$("gears"),
+    dynamicShift:$("dynamicShift"),
+    
+    driveModeNormal:$("driveModeNormal"),
+    driveModeSport:$("driveModeSport"),
+    driveModeMadness:$("driveModeMadness"),
     testShiftBurble:$("testShiftBurble"),
     testDownshiftBlip:$("testDownshiftBlip"),
     testBov:$("testBov"),
@@ -116,7 +122,16 @@
   let easyBovEnabled = false;
   let gearsEnabled = true;
   let dynamicShiftEnabled = true;
-
+  
+  // ----- Fahrmodus -----
+  let driveMode = "normal";
+  
+  const VALID_DRIVE_MODES = [
+    "normal",
+    "sport",
+    "madness"
+  ];
+  
   let previousGpsKmhForEasyBov = null;
 
 function setRpmMarker(
