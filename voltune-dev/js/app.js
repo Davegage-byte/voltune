@@ -20,6 +20,7 @@
     easyBov:$("easyBov"),
     gears:$("gears"),
     dynamicShift:$("dynamicShift"),
+    animations:$("animations"),
     
     driveModeNormal:$("driveModeNormal"),
     driveModeSport:$("driveModeSport"),
@@ -573,6 +574,7 @@ for (
   let easyBovEnabled = false;
   let gearsEnabled = true;
   let dynamicShiftEnabled = true;
+  let animationsEnabled = true;
   
 // ----- Fahrmodus -----
 let driveMode = "normal";
