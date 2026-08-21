@@ -1226,3 +1226,286 @@ input[type=range]{
   }
 
 }
+
+/* =========================
+   Voltune Startanimation
+   ========================= */
+
+#startupOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  background:
+    rgba(5, 7, 10, 0.92);
+
+  backdrop-filter:
+    blur(16px);
+
+  -webkit-backdrop-filter:
+    blur(16px);
+
+  opacity: 1;
+
+  pointer-events: none;
+
+  transition:
+    opacity 0.55s ease,
+    background 0.65s ease,
+    backdrop-filter 0.65s ease,
+    -webkit-backdrop-filter 0.65s ease;
+}
+
+
+/* =========================
+   Zentraler Lichtpunkt / Glow
+   ========================= */
+
+#startupGlow {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 10px;
+  height: 10px;
+
+  border-radius: 50%;
+
+  opacity: 0;
+
+  background:
+    rgba(215, 235, 255, 0.95);
+
+  box-shadow:
+    0 0 18px rgba(180, 220, 255, 0.95),
+    0 0 42px rgba(120, 190, 255, 0.65),
+    0 0 90px rgba(80, 150, 255, 0.30);
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.2);
+}
+
+
+/* =========================
+   Expandierender Energiering
+   ========================= */
+
+#startupRing {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 48px;
+  height: 48px;
+
+  border:
+    2px solid
+    rgba(190, 225, 255, 0.85);
+
+  border-radius: 50%;
+
+  opacity: 0;
+
+  box-shadow:
+    0 0 10px rgba(170, 215, 255, 0.75),
+    0 0 28px rgba(100, 175, 255, 0.45);
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.15);
+}
+
+
+/* =========================
+   VOLTUNE Logo
+   ========================= */
+
+#startupLogo {
+  position: relative;
+
+  z-index: 1;
+
+  font-size:
+    clamp(30px, 5vw, 58px);
+
+  font-weight: 700;
+
+  letter-spacing:
+    0.22em;
+
+  color:
+    rgba(235, 245, 255, 0.98);
+
+  text-shadow:
+    0 0 14px rgba(170, 215, 255, 0.65),
+    0 0 34px rgba(100, 170, 255, 0.30);
+
+  opacity: 0;
+
+  transform:
+    scale(0.94);
+
+  user-select: none;
+}
+
+
+/* =========================
+   Vollständiger Boot-Ablauf
+   ========================= */
+
+#startupOverlay.startupRunning
+#startupGlow {
+  animation:
+    voltuneStartupGlow
+    0.85s
+    ease-out
+    forwards;
+}
+
+#startupOverlay.startupRunning
+#startupRing {
+  animation:
+    voltuneStartupRing
+    0.90s
+    ease-out
+    0.22s
+    forwards;
+}
+
+#startupOverlay.startupRunning
+#startupLogo {
+  animation:
+    voltuneStartupLogo
+    1.15s
+    ease
+    0.16s
+    forwards;
+}
+
+
+/* =========================
+   Normales Ende
+   ========================= */
+
+#startupOverlay.startupExit {
+  opacity: 0;
+
+  background:
+    rgba(5, 7, 10, 0);
+
+  backdrop-filter:
+    blur(0);
+
+  -webkit-backdrop-filter:
+    blur(0);
+}
+
+
+/* =========================
+   Animationen AUS
+   ========================= */
+
+#startupOverlay.startupSimpleExit {
+  opacity: 0;
+
+  background:
+    rgba(5, 7, 10, 0);
+
+  backdrop-filter:
+    blur(0);
+
+  -webkit-backdrop-filter:
+    blur(0);
+}
+
+
+/* =========================
+   Keyframes
+   ========================= */
+
+@keyframes voltuneStartupGlow {
+  0% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scale(0.2);
+  }
+
+  30% {
+    opacity: 1;
+    transform:
+      translate(-50%, -50%)
+      scale(1);
+  }
+
+  60% {
+    opacity: 0.9;
+    transform:
+      translate(-50%, -50%)
+      scale(1.8);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scale(4);
+  }
+}
+
+
+@keyframes voltuneStartupRing {
+  0% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scale(0.15);
+  }
+
+  18% {
+    opacity: 0.95;
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scale(32);
+  }
+}
+
+
+@keyframes voltuneStartupLogo {
+  0% {
+    opacity: 0;
+    transform:
+      scale(0.94);
+  }
+
+  22% {
+    opacity: 1;
+    transform:
+      scale(1);
+  }
+
+  65% {
+    opacity: 1;
+    transform:
+      scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      scale(1.035);
+  }
+}
