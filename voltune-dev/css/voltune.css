@@ -521,6 +521,74 @@ body.debugActive .meter.debugOnly{
   margin-top:5px;
 }
 
+/* =========================
+   Fahrmodi
+   ========================= */
+
+.driveModeGroup{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:6px;
+
+  margin-top:6px;
+  padding-top:9px;
+
+  border-top:
+    1px solid rgba(77,163,255,.22);
+}
+
+.driveModeTitle{
+  padding:
+    0 4px 1px;
+
+  color:#73bfff;
+
+  font-size:10px;
+  font-weight:800;
+
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.sideRail .driveModeBtn{
+  min-height:44px;
+
+  background:
+    rgba(25,72,112,.38);
+
+  color:#a9d9ff;
+
+  border:
+    1px solid rgba(71,153,220,.55);
+
+  box-shadow:none;
+
+  transition:
+    transform .12s ease,
+    filter .12s ease,
+    background .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease;
+}
+
+.sideRail .driveModeBtn:hover{
+  background:
+    rgba(31,91,140,.52);
+}
+
+.sideRail .driveModeBtn.active{
+  background:
+    rgba(24,123,211,.88);
+
+  color:#ffffff;
+
+  border-color:#65c4ff;
+
+  box-shadow:
+    0 0 10px rgba(55,168,255,.42),
+    inset 0 0 8px rgba(160,220,255,.12);
+}
+
 /* Debug als letzte Gruppe absetzen */
 #debug{
   margin-top:5px;
