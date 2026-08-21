@@ -737,7 +737,8 @@ function getPersistentSettings() {
 
     easyBovEnabled,
     gearsEnabled,
-    dynamicShiftEnabled
+    dynamicShiftEnabled,
+    animationsEnabled
   };
 }
 
@@ -800,6 +801,11 @@ function applyPersistentSettings(settings) {
       settings.dynamicShiftEnabled;
   }
 
+  if (typeof settings.animationsEnabled === "boolean") {
+    animationsEnabled =
+      settings.animationsEnabled;
+  }
+
   ui.easyBov.classList.toggle(
     "active",
     easyBovEnabled
@@ -813,6 +819,11 @@ function applyPersistentSettings(settings) {
   ui.dynamicShift.classList.toggle(
     "active",
     dynamicShiftEnabled
+  );
+
+  ui.animations.classList.toggle(
+    "active",
+    animationsEnabled
   );
 }
   
