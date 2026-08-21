@@ -213,6 +213,295 @@ for (
     particle
   );
 }
+
+  function updateAccelerationFx(
+  accel,
+  now
+) {
+  if (
+    !accelerationFxCanvas ||
+    !accelerationFxCtx
+  ) {
+    return;
+  }
+
+  const dt =
+    clamp(
+      (now - accelerationFxLastTime) / 1000,
+      0,
+      0.05
+    );
+
+  accelerationFxLastTime =
+    now;
+
+
+  // =========================
+  // Beschleunigung -> Intensität
+  // =========================
+  //
+  // Unter ca. 0,7 m/s² bleibt der
+  // Effekt komplett unsichtbar.
+  //
+  // Ab ca. 3,5 m/s² ist die maximale
+  // visuelle Intensität erreicht.
+
+  const rawIntensity =
+    clamp(
+      (accel - 0.7) /
+      (3.5 - 0.7),
+      0,
+      1
+    );
+
+  accelerationFxTargetIntensity =
+    Math.pow(
+      rawIntensity,
+      0.85
+    );
+
+
+  // =========================
+  // Weiches Ein-/Ausblenden
+  // =========================
+
+  const responseTime =
+    accelerationFxTargetIntensity >
+    accelerationFxIntensity
+      ? 0.10
+      : 0.28;
+
+  const response =
+    1 -
+    Math.exp(
+      -dt / responseTime
+    );
+
+  accelerationFxIntensity +=
+    (
+      accelerationFxTargetIntensity -
+      accelerationFxIntensity
+    ) *
+    response;
+
+  accelerationFxIntensity =
+    clamp(
+      accelerationFxIntensity,
+      0,
+      1
+    );
+
+
+  // Alte Zeichenfläche löschen.
+  accelerationFxCtx.clearRect(
+    0,
+    0,
+    accelerationFxWidth,
+    accelerationFxHeight
+  );
+
+
+  // Bei praktisch unsichtbarer Intensität
+  // gar nichts mehr berechnen.
+  if (
+    accelerationFxIntensity < 0.005
+  ) {
+    return;
+  }
+
+
+  // =========================
+  // Fluchtpunkt
+  // =========================
+
+  const centerX =
+    accelerationFxWidth * 0.5;
+
+  const centerY =
+    accelerationFxHeight * 0.5;
+
+  const maxDistance =
+    Math.hypot(
+      accelerationFxWidth,
+      accelerationFxHeight
+    ) * 0.62;
+
+
+  // =========================
+  // Anzahl sichtbarer Partikel
+  // =========================
+
+  const activeParticles =
+    Math.round(
+      8 +
+      accelerationFxIntensity *
+      (
+        ACCELERATION_FX_PARTICLE_COUNT -
+        8
+      )
+    );
+
+
+  // =========================
+  // Bewegung
+  // =========================
+
+  const travelSpeed =
+    70 +
+    accelerationFxIntensity *
+    720;
+
+
+  accelerationFxCtx.lineCap =
+    "round";
+
+
+  for (
+    let i = 0;
+    i < activeParticles;
+    i++
+  ) {
+    const particle =
+      accelerationFxParticles[i];
+
+
+    // Partikel bewegen sich radial
+    // vom Fluchtpunkt nach außen.
+
+    particle.distance +=
+      travelSpeed *
+      particle.speed *
+      dt;
+
+
+    // Hat ein Partikel den Bildschirm
+    // verlassen, beginnt es wieder hinten.
+
+    if (
+      particle.distance >
+      maxDistance
+    ) {
+      resetAccelerationFxParticle(
+        particle,
+        false
+      );
+    }
+
+
+    const distanceN =
+      clamp(
+        particle.distance /
+        maxDistance,
+        0,
+        1
+      );
+
+
+    // Je weiter ein Partikel nach außen kommt,
+    // desto stärker wirkt die Bewegung.
+
+    const perspective =
+      0.35 +
+      distanceN * 0.65;
+
+
+    const x =
+      centerX +
+      particle.dirX *
+      particle.distance;
+
+    const y =
+      centerY +
+      particle.dirY *
+      particle.distance;
+
+
+    // =========================
+    // Streifenlänge
+    // =========================
+    //
+    // Leichte Beschleunigung:
+    // fast nur Lichtpunkte.
+    //
+    // Starke Beschleunigung:
+    // deutlich längere Bewegungsstreifen.
+
+    const streakLength =
+      (
+        1 +
+        accelerationFxIntensity *
+        34
+      ) *
+      perspective *
+      particle.speed;
+
+
+    const previousDistance =
+      Math.max(
+        0,
+        particle.distance -
+        streakLength
+      );
+
+    const startX =
+      centerX +
+      particle.dirX *
+      previousDistance;
+
+    const startY =
+      centerY +
+      particle.dirY *
+      previousDistance;
+
+
+    // =========================
+    // Helligkeit
+    // =========================
+
+    const alpha =
+      clamp(
+        (
+          0.05 +
+          accelerationFxIntensity *
+          0.34
+        ) *
+        particle.brightness *
+        perspective,
+        0,
+        0.42
+      );
+
+
+    // =========================
+    // Punkt oder Streifen
+    // =========================
+
+    accelerationFxCtx.beginPath();
+
+    accelerationFxCtx.moveTo(
+      startX,
+      startY
+    );
+
+    accelerationFxCtx.lineTo(
+      x,
+      y
+    );
+
+    accelerationFxCtx.lineWidth =
+      particle.size *
+      (
+        0.65 +
+        accelerationFxIntensity *
+        0.75
+      );
+
+    accelerationFxCtx.strokeStyle =
+      `rgba(255, 255, 255, ${alpha})`;
+
+    accelerationFxCtx.stroke();
+  }
+}
   
   function setGpsButtonActive(active) {
     ui.gps.textContent =
@@ -1029,10 +1318,23 @@ ui.gpsSmoothAccel.textContent =
         : state;
   }
 
-  function render(speedKmh, accel, state) {
-    renderVisual(speedKmh, accel, state);
-    updateVoltuneSound(speedKmh, accel);
-  }
+function render(speedKmh, accel, state) {
+  renderVisual(
+    speedKmh,
+    accel,
+    state
+  );
+
+  updateAccelerationFx(
+    accel,
+    performance.now()
+  );
+
+  updateVoltuneSound(
+    speedKmh,
+    accel
+  );
+}
 
 // =========================
 // Voltune Testfahrt
