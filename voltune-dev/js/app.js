@@ -67,6 +67,53 @@
   let soundActive = false;
 
   // =========================
+// Browser-Theme Debug
+// =========================
+
+const browserThemeMedia =
+  window.matchMedia(
+    "(prefers-color-scheme: dark)"
+  );
+
+const browserThemeDebug =
+  document.createElement("div");
+
+browserThemeDebug.style.display =
+  "none";
+
+browserThemeDebug.style.marginTop =
+  "12px";
+
+browserThemeDebug.style.fontSize =
+  "12px";
+
+browserThemeDebug.style.opacity =
+  "0.65";
+
+browserThemeDebug.style.textAlign =
+  "center";
+
+document.body.appendChild(
+  browserThemeDebug
+);
+
+function updateBrowserThemeDebug() {
+  browserThemeDebug.textContent =
+    `Browser-Theme: ${
+      browserThemeMedia.matches
+        ? "DARK"
+        : "LIGHT"
+    }`;
+}
+
+updateBrowserThemeDebug();
+
+browserThemeMedia.addEventListener(
+  "change",
+  updateBrowserThemeDebug
+);
+
+  // =========================
   // Beschleunigungsanimation
   // =========================
   
@@ -2841,6 +2888,11 @@ ui.debug.addEventListener("click", () => {
     "active",
     active
   );
+
+  browserThemeDebug.style.display =
+  active
+    ? "block"
+    : "none";
 
   ui.debug.setAttribute(
     "aria-pressed",
