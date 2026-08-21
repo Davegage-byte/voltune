@@ -1436,16 +1436,12 @@ function triggerDownshiftBlip(
     now
   );
 
-  // Schneller Drehzahlsprung nach oben.
+  // Rückschalten = Drehzahl wird angehoben.
+  // Der Blip zieht deshalb ausschließlich
+  // von einer niedrigen zu einer höheren Frequenz.
   blip.frequency.exponentialRampToValueAtTime(
     peakFreq,
-    now + 0.055
-  );
-
-  // Danach wieder leicht zurückfallen.
-  blip.frequency.exponentialRampToValueAtTime(
-    105 + amount * 35,
-    now + duration
+    now + 0.095
   );
 
 
@@ -1464,14 +1460,12 @@ function triggerDownshiftBlip(
     now
   );
 
+  // Auch der tiefe Körper zieht nach oben
+  // und fällt innerhalb des Blips nicht
+  // wieder zurück.
   body.frequency.exponentialRampToValueAtTime(
     92 + amount * 28,
-    now + 0.06
-  );
-
-  body.frequency.exponentialRampToValueAtTime(
-    68 + amount * 10,
-    now + duration
+    now + 0.10
   );
 
 
