@@ -215,6 +215,76 @@ for (
   );
 }
 
+  // =========================
+// Rekuperations-Partikel
+// =========================
+//
+// Transparente grüne Leuchtringe,
+// die bei Rekuperation von außen
+// Richtung Fluchtpunkt wandern.
+
+const REGEN_FX_PARTICLE_COUNT = 48;
+
+const regenFxParticles = [];
+
+let regenFxIntensity = 0;
+let regenFxTargetIntensity = 0;
+
+function resetRegenFxParticle(
+  particle,
+  randomProgress = true
+) {
+  particle.angle =
+    Math.random() *
+    Math.PI *
+    2;
+
+  // 0 = außen
+  // 1 = Fluchtpunkt / Mitte
+  particle.progress =
+    randomProgress
+      ? Math.random()
+      : 0;
+
+  particle.speed =
+    0.65 +
+    Math.random() * 0.70;
+
+  particle.size =
+    4 +
+    Math.random() * 8;
+
+  particle.brightness =
+    0.40 +
+    Math.random() * 0.60;
+
+  // Kleine Abweichung von einer perfekt
+  // geraden Flugbahn, damit die Bewegung
+  // etwas organischer wirkt.
+  particle.drift =
+    (
+      Math.random() -
+      0.5
+    ) * 0.18;
+}
+
+for (
+  let i = 0;
+  i < REGEN_FX_PARTICLE_COUNT;
+  i++
+) {
+  const particle = {};
+
+  resetRegenFxParticle(
+    particle,
+    true
+  );
+
+  regenFxParticles.push(
+    particle
+  );
+}
+
 function updateAccelerationFx(
   accel,
   now
@@ -279,7 +349,31 @@ function updateAccelerationFx(
       0.85
     );
 
+// =========================
+// Rekuperation -> Intensität
+// =========================
+//
+// Unter etwa -0,6 m/s² bleibt
+// die Reku-Animation unsichtbar.
+//
+// Ab etwa -4,5 m/s² erreicht
+// sie ihre maximale Intensität.
 
+const rawRegenIntensity =
+  clamp(
+    (-accel - 0.6) /
+    (4.5 - 0.6),
+    0,
+    1
+  );
+
+regenFxTargetIntensity =
+  Math.pow(
+    rawRegenIntensity,
+    0.85
+  );
+
+  
   // =========================
   // Weiches Ein-/Ausblenden
   // =========================
@@ -311,6 +405,35 @@ function updateAccelerationFx(
     );
 
 
+// Reku soll ebenfalls direkt reagieren,
+// beim Nachlassen aber weich verschwinden.
+
+const regenResponseTime =
+  regenFxTargetIntensity >
+  regenFxIntensity
+    ? 0.12
+    : 0.32;
+
+const regenResponse =
+  1 -
+  Math.exp(
+    -dt / regenResponseTime
+  );
+
+regenFxIntensity +=
+  (
+    regenFxTargetIntensity -
+    regenFxIntensity
+  ) *
+  regenResponse;
+
+regenFxIntensity =
+  clamp(
+    regenFxIntensity,
+    0,
+    1
+  );
+  
   // Alte Zeichenfläche löschen.
   accelerationFxCtx.clearRect(
     0,
@@ -323,7 +446,8 @@ function updateAccelerationFx(
   // Bei praktisch unsichtbarer Intensität
   // gar nichts mehr berechnen.
   if (
-    accelerationFxIntensity < 0.005
+    accelerationFxIntensity < 0.005 &&
+    regenFxIntensity < 0.005
   ) {
     return;
   }
