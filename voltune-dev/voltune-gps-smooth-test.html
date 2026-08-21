@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#090b10" />
+  <title>Voltune GPS Smooth Test</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b10;
+      --card: #121722;
+      --card2: #0e131c;
+      --text: #f1f5f9;
+      --muted: #93a4b8;
+      --line: #283446;
+      --accent: #69d2ff;
+      --good: #54e39e;
+      --warn: #ffcf66;
+      --bad: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
+    }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    .sub { color: var(--muted); margin-bottom: 14px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    button.primary { border-color: var(--accent); }
+    button:disabled { opacity: .45; }
+    .status {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card2);
+      margin-bottom: 12px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .card.big { min-height: 144px; }
+    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .value {
+      margin-top: 4px;
+      font-size: clamp(34px, 10vw, 64px);
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      line-height: 1.05;
+    }
+    .unit { font-size: 14px; color: var(--muted); font-weight: 600; }
+    .mini {
+      margin-top: 8px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .span2 { grid-column: 1 / -1; }
+    canvas {
+      width: 100%;
+      height: 250px;
+      display: block;
+      background: #0b0f16;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .rawdot { background: var(--warn); }
+    .smoothdot { background: var(--accent); }
+    .settings {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      align-items: center;
+    }
+    input[type=range] { width: 100%; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    details { margin-top: 12px; }
+    summary { cursor: pointer; color: var(--muted); }
+    pre {
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #080b10;
+      padding: 10px;
+      border-radius: 8px;
+      color: #b8c4d3;
+      max-height: 240px;
+    }
+    @media (max-width: 620px) {
+      .grid { grid-template-columns: 1fr; }
+      .span2 { grid-column: auto; }
+      canvas { height: 210px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Voltune – GPS Smooth Test</h1>
+  <div class="sub">Vergleicht echte GPS-Updates mit einer intern kontinuierlich fortgeschriebenen Geschwindigkeit.</div>
+
+  <div class="toolbar">
+    <button id="startBtn" class="primary">GPS starten</button>
+    <button id="stopBtn" disabled>Stop</button>
+    <button id="demoBtn">1-Hz-Demo</button>
+    <button id="clearBtn">Diagramm leeren</button>
+    <button id="csvBtn">CSV speichern</button>
+  </div>
+
+  <div id="status" class="status">Bereit. Für echtes GPS bitte über HTTPS öffnen.</div>
+
+  <div class="grid">
+    <div class="card big">
+      <div class="label">Roh-GPS</div>
+      <div class="value"><span id="rawSpeed">0.0</span> <span class="unit">km/h</span></div>
+      <div class="mini">GPS-Rate: <span id="gpsHz">0.00</span> Hz</div>
+      <div class="mini">Fix-Abstand: <span id="fixAge">–</span> ms</div>
+    </div>
+
+    <div class="card big">
+      <div class="label">Voltune Smooth</div>
+      <div class="value"><span id="smoothSpeed">0.0</span> <span class="unit">km/h</span></div>
+      <div class="mini">Interne Rate: <span id="renderHz">0</span> Hz</div>
+      <div class="mini">Prognose: <span id="predictedSpeed">0.0</span> km/h</div>
+    </div>
+
+    <div class="card">
+      <div class="label">GPS-Daten</div>
+      <div class="mini">Genauigkeit: <span id="accuracy">–</span> m</div>
+      <div class="mini">coords.speed: <span id="nativeSpeed">–</span></div>
+      <div class="mini">Quelle: <span id="speedSource">–</span></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Dynamik</div>
+      <div class="mini">geschätzte Beschleunigung: <span id="accel">0.00</span> m/s²</div>
+      <div class="mini">Differenz Raw/Smooth: <span id="delta">0.0</span> km/h</div>
+      <div class="mini">GPS-Fixes: <span id="fixCount">0</span></div>
+    </div>
+
+    <div class="card span2">
+      <div class="label">Glättung</div>
+      <div class="settings">
+        <label for="response">Reaktionszeit</label>
+        <span><span id="responseValue">0.32</span> s</span>
+        <input id="response" type="range" min="0.08" max="1.20" step="0.02" value="0.32">
+        <span></span>
+
+        <label for="predict">Max. Vorhersage</label>
+        <span><span id="predictValue">1.10</span> s</span>
+        <input id="predict" type="range" min="0" max="1.50" step="0.05" value="1.10">
+        <span></span>
+      </div>
+    </div>
+
+    <div class="card span2">
+      <div class="label">Verlauf – letzte 30 Sekunden</div>
+      <canvas id="chart"></canvas>
+      <div class="legend">
+        <span><i class="dot rawdot"></i>Roh-GPS</span>
+        <span><i class="dot smoothdot"></i>Smooth</span>
+      </div>
+    </div>
+  </div>
+
+  <details>
+    <summary>Debug-Log</summary>
+    <pre id="log" class="mono"></pre>
+  </details>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+
+  const ui = {
+    start: $("startBtn"), stop: $("stopBtn"), demo: $("demoBtn"), clear: $("clearBtn"), csv: $("csvBtn"),
+    status: $("status"), raw: $("rawSpeed"), smooth: $("smoothSpeed"), gpsHz: $("gpsHz"),
+    fixAge: $("fixAge"), renderHz: $("renderHz"), pred: $("predictedSpeed"), accuracy: $("accuracy"),
+    nativeSpeed: $("nativeSpeed"), source: $("speedSource"), accel: $("accel"), delta: $("delta"),
+    fixCount: $("fixCount"), response: $("response"), responseValue: $("responseValue"),
+    predict: $("predict"), predictValue: $("predictValue"), chart: $("chart"), log: $("log")
+  };
+
+  const state = {
+    watchId: null,
+    demoTimer: null,
+    running: false,
+    demo: false,
+
+    lastPosition: null,
+    previousFix: null,
+    latestFix: null,
+    latestSpeedMps: 0,
+    previousSpeedMps: 0,
+    accelMps2: 0,
+
+    smoothMps: 0,
+    predictedMps: 0,
+
+    fixCount: 0,
+    fixTimes: [],
+    samples: [],
+    csv: [],
+
+    lastFrame: performance.now(),
+    frameTimes: []
+  };
+
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const mpsToKmh = v => v * 3.6;
+
+  function log(msg) {
+    const time = new Date().toLocaleTimeString();
+    ui.log.textContent = `[${time}] ${msg}\n` + ui.log.textContent.slice(0, 10000);
+  }
+
+  function setStatus(msg) {
+    ui.status.textContent = msg;
+  }
+
+  function haversineMeters(a, b) {
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const p1 = toRad(a.latitude);
+    const p2 = toRad(b.latitude);
+    const dp = toRad(b.latitude - a.latitude);
+    const dl = toRad(b.longitude - a.longitude);
+    const s = Math.sin(dp / 2) ** 2 +
+              Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+
+  function deriveSpeedFromPositions(pos, prev) {
+    if (!prev) return null;
+    const dt = (pos.timestamp - prev.timestamp) / 1000;
+    if (dt <= 0.05 || dt > 10) return null;
+    const dist = haversineMeters(pos.coords, prev.coords);
+    return dist / dt;
+  }
+
+  function acceptFix({ speedMps, timestamp, accuracy = null, nativeSpeed = null, source = "GPS" }) {
+    if (!Number.isFinite(speedMps) || speedMps < 0) return;
+
+    const nowPerf = performance.now();
+
+    state.previousFix = state.latestFix;
+    state.previousSpeedMps = state.latestSpeedMps;
+    state.latestFix = { timestamp, receivedPerf: nowPerf };
+    state.latestSpeedMps = speedMps;
+    state.fixCount++;
+
+    if (state.previousFix) {
+      const dt = (timestamp - state.previousFix.timestamp) / 1000;
+      if (dt > 0.05 && dt < 5) {
+        const rawAccel = (state.latestSpeedMps - state.previousSpeedMps) / dt;
+
+        // Begrenzung verhindert völlig unrealistische GPS-Ausreißer.
+        const bounded = clamp(rawAccel, -6.0, 5.0);
+
+        // Beschleunigung leicht glätten, Geschwindigkeit selbst aber nicht künstlich verzögern.
+        state.accelMps2 += (bounded - state.accelMps2) * 0.55;
+      }
+    } else {
+      state.smoothMps = speedMps;
+    }
+
+    state.fixTimes.push(nowPerf);
+    state.fixTimes = state.fixTimes.filter(t => nowPerf - t <= 5000);
+
+    ui.raw.textContent = mpsToKmh(speedMps).toFixed(1);
+    ui.accuracy.textContent = accuracy == null ? "–" : accuracy.toFixed(1);
+    ui.nativeSpeed.textContent = nativeSpeed == null ? "nicht geliefert" : `${mpsToKmh(nativeSpeed).toFixed(1)} km/h`;
+    ui.source.textContent = source;
+    ui.fixCount.textContent = state.fixCount;
+
+    log(`Fix #${state.fixCount}: ${mpsToKmh(speedMps).toFixed(1)} km/h | ${source}`);
+  }
+
+  function onPosition(pos) {
+    let speed = Number.isFinite(pos.coords.speed) ? pos.coords.speed : null;
+    let source = "coords.speed";
+
+    if (speed == null) {
+      speed = deriveSpeedFromPositions(pos, state.lastPosition);
+      source = "Position / Zeit";
+    }
+
+    state.lastPosition = pos;
+
+    if (speed == null) {
+      setStatus("GPS aktiv, aber noch keine Geschwindigkeit berechenbar …");
+      return;
+    }
+
+    acceptFix({
+      speedMps: Math.max(0, speed),
+      timestamp: pos.timestamp,
+      accuracy: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null,
+      nativeSpeed: Number.isFinite(pos.coords.speed) ? pos.coords.speed : null,
+      source
+    });
+
+    setStatus("GPS aktiv – fahre möglichst mit wechselnder Geschwindigkeit.");
+  }
+
+  function onGeoError(err) {
+    setStatus(`GPS-Fehler ${err.code}: ${err.message}`);
+    log(`GPS-Fehler ${err.code}: ${err.message}`);
+  }
+
+  function startGps() {
+    stopDemo();
+
+    if (!navigator.geolocation) {
+      setStatus("Geolocation wird von diesem Browser nicht unterstützt.");
+      return;
+    }
+
+    if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId);
+
+    state.watchId = navigator.geolocation.watchPosition(
+      onPosition,
+      onGeoError,
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
+      }
+    );
+
+    state.running = true;
+    state.demo = false;
+    ui.start.disabled = true;
+    ui.stop.disabled = false;
+    setStatus("GPS wird gestartet …");
+    log("GPS watchPosition gestartet: High Accuracy, maximumAge 0.");
+  }
+
+  function stopGps() {
+    if (state.watchId != null) {
+      navigator.geolocation.clearWatch(state.watchId);
+      state.watchId = null;
+    }
+    state.running = false;
+    ui.start.disabled = false;
+    if (!state.demo) ui.stop.disabled = true;
+    setStatus("GPS gestoppt.");
+  }
+
+  const demoProfile = [
+    0, 0, 2, 6, 12, 20, 30, 42, 55, 68, 80, 90, 98, 104, 109, 113,
+    116, 118, 118, 118, 116, 111, 104, 94, 82, 68, 54, 41, 30, 20, 12, 6, 2, 0
+  ];
+
+  let demoIndex = 0;
+
+  function startDemo() {
+    stopGps();
+    stopDemo();
+
+    resetDynamicState();
+    state.demo = true;
+    ui.stop.disabled = false;
+    demoIndex = 0;
+
+    const tick = () => {
+      const kmh = demoProfile[demoIndex % demoProfile.length];
+      acceptFix({
+        speedMps: kmh / 3.6,
+        timestamp: Date.now(),
+        accuracy: 3.0,
+        nativeSpeed: kmh / 3.6,
+        source: "1-Hz-Demo"
+      });
+      demoIndex++;
+    };
+
+    tick();
+    state.demoTimer = setInterval(tick, 1000);
+    setStatus("1-Hz-Demo aktiv – die gelbe Kurve springt, Smooth läuft kontinuierlich.");
+  }
+
+  function stopDemo() {
+    if (state.demoTimer != null) {
+      clearInterval(state.demoTimer);
+      state.demoTimer = null;
+    }
+    state.demo = false;
+    if (!state.running) ui.stop.disabled = true;
+  }
+
+  function stopAll() {
+    stopGps();
+    stopDemo();
+    ui.stop.disabled = true;
+    setStatus("Gestoppt.");
+  }
+
+  function resetDynamicState() {
+    state.lastPosition = null;
+    state.previousFix = null;
+    state.latestFix = null;
+    state.latestSpeedMps = 0;
+    state.previousSpeedMps = 0;
+    state.accelMps2 = 0;
+    state.smoothMps = 0;
+    state.predictedMps = 0;
+    state.fixCount = 0;
+    state.fixTimes = [];
+    state.samples = [];
+    state.csv = [];
+    ui.fixCount.textContent = "0";
+  }
+
+  function clearChart() {
+    state.samples = [];
+    state.csv = [];
+    drawChart();
+  }
+
+  function updateFrame(now) {
+    const dt = clamp((now - state.lastFrame) / 1000, 0.001, 0.1);
+    state.lastFrame = now;
+
+    state.frameTimes.push(now);
+    state.frameTimes = state.frameTimes.filter(t => now - t <= 1000);
+    ui.renderHz.textContent = state.frameTimes.length.toString();
+
+    if (state.latestFix) {
+      const age = Math.max(0, (now - state.latestFix.receivedPerf) / 1000);
+      const maxPredict = Number(ui.predict.value);
+
+      // Zwischen den GPS-Fixes wird mit der zuletzt erkannten Beschleunigung weitergerechnet.
+      // Nach maxPredict Sekunden friert die Vorhersage ein, damit ein verlorener GPS-Fix nicht davonläuft.
+      const predictionAge = Math.min(age, maxPredict);
+      state.predictedMps = Math.max(0, state.latestSpeedMps + state.accelMps2 * predictionAge);
+
+      // Exponentielle Annäherung ist unabhängig von der Display-Framerate.
+      const tau = Number(ui.response.value);
+      const alpha = 1 - Math.exp(-dt / Math.max(0.001, tau));
+      state.smoothMps += (state.predictedMps - state.smoothMps) * alpha;
+
+      // Im Stand keine kleinen negativen/positiven Reste halten.
+      if (state.latestSpeedMps < 0.15 && state.predictedMps < 0.15 && state.smoothMps < 0.35) {
+        state.smoothMps = 0;
+      }
+
+      ui.smooth.textContent = mpsToKmh(state.smoothMps).toFixed(1);
+      ui.pred.textContent = mpsToKmh(state.predictedMps).toFixed(1);
+      ui.accel.textContent = state.accelMps2.toFixed(2);
+      ui.delta.textContent = (mpsToKmh(state.latestSpeedMps - state.smoothMps)).toFixed(1);
+      ui.fixAge.textContent = Math.round(age * 1000).toString();
+
+      const hz = state.fixTimes.length >= 2
+        ? (state.fixTimes.length - 1) / ((state.fixTimes.at(-1) - state.fixTimes[0]) / 1000)
+        : 0;
+      ui.gpsHz.textContent = Number.isFinite(hz) ? hz.toFixed(2) : "0.00";
+
+      const t = performance.now() / 1000;
+      const sample = {
+        t,
+        raw: mpsToKmh(state.latestSpeedMps),
+        smooth: mpsToKmh(state.smoothMps),
+        predicted: mpsToKmh(state.predictedMps),
+        accel: state.accelMps2
+      };
+
+      state.samples.push(sample);
+      state.samples = state.samples.filter(s => t - s.t <= 30);
+
+      // Für CSV nicht 60x/s schreiben, sondern ca. 10x/s.
+      const lastCsv = state.csv.at(-1);
+      if (!lastCsv || t - lastCsv.t >= 0.095) {
+        state.csv.push(sample);
+      }
+    }
+
+    drawChart();
+    requestAnimationFrame(updateFrame);
+  }
+
+  function drawChart() {
+    const canvas = ui.chart;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const cw = rect.width;
+    const ch = rect.height;
+    ctx.clearRect(0, 0, cw, ch);
+
+    const samples = state.samples;
+    if (samples.length < 2) return;
+
+    const tMax = samples.at(-1).t;
+    const tMin = tMax - 30;
+    let maxSpeed = 20;
+    for (const s of samples) maxSpeed = Math.max(maxSpeed, s.raw, s.smooth);
+    maxSpeed = Math.ceil(maxSpeed / 20) * 20;
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#253143";
+    ctx.fillStyle = "#8798ad";
+    ctx.font = "11px system-ui";
+
+    for (let i = 0; i <= 4; i++) {
+      const y = 8 + (ch - 24) * i / 4;
+      ctx.beginPath();
+      ctx.moveTo(34, y);
+      ctx.lineTo(cw - 8, y);
+      ctx.stroke();
+      const speed = Math.round(maxSpeed * (1 - i / 4));
+      ctx.fillText(String(speed), 4, y + 4);
+    }
+
+    const xOf = t => 34 + ((t - tMin) / 30) * (cw - 42);
+    const yOf = v => 8 + (1 - v / maxSpeed) * (ch - 24);
+
+    function strokeSeries(key, color, width) {
+      ctx.beginPath();
+      let started = false;
+      for (const s of samples) {
+        const x = xOf(s.t);
+        if (x < 34) continue;
+        const y = yOf(s[key]);
+        if (!started) { ctx.moveTo(x, y); started = true; }
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+
+    strokeSeries("raw", "#ffcf66", 2);
+    strokeSeries("smooth", "#69d2ff", 2.5);
+  }
+
+  function saveCsv() {
+    if (!state.csv.length) {
+      setStatus("Noch keine Daten zum Speichern vorhanden.");
+      return;
+    }
+
+    const baseT = state.csv[0].t;
+    const rows = [
+      ["time_s", "raw_kmh", "smooth_kmh", "predicted_kmh", "accel_mps2"].join(";"),
+      ...state.csv.map(s => [
+        (s.t - baseT).toFixed(3),
+        s.raw.toFixed(3),
+        s.smooth.toFixed(3),
+        s.predicted.toFixed(3),
+        s.accel.toFixed(4)
+      ].join(";"))
+    ];
+
+    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `voltune-gps-test-${stamp}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  ui.start.addEventListener("click", startGps);
+  ui.stop.addEventListener("click", stopAll);
+  ui.demo.addEventListener("click", startDemo);
+  ui.clear.addEventListener("click", clearChart);
+  ui.csv.addEventListener("click", saveCsv);
+
+  ui.response.addEventListener("input", () => {
+    ui.responseValue.textContent = Number(ui.response.value).toFixed(2);
+  });
+
+  ui.predict.addEventListener("input", () => {
+    ui.predictValue.textContent = Number(ui.predict.value).toFixed(2);
+  });
+
+  window.addEventListener("resize", drawChart);
+
+  requestAnimationFrame(updateFrame);
+})();
+</script>
+</body>
+</html>
