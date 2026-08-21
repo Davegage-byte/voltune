@@ -827,7 +827,7 @@ ui.gpsSmoothAccel.textContent =
 
     soundActive = false;
 
-    ui.start.textContent = "Sound + Demo starten";
+    ui.start.textContent = "Demo Start";
     setGpsButtonActive(false);
     ui.mute.textContent = "Stumm";
 
@@ -1417,7 +1417,7 @@ function updateControllerDrive(now) {
     controllerActive = false;
 
     ui.controller.textContent =
-      "Controller fahren";
+      "Controller";
 
     renderVisual(
       controllerSpeed,
@@ -2135,7 +2135,7 @@ ui.speedTest.addEventListener(
     setGpsButtonActive(false);
 
     ui.controller.textContent =
-      "Controller fahren";
+      "Controller";
 
     manualTargetSpeed =
       Number(ui.speedTest.value);
