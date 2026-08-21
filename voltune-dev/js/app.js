@@ -2310,21 +2310,10 @@ if (savedSettings) {
   );
 }
 
-const savedSettings =
-  VoltuneStorage.loadSettings();
-
-if (savedSettings) {
-  applyPersistentSettings(
-    savedSettings
-  );
-}
-
 // Gespeicherten Fahrmodus laden.
 // Falls nichts oder ein ungültiger Wert
 // vorhanden ist, wird Normal verwendet.
 restoreDriveMode();
-
-updateLabels();
 
 updateLabels();
 
