@@ -554,9 +554,27 @@ body.debugActive .meter.debugOnly{
 
 /* Zentraler Start-Button */
 #gps.mainStartButton{
+  background:#176fc1;
+  color:#ffffff;
+
+  border:
+    1px solid #55b8ff;
+
+  box-shadow:
+    0 0 10px
+    rgba(77,163,255,.28);
+}
+
+#gps.mainStartButton.active{
   background:#176b4f;
   color:#effff9;
-  border:1px solid #2fa77e;
+
+  border:
+    1px solid #2fa77e;
+
+  box-shadow:
+    0 0 10px
+    rgba(47,167,126,.28);
 }
 
 #debug{
