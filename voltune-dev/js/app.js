@@ -405,7 +405,8 @@ function updateVoltuneSound(speedKmh, accel) {
       gearRange: Number(ui.gearRange.value),
       shiftRpm: Number(ui.shiftRpm.value),
       gearsEnabled,
-      dynamicShiftEnabled
+      dynamicShiftEnabled,
+      driveMode
     }
   );
 
@@ -1987,6 +1988,21 @@ ui.gears.addEventListener("click", () => {
     scheduleSettingsSave();
   });
 
+  ui.driveModeNormal.addEventListener(
+  "click",
+  () => setDriveMode("normal")
+);
+
+ui.driveModeSport.addEventListener(
+  "click",
+  () => setDriveMode("sport")
+);
+
+ui.driveModeMadness.addEventListener(
+  "click",
+  () => setDriveMode("madness")
+);
+
 ui.debug.addEventListener("click", () => {
   const active =
     document.body.classList.toggle(
@@ -2293,6 +2309,22 @@ if (savedSettings) {
     savedSettings
   );
 }
+
+const savedSettings =
+  VoltuneStorage.loadSettings();
+
+if (savedSettings) {
+  applyPersistentSettings(
+    savedSettings
+  );
+}
+
+// Gespeicherten Fahrmodus laden.
+// Falls nichts oder ein ungültiger Wert
+// vorhanden ist, wird Normal verwendet.
+restoreDriveMode();
+
+updateLabels();
 
 updateLabels();
 
