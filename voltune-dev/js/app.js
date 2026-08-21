@@ -3,6 +3,7 @@
   const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
 
   const ui = {
+    accelerationFx:$("accelerationFx"),
     speed:$("speed"), accel:$("accel"), state:$("state"), speedBar:$("speedBar"), shiftMarker:$("shiftMarker"), downshiftMarker:$("downshiftMarker"),
     baseHz:$("baseHz"),
     invHz:$("invHz"),
@@ -64,6 +65,155 @@
 
   let soundActive = false;
 
+  // =========================
+  // Beschleunigungsanimation
+  // =========================
+  
+  const accelerationFxCanvas =
+    ui.accelerationFx;
+  
+  const accelerationFxCtx =
+    accelerationFxCanvas
+      ? accelerationFxCanvas.getContext("2d")
+      : null;
+  
+  let accelerationFxWidth = 0;
+  let accelerationFxHeight = 0;
+  
+  function resizeAccelerationFx() {
+    if (
+      !accelerationFxCanvas ||
+      !accelerationFxCtx
+    ) {
+      return;
+    }
+  
+    const dpr =
+      Math.min(
+        window.devicePixelRatio || 1,
+        2
+      );
+  
+    accelerationFxWidth =
+      window.innerWidth;
+  
+    accelerationFxHeight =
+      window.innerHeight;
+  
+    accelerationFxCanvas.width =
+      Math.round(
+        accelerationFxWidth * dpr
+      );
+  
+    accelerationFxCanvas.height =
+      Math.round(
+        accelerationFxHeight * dpr
+      );
+  
+    accelerationFxCanvas.style.width =
+      `${accelerationFxWidth}px`;
+  
+    accelerationFxCanvas.style.height =
+      `${accelerationFxHeight}px`;
+  
+    accelerationFxCtx.setTransform(
+      dpr,
+      0,
+      0,
+      dpr,
+      0,
+      0
+    );
+  }
+  
+  window.addEventListener(
+    "resize",
+    resizeAccelerationFx
+  );
+  
+  resizeAccelerationFx();
+
+  // =========================
+// Beschleunigungs-Partikel
+// =========================
+
+// Fester Partikel-Pool.
+// Je nach Beschleunigung wird später nur
+// ein Teil davon tatsächlich gezeichnet.
+const ACCELERATION_FX_PARTICLE_COUNT = 90;
+
+const accelerationFxParticles = [];
+
+let accelerationFxIntensity = 0;
+let accelerationFxTargetIntensity = 0;
+let accelerationFxLastTime =
+  performance.now();
+
+function resetAccelerationFxParticle(
+  particle,
+  randomDepth = true
+) {
+  // Zufällige Richtung vom Fluchtpunkt weg.
+  const angle =
+    Math.random() *
+    Math.PI *
+    2;
+
+  // Nicht alle Partikel exakt gleich weit
+  // vom Mittelpunkt starten lassen.
+  const radius =
+    10 +
+    Math.random() * 80;
+
+  particle.dirX =
+    Math.cos(angle);
+
+  particle.dirY =
+    Math.sin(angle);
+
+  particle.distance =
+    radius;
+
+  // Virtuelle Tiefe.
+  // Kleine Werte = weit hinten,
+  // größere Werte = näher am Fahrer.
+  particle.depth =
+    randomDepth
+      ? Math.random()
+      : 0;
+
+  // Kleine individuelle Unterschiede,
+  // damit der Effekt nicht künstlich wirkt.
+  particle.speed =
+    0.75 +
+    Math.random() * 0.55;
+
+  particle.size =
+    0.6 +
+    Math.random() * 1.4;
+
+  particle.brightness =
+    0.35 +
+    Math.random() * 0.65;
+}
+
+for (
+  let i = 0;
+  i < ACCELERATION_FX_PARTICLE_COUNT;
+  i++
+) {
+  const particle = {};
+
+  resetAccelerationFxParticle(
+    particle,
+    true
+  );
+
+  accelerationFxParticles.push(
+    particle
+  );
+}
+  
   function setGpsButtonActive(active) {
     ui.gps.textContent =
       active
