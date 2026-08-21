@@ -737,6 +737,16 @@ body.debugActive .meter.debugOnly{
    Manueller Test
    ========================= */
 
+.controls > .manual{
+  grid-column:1;
+
+  margin:0;
+}
+
+.controls > .control-master{
+  grid-column:1;
+}
+
 .manual{
   padding:16px;
 
