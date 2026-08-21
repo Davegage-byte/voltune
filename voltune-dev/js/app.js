@@ -2290,13 +2290,20 @@ function restoreLastDriveMode() {
   lastState = "idle";
 
   if (startGps()) {
+    // GPS darf bereits im Hintergrund
+    // wieder anlaufen.
+    //
+    // Der Sound benötigt im Tesla-Browser
+    // aber weiterhin einen echten Benutzerklick.
+    // Deshalb erst nach diesem Klick
+    // "Aktiv ✓" anzeigen.
     ui.gps.textContent =
-      "Aktiv ✓";
+      "Start";
 
     renderVisual(
       0,
       0,
-      "GPS · warte …"
+      "GPS · bereit"
     );
   }
 }
