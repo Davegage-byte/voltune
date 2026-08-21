@@ -475,14 +475,16 @@ regenFxIntensity =
   // =========================
 
   const activeParticles =
-    Math.round(
-      14 +
-      accelerationFxIntensity *
-      (
-        ACCELERATION_FX_PARTICLE_COUNT -
-        14
-      )
-    );
+    accelerationFxIntensity < 0.005
+      ? 0
+      : Math.round(
+          14 +
+          accelerationFxIntensity *
+          (
+            ACCELERATION_FX_PARTICLE_COUNT -
+            14
+          )
+        );
 
 
   // =========================
@@ -644,6 +646,191 @@ regenFxIntensity =
 
     accelerationFxCtx.stroke();
   }
+// =========================
+// Rekuperations-Ringe
+// =========================
+
+if (regenFxIntensity >= 0.005) {
+
+  const activeRegenParticles =
+    Math.round(
+      5 +
+      regenFxIntensity *
+      (
+        REGEN_FX_PARTICLE_COUNT -
+        5
+      )
+    );
+
+  // Je stärker die Rekuperation,
+  // desto schneller werden die Ringe
+  // zur Mitte gezogen.
+  const regenTravelSpeed =
+    0.28 +
+    regenFxIntensity *
+    0.95;
+
+  accelerationFxCtx.save();
+
+  accelerationFxCtx.lineCap =
+    "round";
+
+
+  for (
+    let i = 0;
+    i < activeRegenParticles;
+    i++
+  ) {
+    const particle =
+      regenFxParticles[i];
+
+
+    particle.progress +=
+      regenTravelSpeed *
+      particle.speed *
+      dt;
+
+
+    // Mitte erreicht:
+    // neuen Ring wieder außen starten.
+    if (particle.progress >= 1) {
+      resetRegenFxParticle(
+        particle,
+        false
+      );
+    }
+
+
+    const progress =
+      clamp(
+        particle.progress,
+        0,
+        1
+      );
+
+
+    // Leicht geschwungene Flugbahn.
+    const angle =
+      particle.angle +
+      particle.drift *
+      Math.sin(
+        progress *
+        Math.PI
+      );
+
+
+    // Von außen nach innen.
+    const distance =
+      maxDistance *
+      (1 - progress);
+
+
+    const x =
+      centerX +
+      Math.cos(angle) *
+      distance;
+
+    const y =
+      centerY +
+      Math.sin(angle) *
+      distance;
+
+
+    // =========================
+    // Ringgröße
+    // =========================
+    //
+    // Richtung Mitte werden die Ringe
+    // etwas kleiner – wie Energie,
+    // die eingesammelt wird.
+
+    const ringRadius =
+      particle.size *
+      (
+        1.15 -
+        progress * 0.60
+      );
+
+
+    // =========================
+    // Weiches Erscheinen /
+    // Verschwinden
+    // =========================
+
+    const fadeIn =
+      clamp(
+        progress / 0.10,
+        0,
+        1
+      );
+
+    const fadeOut =
+      clamp(
+        (1 - progress) / 0.18,
+        0,
+        1
+      );
+
+
+    const alpha =
+      clamp(
+        (
+          0.10 +
+          regenFxIntensity *
+          0.48
+        ) *
+        particle.brightness *
+        fadeIn *
+        fadeOut,
+        0,
+        0.62
+      );
+
+
+    // =========================
+    // Grüner Glow
+    // =========================
+
+    accelerationFxCtx.shadowColor =
+      `rgba(70, 255, 140, ${
+        alpha * 0.85
+      })`;
+
+    accelerationFxCtx.shadowBlur =
+      4 +
+      regenFxIntensity *
+      10;
+
+
+    // =========================
+    // Ring zeichnen
+    // =========================
+
+    accelerationFxCtx.beginPath();
+
+    accelerationFxCtx.arc(
+      x,
+      y,
+      ringRadius,
+      0,
+      Math.PI * 2
+    );
+
+    accelerationFxCtx.lineWidth =
+      0.8 +
+      regenFxIntensity *
+      1.2;
+
+    accelerationFxCtx.strokeStyle =
+      `rgba(70, 255, 140, ${alpha})`;
+
+    accelerationFxCtx.stroke();
+  }
+
+
+  accelerationFxCtx.restore();
+}
+  
 }
   
   function setGpsButtonActive(active) {
