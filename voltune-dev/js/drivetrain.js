@@ -47,7 +47,11 @@ window.VoltuneDrivetrain = (() => {
     );
   }
 
-function calculateShiftTarget(accel, config) {
+  function calculateShiftTarget(
+    accel,
+    config,
+    effectiveDrivingStyle
+  ) {
   const maxRpm = Number(config.maxRpm);
 
   const sportShift = Math.min(
@@ -119,7 +123,7 @@ function calculateShiftTarget(accel, config) {
 const effectiveDemand =
   Math.max(
     shiftDemand,
-    drivingStyle * 0.60
+    effectiveDrivingStyle * 0.60
   );
 
 return (
@@ -192,6 +196,21 @@ function updateDrivingStyle(accel) {
 
   return drivingStyle;
 }
+
+  function getEffectiveDrivingStyle(mode) {
+  if (mode === "madness") {
+    return 1;
+  }
+
+  if (mode === "sport") {
+    return Math.max(
+      0.5,
+      drivingStyle
+    );
+  }
+
+  return drivingStyle;
+}
   
   function update(speedKmh, accel, config) {
     const maxRpm = Number(config.maxRpm);
@@ -199,8 +218,17 @@ function updateDrivingStyle(accel) {
 
     updateDrivingStyle(accel);
     
+    const effectiveDrivingStyle =
+      getEffectiveDrivingStyle(
+        config.driveMode
+      );
+    
     currentShiftTarget =
-      calculateShiftTarget(accel, config);
+      calculateShiftTarget(
+        accel,
+        config,
+        effectiveDrivingStyle
+      );
 
     if (!config.gearsEnabled) {
       currentGear = 1;
@@ -211,15 +239,17 @@ function updateDrivingStyle(accel) {
         maxRpm * 1.08
       );
 
-        return {
-          gear: 1,
-          ratio: null,
-          rpm: virtualRpm,
-          maxRpm,
-          shiftTarget: null,
-          downshiftTarget: null,
-          direct: true
-        };
+      return {
+        gear: 1,
+        ratio: null,
+        rpm: virtualRpm,
+        maxRpm,
+        shiftTarget: null,
+        downshiftTarget: null,
+        drivingStyle: effectiveDrivingStyle,
+        rawDrivingStyle: drivingStyle,
+        direct: true
+      };
     }
 
     let rpm = rpmForGear(
@@ -382,7 +412,7 @@ const brakingDemand =
 
 const downshiftAggression =
   clamp(
-    drivingStyle * 0.80 +
+    effectiveDrivingStyle * 0.80 +
       brakingDemand * 0.18,
     0,
     1
@@ -514,7 +544,7 @@ const displayedIdleRpm =
         maxRpm,
         shiftTarget: currentShiftTarget,
         downshiftTarget,
-        drivingStyle,
+        drivingStyle: effectiveDrivingStyle,
         direct: false
       };
   }
