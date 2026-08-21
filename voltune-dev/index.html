@@ -13,46 +13,76 @@
 <div class="sideRail">
 
   <div class="driveHud">
-  
+
     <div class="driveHudInfo">
-  
+
       <div class="driveHudItem driveHudSpeed debugOnly">
         <span class="label">Tempo</span>
-  
+
         <div class="driveHudSpeedValue">
           <b id="speed">0</b>
           <small>km/h</small>
         </div>
       </div>
-  
-      <div class="driveHudItem">
+
+      <div class="driveHudItem driveHudGear">
         <span class="label">Gang</span>
         <b id="gearDisplay">–</b>
       </div>
-  
-      <div class="driveHudItem">
+
+      <div class="driveHudItem driveHudRpm">
         <span class="label">Drehzahl</span>
         <b id="rpmDisplay">0 RPM</b>
       </div>
-  
+
     </div>
-  
+
     <div class="bar rpmBar">
       <div id="speedBar"></div>
-  
+
       <span
         id="downshiftMarker"
         class="rpmMarker rpmMarkerDown"
         title="Rückschaltziel"
       ></span>
-  
+
       <span
         id="shiftMarker"
         class="rpmMarker rpmMarkerUp"
         title="Hochschaltziel"
       ></span>
     </div>
-  
+
+  </div>
+
+  <div class="driveModeGroup">
+    <div class="driveModeTitle">
+      Fahrmodus
+    </div>
+
+    <button
+      id="driveModeNormal"
+      class="driveModeBtn active"
+      data-drive-mode="normal"
+    >
+      Normal
+    </button>
+
+    <button
+      id="driveModeSport"
+      class="driveModeBtn"
+      data-drive-mode="sport"
+    >
+      Sport
+    </button>
+
+    <button
+      id="driveModeMadness"
+      class="driveModeBtn"
+      data-drive-mode="madness"
+    >
+      Wahnsinn
+    </button>
   </div>
 
   <div class="buttons sideButtons">
@@ -61,48 +91,12 @@
     <button id="stop">STOP</button>
     <button id="mute">Stumm</button>
 
-    <button id="easyBov" class="featureBtn">
-      EasyBOV
-    </button>
+    <button id="easyBov" class="featureBtn">EasyBOV</button>
 
-    <button id="gears" class="featureBtn active">
-      Gänge
-    </button>
+    <button id="gears" class="featureBtn active">Gänge</button>
 
-    <button id="dynamicShift" class="featureBtn active">
-      Dynamik
-    </button>
-    
-    <div class="driveModeGroup">
-      <div class="driveModeTitle">
-        Fahrmodus
-      </div>
-    
-      <button
-        id="driveModeNormal"
-        class="driveModeBtn active"
-        data-drive-mode="normal"
-      >
-        Normal
-      </button>
-    
-      <button
-        id="driveModeSport"
-        class="driveModeBtn"
-        data-drive-mode="sport"
-      >
-        Sport
-      </button>
-    
-      <button
-        id="driveModeMadness"
-        class="driveModeBtn"
-        data-drive-mode="madness"
-      >
-        Wahnsinn
-      </button>
-    </div>
-    
+    <button id="dynamicShift" class="featureBtn active">Dynamik</button>
+
     <button id="debug" aria-pressed="false">Debug</button>
 
     <button id="start" class="debugOnly">Sound + Demo starten</button>
@@ -440,19 +434,6 @@
     
   </div>
 
-<div class="pageFooter">
-  <h1>
-    Voltune · Sound Test
-    <span style="font-size:14px;color:#7f8b9b">
-      GPS v6 · DEV <span id="devVersionDisplay">–</span>
-    </span>
-  </h1>
-
-  <p class="sub">
-    Sound-Labor: Demo, manueller Regler oder echtes GPS direkt im Tesla.
-  </p>
-</div>
-  
   <div class="note debugOnly">
     Demo-Testfahrt mit Idle, Anrollen, Konstantfahrt, sanfter bis starker Beschleunigung,
     Kickdown, Lupfen, Highspeed, Rekuperation und Rückschaltungen.
@@ -464,16 +445,7 @@
 <script>
   (() => {
     const devVersion = Date.now();
-
-    const versionDisplay =
-      document.getElementById("devVersionDisplay");
-
-    if (versionDisplay) {
-      versionDisplay.textContent =
-        String(devVersion).slice(-6);
-    }
-
-    const scripts = [
+const scripts = [
       "js/drivetrain.js",
       "js/gps.js",
       "js/audio.js",
