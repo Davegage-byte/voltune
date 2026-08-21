@@ -3184,6 +3184,10 @@ renderVisual(
   0,
   "Bereit"
 );
+  
+  VoltuneStartup.finish(
+    animationsEnabled
+);
 
   setTimeout(
   restoreLastDriveMode,
