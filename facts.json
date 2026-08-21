@@ -1,0 +1,502 @@
+[
+  {
+    "id": 1,
+    "category": "Laden & Supercharger",
+    "text": "Teslas ursprünglicher Roadster kann laut Tesla bis heute nicht am Supercharger laden."
+  },
+  {
+    "id": 2,
+    "category": "Batterie & Thermik",
+    "text": "Teslas Octovalve ist ein Drehventil mit acht Anschlüssen und fünf internen Ventilstellungen für verschiedene Kühlkreise."
+  },
+  {
+    "id": 3,
+    "category": "Roadster & SpaceX",
+    "text": "Ein Tesla Roadster diente 2018 als Nutzlast beim ersten Falcon-Heavy-Testflug und umkreist seitdem die Sonne."
+  },
+  {
+    "id": 4,
+    "category": "Software & Bedienung",
+    "text": "Versionshinweise im Fahrzeug haben Vorrang, wenn sie einer älteren Beschreibung im Benutzerhandbuch widersprechen."
+  },
+  {
+    "id": 5,
+    "category": "Produktion & Fabriken",
+    "text": "Tesla verlegte seinen rechtlichen Firmensitz von Delaware nach Texas; die Hauptadresse lautet 1 Tesla Road in Austin."
+  },
+  {
+    "id": 6,
+    "category": "Laden & Supercharger",
+    "text": "An stark ausgelasteten Superchargern kann das Fahrzeug das Ladelimit automatisch auf 80 Prozent setzen; der Fahrer kann es anschließend wieder erhöhen."
+  },
+  {
+    "id": 7,
+    "category": "Model 3 & Model Y",
+    "text": "Das Benutzerhandbuch im Fahrzeug wird an Ausstattung, Konfiguration, Marktregion und Softwareversion des konkreten Autos angepasst."
+  },
+  {
+    "id": 8,
+    "category": "Energie & Statistik",
+    "text": "Tesla meldete im Impact Report 2025 insgesamt 37 Millionen Tonnen vermiedene CO2-Äquivalente."
+  },
+  {
+    "id": 9,
+    "category": "Historie",
+    "text": "Der erste Roadster war das erste serienmäßige Elektroauto mit Lithium-Ionen-Zellen und mehr als 200 Meilen Reichweite pro Ladung."
+  },
+  {
+    "id": 10,
+    "category": "Laden & Supercharger",
+    "text": "Bei minutengenauer Abrechnung unterscheidet Tesla vier Leistungsstufen: bis 60, 60 bis 100, 100 bis 180 und über 180 kW."
+  },
+  {
+    "id": 11,
+    "category": "Batterie & Thermik",
+    "text": "Das Wärmepumpenpatent von Tesla beschreibt sogar einen absichtlich verlustreichen Kompressorbetrieb, bei dem zusätzliche Wärme erzeugt wird."
+  },
+  {
+    "id": 12,
+    "category": "Fahrzeugtechnik",
+    "text": "Bei Elektroautos steht wenig Motorabwärme zur Verfügung; deshalb ist das Wiederverwenden von Wärme aus Akku und Antrieb besonders wertvoll."
+  },
+  {
+    "id": 13,
+    "category": "Elon Musk & Unternehmen",
+    "text": "Elon Musk war nicht einer der beiden ursprünglichen Tesla-Gründer, stieg aber 2004 als führender Investor und Chairman ein."
+  },
+  {
+    "id": 14,
+    "category": "Laden & Supercharger",
+    "text": "Der beim Einstecken gültige Supercharger-Tarif bleibt laut Tesla für die laufende Sitzung bestehen, selbst wenn sich der Preis währenddessen ändert."
+  },
+  {
+    "id": 15,
+    "category": "Roadster",
+    "text": "Der erste Roadster nutzte ein 53-kWh-Paket und erreichte im US-EPA-Test 244 Meilen beziehungsweise 393 Kilometer."
+  },
+  {
+    "id": 16,
+    "category": "Software & Bedienung",
+    "text": "Der Wächter-Modus und die Dashcam benötigen ein passend formatiertes USB-Laufwerk, um Videoclips zu speichern."
+  },
+  {
+    "id": 17,
+    "category": "Batterie & Thermik",
+    "text": "Die Octovalve verbindet Kühlkreise von Batterie, Antrieb, Leistungselektronik und Innenraum, statt für jede Aufgabe vollständig getrennte Systeme zu verwenden."
+  },
+  {
+    "id": 18,
+    "category": "Laden & Supercharger",
+    "text": "Tesla nennt Alter und Größe des Akkupakets, Ladestand, Außentemperatur und Fahrzeugkonfiguration als Faktoren für die erreichbare Ladeleistung."
+  },
+  {
+    "id": 19,
+    "category": "Model S",
+    "text": "Die Alpha-Testphase des Model S begann bereits 2010, zwei Jahre vor den ersten Kundenauslieferungen."
+  },
+  {
+    "id": 20,
+    "category": "Produktion & Fabriken",
+    "text": "Die Gigafactory Shanghai war Teslas erstes Fahrzeugwerk außerhalb der USA."
+  },
+  {
+    "id": 21,
+    "category": "Laden & Supercharger",
+    "text": "Fast alle Supercharger sind rund um die Uhr zugänglich; Öffnungszeiten am Standort können sich jedoch auf die benachbarten Einrichtungen beschränken."
+  },
+  {
+    "id": 22,
+    "category": "Energie & Statistik",
+    "text": "Tesla meldete für 2025 rund 135.000 weltweit geschaffene Arbeitsplätze in Bereichen wie Nachhaltigkeit und KI."
+  },
+  {
+    "id": 23,
+    "category": "Roadster & SpaceX",
+    "text": "Der ins All geschossene Roadster ist an der zweiten Raketenstufe befestigt und befindet sich in einer elliptischen Umlaufbahn um die Sonne."
+  },
+  {
+    "id": 24,
+    "category": "Software & Bedienung",
+    "text": "Tesla-Fahrzeuge zeigen nach einem Softwareupdate neue Funktionen direkt als Versionshinweise auf dem Touchscreen an."
+  },
+  {
+    "id": 25,
+    "category": "Laden & Supercharger",
+    "text": "Standorthinweise eines Superchargers können im Fahrzeug sogar Torcodes, Parkebenen und Stoßzeiten enthalten."
+  },
+  {
+    "id": 26,
+    "category": "Batterie & Thermik",
+    "text": "Eine wissenschaftliche Simulation der Octovalve fand geringeren Energieverbrauch und geringere Akkubelastung beim Aufwärmen, allerdings mit längerer Aufwärmzeit."
+  },
+  {
+    "id": 27,
+    "category": "Fahrzeugtechnik",
+    "text": "Die Octovalve gibt dem Rechner für Fahrerassistenz besonders kaltes Kühlmittel direkt hinter dem Chiller, weil dessen Prozessoren priorisiert gekühlt werden."
+  },
+  {
+    "id": 28,
+    "category": "Historie",
+    "text": "Tesla ging 2010 an die Börse; das Aktiensymbol TSLA wird an der Nasdaq gehandelt."
+  },
+  {
+    "id": 29,
+    "category": "Laden & Supercharger",
+    "text": "Beim Supercharger öffnet ein Druck auf die Unterseite der Ladeportklappe den Anschluss, sofern das Fahrzeug entriegelt ist."
+  },
+  {
+    "id": 30,
+    "category": "Model X",
+    "text": "Die Falcon-Wing-Türen überwachen mit Sensoren ihre Umgebung und passen den Öffnungsbogen an verfügbare Höhe und seitlichen Platz an."
+  },
+  {
+    "id": 31,
+    "category": "Batterie & Thermik",
+    "text": "Teslas Wärmepumpensystem kann laut seinem Patent Kabine, Batterie und Antrieb wahlweise erwärmen oder kühlen und deren Kreisläufe thermisch koppeln."
+  },
+  {
+    "id": 32,
+    "category": "Laden & Supercharger",
+    "text": "Tesla erlaubt alle drei Monate bis zu fünf Stimmen für vorgeschlagene neue Supercharger-Standorte."
+  },
+  {
+    "id": 33,
+    "category": "Roadster",
+    "text": "Vom ersten Roadster entstanden ungefähr 2.450 Fahrzeuge, die in mehr als 30 Ländern verkauft wurden."
+  },
+  {
+    "id": 34,
+    "category": "Software & Bedienung",
+    "text": "Der im Fahrzeug angezeigte Reichweitenwert basiert auf einer festen Verbrauchsannahme; der Energiegraph berücksichtigt dagegen das reale Fahrprofil."
+  },
+  {
+    "id": 35,
+    "category": "Fahrzeugtechnik",
+    "text": "Ein Elektroauto kann beim Verzögern Strom zurückgewinnen, doch Rekuperation kann bei kaltem oder fast vollem Akku eingeschränkt sein."
+  },
+  {
+    "id": 36,
+    "category": "Laden & Supercharger",
+    "text": "Supercharger-Rechnungen lassen sich in der Tesla-App nach Datum, Fahrzeug und Dateityp auswählen und herunterladen."
+  },
+  {
+    "id": 37,
+    "category": "Energie & Statistik",
+    "text": "Tesla bezeichnete sein Energiespeichergeschäft im zweiten Quartal 2026 als das zweitstärkste Quartal seiner Geschichte."
+  },
+  {
+    "id": 38,
+    "category": "Model S",
+    "text": "Das Model S wurde ohne die räumlichen Zwänge eines Verbrennungsmotors von Grund auf um den elektrischen Antrieb herum konstruiert."
+  },
+  {
+    "id": 39,
+    "category": "Batterie & Thermik",
+    "text": "Das Octovalve-System nutzt zwei übereinander verschraubte Verteiler: einen Polymerverteiler für Wasser-Glykol und einen Aluminiumverteiler für Kältemittel."
+  },
+  {
+    "id": 40,
+    "category": "Laden & Supercharger",
+    "text": "Wird ein geliehenes Tesla-Fahrzeug geladen, belastet Tesla die im Konto des Fahrzeughalters hinterlegte Zahlungsmethode."
+  },
+  {
+    "id": 41,
+    "category": "Roadster & SpaceX",
+    "text": "Im Fahrersitz des Weltraum-Roadsters sitzt die Schaufensterpuppe 'Starman' in einem Raumanzug."
+  },
+  {
+    "id": 42,
+    "category": "Software & Bedienung",
+    "text": "Einige Tesla-Funktionen mit hohem Datenverbrauch benötigen mindestens Standard-Konnektivität; dazu zählen laut Tesla Karten, Navigation und Sprachbefehle."
+  },
+  {
+    "id": 43,
+    "category": "Batterie & Thermik",
+    "text": "Der Chiller eines Tesla-Wärmepumpensystems überträgt Wärme zwischen dem Kältemittelkreis und dem Wasser-Glykol-Kühlmittel."
+  },
+  {
+    "id": 44,
+    "category": "Laden & Supercharger",
+    "text": "Teslas dynamische Standortpreise berücksichtigen unter anderem aktuelle Belegung und erwartete Nachfrage, um Auslastung zu verteilen."
+  },
+  {
+    "id": 45,
+    "category": "Historie",
+    "text": "Tesla wurde 2003 zunächst unter dem Namen Tesla Motors gegründet und verkürzte den Firmennamen 2017 auf Tesla, Inc."
+  },
+  {
+    "id": 46,
+    "category": "Model 3 & Model Y",
+    "text": "Das Model Y war das erste Tesla-Serienmodell mit der neuen Wärmepumpe und der Octovalve-Architektur."
+  },
+  {
+    "id": 47,
+    "category": "Fahrzeugtechnik",
+    "text": "Die flache Batterie im Fahrzeugboden senkt den Schwerpunkt und schafft vorn Platz für einen zusätzlichen Kofferraum."
+  },
+  {
+    "id": 48,
+    "category": "Laden & Supercharger",
+    "text": "Tesla warnt ausdrücklich: Die letzten 20 Prozent bis 100 dauern typischerweise deutlich länger als das Laden bis 80 Prozent."
+  },
+  {
+    "id": 49,
+    "category": "Energie & Statistik",
+    "text": "Tesla meldete im zweiten Quartal 2026 erstmals mehr als 100 Milliarden US-Dollar Umsatz auf Basis der vorausgegangenen zwölf Monate."
+  },
+  {
+    "id": 50,
+    "category": "Roadster",
+    "text": "Die Karosseriestruktur des ersten Roadsters basierte auf dem Lotus Elise, sein elektrischer Antriebsstrang stammte jedoch von Tesla."
+  },
+  {
+    "id": 51,
+    "category": "Software & Bedienung",
+    "text": "Der Besitzer kann viele fahrzeugbezogene Einstellungen in Fahrerprofilen speichern; Profile lassen sich auch mit Schlüsseln verknüpfen."
+  },
+  {
+    "id": 52,
+    "category": "Laden & Supercharger",
+    "text": "Eine laufende Supercharger-Sitzung wird nach dem Abziehen automatisch über die in der Tesla-App hinterlegte Zahlungsmethode abgerechnet."
+  },
+  {
+    "id": 53,
+    "category": "Batterie & Thermik",
+    "text": "Das Wärmepumpensystem kann Klimaanlage und Wärmepumpenbetrieb gleichzeitig ausführen, um Wärme gezielt zu verschieben."
+  },
+  {
+    "id": 54,
+    "category": "Model S",
+    "text": "Tesla entwickelte für das Model S zunächst Alpha- und anschließend Beta-Fahrzeuge, bevor die Serienproduktion begann."
+  },
+  {
+    "id": 55,
+    "category": "Fahrzeugtechnik",
+    "text": "Tesla nennt ungewöhnliche Pumpen-, Klappen- oder Kompressorgeräusche im Stand ausdrücklich als normale Betriebsgeräusche des Thermosystems."
+  },
+  {
+    "id": 56,
+    "category": "Laden & Supercharger",
+    "text": "Ein Supercharger-Pin im Fahrzeug zeigt nicht nur freie Ladeplätze, sondern auch die maximal verfügbare Leistung des Standorts."
+  },
+  {
+    "id": 57,
+    "category": "Elon Musk & Unternehmen",
+    "text": "Musk nutzte den später ins All geschossenen Roadster zuvor persönlich für Fahrten zur Arbeit."
+  },
+  {
+    "id": 58,
+    "category": "Historie",
+    "text": "Der Prototyp des ersten Roadsters wurde am 19. Juli 2006 bei einer Einladungveranstaltung in Santa Monica vorgestellt."
+  },
+  {
+    "id": 59,
+    "category": "Software & Bedienung",
+    "text": "Freigeschaltete Funktionen können je nach Marktregion, Hardware, gekaufter Ausstattung und Softwarestand unterschiedlich sein."
+  },
+  {
+    "id": 60,
+    "category": "Batterie & Thermik",
+    "text": "Die Batterie kann vor einem Schnellladestopp automatisch temperiert werden, wenn der Supercharger als Navigationsziel gesetzt ist."
+  },
+  {
+    "id": 61,
+    "category": "Laden & Supercharger",
+    "text": "Bei einer zeitabhängigen Supercharger-Abrechnung steigt der Minutenpreis mit der tatsächlich erreichten Ladeleistung."
+  },
+  {
+    "id": 62,
+    "category": "Fahrzeugtechnik",
+    "text": "Räder beeinflussen die Aerodynamik besonders stark, weil sie rotieren und offene Radkästen turbulente Luft erzeugen."
+  },
+  {
+    "id": 63,
+    "category": "Roadster & SpaceX",
+    "text": "Der Weltraum-Roadster wurde am 6. Februar 2018 vom Kennedy Space Center auf Falcon Heavy FH-001 gestartet."
+  },
+  {
+    "id": 64,
+    "category": "Energie & Statistik",
+    "text": "Tesla behauptete im Impact Report 2025 für Fahrten mit FSD (Supervised) achtmal weniger schwere Kollisionen als beim durchschnittlichen US-Fahrer."
+  },
+  {
+    "id": 65,
+    "category": "Laden & Supercharger",
+    "text": "Der Trip Planner kann Supercharger automatisch anhand des aktuellen Ladestands in eine Route einfügen."
+  },
+  {
+    "id": 66,
+    "category": "Batterie & Thermik",
+    "text": "Das Octovalve-Wärmepumpenmodul ist trotz mehrerer Wärmetauscher und Ventile ungefähr so groß wie ein großer Aktenkoffer."
+  },
+  {
+    "id": 67,
+    "category": "Software & Bedienung",
+    "text": "Tesla kann das Fahrzeughandbuch per Software aktualisieren; deshalb kann die Online-Version von der fahrzeugspezifischen Version abweichen."
+  },
+  {
+    "id": 68,
+    "category": "Historie",
+    "text": "Der erste an einen Kunden ausgelieferte Roadster ging im Februar 2008 an Elon Musk."
+  },
+  {
+    "id": 69,
+    "category": "Produktion & Fabriken",
+    "text": "Tesla kombiniert an mehreren Standorten Fahrzeugbau, Batteriepacks, Antriebseinheiten und Energiespeicher unter einem Fabriknetz."
+  },
+  {
+    "id": 70,
+    "category": "Laden & Supercharger",
+    "text": "Tesla erhebt an stark belegten Standorten ab einem festgelegten Ladestand oder nach Ladeende Überlastungsgebühren; die ersten fünf Minuten sind gebührenfrei."
+  },
+  {
+    "id": 71,
+    "category": "Fahrzeugtechnik",
+    "text": "Ein Tesla besitzt neben dem Hochvolt-Akku ein separates Niedervoltsystem für Steuergeräte, Schlösser, Beleuchtung und andere Verbraucher."
+  },
+  {
+    "id": 72,
+    "category": "Model 3 & Model Y",
+    "text": "Das neuere europäische Model-3-Handbuch enthält eigene Kapitel zu Innenraumradar, Kind-im-Fahrzeug-Erkennung und Müdigkeitswarnung."
+  },
+  {
+    "id": 73,
+    "category": "Laden & Supercharger",
+    "text": "Roadster-Fahrer können den ursprünglichen Tesla-Sportwagen nicht einfach über einen Adapter zum Supercharger-Fahrzeug machen; Tesla führt ihn ausdrücklich als nicht kompatibel."
+  },
+  {
+    "id": 74,
+    "category": "Energie & Statistik",
+    "text": "Tesla kündigte im zweiten Quartal 2026 an, die Model-S- und Model-X-Linien in Fremont für Optimus-Produktion stillgelegt zu haben."
+  },
+  {
+    "id": 75,
+    "category": "Batterie & Thermik",
+    "text": "Die Octovalve kann Abwärme aus Antrieb und Elektronik zum Erwärmen der Batterie oder des Innenraums nutzen, statt sie nur an die Umgebung abzugeben."
+  },
+  {
+    "id": 76,
+    "category": "Software & Bedienung",
+    "text": "Der Ladeport zeigt seinen Zustand über Farben an; blinkendes Grün bedeutet, dass aktiv geladen wird."
+  },
+  {
+    "id": 77,
+    "category": "Historie",
+    "text": "Der erste Roadster war ein Zweisitzer mit Hinterradantrieb und einem einmotorigen AC-Induktionsantrieb."
+  },
+  {
+    "id": 78,
+    "category": "Laden & Supercharger",
+    "text": "Tesla gibt für das Model S unter Idealbedingungen bis zu 200 Meilen zusätzliche Reichweite in 15 Minuten Supercharging an."
+  },
+  {
+    "id": 79,
+    "category": "Fahrzeugtechnik",
+    "text": "Bei einem Elektrofahrzeug steigt der Luftwiderstand ungefähr mit dem Quadrat der Geschwindigkeit; deshalb kostet hohes Autobahntempo überproportional Reichweite."
+  },
+  {
+    "id": 80,
+    "category": "Elon Musk & Unternehmen",
+    "text": "Die Tesla-Anschrift '1 Tesla Road' liegt nicht in Kalifornien, sondern am Gigafactory-Texas-Standort in Austin."
+  },
+  {
+    "id": 81,
+    "category": "Batterie & Thermik",
+    "text": "Teslas thermische Architektur kann den Kompressor ineffizient betreiben, um bewusst Wärme zu erzeugen, wenn kaum nutzbare Abwärme vorhanden ist."
+  },
+  {
+    "id": 82,
+    "category": "Laden & Supercharger",
+    "text": "Zusatzhinweise eines Supercharger-Standorts werden über das rote Blitzsymbol in der Fahrzeugnavigation geöffnet."
+  },
+  {
+    "id": 83,
+    "category": "Roadster",
+    "text": "Der Roadster Sport beschleunigte laut damaligen Angaben in 3,7 Sekunden von 0 auf 60 mph; die Standardversion benötigte 3,9 Sekunden."
+  },
+  {
+    "id": 84,
+    "category": "Software & Bedienung",
+    "text": "Das Handbuch nennt den Innenraumschutz bei Hitze nicht als Ersatz dafür, Personen oder Tiere im Fahrzeug zurückzulassen."
+  },
+  {
+    "id": 85,
+    "category": "Produktion & Fabriken",
+    "text": "Tesla beschrieb 2025 den Wandel von einem hardwarezentrierten Hersteller zu einem Unternehmen für physische KI."
+  },
+  {
+    "id": 86,
+    "category": "Energie & Statistik",
+    "text": "Im zweiten Quartal 2026 meldete Tesla 4,7 Milliarden US-Dollar operativen Cashflow und zugleich einen negativen freien Cashflow von 1,1 Milliarden US-Dollar."
+  },
+  {
+    "id": 87,
+    "category": "Laden & Supercharger",
+    "text": "Nicht jeder für Tesla geöffnete Supercharger ist automatisch für Fremdmarken nutzbar; die Tesla-App zeigt die spezifisch freigegebenen Standorte."
+  },
+  {
+    "id": 88,
+    "category": "Batterie & Thermik",
+    "text": "Tesla priorisiert beim Kühlen des Assistenzcomputers niedrige Kühlmitteltemperaturen, weil dessen Hochleistungsprozessoren empfindlich auf Hitze reagieren."
+  },
+  {
+    "id": 89,
+    "category": "Fahrzeugtechnik",
+    "text": "Beim Abschleppen eines Tesla müssen die Antriebsräder je nach Modell und Verfahren vom Boden ferngehalten werden, weil rotierende Motoren Strom erzeugen können."
+  },
+  {
+    "id": 90,
+    "category": "Roadster & SpaceX",
+    "text": "Die Umlaufbahn des Weltraum-Roadsters reicht bis etwa 1,66 Astronomische Einheiten von der Sonne und kreuzt die Marsbahn."
+  },
+  {
+    "id": 91,
+    "category": "Software & Bedienung",
+    "text": "Tesla listet 'normale Betriebsgeräusche' im Handbuch, damit Summen, Klicken und Strömungsgeräusche nicht automatisch als Defekt gelten."
+  },
+  {
+    "id": 92,
+    "category": "Historie",
+    "text": "Der Firmenname ehrt Nikola Tesla, dessen Arbeiten zum Wechselstrommotor direkt zur Technik früher Tesla-Antriebe passen."
+  },
+  {
+    "id": 93,
+    "category": "Laden & Supercharger",
+    "text": "Abseits der kWh-Abrechnung kann Tesla in bestimmten Regionen weiterhin pro Minute berechnen, weil lokale Regeln Energieverkauf unterschiedlich behandeln."
+  },
+  {
+    "id": 94,
+    "category": "Model S",
+    "text": "Der frühe Model-S-Entwurf nutzte den fehlenden Verbrennungsmotor nicht nur für einen Frunk, sondern auch für eine neu gedachte Crashstruktur."
+  },
+  {
+    "id": 95,
+    "category": "Batterie & Thermik",
+    "text": "Im Tesla-Wärmepumpenpatent sind Batterie- und Antriebskühlkreis wahlweise miteinander oder getrennt betreibbar."
+  },
+  {
+    "id": 96,
+    "category": "Energie & Statistik",
+    "text": "Tesla meldete für das zweite Quartal 2026 einen GAAP-Nettogewinn von 1,1 Milliarden US-Dollar bei 0,4 Milliarden US-Dollar operativem Ergebnis."
+  },
+  {
+    "id": 97,
+    "category": "Laden & Supercharger",
+    "text": "Die Tesla-App kann während des Ladens den Status anzeigen und den Fahrer benachrichtigen, wenn das Fahrzeug bereit zur Weiterfahrt ist."
+  },
+  {
+    "id": 98,
+    "category": "Software & Bedienung",
+    "text": "Für bestimmte Änderungen reicht kein App-Update: Funktionsumfang und Menüs hängen auch von der im Fahrzeug verbauten Hardware ab."
+  },
+  {
+    "id": 99,
+    "category": "Produktion & Fabriken",
+    "text": "Tesla fertigt nicht nur Autos, sondern auch stationäre Speicher wie Powerwall und Megapack sowie Solartechnik."
+  },
+  {
+    "id": 100,
+    "category": "Elon Musk & Unternehmen",
+    "text": "X.com, ein von Musk mitgegründetes Online-Finanzunternehmen, ging nach einer Fusion in dem Unternehmen auf, das später PayPal hieß."
+  }
+]
