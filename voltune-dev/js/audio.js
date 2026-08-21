@@ -43,6 +43,10 @@ window.VoltuneAudio = (() => {
   let overrunPeakAccel = 0;
   let overrunArmed = false;
 
+  // Koordination DSG-Furzen ↔ Schubknallen
+  let shiftBurbleUntil = 0;
+  let pendingOverrun = null;
+
     // Konstantfahrt-Erkennung
   let steadySince = null;
   let cruiseQuiet = 0;
@@ -551,6 +555,8 @@ function stop() {
   lastOverrunAt = -9999;
   overrunPeakAccel = 0;
   overrunArmed = false;
+  shiftBurbleUntil = 0;
+  pendingOverrun = null;
 }
 
   function setMasterVolume(percent) {
@@ -858,7 +864,8 @@ function stop() {
 
 function triggerOverrun(
   intensity = 1,
-  volumePercent = 50
+  volumePercent = 50,
+  fromQueue = false
 ) {
   if (
     !started ||
@@ -889,8 +896,46 @@ function triggerOverrun(
     return;
   }
 
-  const now =
+  // Schubknallen ganz kurz zurückhalten.
+// Dadurch bekommt ein unmittelbar danach
+// erkannter DSG-Gangwechsel noch Vorrang.
+if (!fromQueue) {
+  pendingOverrun = {
+    intensity: amount,
+    volumePercent
+  };
+
+  setTimeout(() => {
+    const queued =
+      pendingOverrun;
+
+    pendingOverrun = null;
+
+    if (!queued) {
+      return;
+    }
+
+    triggerOverrun(
+      queued.intensity,
+      queued.volumePercent,
+      true
+    );
+  }, 25);
+
+  return;
+}
+
+  const requestedNow =
     ctx.currentTime;
+  
+  // Läuft gerade ein DSG-Furzen,
+  // beginnt die komplette Schubknall-Sequenz
+  // erst direkt danach.
+  const now =
+    Math.max(
+      requestedNow,
+      shiftBurbleUntil
+    );
 
   // Stärkere vorherige Last erzeugt
   // einen längeren Nachlauf mit mehr Impulsen.
@@ -909,20 +954,22 @@ function triggerOverrun(
     i < popCount;
     i++
   ) {
-    // Nicht perfekt gleichmäßig verteilen.
-    // Dadurch entsteht eher ein natürliches
-    // Brabbeln als ein Metronom.
+    // Der erste Impuls kommt praktisch sofort.
+    // Die restlichen verteilen sich weiterhin
+    // natürlich über die gesamte Sequenz.
     const progress =
-      (i + 1) /
-      (popCount + 1);
-
+      popCount > 1
+        ? i / (popCount - 1)
+        : 0;
+    
     const randomOffset =
-      (Math.random() - 0.5) *
-      0.08;
-
+      i === 0
+        ? 0
+        : (Math.random() - 0.5) * 0.08;
+    
     const popTime =
       now +
-      0.04 +
+      0.015 +
       progress * duration +
       randomOffset;
 
@@ -1118,6 +1165,12 @@ function triggerShiftBurble(
   const duration =
     0.34 +
     effectAmount * 0.26;
+
+  // Merken, bis wann das DSG-Furzen läuft.
+  // 10 ms Reserve sorgen für einen sauberen,
+  // praktisch nahtlosen Übergang.
+  shiftBurbleUntil =
+    now + duration + 0.01;
 
 
   // =========================
@@ -2533,6 +2586,9 @@ lastAccel = accel;
     lastOverrunAt = -9999;
     overrunPeakAccel = 0;
     overrunArmed = false;
+
+    shiftBurbleUntil = 0;
+    pendingOverrun = null;
   
     steadySince = null;
     cruiseQuiet = 0;
