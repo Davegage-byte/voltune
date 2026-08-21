@@ -123,14 +123,79 @@
   let gearsEnabled = true;
   let dynamicShiftEnabled = true;
   
-  // ----- Fahrmodus -----
-  let driveMode = "normal";
-  
-  const VALID_DRIVE_MODES = [
-    "normal",
-    "sport",
-    "madness"
-  ];
+// ----- Fahrmodus -----
+let driveMode = "normal";
+
+const VALID_DRIVE_MODES = [
+  "normal",
+  "sport",
+  "madness"
+];
+
+const DRIVING_STYLE_MODE_KEY =
+  "voltune.drivingStyleMode";
+
+function updateDriveModeButtons() {
+  ui.driveModeNormal.classList.toggle(
+    "active",
+    driveMode === "normal"
+  );
+
+  ui.driveModeSport.classList.toggle(
+    "active",
+    driveMode === "sport"
+  );
+
+  ui.driveModeMadness.classList.toggle(
+    "active",
+    driveMode === "madness"
+  );
+}
+
+function setDriveMode(mode) {
+  if (!VALID_DRIVE_MODES.includes(mode)) {
+    return;
+  }
+
+  driveMode = mode;
+
+  updateDriveModeButtons();
+
+  try {
+    localStorage.setItem(
+      DRIVING_STYLE_MODE_KEY,
+      driveMode
+    );
+  } catch (error) {
+    console.warn(
+      "Fahrmodus konnte nicht gespeichert werden:",
+      error
+    );
+  }
+}
+
+function restoreDriveMode() {
+  let savedMode = null;
+
+  try {
+    savedMode =
+      localStorage.getItem(
+        DRIVING_STYLE_MODE_KEY
+      );
+  } catch (error) {
+    console.warn(
+      "Fahrmodus konnte nicht geladen werden:",
+      error
+    );
+  }
+
+  driveMode =
+    VALID_DRIVE_MODES.includes(savedMode)
+      ? savedMode
+      : "normal";
+
+  updateDriveModeButtons();
+}
   
   let previousGpsKmhForEasyBov = null;
 
