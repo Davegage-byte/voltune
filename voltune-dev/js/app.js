@@ -15,7 +15,7 @@
     downshiftTargetDisplay:$("downshiftTargetDisplay"),
     drivingStyleDisplay:$("drivingStyleDisplay"),
 
-    start:$("start"), gps:$("gps"), controller:$("controller"), restart:$("restart"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
+    start:$("start"), gps:$("gps"), controller:$("controller"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
     easyBov:$("easyBov"),
     gears:$("gears"),
     dynamicShift:$("dynamicShift"),
@@ -1915,19 +1915,6 @@ ui.controller.addEventListener(
   }
 );
   
-  ui.restart.addEventListener("click", async () => {
-    if (!await ensureVoltuneAudio()) return;
-    
-    VoltuneAudio.resetDrivingState();
-
-    stopGps(false);
-    demoActive = true;
-    saveLastDriveMode("demo");
-    demoStart = performance.now();
-    lastState = "idle";
-    setGpsButtonActive(false);
-  });
-
   ui.stop.addEventListener("click", () => {
     stopAudio();
   });
