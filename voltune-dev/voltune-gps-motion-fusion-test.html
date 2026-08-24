@@ -606,22 +606,73 @@ function drawChart(){
 }
 
 function saveCsv(){
-  if(!state.csv.length){status("Noch keine Daten vorhanden.","warn");return}
+  if(!state.csv.length){
+    status("Noch keine Daten vorhanden.","warn");
+    return;
+  }
+
   const t0=state.csv[0].t;
   const rows=[
     "time_s;raw_gps_kmh;gps_prediction_kmh;fusion_kmh;gps_accel_mps2;motion_accel_mps2;gps_hz;motion_hz;cal_confidence",
     ...state.csv.map(s=>[
-      (s.t-t0).toFixed(3),s.raw.toFixed(3),s.pred.toFixed(3),s.fusion.toFixed(3),
-      s.gpsAccel.toFixed(4),finite(s.motionAccel)?s.motionAccel.toFixed(4):"",
-      s.gpsHz.toFixed(3),s.motionHz.toFixed(1),s.confidence.toFixed(3)
+      (s.t-t0).toFixed(3),
+      s.raw.toFixed(3),
+      s.pred.toFixed(3),
+      s.fusion.toFixed(3),
+      s.gpsAccel.toFixed(4),
+      finite(s.motionAccel)?s.motionAccel.toFixed(4):"",
+      s.gpsHz.toFixed(3),
+      s.motionHz.toFixed(1),
+      s.confidence.toFixed(3)
     ].join(";"))
   ];
-  const blob=new Blob([rows.join("\n")],{type:"text/csv;charset=utf-8"});
-  const url=URL.createObjectURL(blob),a=document.createElement("a");
+
+  const csvText="\uFEFF"+rows.join("\r\n");
+  const blob=new Blob([csvText],{type:"text/csv;charset=utf-8"});
+  const filename=`voltune-gps-motion-${new Date().toISOString().replace(/[:.]/g,"-")}.csv`;
+  const url=URL.createObjectURL(blob);
+
+  // Android-/Mobile-kompatibler: Link wirklich ins DOM hängen.
+  const a=document.createElement("a");
   a.href=url;
-  a.download=`voltune-gps-motion-${new Date().toISOString().replace(/[:.]/g,"-")}.csv`;
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  a.download=filename;
+  a.style.display="none";
+  document.body.appendChild(a);
+
+  status(`CSV vorbereitet: ${state.csv.length} Messwerte. Download wird gestartet …`,"ok");
+
+  try{
+    a.click();
+  }catch(e){
+    log(`Direkter CSV-Download fehlgeschlagen: ${e.message}`);
+  }
+
+  a.remove();
+
+  // Sichtbarer Fallback für Browser, die Blob-Downloads unterdrücken.
+  let fallback=document.getElementById("csvFallback");
+  if(fallback) fallback.remove();
+
+  fallback=document.createElement("div");
+  fallback.id="csvFallback";
+  fallback.style.marginTop="10px";
+  fallback.style.padding="10px 12px";
+  fallback.style.border="1px solid #69d2ff";
+  fallback.style.borderRadius="10px";
+  fallback.style.background="#0d121b";
+  fallback.innerHTML=
+    `Falls kein Download erschienen ist: `+
+    `<a href="${url}" download="${filename}" target="_blank" `+
+    `style="color:#69d2ff;font-weight:800">CSV hier öffnen / speichern</a>`;
+
+  ui.status.insertAdjacentElement("afterend",fallback);
+
+  // Lange genug gültig lassen, damit der Fallback-Link auf Mobilgeräten benutzt werden kann.
+  setTimeout(()=>{
+    const el=document.getElementById("csvFallback");
+    if(el) el.remove();
+    URL.revokeObjectURL(url);
+  },10*60*1000);
 }
 
 ui.start.addEventListener("click",async()=>{
