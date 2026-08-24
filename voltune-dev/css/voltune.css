@@ -1512,3 +1512,661 @@ input[type=range]{
       scale(1.035);
   }
 }
+
+/* =========================
+   Theme-Wechsel
+   ========================= */
+
+html{
+  background:
+    var(--bg);
+}
+
+html[data-theme="dark"]{
+  color-scheme:
+    dark;
+}
+
+html[data-theme="light"]{
+  color-scheme:
+    light;
+}
+
+
+/* Gesamte Oberfläche beim Wechsel
+   kurz weichzeichnen und ausblenden */
+
+body{
+  transition:
+    filter .26s ease,
+    opacity .26s ease,
+    color .26s ease;
+}
+
+html.themeChanging body{
+  transition-duration:
+    .14s;
+
+  filter:
+    blur(3px);
+
+  opacity:
+    .78;
+}
+
+
+/* Farbwechsel der wichtigsten Flächen */
+
+.driveHud,
+.driveHudInfo > div,
+.controlGroup,
+.driveModeGroup,
+.stateBox,
+.gpsItem,
+.manual,
+.control,
+.meter div,
+.bar,
+.effectTestBtn{
+  transition:
+    background-color .26s ease,
+    color .26s ease,
+    border-color .26s ease,
+    box-shadow .26s ease;
+}
+
+
+/* Bestehende Button-Animationen behalten
+   und zusätzlich Farben weich wechseln */
+
+button{
+  transition:
+    transform .12s ease,
+    filter .12s ease,
+    background-color .26s ease,
+    color .26s ease,
+    border-color .26s ease,
+    box-shadow .26s ease;
+}
+
+
+@media (prefers-reduced-motion: reduce){
+
+  body,
+  button,
+  .driveHud,
+  .driveHudInfo > div,
+  .controlGroup,
+  .driveModeGroup,
+  .stateBox,
+  .gpsItem,
+  .manual,
+  .control,
+  .meter div,
+  .bar,
+  .effectTestBtn{
+    transition:none;
+  }
+
+  html.themeChanging body{
+    filter:none;
+    opacity:1;
+  }
+
+}
+
+/* =========================
+   Theme-Button
+   ========================= */
+
+#theme[data-theme-mode="auto"]{
+  background:
+    #24364a;
+
+  color:
+    #cfe7ff;
+
+  border-color:
+    #41678c;
+}
+
+#theme[data-theme-mode="dark"]{
+  background:
+    #151a21;
+
+  color:
+    #f4f7fb;
+
+  border-color:
+    #596779;
+}
+
+#theme[data-theme-mode="light"]{
+  background:
+    #edf1f5;
+
+  color:
+    #18212b;
+
+  border-color:
+    #ffffff;
+
+  box-shadow:
+    0 0 8px
+    rgba(255,255,255,.16);
+}
+
+/* =========================
+   Voltune Light Theme
+   ========================= */
+
+html[data-theme="light"]{
+
+  --bg:
+    #eef1f5;
+
+  --panel:
+    #f7f9fb;
+
+  --panel2:
+    #ffffff;
+
+  --line:
+    #ccd5df;
+
+  --text:
+    #17202a;
+
+  --muted:
+    #687587;
+
+  --blue:
+    #2f7fca;
+
+  --red:
+    #cf4f4f;
+
+  --green:
+    #299d66;
+
+  --orange:
+    #cf7d2e;
+}
+
+
+/* =========================
+   Hintergrund
+   ========================= */
+
+html[data-theme="light"] body{
+
+  background:
+    radial-gradient(
+      circle at 50% -20%,
+      #e5dcef 0,
+      #f2edf7 24%,
+      transparent 52%
+    ),
+    var(--bg);
+
+  color:
+    var(--text);
+}
+
+
+/* =========================
+   HUD / allgemeine Panels
+   ========================= */
+
+html[data-theme="light"] .driveHud,
+html[data-theme="light"] .controlGroup,
+html[data-theme="light"] .driveModeGroup,
+html[data-theme="light"] .stateBox,
+html[data-theme="light"] .control{
+
+  box-shadow:
+    0 1px 4px
+    rgba(22,32,44,.06);
+}
+
+
+html[data-theme="light"] .driveHudInfo > div{
+
+  background:
+    #f2f5f8;
+
+  border-color:
+    #d3dce6;
+}
+
+
+html[data-theme="light"] .bar{
+
+  background:
+    #dce3ea;
+
+  border-color:
+    #c5cfda;
+}
+
+
+/* RPM-Marker müssen auf hellem
+   Hintergrund dunkler werden */
+
+html[data-theme="light"] .rpmMarkerUp,
+html[data-theme="light"] .rpmMarkerDown{
+
+  background:
+    #273440;
+
+  box-shadow:
+    0 0 5px
+    rgba(39,52,64,.45);
+}
+
+
+/* =========================
+   Debug / GPS
+   ========================= */
+
+html[data-theme="light"] .gpsItem{
+
+  background:
+    #f6f8fa;
+
+  border-color:
+    #d3dce6;
+}
+
+
+html[data-theme="light"] .manual{
+
+  background:
+    #f6f8fa;
+
+  border-color:
+    #c8d3de;
+}
+
+
+html[data-theme="light"] .meter div{
+
+  background:
+    #f6f8fa;
+
+  border-color:
+    #d3dce6;
+}
+
+
+/* =========================
+   Neutrale Buttons
+   ========================= */
+
+html[data-theme="light"] #restart,
+html[data-theme="light"] #mute,
+html[data-theme="light"] #debug,
+html[data-theme="light"] .featureBtn{
+
+  background:
+    #e8edf3;
+
+  color:
+    #1d2833;
+
+  border-color:
+    #c5d0db;
+}
+
+
+html[data-theme="light"] #debug,
+html[data-theme="light"] #start,
+html[data-theme="light"] #restart,
+html[data-theme="light"] #controller{
+
+  background:
+    #f8fafc;
+
+  color:
+    #17212c;
+
+  border-color:
+    #c8d2dd;
+}
+
+
+/* Feature aktiv */
+
+html[data-theme="light"] .featureBtn.active{
+
+  background:
+    #d9eee5;
+
+  color:
+    #164b37;
+
+  border-color:
+    #7ab99d;
+}
+
+
+/* STOP darf deutlich bleiben */
+
+html[data-theme="light"] #stop{
+
+  background:
+    #bf4141;
+
+  color:
+    #ffffff;
+
+  border-color:
+    #a93131;
+}
+
+
+/* =========================
+   Fahrmodus
+   ========================= */
+
+html[data-theme="light"] .driveModeGroup{
+
+  border-color:
+    rgba(47,127,202,.30);
+}
+
+
+html[data-theme="light"] .driveModeTitle{
+
+  color:
+    #2874b3;
+}
+
+
+html[data-theme="light"] .sideRail .driveModeBtn{
+
+  background:
+    #e8f2fa;
+
+  color:
+    #255d8b;
+
+  border-color:
+    #9dc5e4;
+}
+
+
+html[data-theme="light"] .sideRail .driveModeBtn:hover{
+
+  background:
+    #dcecf8;
+}
+
+
+html[data-theme="light"] .sideRail .driveModeBtn.active{
+
+  background:
+    #2d80c3;
+
+  color:
+    #ffffff;
+
+  border-color:
+    #4a9cd8;
+
+  box-shadow:
+    0 0 8px
+    rgba(45,128,195,.24);
+}
+
+
+/* =========================
+   Regler-Karten
+   ========================= */
+
+html[data-theme="light"] .control-neutral{
+
+  background:
+    #f1f4f7;
+
+  border-color:
+    #c9d2dc;
+}
+
+
+html[data-theme="light"] .control-master{
+
+  background:
+    rgba(55,75,95,.07);
+
+  border-color:
+    rgba(55,75,95,.27);
+
+  color:
+    var(--text);
+}
+
+
+html[data-theme="light"] .control-master .top{
+
+  color:
+    var(--text);
+}
+
+
+html[data-theme="light"] .control-master input[type=range]{
+
+  accent-color:
+    #52606d;
+}
+
+
+/* Fahren */
+
+html[data-theme="light"] .control-driving{
+
+  background:
+    rgba(47,127,202,.08);
+
+  border-color:
+    rgba(47,127,202,.34);
+}
+
+
+/* Beschleunigung */
+
+html[data-theme="light"] .control-accel{
+
+  background:
+    rgba(207,79,79,.08);
+
+  border-color:
+    rgba(207,79,79,.34);
+}
+
+
+/* Reku */
+
+html[data-theme="light"] .control-regen{
+
+  background:
+    rgba(41,157,102,.08);
+
+  border-color:
+    rgba(41,157,102,.34);
+}
+
+
+/* Drehzahl / Getriebe */
+
+html[data-theme="light"] .control-rpm{
+
+  background:
+    rgba(207,125,46,.09);
+
+  border-color:
+    rgba(207,125,46,.36);
+}
+
+
+/* =========================
+   Beschriftungen
+   ========================= */
+
+html[data-theme="light"] .controlHint{
+
+  color:
+    rgba(23,32,42,.52);
+}
+
+
+html[data-theme="light"] .note{
+
+  color:
+    #687587;
+}
+
+
+/* =========================
+   Effekt-Testbuttons
+   ========================= */
+
+html[data-theme="light"] .effectTestBtn{
+
+  background:
+    rgba(25,38,50,.06);
+
+  border-color:
+    rgba(25,38,50,.22);
+
+  color:
+    #263542;
+}
+
+
+html[data-theme="light"] .effectTestBtn:hover{
+
+  background:
+    rgba(25,38,50,.12);
+}
+
+
+/* =========================
+   Doppelregler
+   ========================= */
+
+html[data-theme="light"] .dualRange::before{
+
+  background:
+    #b8c2cc;
+}
+
+
+/* =========================
+   Theme-Button im Light Mode
+   ========================= */
+
+html[data-theme="light"]
+#theme[data-theme-mode="auto"]{
+
+  background:
+    #dceaf7;
+
+  color:
+    #275c88;
+
+  border-color:
+    #9dbedb;
+}
+
+
+html[data-theme="light"]
+#theme[data-theme-mode="dark"]{
+
+  background:
+    #29323c;
+
+  color:
+    #ffffff;
+
+  border-color:
+    #4f5c69;
+}
+
+
+html[data-theme="light"]
+#theme[data-theme-mode="light"]{
+
+  background:
+    #ffffff;
+
+  color:
+    #17202a;
+
+  border-color:
+    #aebbc8;
+
+  box-shadow:
+    0 1px 6px
+    rgba(20,30,40,.10);
+}
+
+
+/* =========================
+   Startanimation Light
+   ========================= */
+
+html[data-theme="light"] #startupOverlay{
+
+  background:
+    rgba(238,241,245,.94);
+}
+
+
+html[data-theme="light"] #startupGlow{
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(65,145,215,.26) 0%,
+      rgba(75,155,225,.13) 32%,
+      rgba(80,150,220,.05) 52%,
+      rgba(80,150,220,0) 72%
+    );
+}
+
+
+html[data-theme="light"] #startupRing{
+
+  border-color:
+    rgba(55,130,200,.72);
+
+  box-shadow:
+    0 0 10px
+    rgba(70,145,210,.45),
+    0 0 28px
+    rgba(70,145,210,.22);
+}
+
+
+html[data-theme="light"] #startupLogo{
+
+  color:
+    rgba(34,49,64,.96);
+
+  text-shadow:
+    0 0 14px
+    rgba(70,145,210,.28),
+    0 0 34px
+    rgba(70,145,210,.14);
+}
+
+
+html[data-theme="light"]
+#startupOverlay.startupExit,
+html[data-theme="light"]
+#startupOverlay.startupSimpleExit{
+
+  background:
+    rgba(238,241,245,0);
+}
