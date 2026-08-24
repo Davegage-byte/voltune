@@ -1791,8 +1791,14 @@ lastTransmissionGear =
     ui.gearDisplay.textContent =
       `${transmission.gear}`;
   
-    ui.shiftTargetDisplay.textContent =
-      `${Math.round(transmission.shiftTarget)} RPM`;
+  const isTopGear =
+    transmission.gear >=
+    VoltuneDrivetrain.gearRatios.length;
+  
+  ui.shiftTargetDisplay.textContent =
+    isTopGear
+      ? "–"
+      : `${Math.round(transmission.shiftTarget)} RPM`;
   
     ui.downshiftTargetDisplay.textContent =
       transmission.downshiftTarget == null
@@ -1816,7 +1822,8 @@ lastTransmissionGear =
       `${rpmBarPercent}%`;
     setRpmMarker(
       ui.shiftMarker,
-      transmission.direct
+      transmission.direct ||
+      isTopGear
         ? null
         : transmission.shiftTarget,
       transmission.maxRpm
