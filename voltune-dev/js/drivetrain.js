@@ -263,11 +263,11 @@ function updateDrivingStyle(accel) {
     );
 
     const nowMs = performance.now();
-
+    
     const firstGearCruiseShift =
     currentGear === 1 &&
     speedKmh >= 18 &&
-    Math.abs(accel) <= 0.20;
+    accel <= 1.0;
 
     if (
       currentGear < gearRatios.length &&
