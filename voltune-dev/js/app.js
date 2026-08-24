@@ -735,16 +735,19 @@ function updateAccelerationFx(
 // Rekuperation -> Intensität
 // =========================
 //
-// Unter etwa -0,6 m/s² bleibt
+// Unter etwa -0,45 m/s² bleibt
 // die Reku-Animation unsichtbar.
 //
-// Ab etwa -4,5 m/s² erreicht
-// sie ihre maximale Intensität.
+// Normale starke Tesla-Reku liegt
+// ungefähr bei -1,5 bis -2,0 m/s².
+//
+// Ab etwa -2,2 m/s² erreicht
+// die Animation ihre maximale Intensität.
 
 const rawRegenIntensity =
   clamp(
-    (-accel - 0.6) /
-    (4.5 - 0.6),
+    (-accel - 0.45) /
+    (2.2 - 0.45),
     0,
     1
   );
