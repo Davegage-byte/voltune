@@ -1039,6 +1039,11 @@ if (!fromQueue) {
     );
 
     gain.gain.exponentialRampToValueAtTime(
+      peak * 0.55,
+      popTime + 0.055
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
       0.0001,
       popTime + popDuration
     );
