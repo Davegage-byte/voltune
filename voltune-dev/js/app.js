@@ -21,6 +21,11 @@
     gears:$("gears"),
     dynamicShift:$("dynamicShift"),
     animations:$("animations"),
+    theme:$("theme"),
+    easyBov:$("easyBov"),
+    gears:$("gears"),
+    dynamicShift:$("dynamicShift"),
+    animations:$("animations"),
     
     driveModeNormal:$("driveModeNormal"),
     driveModeSport:$("driveModeSport"),
@@ -66,14 +71,47 @@
 
   let soundActive = false;
 
-  // =========================
-// Browser-Theme Debug
 // =========================
+// Theme
+// =========================
+
+const THEME_MODE_KEY =
+  "voltune.themeMode";
+
+const VALID_THEME_MODES = [
+  "auto",
+  "dark",
+  "light"
+];
 
 const browserThemeMedia =
   window.matchMedia(
     "(prefers-color-scheme: dark)"
   );
+
+let themeMode =
+  document.documentElement.dataset.themeMode;
+
+if (
+  !VALID_THEME_MODES.includes(
+    themeMode
+  )
+) {
+  themeMode = "auto";
+}
+
+
+// =========================
+// Theme-Übergang
+// =========================
+
+let themeSwitchTimer = null;
+let themeTransitionEndTimer = null;
+
+
+// =========================
+// Browser-Theme Debug
+// =========================
 
 const browserThemeDebug =
   document.createElement("div");
@@ -97,20 +135,255 @@ document.body.appendChild(
   browserThemeDebug
 );
 
-function updateBrowserThemeDebug() {
-  browserThemeDebug.textContent =
-    `Browser-Theme: ${
-      browserThemeMedia.matches
-        ? "DARK"
-        : "LIGHT"
-    }`;
+
+// =========================
+// Theme auflösen
+// =========================
+
+function resolveTheme() {
+  if (themeMode === "dark") {
+    return "dark";
+  }
+
+  if (themeMode === "light") {
+    return "light";
+  }
+
+  return browserThemeMedia.matches
+    ? "dark"
+    : "light";
 }
 
-updateBrowserThemeDebug();
 
-browserThemeMedia.addEventListener(
-  "change",
-  updateBrowserThemeDebug
+// =========================
+// Theme speichern
+// =========================
+
+function saveThemeMode() {
+  try {
+    localStorage.setItem(
+      THEME_MODE_KEY,
+      themeMode
+    );
+  } catch (error) {
+    console.warn(
+      "Theme-Modus konnte nicht gespeichert werden:",
+      error
+    );
+  }
+}
+
+
+// =========================
+// Theme-Button
+// =========================
+
+function updateThemeButton() {
+  const labels = {
+    auto: "Auto",
+    dark: "Dark",
+    light: "Light"
+  };
+
+  if (ui.theme) {
+    ui.theme.textContent =
+      `Theme: ${labels[themeMode]}`;
+
+    ui.theme.dataset.themeMode =
+      themeMode;
+  }
+
+  document.documentElement.dataset.themeMode =
+    themeMode;
+}
+
+
+// =========================
+// Theme-Debug
+// =========================
+
+function updateBrowserThemeDebug() {
+  const browserTheme =
+    browserThemeMedia.matches
+      ? "DARK"
+      : "LIGHT";
+
+  const resolvedTheme =
+    resolveTheme().toUpperCase();
+
+  browserThemeDebug.textContent =
+    `Browser: ${browserTheme} · Voltune: ${resolvedTheme} · Modus: ${themeMode.toUpperCase()}`;
+}
+
+
+// =========================
+// Theme anwenden
+// =========================
+
+function applyTheme(
+  animate = true
+) {
+  const root =
+    document.documentElement;
+
+  const resolvedTheme =
+    resolveTheme();
+
+  const currentTheme =
+    root.dataset.theme;
+
+  root.dataset.themeMode =
+    themeMode;
+
+  updateThemeButton();
+
+  clearTimeout(
+    themeSwitchTimer
+  );
+
+  clearTimeout(
+    themeTransitionEndTimer
+  );
+
+  root.classList.remove(
+    "themeChanging"
+  );
+
+
+  // Beim ersten Laden oder wenn sich
+  // das sichtbare Theme gar nicht ändert,
+  // ist keine Übergangsanimation nötig.
+  if (
+    !animate ||
+    !currentTheme ||
+    currentTheme === resolvedTheme
+  ) {
+    root.dataset.theme =
+      resolvedTheme;
+
+    updateBrowserThemeDebug();
+
+    return;
+  }
+
+
+  // Erst leicht ausblenden / unscharf werden.
+  // Das eigentliche Theme wird erst im
+  // unscharfen Moment gewechselt.
+  requestAnimationFrame(() => {
+    root.classList.add(
+      "themeChanging"
+    );
+
+    themeSwitchTimer =
+      setTimeout(() => {
+        root.dataset.theme =
+          resolvedTheme;
+
+        updateBrowserThemeDebug();
+
+        // Danach wieder scharf einblenden.
+        themeTransitionEndTimer =
+          setTimeout(() => {
+            root.classList.remove(
+              "themeChanging"
+            );
+          }, 260);
+
+      }, 140);
+  });
+}
+
+
+// =========================
+// Theme-Modus setzen
+// =========================
+
+function setThemeMode(
+  nextMode,
+  animate = true
+) {
+  if (
+    !VALID_THEME_MODES.includes(
+      nextMode
+    )
+  ) {
+    return;
+  }
+
+  themeMode =
+    nextMode;
+
+  saveThemeMode();
+
+  applyTheme(
+    animate
+  );
+}
+
+
+// =========================
+// Theme durchschalten
+// =========================
+
+function cycleThemeMode() {
+  const currentIndex =
+    VALID_THEME_MODES.indexOf(
+      themeMode
+    );
+
+  const nextIndex =
+    (
+      currentIndex + 1
+    ) %
+    VALID_THEME_MODES.length;
+
+  setThemeMode(
+    VALID_THEME_MODES[nextIndex],
+    true
+  );
+}
+
+
+// =========================
+// Tesla / Browser Theme live
+// =========================
+
+function handleBrowserThemeChange() {
+  updateBrowserThemeDebug();
+
+  // Nur Auto folgt dem Tesla.
+  if (themeMode === "auto") {
+    applyTheme(
+      true
+    );
+  }
+}
+
+if (
+  browserThemeMedia.addEventListener
+) {
+  browserThemeMedia.addEventListener(
+    "change",
+    handleBrowserThemeChange
+  );
+
+} else if (
+  browserThemeMedia.addListener
+) {
+  browserThemeMedia.addListener(
+    handleBrowserThemeChange
+  );
+}
+
+
+// Das eigentliche Theme wurde bereits
+// ganz früh in index.html bestimmt.
+// Hier synchronisieren wir nur Zustand
+// und Button ohne sichtbaren Übergang.
+
+applyTheme(
+  false
 );
 
   // =========================
@@ -2863,6 +3136,18 @@ ui.animations.addEventListener(
     scheduleSettingsSave();
   }
 );
+
+// =========================
+// Theme
+// =========================
+
+if (ui.theme) {
+  ui.theme.addEventListener(
+    "click",
+    cycleThemeMode
+  );
+}
+  
   ui.driveModeNormal.addEventListener(
   "click",
   () => setDriveMode("normal")
