@@ -168,7 +168,7 @@ window.VoltuneAudio = (() => {
 
     overrunSampleBuffer =
       await loadAudioBuffer(
-        "freesound_community-bang-100662.mp3"
+        "sounds/overrun/freesound_community-bang-100662.mp3"
       );
 
     master =
