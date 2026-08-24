@@ -46,6 +46,38 @@ window.VoltuneAudio = (() => {
   let sharedNoiseBuffer = null;
   
   let overrunSampleBuffer = null;
+  
+  let overrunSampleUrl =
+    "sounds/overrun/freesound_community-bang-100662.mp3";
+  
+  let overrunSampleSettings = {
+    frequency: 3.75,
+    irregularity: 100,
+    slowdown: 80,
+    hitVolumeRandom: 30,
+    rateRandom: 15,
+  
+    volume: 100,
+    rate: 100,
+  
+    startTrim: 300,
+    endTrim: 0,
+    attack: 0,
+    fadeOut: 20,
+  
+    highpass: 30,
+    lowpass: 18000,
+    resonance: 7,
+  
+    bass: 3,
+    mid: 0,
+    treble: 0,
+  
+    drive: 10,
+    echo: 8,
+    echoDelay: 35,
+    compress: 25
+  };
 
   let lastAccel = 0;
   let lastBovAt = -9999;
@@ -132,6 +164,127 @@ window.VoltuneAudio = (() => {
       return null;
     }
   }
+
+function getSettingsUrlForAudio(
+  audioUrl
+) {
+  return audioUrl.replace(
+    /\.[^/.]+$/,
+    ".txt"
+  );
+}
+
+
+  async function loadSampleSettings(
+  audioUrl,
+  defaults
+) {
+  const settingsUrl =
+    getSettingsUrlForAudio(
+      audioUrl
+    );
+
+  try {
+    const response =
+      await fetch(
+        settingsUrl
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const text =
+      await response.text();
+
+    const settings = {
+      ...defaults
+    };
+
+    text
+      .split(/\r?\n/)
+      .forEach(line => {
+        const trimmed =
+          line.trim();
+
+        if (
+          !trimmed ||
+          !trimmed.includes("=")
+        ) {
+          return;
+        }
+
+        const separator =
+          trimmed.indexOf("=");
+
+        const key =
+          trimmed
+            .slice(
+              0,
+              separator
+            )
+            .trim();
+
+        const rawValue =
+          trimmed
+            .slice(
+              separator + 1
+            )
+            .trim();
+
+        // Diese Angaben aus dem Testlabor
+        // brauchen wir in Voltune nicht.
+        if (
+          key === "file" ||
+          key === "count"
+        ) {
+          return;
+        }
+
+        if (
+          !Object.prototype
+            .hasOwnProperty
+            .call(
+              settings,
+              key
+            )
+        ) {
+          return;
+        }
+
+        const value =
+          Number(
+            rawValue
+          );
+
+        if (
+          Number.isFinite(
+            value
+          )
+        ) {
+          settings[key] =
+            value;
+        }
+      });
+
+    return settings;
+
+  } catch (error) {
+    console.warn(
+      "Voltune Sample-Einstellungen konnten nicht geladen werden:",
+      settingsUrl,
+      error
+    );
+
+    // Keine TXT vorhanden:
+    // einfach mit den Standardwerten weiter.
+    return {
+      ...defaults
+    };
+  }
+}
   
   function createOsc(type) {
     const osc =
@@ -168,7 +321,13 @@ window.VoltuneAudio = (() => {
 
     overrunSampleBuffer =
       await loadAudioBuffer(
-        "sounds/overrun/freesound_community-bang-100662.mp3"
+        overrunSampleUrl
+      );
+    
+    overrunSampleSettings =
+      await loadSampleSettings(
+        overrunSampleUrl,
+        overrunSampleSettings
       );
 
     master =
@@ -1440,18 +1599,32 @@ function playOverrunSampleHit(
       Math.random() * 2 -
       1
     ) *
-    0.30;
-
-
-  // Testwert:
-  // Tonhöhe / Geschwindigkeit ±15 %
-  const rate =
-    1 +
     (
-      Math.random() * 2 -
-      1
-    ) *
-    0.15;
+      overrunSampleSettings
+        .hitVolumeRandom /
+      100
+    );
+
+
+  const baseRate =
+    overrunSampleSettings.rate /
+    100;
+
+  const rateRandom =
+    overrunSampleSettings
+      .rateRandom /
+    100;
+
+  const rate =
+    baseRate *
+    (
+      1 +
+      (
+        Math.random() * 2 -
+        1
+      ) *
+      rateRandom
+    );
 
 
   const source =
@@ -1475,10 +1648,11 @@ function playOverrunSampleHit(
     "highpass";
 
   highpass.frequency.value =
-    30;
+    overrunSampleSettings.highpass;
 
   highpass.Q.value =
-    0.7;
+    overrunSampleSettings.resonance /
+    10;
 
 
   const lowpass =
@@ -1488,10 +1662,11 @@ function playOverrunSampleHit(
     "lowpass";
 
   lowpass.frequency.value =
-    18000;
+    overrunSampleSettings.lowpass;
 
   lowpass.Q.value =
-    0.7;
+    overrunSampleSettings.resonance /
+    10;
 
 
   // +3 dB Bass aus dem Testlabor.
@@ -1505,7 +1680,7 @@ function playOverrunSampleHit(
     180;
 
   bass.gain.value =
-    3;
+    overrunSampleSettings.bass;
 
 
   // =========================
