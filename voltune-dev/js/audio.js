@@ -1063,8 +1063,8 @@ if (!fromQueue) {
         "bandpass";
       
       crackleFilter.frequency.value =
-        900 +
-        Math.random() * 700;
+        1300 +
+        Math.random() * 1000;
       
       crackleFilter.Q.value =
         1.2;
