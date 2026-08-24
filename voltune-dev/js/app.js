@@ -235,6 +235,10 @@ async function loadOverrunSoundList() {
         savedValue;
     }
 
+    await VoltuneAudio.setOverrunSound(
+      ui.overrunSound.value
+    );
+    
   } catch (error) {
     console.warn(
       "Schubknall-Soundliste konnte nicht geladen werden:",
@@ -3478,16 +3482,38 @@ ui.testOverrun.addEventListener(
       return;
     }
 
+    const testDrivingStyle =
+      driveMode === "madness"
+        ? 1.0
+        : driveMode === "sport"
+          ? 0.6
+          : 0.2;
+
     VoltuneAudio.triggerOverrun(
       1.0,
-      Number(ui.overrun.value)
+      Number(ui.overrun.value),
+      false,
+      testDrivingStyle
     );
   }
 );
 
 ui.overrunSound.addEventListener(
   "change",
-  () => {
+  async () => {
+    const loaded =
+      await VoltuneAudio.setOverrunSound(
+        ui.overrunSound.value
+      );
+
+    if (!loaded) {
+      console.warn(
+        "Schubknall-Sound konnte nicht geladen werden."
+      );
+
+      return;
+    }
+
     scheduleSettingsSave();
   }
 );
