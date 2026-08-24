@@ -3485,6 +3485,13 @@ ui.testOverrun.addEventListener(
   }
 );
 
+ui.overrunSound.addEventListener(
+  "change",
+  () => {
+    scheduleSettingsSave();
+  }
+);
+  
 // =========================
 // Manuelle Zielgeschwindigkeit
 // =========================
@@ -3738,6 +3745,8 @@ if (savedSettings) {
   );
 }
 
+  loadOverrunSoundList();
+  
 // Gespeicherten Fahrmodus laden.
 // Falls nichts oder ein ungültiger Wert
 // vorhanden ist, wird Normal verwendet.
