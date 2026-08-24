@@ -882,6 +882,13 @@ function triggerOverrun(
     return;
   }
 
+  const amount =
+    clamp(
+      Number(intensity) || 0,
+      0,
+      1
+    );
+  
   const volume =
     volumeCurve(volumePercent);
 
