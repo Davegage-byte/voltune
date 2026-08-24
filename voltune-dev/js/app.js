@@ -288,9 +288,9 @@ function applyTheme(
             root.classList.remove(
               "themeChanging"
             );
-          }, 260);
+          }, 430);
 
-      }, 140);
+      }, 240);
   });
 }
 
