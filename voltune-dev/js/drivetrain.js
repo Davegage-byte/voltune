@@ -425,7 +425,12 @@ const downshiftAggression =
     1
   );
 
-if (currentGear > 1) {
+  // Aktuelles Rückschaltziel im derzeitigen Gang.
+  // Dieser Wert wird zusätzlich an app.js ausgegeben,
+  // damit er im RPM-Balken angezeigt werden kann.
+  let downshiftTarget = null;
+  
+  if (currentGear > 1) {
   // Der 1. Gang soll wie bei einem echten
   // Automatik-/DSG-Getriebe erst unmittelbar
   // vor dem Stillstand eingelegt werden.
