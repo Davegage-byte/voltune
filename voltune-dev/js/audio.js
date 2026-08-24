@@ -1869,21 +1869,6 @@ function playOverrunSampleHit(
     );
   }
 
-  const fadeStart =
-    time +
-    audibleDuration -
-    fadeDuration;
-
-  gain.gain.setValueAtTime(
-    peak,
-    fadeStart
-  );
-
-  gain.gain.exponentialRampToValueAtTime(
-    0.0001,
-    time + audibleDuration
-  );
-
 
   // =========================
   // Hauptsignal
