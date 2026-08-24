@@ -3,19 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-    html,
-    body {
-      background: #05070a;
+
+<script>
+  (() => {
+    const THEME_MODE_KEY =
+      "voltune.themeMode";
+
+    const VALID_THEME_MODES = [
+      "auto",
+      "dark",
+      "light"
+    ];
+
+    let themeMode =
+      "auto";
+
+    try {
+      const savedThemeMode =
+        localStorage.getItem(
+          THEME_MODE_KEY
+        );
+
+      if (
+        VALID_THEME_MODES.includes(
+          savedThemeMode
+        )
+      ) {
+        themeMode =
+          savedThemeMode;
+      }
+    } catch (error) {
+      console.warn(
+        "Theme-Modus konnte nicht geladen werden:",
+        error
+      );
     }
-  
-    #startupOverlay {
-      position: fixed;
-      inset: 0;
-      z-index: 20000;
-      background: rgba(5, 7, 10, 0.96);
-      pointer-events: none;
-    }
+
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+
+    const resolvedTheme =
+      themeMode === "auto"
+        ? (
+            prefersDark
+              ? "dark"
+              : "light"
+          )
+        : themeMode;
+
+    document.documentElement.dataset.theme =
+      resolvedTheme;
+
+    document.documentElement.dataset.themeMode =
+      themeMode;
+  })();
+</script>
+
+<style>
+html,
+body {
+  background: #05070a;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] body {
+  background: #eef1f5;
+}
+
+#startupOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  background: rgba(5, 7, 10, 0.96);
+  pointer-events: none;
+}
+
+html[data-theme="light"] #startupOverlay {
+  background: rgba(238, 241, 245, 0.96);
+}
   </style>
 <title>Voltune Sound Test GPS v6</title>
   
@@ -145,6 +213,14 @@
     <button id="dynamicShift" class="featureBtn active">Dynamik</button>
     
     <button id="animations" class="featureBtn active">Animationen</button>
+
+    <button
+      id="theme"
+      class="featureBtn"
+      type="button"
+    >
+      Theme: Auto
+    </button>
     
     <button id="debug" aria-pressed="false">Debug</button>
 
