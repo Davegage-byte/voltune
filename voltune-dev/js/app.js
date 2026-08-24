@@ -860,11 +860,11 @@ regenFxIntensity =
     accelerationFxIntensity < 0.005
       ? 0
       : Math.round(
-          14 +
+          20 +
           accelerationFxIntensity *
           (
             ACCELERATION_FX_PARTICLE_COUNT -
-            14
+            20
           )
         );
 
@@ -955,9 +955,9 @@ regenFxIntensity =
 
     const streakLength =
       (
-        2 +
+        3 +
         accelerationFxIntensity *
-        52
+        68
       ) *
       perspective *
       particle.speed;
@@ -988,14 +988,14 @@ regenFxIntensity =
     const alpha =
       clamp(
         (
-          0.08 +
+          0.11 +
           accelerationFxIntensity *
-          0.48
+          0.58
         ) *
         particle.brightness *
         perspective,
         0,
-        0.58
+        0.70
       );
 
 
@@ -1036,11 +1036,11 @@ if (regenFxIntensity >= 0.005) {
 
   const activeRegenParticles =
     Math.round(
-      5 +
+      8 +
       regenFxIntensity *
       (
         REGEN_FX_PARTICLE_COUNT -
-        5
+        8
       )
     );
 
@@ -1048,9 +1048,9 @@ if (regenFxIntensity >= 0.005) {
   // desto schneller werden die Ringe
   // zur Mitte gezogen.
   const regenTravelSpeed =
-    0.28 +
+    0.12 +
     regenFxIntensity *
-    0.95;
+    0.42;
 
   accelerationFxCtx.save();
 
@@ -1154,19 +1154,19 @@ if (regenFxIntensity >= 0.005) {
       );
 
 
-    const alpha =
-      clamp(
-        (
-          0.10 +
-          regenFxIntensity *
-          0.48
-        ) *
-        particle.brightness *
-        fadeIn *
-        fadeOut,
-        0,
-        0.62
-      );
+      const alpha =
+        clamp(
+          (
+            0.14 +
+            regenFxIntensity *
+            0.60
+          ) *
+          particle.brightness *
+          fadeIn *
+          fadeOut,
+          0,
+          0.74
+        );
 
 
     // =========================
@@ -1179,9 +1179,9 @@ if (regenFxIntensity >= 0.005) {
       })`;
 
     accelerationFxCtx.shadowBlur =
-      4 +
+      6 +
       regenFxIntensity *
-      10;
+      14;
 
 
     // =========================
