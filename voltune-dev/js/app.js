@@ -1775,6 +1775,11 @@ lastTransmissionGear =
   transmission.direct
     ? 1
     : transmission.gear;
+
+  const isTopGear =
+    !transmission.direct &&
+    transmission.gear >=
+      VoltuneDrivetrain.gearRatios.length;
   
   // Getriebeanzeige aktualisieren
   if (transmission.direct) {
@@ -1790,10 +1795,6 @@ lastTransmissionGear =
   } else {
     ui.gearDisplay.textContent =
       `${transmission.gear}`;
-  
-  const isTopGear =
-    transmission.gear >=
-    VoltuneDrivetrain.gearRatios.length;
   
   ui.shiftTargetDisplay.textContent =
     isTopGear
