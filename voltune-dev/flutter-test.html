@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Voltune – Turbo Flutter Test</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#05070a;color:#f5f7fa}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#111827 0,#05070a 55%)}
+    main{width:min(760px,calc(100% - 32px));margin:0 auto;padding:32px 0 48px} h1{margin:0 0 8px;font-size:clamp(28px,5vw,44px);letter-spacing:.04em}
+    .intro{margin:0 0 28px;color:#aeb7c4;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    button{min-height:88px;padding:16px;border:1px solid #2a3442;border-radius:14px;background:rgba(20,27,37,.92);color:inherit;text-align:left;cursor:pointer}
+    button:active{transform:scale(.985)} button:hover{border-color:#69778b;background:rgba(28,37,50,.96)} button b{display:block;margin-bottom:5px;font-size:17px}
+    button small{display:block;color:#9ba7b6;font-size:13px;line-height:1.35} #status{margin-top:22px;min-height:24px;color:#c8d1dc;font-variant-numeric:tabular-nums}
+    .note{margin-top:22px;padding-top:18px;border-top:1px solid #222b36;color:#8995a5;font-size:13px;line-height:1.5}
+    @media(max-width:600px){main{width:min(100% - 20px,760px);padding-top:20px}.grid{grid-template-columns:1fr}button{min-height:78px}}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Turbo Flutter Test</h1>
+  <p class="intro">Zehn unterschiedliche Flutter-Varianten. Einfach nacheinander anklicken und merken, welche Nummer am besten zu Voltune passt.</p>
+  <div class="grid">
+    <button type="button" data-variant="1"><b>1 · Classic JDM</b><small>FÜ – nü – nü – nüüü · klassisch abfallend</small></button>
+    <button type="button" data-variant="2"><b>2 · Fast Chatter</b><small>Sehr schnelles, dichtes Turbo-Flattern</small></button>
+    <button type="button" data-variant="3"><b>3 · High Whistle</b><small>Deutliches Turbo-Pfeifen mit kurzem Flutter</small></button>
+    <button type="button" data-variant="4"><b>4 · Deep Flutter</b><small>Tiefer, kräftiger und weniger schrill</small></button>
+    <button type="button" data-variant="5"><b>5 · Aggressive JDM</b><small>Härtere Impulse, mehr Attack und mechanischer Charakter</small></button>
+    <button type="button" data-variant="6"><b>6 · Clean Turbo</b><small>Sauberes Pfeifen mit nur drei klaren Flutter-Impulsen</small></button>
+    <button type="button" data-variant="7"><b>7 · Long Tail</b><small>Abfallendes Flutter mit langem letzten „nüüü“</small></button>
+    <button type="button" data-variant="8"><b>8 · Metallic Flutter</b><small>Etwas metallischer und technischer</small></button>
+    <button type="button" data-variant="9"><b>9 · Pressure Dump</b><small>Kurzes Zischen vor dem eigentlichen Flutter</small></button>
+    <button type="button" data-variant="10"><b>10 · Wild Flutter</b><small>Mehr Impulse, unruhiger und deutlich extremer</small></button>
+  </div>
+  <div id="status">Bereit.</div>
+  <div class="note">Die Varianten laufen bewusst mit ähnlichem Gesamtpegel, damit du Klang, Rhythmus und Charakter vergleichst. Die endgültige Lautstärke stellen wir später separat in Voltune ein.</div>
+</main>
+<script>
+(() => {
+  let ctx=null, master=null, noiseBuffer=null;
+  const status=document.getElementById('status');
+  function ensureAudio(){
+    if(!ctx){
+      const AudioCtx=window.AudioContext||window.webkitAudioContext; ctx=new AudioCtx(); master=ctx.createGain(); master.gain.value=.48;
+      const limiter=ctx.createDynamicsCompressor(); limiter.threshold.value=-1; limiter.knee.value=0; limiter.ratio.value=12; limiter.attack.value=.001; limiter.release.value=.08;
+      master.connect(limiter).connect(ctx.destination); noiseBuffer=createNoiseBuffer(1);
+    }
+    return ctx.state==='suspended'?ctx.resume():Promise.resolve();
+  }
+  function createNoiseBuffer(seconds){
+    const length=Math.floor(ctx.sampleRate*seconds), buffer=ctx.createBuffer(1,length,ctx.sampleRate), data=buffer.getChannelData(0); let last=0;
+    for(let i=0;i<length;i++){const white=Math.random()*2-1; last=last*.82+white*.18; data[i]=white*.72+last*.28;} return buffer;
+  }
+  function playTone({time,duration,startHz,endHz,gain=.08,type='sine',body=0,attack=.005}){
+    const osc=ctx.createOscillator(), oscGain=ctx.createGain(); osc.type=type; osc.frequency.setValueAtTime(Math.max(20,startHz),time); osc.frequency.exponentialRampToValueAtTime(Math.max(20,endHz),time+duration);
+    oscGain.gain.setValueAtTime(.0001,time); oscGain.gain.exponentialRampToValueAtTime(gain,time+attack); oscGain.gain.exponentialRampToValueAtTime(gain*.58,time+duration*.55); oscGain.gain.exponentialRampToValueAtTime(.0001,time+duration);
+    osc.connect(oscGain).connect(master); osc.start(time); osc.stop(time+duration+.03);
+    if(body>0){
+      const bo=ctx.createOscillator(), bg=ctx.createGain(); bo.type='triangle'; bo.frequency.setValueAtTime(startHz*.43,time); bo.frequency.exponentialRampToValueAtTime(Math.max(40,endHz*.35),time+duration);
+      bg.gain.setValueAtTime(.0001,time); bg.gain.exponentialRampToValueAtTime(gain*body,time+attack); bg.gain.exponentialRampToValueAtTime(.0001,time+duration); bo.connect(bg).connect(master); bo.start(time); bo.stop(time+duration+.03);
+    }
+  }
+  function playNoise({time,duration,frequency,gain}){
+    const src=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); src.buffer=noiseBuffer; f.type='bandpass'; f.frequency.value=frequency; f.Q.value=1.1;
+    g.gain.setValueAtTime(.0001,time); g.gain.exponentialRampToValueAtTime(gain,time+.004); g.gain.exponentialRampToValueAtTime(.0001,time+duration); src.connect(f).connect(g).connect(master); src.start(time); src.stop(time+duration+.03);
+  }
+  function playPattern(pulses,options={}){
+    const now=ctx.currentTime+.025; const {whistle=false,noise=false,type='sine',body=.18}=options;
+    if(whistle) playTone({time:now,duration:.12,startHz:whistle.startHz,endHz:whistle.endHz,gain:whistle.gain,type:'sine',body:0});
+    pulses.forEach(p=>{const t=now+p.offset; playTone({time:t,duration:p.duration,startHz:p.startHz,endHz:p.endHz,gain:p.gain,type:p.type||type,body:p.body??body,attack:p.attack??.005});
+      if(noise||p.noise) playNoise({time:t,duration:Math.min(p.duration,.05),frequency:p.noiseHz||2400,gain:p.noiseGain||.018});
+    });
+  }
+  function playVariant(n){
+    switch(n){
+      case 1: playPattern([{offset:0,duration:.065,startHz:2600,endHz:1950,gain:.10},{offset:.09,duration:.07,startHz:2200,endHz:1650,gain:.09},{offset:.18,duration:.08,startHz:1900,endHz:1420,gain:.08},{offset:.28,duration:.145,startHz:1650,endHz:1120,gain:.072}],{body:.20}); break;
+      case 2: playPattern([{offset:0,duration:.045,startHz:2500,endHz:1950,gain:.086},{offset:.055,duration:.045,startHz:2350,endHz:1820,gain:.082},{offset:.11,duration:.048,startHz:2180,endHz:1680,gain:.078},{offset:.168,duration:.05,startHz:2010,endHz:1540,gain:.074},{offset:.228,duration:.055,startHz:1840,endHz:1400,gain:.07},{offset:.295,duration:.075,startHz:1680,endHz:1200,gain:.065}],{body:.16}); break;
+      case 3: playPattern([{offset:.07,duration:.06,startHz:3050,endHz:2350,gain:.094},{offset:.155,duration:.068,startHz:2650,endHz:1980,gain:.083},{offset:.248,duration:.09,startHz:2250,endHz:1580,gain:.072}],{whistle:{startHz:4200,endHz:3200,gain:.05},body:.15}); break;
+      case 4: playPattern([{offset:0,duration:.075,startHz:1750,endHz:1220,gain:.112},{offset:.1,duration:.08,startHz:1500,endHz:1030,gain:.102},{offset:.205,duration:.09,startHz:1300,endHz:860,gain:.092},{offset:.325,duration:.135,startHz:1120,endHz:700,gain:.08}],{body:.34}); break;
+      case 5: playPattern([{offset:0,duration:.055,startHz:2850,endHz:1800,gain:.115,type:'triangle',noise:true},{offset:.075,duration:.06,startHz:2480,endHz:1570,gain:.105,type:'triangle',noise:true},{offset:.155,duration:.068,startHz:2150,endHz:1330,gain:.096,type:'triangle',noise:true},{offset:.245,duration:.085,startHz:1820,endHz:1080,gain:.087,type:'triangle',noise:true}],{body:.24}); break;
+      case 6: playPattern([{offset:.075,duration:.075,startHz:2800,endHz:2120,gain:.092},{offset:.18,duration:.085,startHz:2250,endHz:1660,gain:.08},{offset:.30,duration:.11,startHz:1800,endHz:1260,gain:.07}],{whistle:{startHz:3650,endHz:3000,gain:.035},body:.12}); break;
+      case 7: playPattern([{offset:0,duration:.06,startHz:2550,endHz:1950,gain:.098},{offset:.085,duration:.065,startHz:2200,endHz:1650,gain:.088},{offset:.175,duration:.075,startHz:1900,endHz:1390,gain:.078},{offset:.28,duration:.095,startHz:1650,endHz:1160,gain:.07},{offset:.405,duration:.23,startHz:1420,endHz:820,gain:.062}],{body:.20}); break;
+      case 8: playPattern([{offset:0,duration:.065,startHz:2950,endHz:2050,gain:.092,type:'triangle',noise:true,noiseHz:3200,noiseGain:.014},{offset:.09,duration:.07,startHz:2500,endHz:1740,gain:.084,type:'triangle',noise:true,noiseHz:3000,noiseGain:.014},{offset:.19,duration:.078,startHz:2140,endHz:1450,gain:.076,type:'triangle',noise:true,noiseHz:2800,noiseGain:.013},{offset:.30,duration:.12,startHz:1780,endHz:1080,gain:.067,type:'triangle',noise:true,noiseHz:2600,noiseGain:.012}],{body:.18}); break;
+      case 9: {const now=ctx.currentTime+.025; playNoise({time:now,duration:.11,frequency:4300,gain:.05}); playPattern([{offset:.075,duration:.06,startHz:2500,endHz:1850,gain:.088},{offset:.165,duration:.068,startHz:2150,endHz:1560,gain:.08},{offset:.265,duration:.082,startHz:1800,endHz:1260,gain:.072},{offset:.38,duration:.135,startHz:1500,endHz:930,gain:.064}],{body:.19}); break;}
+      case 10: playPattern([{offset:0,duration:.048,startHz:3000,endHz:2200,gain:.105,noise:true},{offset:.06,duration:.05,startHz:2750,endHz:2000,gain:.10,noise:true},{offset:.125,duration:.052,startHz:2500,endHz:1800,gain:.094,noise:true},{offset:.195,duration:.055,startHz:2250,endHz:1600,gain:.088,noise:true},{offset:.27,duration:.06,startHz:2000,endHz:1400,gain:.082,noise:true},{offset:.35,duration:.068,startHz:1750,endHz:1200,gain:.076,noise:true},{offset:.445,duration:.145,startHz:1500,endHz:850,gain:.068,noise:true}],{body:.25}); break;
+    }
+  }
+  document.querySelectorAll('[data-variant]').forEach(btn=>btn.addEventListener('click',async()=>{await ensureAudio(); const n=Number(btn.dataset.variant); status.textContent=`Spiele Variante ${n} …`; playVariant(n); setTimeout(()=>status.textContent=`Variante ${n} gespielt.`,800);}));
+})();
+</script>
+</body>
+</html>
