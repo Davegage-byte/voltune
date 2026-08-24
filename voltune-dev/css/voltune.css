@@ -981,6 +981,136 @@ input[type=range]{
   width:100%;
 }
 
+
+/* =========================
+   Eigene Slider-Schienen
+   ========================= */
+
+/* Farbe des gefüllten Bereichs */
+
+.control-master > input[type=range]{
+  --range-accent:#f5f7fa;
+}
+
+.control-driving > input[type=range]{
+  --range-accent:var(--blue);
+}
+
+.control-accel > input[type=range]{
+  --range-accent:var(--red);
+}
+
+.control-regen > input[type=range]{
+  --range-accent:var(--green);
+}
+
+.control-rpm > input[type=range]{
+  --range-accent:var(--orange);
+}
+
+
+/* Normale Regler.
+   Der Doppelregler Grundfrequenz
+   ist hiervon absichtlich ausgenommen. */
+
+.control > input[type=range]{
+  --range-track:#5b626b;
+
+  height:18px;
+
+  margin:0;
+
+  background:transparent;
+
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+
+/* Chromium / Tesla / Chrome */
+
+.control > input[type=range]::-webkit-slider-runnable-track{
+  height:5px;
+
+  border-radius:99px;
+
+  background:
+    linear-gradient(
+      to right,
+      var(--range-accent) 0,
+      var(--range-accent) var(--range-progress, 0%),
+      var(--range-track) var(--range-progress, 0%),
+      var(--range-track) 100%
+    );
+}
+
+.control > input[type=range]::-webkit-slider-thumb{
+  width:16px;
+  height:16px;
+
+  margin-top:-5.5px;
+
+  border:0;
+  border-radius:50%;
+
+  background:
+    var(--range-accent);
+
+  cursor:pointer;
+
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+
+/* Firefox */
+
+.control > input[type=range]::-moz-range-track{
+  height:5px;
+
+  border:0;
+  border-radius:99px;
+
+  background:
+    var(--range-track);
+}
+
+.control > input[type=range]::-moz-range-progress{
+  height:5px;
+
+  border-radius:99px;
+
+  background:
+    var(--range-accent);
+}
+
+.control > input[type=range]::-moz-range-thumb{
+  width:16px;
+  height:16px;
+
+  border:0;
+  border-radius:50%;
+
+  background:
+    var(--range-accent);
+
+  cursor:pointer;
+}
+
+
+/* Light Theme:
+   ungefüllter Bereich immer einheitlich hell */
+
+html[data-theme="light"]
+.control > input[type=range]{
+  --range-track:#c4ccd5;
+}
+
+html[data-theme="light"]
+.control-master > input[type=range]{
+  --range-accent:#52606d;
+}
+
 /* =========================
    Doppelregler Grundfrequenz
    ========================= */
