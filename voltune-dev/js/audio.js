@@ -924,9 +924,13 @@ function triggerTurboFlutter(
       1.10
     ) * 0.85;
 
+  const flutterBoost =
+    1.5;
+  
   const flutterAmount =
     volume *
-    pressureVolume;
+    pressureVolume *
+    flutterBoost;
 
   const now =
     ctx.currentTime;
