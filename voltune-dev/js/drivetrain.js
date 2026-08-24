@@ -1,6 +1,10 @@
 window.VoltuneDrivetrain = (() => {
-  const gearRatios = [2.66, 1.78, 1.30, 1.00, 0.80, 0.63];
-  const topGearRatio = gearRatios[gearRatios.length - 1];
+  const gearRatios = [2.66, 1.78, 1.30, 1.00, 0.80, 0.63, 0.50];
+  
+  // Der bisherige 6. Gang bleibt die RPM-Referenz.
+  // Dadurch ändern sich die Gänge 1–6 durch den
+  // neuen 7. Gang überhaupt nicht.
+  const rpmReferenceRatio = 0.63;
 
   let drivingStyle = 0;
   let lastStyleUpdate = performance.now();
@@ -43,7 +47,7 @@ window.VoltuneDrivetrain = (() => {
       0,
       (speedKmh / rangeKmh) *
       maxRpm *
-      (ratio / topGearRatio)
+      (ratio / rpmReferenceRatio)
     );
   }
 
@@ -381,6 +385,7 @@ if (
 // 4 -> 3
 // 5 -> 4
 // 6 -> 5
+// 7 -> 6
 
 // Entspannte Ziel-RPM nach dem Zurückschalten.
 const relaxedDownshiftRpm = {
@@ -388,7 +393,8 @@ const relaxedDownshiftRpm = {
   3: 1950,
   4: 1750,
   5: 1600,
-  6: 1450
+  6: 1450,
+  7: 1325
 };
 
 // Sportliche Ziel-RPM.
@@ -398,7 +404,8 @@ const sportDownshiftRpm = {
   3: 3150,
   4: 2900,
   5: 2650,
-  6: 2400
+  6: 2400,
+  7: 2150
 };
 
 // Stärkeres Bremsen darf die Rückschaltung
@@ -418,32 +425,43 @@ const downshiftAggression =
     1
   );
 
-// Aktuelles Rückschaltziel im derzeitigen Gang.
-// Dieser Wert wird zusätzlich an app.js ausgegeben,
-// damit er im RPM-Balken angezeigt werden kann.
-let downshiftTarget = null;
-
 if (currentGear > 1) {
-  const currentRatio =
-    gearRatios[currentGear - 1];
+  // Der 1. Gang soll wie bei einem echten
+  // Automatik-/DSG-Getriebe erst unmittelbar
+  // vor dem Stillstand eingelegt werden.
+  //
+  // Deshalb wird 2 -> 1 nicht über die normale
+  // Fahrstil-/Bremslogik gesteuert, sondern
+  // erst bei ungefähr 9 km/h freigegeben.
+  if (currentGear === 2) {
+    downshiftTarget =
+      rpmForGear(
+        9,
+        2,
+        config
+      );
+  } else {
+    const currentRatio =
+      gearRatios[currentGear - 1];
 
-  const lowerRatio =
-    gearRatios[currentGear - 2];
+    const lowerRatio =
+      gearRatios[currentGear - 2];
 
-  const relaxedRpm =
-    relaxedDownshiftRpm[currentGear];
+    const relaxedRpm =
+      relaxedDownshiftRpm[currentGear];
 
-  const sportRpm =
-    sportDownshiftRpm[currentGear];
+    const sportRpm =
+      sportDownshiftRpm[currentGear];
 
-  const targetLandingRpm =
-    relaxedRpm +
-    (sportRpm - relaxedRpm) *
-      downshiftAggression;
+    const targetLandingRpm =
+      relaxedRpm +
+      (sportRpm - relaxedRpm) *
+        downshiftAggression;
 
-  downshiftTarget =
-    targetLandingRpm *
-    (currentRatio / lowerRatio);
+    downshiftTarget =
+      targetLandingRpm *
+      (currentRatio / lowerRatio);
+  }
 }
 
 if (
