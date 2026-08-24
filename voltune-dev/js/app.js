@@ -3376,6 +3376,34 @@ ui.speedTest.addEventListener(
     }
   },1000);
 
+// =========================
+// Slider-Füllstand
+// =========================
+
+function updateRangeProgress(element) {
+  const min =
+    Number(element.min || 0);
+
+  const max =
+    Number(element.max || 100);
+
+  const value =
+    Number(element.value);
+
+  const percent =
+    max > min
+      ? (
+          (value - min) /
+          (max - min)
+        ) * 100
+      : 0;
+
+  element.style.setProperty(
+    "--range-progress",
+    `${clamp(percent, 0, 100)}%`
+  );
+}
+  
   const updateLabels = () => {
     ui.volumeLabel.textContent = `${ui.volume.value} %`;
     ui.baseLabel.textContent = `${ui.base.value} Hz`;
@@ -3403,7 +3431,15 @@ ui.speedTest.addEventListener(
     ui.airLabel.textContent = `${ui.air.value} %`;
     ui.bovLabel.textContent = `${ui.bov.value} %`;
     ui.overrunLabel.textContent = `${ui.overrun.value} %`;
-  };
+    
+    document
+      .querySelectorAll(
+        '.control > input[type="range"]'
+      )
+      .forEach(
+        updateRangeProgress
+      );
+    };
 
   [
     ui.volume,
