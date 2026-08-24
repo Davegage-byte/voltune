@@ -1682,7 +1682,34 @@ function playOverrunSampleHit(
   bass.gain.value =
     overrunSampleSettings.bass;
 
+  const mid =
+    ctx.createBiquadFilter();
 
+  mid.type =
+    "peaking";
+
+  mid.frequency.value =
+    900;
+
+  mid.Q.value =
+    0.85;
+
+  mid.gain.value =
+    overrunSampleSettings.mid;
+
+
+  const treble =
+    ctx.createBiquadFilter();
+
+  treble.type =
+    "highshelf";
+
+  treble.frequency.value =
+    3200;
+
+  treble.gain.value =
+    overrunSampleSettings.treble;
+  
   // =========================
   // Sättigung
   // =========================
@@ -1692,7 +1719,8 @@ function playOverrunSampleHit(
 
   distortion.curve =
     createOverrunSampleDriveCurve(
-      0.10
+      overrunSampleSettings.drive /
+      100
     );
 
   distortion.oversample =
@@ -1803,6 +1831,8 @@ function playOverrunSampleHit(
     .connect(highpass)
     .connect(lowpass)
     .connect(bass)
+    .connect(mid)
+    .connect(treble)
     .connect(distortion)
     .connect(compressor)
     .connect(gain)
