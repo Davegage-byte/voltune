@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Voltune – WAV Schubknallen Lab</title>
+  <title>Voltune – WAV + MP3 Schubknallen Lab</title>
   <style>
     :root{
       color-scheme:dark;
@@ -153,19 +153,19 @@
 </head>
 <body>
 <main>
-  <h1>WAV Schubknallen Lab</h1>
+  <h1>WAV + MP3 Schubknallen Lab</h1>
   <p class="lead">
-    Lade einen einzelnen echten Knall als WAV. Die Seite spielt daraus eine
+    Lade einen einzelnen echten Knall als WAV oder MP3. Die Seite spielt daraus eine
     komplette Schubknall-Serie und verändert jeden einzelnen Treffer live.
     Die Datei bleibt ausschließlich lokal im Browser.
   </p>
 
   <div class="upload">
     <div class="upload-row">
-      <strong>1. WAV auswählen</strong>
-      <input id="file" type="file" accept=".wav,audio/wav,audio/wave,audio/x-wav">
+      <strong>1. WAV oder MP3 auswählen</strong>
+      <input id="file" type="file" accept=".wav,.mp3,audio/wav,audio/wave,audio/x-wav,audio/mpeg">
     </div>
-    <div id="fileInfo">Noch keine WAV geladen.</div>
+    <div id="fileInfo">Noch keine Audio-Datei geladen.</div>
   </div>
 
   <div class="toolbar">
@@ -329,7 +329,7 @@
     </section>
   </div>
 
-  <div id="status">WAV laden und loslegen.</div>
+  <div id="status">WAV oder MP3 laden und loslegen.</div>
 
   <div class="result">
     <div class="result-head">
@@ -339,7 +339,7 @@
     <textarea id="values" readonly></textarea>
     <div class="hint">
       Wenn du eine Richtung gefunden hast, schick mir diesen kompletten Block.
-      Die eigentliche WAV-Datei kannst du dann zusätzlich hochladen.
+      Die eigentliche WAV- oder MP3-Datei kannst du dann zusätzlich hochladen.
     </div>
   </div>
 </main>
@@ -707,7 +707,7 @@
     stopAll();
     await ensureContext();
 
-    status.textContent = "WAV wird geladen …";
+    status.textContent = "Audio-Datei wird geladen …";
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -721,16 +721,16 @@
       playSequenceBtn.disabled = false;
       playSingleBtn.disabled = false;
 
-      status.textContent = "WAV geladen. Bereit zum Testen.";
+      status.textContent = "Audio-Datei geladen. Bereit zum Testen.";
       updateUI();
     } catch (error) {
       buffer = null;
       fileName = "";
       fileInfo.textContent =
-        "Die Datei konnte nicht als WAV gelesen werden.";
+        "Die Datei konnte nicht als WAV oder MP3 gelesen werden.";
       playSequenceBtn.disabled = true;
       playSingleBtn.disabled = true;
-      status.textContent = "Fehler beim Laden der WAV.";
+      status.textContent = "Fehler beim Laden der Audio-Datei.";
       updateUI();
     }
   });
