@@ -44,6 +44,8 @@ window.VoltuneAudio = (() => {
 
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
+  
+  let overrunSampleBuffer = null;
 
   let lastAccel = 0;
   let lastBovAt = -9999;
@@ -101,6 +103,36 @@ window.VoltuneAudio = (() => {
     return buffer;
   }
 
+  async function loadAudioBuffer(
+    url
+  ) {
+    try {
+      const response =
+        await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+      }
+
+      const arrayBuffer =
+        await response.arrayBuffer();
+
+      return await ctx.decodeAudioData(
+        arrayBuffer
+      );
+    } catch (error) {
+      console.warn(
+        "Voltune Sample konnte nicht geladen werden:",
+        url,
+        error
+      );
+
+      return null;
+    }
+  }
+  
   function createOsc(type) {
     const osc =
       ctx.createOscillator();
@@ -133,6 +165,11 @@ window.VoltuneAudio = (() => {
 
     sharedNoiseBuffer =
       createNoiseBuffer(2);
+
+    overrunSampleBuffer =
+      await loadAudioBuffer(
+        "freesound_community-bang-100662.mp3"
+      );
 
     master =
       ctx.createGain();
@@ -1329,6 +1366,475 @@ function triggerTurboFlutter(
   );
 }
 
+
+// =========================
+// Schubknallen Sample
+// =========================
+//
+// Zusätzliches echtes Knall-Sample.
+//
+// Grundlage:
+// freesound_community-bang-100662.mp3
+//
+// Rhythmus und Klangparameter stammen
+// aus dem WAV/MP3-Testlabor.
+
+function createOverrunSampleDriveCurve(
+  amount
+) {
+  const samples =
+    2048;
+
+  const curve =
+    new Float32Array(
+      samples
+    );
+
+  const k =
+    1 +
+    amount * 30;
+
+  for (
+    let i = 0;
+    i < samples;
+    i++
+  ) {
+    const x =
+      i * 2 /
+        (samples - 1) -
+      1;
+
+    curve[i] =
+      Math.tanh(
+        x * k
+      ) /
+      Math.tanh(k);
+  }
+
+  return curve;
+}
+
+
+function playOverrunSampleHit(
+  time,
+  baseVolume
+) {
+  if (
+    !ctx ||
+    !overrunSampleBuffer ||
+    !loudnessGain
+  ) {
+    return;
+  }
+
+
+  // =========================
+  // Zufällige Variation
+  // =========================
+
+  // Testwert:
+  // Lautstärke ±30 %
+  const volumeRandom =
+    1 +
+    (
+      Math.random() * 2 -
+      1
+    ) *
+    0.30;
+
+
+  // Testwert:
+  // Tonhöhe / Geschwindigkeit ±15 %
+  const rate =
+    1 +
+    (
+      Math.random() * 2 -
+      1
+    ) *
+    0.15;
+
+
+  const source =
+    ctx.createBufferSource();
+
+  source.buffer =
+    overrunSampleBuffer;
+
+  source.playbackRate.value =
+    rate;
+
+
+  // =========================
+  // Filter
+  // =========================
+
+  const highpass =
+    ctx.createBiquadFilter();
+
+  highpass.type =
+    "highpass";
+
+  highpass.frequency.value =
+    30;
+
+  highpass.Q.value =
+    0.7;
+
+
+  const lowpass =
+    ctx.createBiquadFilter();
+
+  lowpass.type =
+    "lowpass";
+
+  lowpass.frequency.value =
+    18000;
+
+  lowpass.Q.value =
+    0.7;
+
+
+  // +3 dB Bass aus dem Testlabor.
+  const bass =
+    ctx.createBiquadFilter();
+
+  bass.type =
+    "lowshelf";
+
+  bass.frequency.value =
+    180;
+
+  bass.gain.value =
+    3;
+
+
+  // =========================
+  // Sättigung
+  // =========================
+
+  const distortion =
+    ctx.createWaveShaper();
+
+  distortion.curve =
+    createOverrunSampleDriveCurve(
+      0.10
+    );
+
+  distortion.oversample =
+    "2x";
+
+
+  // =========================
+  // Kompression
+  // =========================
+
+  // Testwert:
+  // 25 %
+  const compressor =
+    ctx.createDynamicsCompressor();
+
+  compressor.threshold.value =
+    -10;
+
+  compressor.knee.value =
+    8;
+
+  compressor.ratio.value =
+    3.25;
+
+  compressor.attack.value =
+    0.002;
+
+  compressor.release.value =
+    0.10;
+
+
+  // =========================
+  // Lautstärke
+  // =========================
+
+  const gain =
+    ctx.createGain();
+
+  const peak =
+    Math.max(
+      0.0001,
+      baseVolume *
+        volumeRandom
+    );
+
+
+  // Die ersten 300 ms des Samples
+  // werden abgeschnitten.
+  const startTrim =
+    Math.min(
+      0.300,
+      Math.max(
+        0,
+        overrunSampleBuffer.duration -
+          0.01
+      )
+    );
+
+  const playableDuration =
+    Math.max(
+      0.01,
+      overrunSampleBuffer.duration -
+        startTrim
+    );
+
+  // Wegen playbackRate verändert sich
+  // auch die reale Abspieldauer.
+  const audibleDuration =
+    playableDuration /
+    rate;
+
+
+  gain.gain.setValueAtTime(
+    peak,
+    time
+  );
+
+
+  // Testwert:
+  // 20 ms Fade-Out.
+  const fadeDuration =
+    Math.min(
+      0.020,
+      audibleDuration * 0.50
+    );
+
+  const fadeStart =
+    time +
+    audibleDuration -
+    fadeDuration;
+
+  gain.gain.setValueAtTime(
+    peak,
+    fadeStart
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    time + audibleDuration
+  );
+
+
+  // =========================
+  // Hauptsignal
+  // =========================
+
+  source
+    .connect(highpass)
+    .connect(lowpass)
+    .connect(bass)
+    .connect(distortion)
+    .connect(compressor)
+    .connect(gain)
+    .connect(loudnessGain);
+
+
+  // =========================
+  // Kurze Reflexion
+  // =========================
+
+  // Testwerte:
+  // 8 % Effekt
+  // 35 ms Abstand
+  const delay =
+    ctx.createDelay(0.5);
+
+  delay.delayTime.value =
+    0.035;
+
+
+  const echoFilter =
+    ctx.createBiquadFilter();
+
+  echoFilter.type =
+    "lowpass";
+
+  echoFilter.frequency.value =
+    4500;
+
+
+  const echoGain =
+    ctx.createGain();
+
+  echoGain.gain.value =
+    0.08 * 0.45;
+
+
+  gain
+    .connect(delay)
+    .connect(echoFilter)
+    .connect(echoGain)
+    .connect(loudnessGain);
+
+
+  source.start(
+    time,
+    startTrim,
+    playableDuration
+  );
+}
+
+
+function triggerOverrunSample(
+  startTime,
+  drivingStyle = 0,
+  intensity = 1,
+  volumePercent = 50
+) {
+  if (
+    !started ||
+    !ctx ||
+    !overrunSampleBuffer
+  ) {
+    return;
+  }
+
+
+  const style =
+    clamp(
+      Number(drivingStyle) || 0,
+      0,
+      1
+    );
+
+  const amount =
+    clamp(
+      Number(intensity) || 0,
+      0,
+      1
+    );
+
+  const volume =
+    volumeCurve(
+      volumePercent
+    );
+
+  if (
+    volume <= 0.001
+  ) {
+    return;
+  }
+
+
+  // =========================
+  // Anzahl nach Fahrstil
+  // =========================
+
+  // 0.0 = 1 Knall
+  // 1.0 = 6 Knaller
+  const popCount =
+    1 +
+    Math.round(
+      style * 5
+    );
+
+
+  // =========================
+  // Wucht nach Fahrstil
+  // =========================
+
+  // Normal:
+  // deutlich zurückhaltender.
+  //
+  // Wahnsinn:
+  // voller Sample-Pegel.
+  const styleVolume =
+    0.42 +
+    style * 0.58;
+
+
+  // Auch die vorherige Last darf
+  // die Wucht leicht beeinflussen.
+  const intensityVolume =
+    0.70 +
+    amount * 0.30;
+
+
+  const baseVolume =
+    volume *
+    styleVolume *
+    intensityVolume;
+
+
+  // =========================
+  // Rhythmus
+  // =========================
+
+  // Testwert:
+  // 3,75 Knaller pro Sekunde.
+  const frequency =
+    3.75;
+
+  const baseInterval =
+    1 / frequency;
+
+
+  // Testwert:
+  // 100 % Unregelmäßigkeit.
+  const irregularity =
+    1.0;
+
+
+  // Testwert:
+  // zum Ende 80 % langsamer.
+  const slowdown =
+    0.80;
+
+
+  let offset =
+    0;
+
+
+  for (
+    let i = 0;
+    i < popCount;
+    i++
+  ) {
+    const progress =
+      popCount > 1
+        ? i /
+          (popCount - 1)
+        : 0;
+
+
+    const intervalGrowth =
+      1 +
+      slowdown *
+        progress;
+
+
+    const jitter =
+      1 +
+      (
+        Math.random() * 2 -
+        1
+      ) *
+      irregularity *
+      0.62;
+
+
+    playOverrunSampleHit(
+      startTime + offset,
+      baseVolume
+    );
+
+
+    offset +=
+      Math.max(
+        0.035,
+
+        baseInterval *
+          intervalGrowth *
+          jitter
+      );
+  }
+}
+  
   
 // =========================
 // Schubknallen / Nachblubbern
@@ -1337,7 +1843,8 @@ function triggerTurboFlutter(
 function triggerOverrun(
   intensity = 1,
   volumePercent = 50,
-  fromQueue = false
+  fromQueue = false,
+  drivingStyle = 0
 ) {
   if (
     !started ||
@@ -1367,10 +1874,10 @@ function triggerOverrun(
   // Schubknallen ganz kurz zurückhalten.
 // Dadurch bekommt ein unmittelbar danach
 // erkannter DSG-Gangwechsel noch Vorrang.
-if (!fromQueue) {
   pendingOverrun = {
     intensity: amount,
-    volumePercent
+    volumePercent,
+    drivingStyle
   };
 
   setTimeout(() => {
@@ -1386,7 +1893,8 @@ if (!fromQueue) {
     triggerOverrun(
       queued.intensity,
       queued.volumePercent,
-      true
+      true,
+      queued.drivingStyle
     );
   }, 25);
 
@@ -1405,6 +1913,22 @@ if (!fromQueue) {
       shiftBurbleUntil
     );
 
+
+  // Zusätzlich zum bisherigen synthetischen
+  // Schubknallen das echte Sample abspielen.
+  //
+  // Beide beginnen am selben Zeitpunkt und
+  // warten gegebenenfalls auf ein laufendes
+  // DSG-Furzen.
+  triggerOverrunSample(
+    now,
+    drivingStyle,
+    amount,
+    volumePercent
+  );
+
+
+  
   // Stärkere vorherige Last erzeugt
   // einen längeren Nachlauf mit mehr Impulsen.
   const duration =
@@ -3076,7 +3600,9 @@ if (
 
   triggerOverrun(
     overrunIntensity,
-    settings.overrunVolume
+    settings.overrunVolume,
+    false,
+    drivingStyle
   );
   overrunTriggered = true;
   lastOverrunAt = nowMs;
