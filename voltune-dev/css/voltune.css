@@ -1895,11 +1895,13 @@ html[data-theme="light"] .rpmMarkerUp,
 html[data-theme="light"] .rpmMarkerDown{
 
   background:
-    #273440;
+    #ffffff;
 
   box-shadow:
+    0 0 0 1px
+    rgba(25,35,45,.85),
     0 0 5px
-    rgba(39,52,64,.45);
+    rgba(25,35,45,.55);
 }
 
 
