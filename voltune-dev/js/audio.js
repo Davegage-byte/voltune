@@ -1100,13 +1100,69 @@ if (!fromQueue) {
         0.0001,
         popTime + 0.045
       );
+
+      // Kurzer elektronischer Unterton.
+      // Gibt jedem Knall einen synthetischen,
+      // leicht aggressiven Impuls, ohne den
+      // eigentlichen Auspuff-Pop zu ersetzen.
+      const electric =
+        ctx.createOscillator();
+
+      electric.type =
+        "triangle";
+
+      electric.frequency.setValueAtTime(
+        620 +
+          amount * 180 +
+          Math.random() * 120,
+        popTime
+      );
+
+      electric.frequency.exponentialRampToValueAtTime(
+        260 +
+          Math.random() * 80,
+        popTime + 0.075
+      );
+
+      const electricGain =
+        ctx.createGain();
+
+      const electricPeak =
+        (
+          0.010 +
+          amount * 0.028
+        ) *
+        volume *
+        randomStrength *
+        2.0;
+
+      electricGain.gain.setValueAtTime(
+        0.0001,
+        popTime
+      );
+
+      electricGain.gain.exponentialRampToValueAtTime(
+        electricPeak,
+        popTime + 0.004
+      );
+
+      electricGain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        popTime + 0.085
+      );
+
+      electric
+        .connect(electricGain)
+        .connect(overrunBus);
       
       crackle
         .connect(crackleFilter)
         .connect(crackleGain)
         .connect(overrunBus);
+    
       pop.start(popTime);
       crackle.start(popTime);
+      electric.start(popTime);
       
       pop.stop(
         popTime +
@@ -1116,6 +1172,9 @@ if (!fromQueue) {
       
       crackle.stop(
         popTime + 0.06
+      );
+      electric.stop(
+        popTime + 0.10
       );
   }
 }
