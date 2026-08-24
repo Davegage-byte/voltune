@@ -1538,20 +1538,20 @@ html[data-theme="light"]{
 
 body{
   transition:
-    filter .26s ease,
-    opacity .26s ease,
-    color .26s ease;
+    filter .42s ease,
+    opacity .42s ease,
+    color .42s ease;
 }
 
 html.themeChanging body{
   transition-duration:
-    .14s;
+    .24s;
 
   filter:
     blur(3px);
 
   opacity:
-    .78;
+    .68;
 }
 
 
@@ -1569,10 +1569,10 @@ html.themeChanging body{
 .bar,
 .effectTestBtn{
   transition:
-    background-color .26s ease,
-    color .26s ease,
-    border-color .26s ease,
-    box-shadow .26s ease;
+    background-color .42s ease,
+    color .42s ease,
+    border-color .42s ease,
+    box-shadow .42s ease;
 }
 
 
@@ -1583,10 +1583,10 @@ button{
   transition:
     transform .12s ease,
     filter .12s ease,
-    background-color .26s ease,
-    color .26s ease,
-    border-color .26s ease,
-    box-shadow .26s ease;
+    background-color .42s ease,
+    color .42s ease,
+    border-color .42s ease,
+    box-shadow .42s ease;
 }
 
 
