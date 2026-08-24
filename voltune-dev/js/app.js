@@ -33,6 +33,7 @@
     testShiftBurble:$("testShiftBurble"),
     testDownshiftBlip:$("testDownshiftBlip"),
     testBov:$("testBov"),
+    testTurboFlutter:$("testTurboFlutter"),
     testOverrun:$("testOverrun"),
     gpsStatus:$("gpsStatus"), gpsAccuracy:$("gpsAccuracy"), gpsHz:$("gpsHz"), secureContext:$("secureContext"),
 
@@ -60,7 +61,9 @@
     shiftBurble:$("shiftBurble"),
     downshiftBlip:$("downshiftBlip"),
     baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
-    regen:$("regen"), air:$("air"), bov:$("bov"), overrun:$("overrun"),
+    regen:$("regen"), air:$("air"), bov:$("bov"),
+    turboFlutter:$("turboFlutter"),
+    overrun:$("overrun"),
 
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
     cruiseDampingLabel:$("cruiseDampingLabel"),
@@ -71,7 +74,10 @@
     downshiftBlipLabel:$("downshiftBlipLabel"),
     baseVolLabel:$("baseVolLabel"), inverterLabel:$("inverterLabel"),
     driveLabel:$("driveLabel"), regenLabel:$("regenLabel"),
-    airLabel:$("airLabel"), bovLabel:$("bovLabel"), overrunLabel:$("overrunLabel")
+    airLabel:$("airLabel"),
+    bovLabel:$("bovLabel"),
+    turboFlutterLabel:$("turboFlutterLabel"),
+    overrunLabel:$("overrunLabel")
   };
 
   // =========================
@@ -1427,6 +1433,7 @@ function setRpmMarker(
     regenVolume: Number(ui.regen.value),
     airVolume: Number(ui.air.value),
     bovVolume: Number(ui.bov.value),
+    flutterVolume: Number(ui.turboFlutter.value),
     overrunVolume: Number(ui.overrun.value),
     
     easyBovEnabled
@@ -1453,6 +1460,7 @@ function getPersistentSettings() {
     regenVolume: Number(ui.regen.value),
     airVolume: Number(ui.air.value),
     bovVolume: Number(ui.bov.value),
+    turboFlutterVolume: Number(ui.turboFlutter.value),
     overrunVolume: Number(ui.overrun.value),
 
     easyBovEnabled,
@@ -1506,6 +1514,10 @@ function applyPersistentSettings(settings) {
   setNumber(ui.regen, settings.regenVolume);
   setNumber(ui.air, settings.airVolume);
   setNumber(ui.bov, settings.bovVolume);
+  setNumber(
+    ui.turboFlutter,
+    settings.turboFlutterVolume
+  );
   setNumber(ui.overrun, settings.overrunVolume);
 
   if (typeof settings.easyBovEnabled === "boolean") {
@@ -3327,6 +3339,20 @@ ui.testBov.addEventListener(
   }
 );
 
+ui.testTurboFlutter.addEventListener(
+  "click",
+  async () => {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+
+    VoltuneAudio.triggerTurboFlutter(
+      1.0,
+      Number(ui.turboFlutter.value)
+    );
+  }
+);
+
 ui.testOverrun.addEventListener(
   "click",
   async () => {
@@ -3447,6 +3473,8 @@ function updateRangeProgress(element) {
     ui.regenLabel.textContent = `${ui.regen.value} %`;
     ui.airLabel.textContent = `${ui.air.value} %`;
     ui.bovLabel.textContent = `${ui.bov.value} %`;
+    ui.turboFlutterLabel.textContent =
+      `${ui.turboFlutter.value} %`;
     ui.overrunLabel.textContent = `${ui.overrun.value} %`;
     
     document
@@ -3475,6 +3503,7 @@ function updateRangeProgress(element) {
     ui.regen,
     ui.air,
     ui.bov,
+    ui.turboFlutter,
     ui.overrun
   ].forEach(el => {
     el.addEventListener("input", () => {
