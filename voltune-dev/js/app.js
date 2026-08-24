@@ -74,8 +74,6 @@
     airLabel:$("airLabel"), bovLabel:$("bovLabel"), overrunLabel:$("overrunLabel")
   };
 
-  let soundActive = false;
-
   // =========================
 // Browser-Viewport Debug
 // =========================
