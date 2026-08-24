@@ -441,7 +441,7 @@ const downshiftAggression =
   if (currentGear === 2) {
     downshiftTarget =
       rpmForGear(
-        9,
+        12,
         2,
         config
       );
