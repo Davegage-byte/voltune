@@ -1736,14 +1736,20 @@ function playOverrunSampleHit(
   const compressor =
     ctx.createDynamicsCompressor();
 
+  const compressionAmount =
+    overrunSampleSettings.compress /
+    100;
+
   compressor.threshold.value =
-    -10;
+    -4 -
+    compressionAmount * 24;
 
   compressor.knee.value =
     8;
 
   compressor.ratio.value =
-    3.25;
+    1 +
+    compressionAmount * 9;
 
   compressor.attack.value =
     0.002;
@@ -1759,10 +1765,15 @@ function playOverrunSampleHit(
   const gain =
     ctx.createGain();
 
+  const sampleVolume =
+    overrunSampleSettings.volume /
+    100;
+
   const peak =
     Math.max(
       0.0001,
       baseVolume *
+        sampleVolume *
         volumeRandom
     );
 
@@ -1771,7 +1782,9 @@ function playOverrunSampleHit(
   // werden abgeschnitten.
   const startTrim =
     Math.min(
-      0.300,
+      overrunSampleSettings.startTrim /
+        1000,
+
       Math.max(
         0,
         overrunSampleBuffer.duration -
@@ -1779,11 +1792,20 @@ function playOverrunSampleHit(
       )
     );
 
+  const endTrim =
+    Math.max(
+      0,
+      overrunSampleSettings.endTrim /
+        1000
+    );
+
   const playableDuration =
     Math.max(
       0.01,
+
       overrunSampleBuffer.duration -
-        startTrim
+        startTrim -
+        endTrim
     );
 
   // Wegen playbackRate verändert sich
@@ -1793,19 +1815,59 @@ function playOverrunSampleHit(
     rate;
 
 
-  gain.gain.setValueAtTime(
-    peak,
-    time
-  );
+  const attackDuration =
+    Math.min(
+      overrunSampleSettings.attack /
+        1000,
+
+      audibleDuration * 0.45
+    );
+
+  if (attackDuration > 0) {
+    gain.gain.setValueAtTime(
+      0.0001,
+      time
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      peak,
+      time + attackDuration
+    );
+  } else {
+    gain.gain.setValueAtTime(
+      peak,
+      time
+    );
+  }
 
 
-  // Testwert:
-  // 20 ms Fade-Out.
   const fadeDuration =
     Math.min(
-      0.020,
-      audibleDuration * 0.50
+      overrunSampleSettings.fadeOut /
+        1000,
+
+      audibleDuration * 0.75
     );
+
+  if (fadeDuration > 0) {
+    const fadeStart =
+      Math.max(
+        time + attackDuration,
+        time +
+          audibleDuration -
+          fadeDuration
+      );
+
+    gain.gain.setValueAtTime(
+      peak,
+      fadeStart
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      time + audibleDuration
+    );
+  }
 
   const fadeStart =
     time +
@@ -1850,7 +1912,8 @@ function playOverrunSampleHit(
     ctx.createDelay(0.5);
 
   delay.delayTime.value =
-    0.035;
+    overrunSampleSettings.echoDelay /
+    1000;
 
 
   const echoFilter =
@@ -1867,7 +1930,11 @@ function playOverrunSampleHit(
     ctx.createGain();
 
   echoGain.gain.value =
-    0.08 * 0.45;
+    (
+      overrunSampleSettings.echo /
+      100
+    ) *
+    0.45;
 
 
   gain
