@@ -2272,18 +2272,24 @@ function triggerOverrun(
     );
 
 
-  // Zusätzlich zum bisherigen synthetischen
-  // Schubknallen das echte Sample abspielen.
-  //
-  // Beide beginnen am selben Zeitpunkt und
-  // warten gegebenenfalls auf ein laufendes
-  // DSG-Furzen.
-  triggerOverrunSample(
-    now,
-    drivingStyle,
-    amount,
-    volumePercent
-  );
+  // Sample ausgewählt:
+  // nur den Sample-Charakter abspielen.
+  if (
+    overrunSoundMode === "sample"
+  ) {
+    triggerOverrunSample(
+      now,
+      drivingStyle,
+      amount,
+      volumePercent
+    );
+
+    return;
+  }
+
+  // Voltune Standard:
+  // ab hier läuft ausschließlich
+  // das bisherige synthetische Schubknallen.
 
 
   
