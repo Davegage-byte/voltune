@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Voltune – Big Turbo Air Lab</title>
+  <title>Voltune – Pipe Whistle Flutter Lab</title>
 
   <style>
     :root {
@@ -113,11 +113,12 @@
 
 <body>
 <main>
-  <h1>Big Turbo Air Lab</h1>
+  <h1>Pipe Whistle Flutter Lab</h1>
 
   <p class="lead">
-    Basis: Big Turbo + hohes Turbo-Pfeifen. Neu ist ein deutlich stärkerer
-    Luft-/Zisch-Layer aus gefiltertem weißem Rauschen.
+    Alle Varianten verwenden denselben tiefen „Big Valve“-Flutter.
+    Nur das Pfeifen/Soggeräusch ändert sich. Schwerpunkt:
+    Luft durch Rohr, Ansaugung, Unterdruck und Resonanz statt sauberem Piepton.
   </p>
 
   <div class="controls">
@@ -127,23 +128,23 @@
   </div>
 
   <div class="grid">
-    <button data-v="1"><strong>1 · Balanced Air</strong><small>Big Turbo + Pfeifen + deutlich mehr Luft</small></button>
-    <button data-v="2"><strong>2 · Air Heavy</strong><small>Sehr viel Zischen, Flutter etwas weiter hinten</small></button>
-    <button data-v="3"><strong>3 · Whistle Heavy</strong><small>Mehr Pfeifen, Luft bleibt kräftig darunter</small></button>
-    <button data-v="4"><strong>4 · Big Valve</strong><small>Tiefe große Flutter-Stöße mit breitem Luftschwall</small></button>
-    <button data-v="5"><strong>5 · Fast Air Chatter</strong><small>Big-Turbo-Körper, aber schnelleres Luftflattern</small></button>
-    <button data-v="6"><strong>6 · Pressure Release</strong><small>Erst großer Luftstoß, dann Flutter-Serie</small></button>
-    <button data-v="7"><strong>7 · Long Air Tail</strong><small>Flutter mit langem rauschendem Ausatmen</small></button>
-    <button data-v="8"><strong>8 · Sharp Valve</strong><small>Helleres Zischen und klarere Ventilimpulse</small></button>
-    <button data-v="9"><strong>9 · Huge Turbo</strong><small>Langsam, tief, massiv, viel Luftvolumen</small></button>
-    <button data-v="10"><strong>10 · Maximum JDM Air</strong><small>Pfeifen, Luft und großes Flutter bewusst übertrieben</small></button>
+    <button data-v="1"><strong>1 · Vacuum Pipe</strong><small>Hohles Sogpfeifen, weich und luftig</small></button>
+    <button data-v="2"><strong>2 · Narrow Tube</strong><small>Engeres Rohr, höher und fokussierter</small></button>
+    <button data-v="3"><strong>3 · Hollow Intake</strong><small>Breites Ansaugheulen mit Rohrresonanz</small></button>
+    <button data-v="4"><strong>4 · Deep Suction</strong><small>Tieferes Unterdruck-Pfeifen, großer Ansaugtrakt</small></button>
+    <button data-v="5"><strong>5 · Twin Resonance</strong><small>Zwei überlagerte Rohrresonanzen</small></button>
+    <button data-v="6"><strong>6 · Breathy Whistle</strong><small>Sehr viel Luft, Pfeifen nur als Resonanz darin</small></button>
+    <button data-v="7"><strong>7 · Intake Howl</strong><small>Mehr Heulen, Frequenz zieht deutlich nach unten</small></button>
+    <button data-v="8"><strong>8 · Pulsing Vacuum</strong><small>Leicht pulsierendes Soggeräusch vor dem Flutter</small></button>
+    <button data-v="9"><strong>9 · Metal Pipe Air</strong><small>Etwas härtere, metallische Rohrresonanz</small></button>
+    <button data-v="10"><strong>10 · Big Turbo Suction</strong><small>Breit, tief, luftig und maximal präsent</small></button>
   </div>
 
   <div id="status">Bereit.</div>
 
   <div class="note">
-    Ziel ist diesmal nicht nur das Flutter selbst, sondern das Gefühl von
-    komprimierter Luft, die hörbar durch Ventil und Verdichter entweicht.
+    Wenn dir z. B. „6 hat die richtige Luft, aber 3 die bessere Tonhöhe“ gefällt,
+    können wir beide Eigenschaften danach direkt zusammenbauen.
   </div>
 </main>
 
@@ -201,8 +202,8 @@
     time,
     duration,
     gain,
-    hp = 500,
-    bp = 2600,
+    hp = 350,
+    bp = 2400,
     q = 0.6,
     sweepTo = null,
     attack = 0.004,
@@ -254,18 +255,29 @@
     source.stop(time + duration + 0.03);
   }
 
-  function whistle({
+  function pipeResonance({
     time,
     duration,
     startHz,
     endHz,
-    gain
+    gain,
+    q = 7,
+    airGain = 0.05,
+    secondRatio = null,
+    secondGain = 0
   }) {
-    const osc = ctx.createOscillator();
-    osc.type = "sine";
+    const source = ctx.createBufferSource();
+    source.buffer = noiseBuffer;
 
-    osc.frequency.setValueAtTime(startHz, time);
-    osc.frequency.exponentialRampToValueAtTime(
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 500;
+
+    const resonance = ctx.createBiquadFilter();
+    resonance.type = "bandpass";
+    resonance.Q.value = q;
+    resonance.frequency.setValueAtTime(startHz, time);
+    resonance.frequency.exponentialRampToValueAtTime(
       endHz,
       time + duration
     );
@@ -276,52 +288,126 @@
     g.gain.setValueAtTime(0.0001, time);
     g.gain.exponentialRampToValueAtTime(
       peak,
-      time + 0.006
+      time + 0.012
     );
     g.gain.exponentialRampToValueAtTime(
-      peak * 0.55,
-      time + duration * 0.55
+      peak * 0.78,
+      time + duration * 0.45
     );
     g.gain.exponentialRampToValueAtTime(
       0.0001,
       time + duration
     );
 
-    osc.connect(g).connect(master);
-    osc.start(time);
-    osc.stop(time + duration + 0.03);
+    source
+      .connect(hp)
+      .connect(resonance)
+      .connect(g)
+      .connect(master);
+
+    if (secondRatio && secondGain > 0) {
+      const resonance2 = ctx.createBiquadFilter();
+      resonance2.type = "bandpass";
+      resonance2.Q.value = q * 0.75;
+      resonance2.frequency.setValueAtTime(
+        startHz * secondRatio,
+        time
+      );
+      resonance2.frequency.exponentialRampToValueAtTime(
+        endHz * secondRatio,
+        time + duration
+      );
+
+      const g2 = ctx.createGain();
+      const peak2 = Math.max(
+        0.0002,
+        secondGain * level()
+      );
+
+      g2.gain.setValueAtTime(0.0001, time);
+      g2.gain.exponentialRampToValueAtTime(
+        peak2,
+        time + 0.015
+      );
+      g2.gain.exponentialRampToValueAtTime(
+        0.0001,
+        time + duration
+      );
+
+      source
+        .connect(resonance2)
+        .connect(g2)
+        .connect(master);
+    }
+
+    if (airGain > 0) {
+      noiseLayer({
+        time,
+        duration,
+        gain: airGain,
+        hp: 650,
+        bp: startHz * 0.9,
+        q: 0.45,
+        sweepTo: endHz * 0.75,
+        sustain: 0.58
+      });
+    }
+
+    source.start(time);
+    source.stop(time + duration + 0.03);
   }
 
-  function flutter({
-    start,
-    offsets,
-    durations,
-    freqs,
-    ends,
-    gains,
-    airGains,
-    qs
+  function pulsingPipe({
+    time,
+    duration,
+    startHz,
+    endHz,
+    gain
   }) {
-    offsets.forEach((offset, i) => {
-      const t = start + offset;
+    const pulses = 5;
+    const gap = duration / pulses;
 
+    for (let i = 0; i < pulses; i++) {
+      const p = i / (pulses - 1);
+      pipeResonance({
+        time: time + i * gap,
+        duration: gap * 0.78,
+        startHz: startHz * (1 - p * 0.12),
+        endHz: endHz * (1 - p * 0.10),
+        gain: gain * (1 - p * 0.08),
+        q: 6.5,
+        airGain: 0.035
+      });
+    }
+  }
+
+  function bigValveFlutter(start) {
+    noiseLayer({
+      time: start,
+      duration: .16,
+      gain: .15,
+      hp: 380,
+      bp: 2900,
+      q: .5,
+      sweepTo: 1700
+    });
+
+    const offsets = [0, .16, .34, .55];
+    const durations = [.13, .14, .16, .24];
+    const freqs = [1900, 1650, 1400, 1180];
+    const ends = [1200, 1000, 800, 580];
+    const airGains = [.22, .20, .18, .16];
+
+    offsets.forEach((offset, i) => {
       noiseLayer({
-        time: t,
+        time: start + .085 + offset,
         duration: durations[i],
         gain: airGains[i],
         hp: 420,
         bp: freqs[i],
-        q: qs?.[i] ?? 0.8,
+        q: [.6,.6,.55,.5][i],
         sweepTo: ends[i],
-        sustain: 0.38
-      });
-
-      whistle({
-        time: t,
-        duration: durations[i],
-        startHz: freqs[i] * 0.92,
-        endHz: ends[i] * 0.78,
-        gain: gains[i]
+        sustain: .38
       });
     });
   }
@@ -331,151 +417,155 @@
 
     switch (v) {
       case 1:
-        whistle({time:now,duration:.16,startHz:4300,endHz:3150,gain:.035});
-        noiseLayer({time:now,duration:.18,gain:.12,hp:650,bp:4200,q:.55,sweepTo:2500});
-        flutter({
-          start:now+.08,
-          offsets:[0,.13,.28,.45],
-          durations:[.10,.11,.13,.20],
-          freqs:[2200,1900,1600,1350],
-          ends:[1450,1200,950,700],
-          gains:[.018,.016,.014,.012],
-          airGains:[.17,.155,.14,.125]
+        pipeResonance({
+          time: now,
+          duration: .22,
+          startHz: 4300,
+          endHz: 2850,
+          gain: .070,
+          q: 7.5,
+          airGain: .085
         });
         break;
 
       case 2:
-        noiseLayer({time:now,duration:.25,gain:.20,hp:500,bp:3600,q:.45,sweepTo:1500});
-        whistle({time:now,duration:.14,startHz:4200,endHz:3000,gain:.025});
-        flutter({
-          start:now+.10,
-          offsets:[0,.14,.30,.48],
-          durations:[.11,.12,.14,.22],
-          freqs:[2100,1800,1500,1250],
-          ends:[1350,1100,850,620],
-          gains:[.013,.012,.011,.010],
-          airGains:[.20,.18,.16,.145]
+        pipeResonance({
+          time: now,
+          duration: .20,
+          startHz: 5200,
+          endHz: 3450,
+          gain: .062,
+          q: 9.0,
+          airGain: .070
         });
         break;
 
       case 3:
-        whistle({time:now,duration:.20,startHz:4700,endHz:3150,gain:.050});
-        noiseLayer({time:now,duration:.20,gain:.13,hp:700,bp:4300,q:.55,sweepTo:2400});
-        flutter({
-          start:now+.10,
-          offsets:[0,.13,.28,.45],
-          durations:[.09,.10,.12,.18],
-          freqs:[2300,1950,1650,1400],
-          ends:[1500,1250,980,720],
-          gains:[.022,.019,.016,.014],
-          airGains:[.16,.145,.13,.115]
+        pipeResonance({
+          time: now,
+          duration: .24,
+          startHz: 3900,
+          endHz: 2450,
+          gain: .080,
+          q: 5.0,
+          airGain: .110,
+          secondRatio: .56,
+          secondGain: .025
         });
         break;
 
       case 4:
-        noiseLayer({time:now,duration:.16,gain:.15,hp:380,bp:2900,q:.5,sweepTo:1700});
-        whistle({time:now,duration:.14,startHz:4100,endHz:2950,gain:.028});
-        flutter({
-          start:now+.085,
-          offsets:[0,.16,.34,.55],
-          durations:[.13,.14,.16,.24],
-          freqs:[1900,1650,1400,1180],
-          ends:[1200,1000,800,580],
-          gains:[.015,.013,.012,.010],
-          airGains:[.22,.20,.18,.16],
-          qs:[.6,.6,.55,.5]
+        pipeResonance({
+          time: now,
+          duration: .26,
+          startHz: 3200,
+          endHz: 1850,
+          gain: .085,
+          q: 5.5,
+          airGain: .120,
+          secondRatio: .62,
+          secondGain: .028
         });
         break;
 
       case 5:
-        whistle({time:now,duration:.12,startHz:4500,endHz:3300,gain:.032});
-        noiseLayer({time:now,duration:.13,gain:.13,hp:650,bp:4100,q:.55,sweepTo:2700});
-        flutter({
-          start:now+.07,
-          offsets:[0,.075,.155,.24,.33,.43],
-          durations:[.055,.06,.065,.07,.08,.12],
-          freqs:[2450,2250,2050,1850,1650,1450],
-          ends:[1750,1600,1450,1280,1100,850],
-          gains:[.016,.015,.014,.013,.012,.011],
-          airGains:[.16,.15,.14,.13,.12,.11]
+        pipeResonance({
+          time: now,
+          duration: .23,
+          startHz: 4400,
+          endHz: 2750,
+          gain: .060,
+          q: 8.0,
+          airGain: .075,
+          secondRatio: 1.32,
+          secondGain: .030
         });
         break;
 
       case 6:
-        whistle({time:now,duration:.18,startHz:4400,endHz:3000,gain:.032});
-        noiseLayer({time:now,duration:.30,gain:.22,hp:500,bp:3900,q:.45,sweepTo:1300,sustain:.58});
-        flutter({
-          start:now+.17,
-          offsets:[0,.14,.30,.48],
-          durations:[.09,.11,.13,.20],
-          freqs:[2100,1800,1500,1250],
-          ends:[1350,1100,850,620],
-          gains:[.014,.013,.012,.010],
-          airGains:[.15,.14,.13,.12]
+        pipeResonance({
+          time: now,
+          duration: .25,
+          startHz: 4000,
+          endHz: 2550,
+          gain: .050,
+          q: 4.5,
+          airGain: .155
         });
         break;
 
       case 7:
-        whistle({time:now,duration:.15,startHz:4300,endHz:3100,gain:.031});
-        noiseLayer({time:now,duration:.17,gain:.13,hp:600,bp:4100,q:.55,sweepTo:2500});
-        flutter({
-          start:now+.08,
-          offsets:[0,.13,.28,.46],
-          durations:[.10,.11,.13,.30],
-          freqs:[2200,1900,1600,1350],
-          ends:[1450,1200,950,600],
-          gains:[.016,.014,.012,.010],
-          airGains:[.17,.155,.14,.16]
+        pipeResonance({
+          time: now,
+          duration: .30,
+          startHz: 4500,
+          endHz: 1900,
+          gain: .075,
+          q: 6.0,
+          airGain: .105,
+          secondRatio: .52,
+          secondGain: .020
         });
-        noiseLayer({time:now+.48,duration:.36,gain:.11,hp:450,bp:1900,q:.45,sweepTo:850,sustain:.42});
         break;
 
       case 8:
-        whistle({time:now,duration:.14,startHz:4900,endHz:3500,gain:.038});
-        noiseLayer({time:now,duration:.15,gain:.15,hp:900,bp:5200,q:.7,sweepTo:3100});
-        flutter({
-          start:now+.075,
-          offsets:[0,.105,.225,.365],
-          durations:[.075,.085,.10,.16],
-          freqs:[3100,2700,2300,1950],
-          ends:[2200,1900,1550,1100],
-          gains:[.018,.016,.014,.012],
-          airGains:[.16,.15,.135,.12],
-          qs:[1.0,.95,.9,.8]
+        pulsingPipe({
+          time: now,
+          duration: .24,
+          startHz: 4200,
+          endHz: 2700,
+          gain: .057
+        });
+        noiseLayer({
+          time: now,
+          duration: .27,
+          gain: .100,
+          hp: 600,
+          bp: 3900,
+          q: .45,
+          sweepTo: 2100
         });
         break;
 
       case 9:
-        whistle({time:now,duration:.20,startHz:4100,endHz:2850,gain:.030});
-        noiseLayer({time:now,duration:.28,gain:.20,hp:350,bp:3200,q:.45,sweepTo:1200});
-        flutter({
-          start:now+.14,
-          offsets:[0,.18,.39,.64],
-          durations:[.14,.16,.18,.28],
-          freqs:[1800,1550,1320,1120],
-          ends:[1100,900,720,520],
-          gains:[.014,.012,.011,.009],
-          airGains:[.23,.21,.19,.17],
-          qs:[.55,.55,.5,.45]
+        pipeResonance({
+          time: now,
+          duration: .22,
+          startHz: 4700,
+          endHz: 2950,
+          gain: .065,
+          q: 11.0,
+          airGain: .065,
+          secondRatio: .48,
+          secondGain: .026
         });
         break;
 
       case 10:
-        whistle({time:now,duration:.22,startHz:4800,endHz:3000,gain:.045});
-        noiseLayer({time:now,duration:.26,gain:.23,hp:600,bp:4700,q:.5,sweepTo:1600});
-        flutter({
-          start:now+.10,
-          offsets:[0,.10,.215,.345,.50],
-          durations:[.08,.09,.105,.13,.24],
-          freqs:[2700,2350,2000,1700,1400],
-          ends:[1900,1650,1350,1050,650],
-          gains:[.020,.018,.016,.014,.012],
-          airGains:[.20,.19,.175,.16,.15],
-          qs:[.8,.75,.7,.65,.55]
+        pipeResonance({
+          time: now,
+          duration: .30,
+          startHz: 4100,
+          endHz: 2100,
+          gain: .085,
+          q: 5.3,
+          airGain: .165,
+          secondRatio: .58,
+          secondGain: .030
         });
-        noiseLayer({time:now+.50,duration:.30,gain:.12,hp:450,bp:2100,q:.5,sweepTo:800});
+        noiseLayer({
+          time: now + .06,
+          duration: .25,
+          gain: .095,
+          hp: 450,
+          bp: 2500,
+          q: .4,
+          sweepTo: 1100
+        });
         break;
     }
+
+    bigValveFlutter(now + .14);
   }
 
   volume.addEventListener("input", () => {
@@ -485,13 +575,18 @@
   document.querySelectorAll("[data-v]").forEach(button => {
     button.addEventListener("click", async () => {
       await ensureAudio();
+
       const v = Number(button.dataset.v);
-      status.textContent = `Spiele Variante ${v} …`;
+
+      status.textContent =
+        `Spiele Pfeif-Variante ${v} …`;
+
       playVariant(v);
 
       setTimeout(() => {
-        status.textContent = `Variante ${v} gespielt.`;
-      }, 1100);
+        status.textContent =
+          `Variante ${v} gespielt.`;
+      }, 1200);
     });
   });
 })();
