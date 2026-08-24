@@ -2,6 +2,17 @@ window.VoltuneAudio = (() => {
   const clamp = (v, min, max) =>
     Math.max(min, Math.min(max, v));
 
+    const volumeCurve = (percent) => {
+      const normalized =
+        clamp(
+          Number(percent) / 100,
+          0,
+          1
+        );
+  
+      return normalized * normalized;
+    };
+
   let ctx = null;
   let master = null;
   let compressor = null;
@@ -644,11 +655,7 @@ function stop() {
     }
 
     const bovVolume =
-      clamp(
-        Number(bovPercent) / 100,
-        0,
-        1
-      );
+      volumeCurve(bovPercent);
     
     const pressureVolume =
       0.06 +
@@ -875,19 +882,8 @@ function triggerOverrun(
     return;
   }
 
-  const amount =
-    clamp(
-      Number(intensity) || 0,
-      0,
-      1
-    );
-
   const volume =
-    clamp(
-      Number(volumePercent) / 100,
-      0,
-      1
-    );
+    volumeCurve(volumePercent);
 
   if (
     amount <= 0.01 ||
@@ -1136,11 +1132,7 @@ function triggerShiftBurble(
     );
 
   const volumeAmount =
-    clamp(
-      Number(volumePercent) / 100,
-      0,
-      1
-    );
+    volumeCurve(volumePercent);
 
   if (volumeAmount <= 0.001) {
     return;
@@ -1443,11 +1435,7 @@ function triggerDownshiftBlip(
     );
 
   const volume =
-    clamp(
-      Number(volumePercent) / 100,
-      0,
-      1
-    );
+    volumeCurve(volumePercent);
 
   if (
     amount <= 0.01 ||
@@ -1661,19 +1649,19 @@ function triggerDownshiftBlip(
       Number(settings.pitch) / 10;
 
     const baseAmount =
-      Number(settings.baseVolume) / 100;
+      volumeCurve(settings.baseVolume);
 
     const inverterAmount =
-      Number(settings.inverterVolume) / 100;
+      volumeCurve(settings.inverterVolume);
 
     const driveAmount =
-      Number(settings.driveVolume) / 100;
+      volumeCurve(settings.driveVolume);
 
     const regenAmount =
-      Number(settings.regenVolume) / 100;
+      volumeCurve(settings.regenVolume);
 
     const airAmount =
-      Number(settings.airVolume) / 100;
+      volumeCurve(settings.airVolume);
 
     const speedN =
       clamp(
