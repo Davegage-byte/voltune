@@ -1872,13 +1872,14 @@ function triggerOverrun(
   }
 
   // Schubknallen ganz kurz zurückhalten.
-// Dadurch bekommt ein unmittelbar danach
-// erkannter DSG-Gangwechsel noch Vorrang.
-  pendingOverrun = {
-    intensity: amount,
-    volumePercent,
-    drivingStyle
-  };
+  // Dadurch bekommt ein unmittelbar danach
+  // erkannter DSG-Gangwechsel noch Vorrang.
+  if (!fromQueue) {
+    pendingOverrun = {
+      intensity: amount,
+      volumePercent,
+      drivingStyle
+    };
 
   setTimeout(() => {
     const queued =
