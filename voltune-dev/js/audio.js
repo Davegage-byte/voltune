@@ -159,7 +159,7 @@ window.VoltuneAudio = (() => {
     // läuft aber weiterhin durch Lautstärkeregler
     // und Limiter.
     overrunBus = ctx.createGain();
-    overrunBus.gain.value = 2.0;
+    overrunBus.gain.value = 3.0;
     
     // Letzte Schutzstufe direkt vor dem Ausgang.
     // Sie fängt nur sehr hohe Spitzen ab.
