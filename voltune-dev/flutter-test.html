@@ -3,160 +3,525 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Voltune – Pipe Whistle Flutter Lab</title>
-
+  <title>Voltune – Turbo Flutter Sound Editor</title>
   <style>
     :root {
       color-scheme: dark;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #05070a;
-      color: #f5f7fb;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:#05070a;
+      color:#f4f7fb;
     }
-
-    * { box-sizing: border-box; }
-
+    * { box-sizing:border-box; }
     body {
-      margin: 0;
-      min-height: 100vh;
+      margin:0;
+      min-height:100vh;
       background:
-        radial-gradient(circle at 50% -10%, #172235 0, #070a0f 45%, #040609 100%);
+        radial-gradient(circle at 50% -10%,#172238 0,#080b11 44%,#040609 100%);
     }
-
     main {
-      width: min(880px, calc(100% - 28px));
-      margin: 0 auto;
-      padding: 26px 0 42px;
+      width:min(1050px,calc(100% - 24px));
+      margin:0 auto;
+      padding:24px 0 48px;
     }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(28px, 5vw, 44px);
+    h1 { margin:0 0 6px; font-size:clamp(28px,4vw,44px); }
+    .lead { margin:0 0 18px; color:#a8b4c3; line-height:1.5; }
+    .toolbar {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:14px;
+      margin-bottom:18px;
+      border:1px solid #2a3442;
+      border-radius:14px;
+      background:rgba(16,22,31,.9);
     }
-
-    .lead {
-      margin: 8px 0 22px;
-      color: #a8b3c1;
-      line-height: 1.5;
-      max-width: 760px;
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 20px;
-      padding: 12px 14px;
-      border: 1px solid #283240;
-      border-radius: 14px;
-      background: rgba(15, 20, 29, .82);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
     button {
-      min-height: 92px;
-      padding: 15px 16px;
-      border: 1px solid #2b3644;
-      border-radius: 14px;
-      background: rgba(18, 25, 35, .94);
-      color: inherit;
-      text-align: left;
-      cursor: pointer;
+      min-height:44px;
+      padding:0 15px;
+      border:1px solid #364355;
+      border-radius:10px;
+      background:#18212d;
+      color:#f4f7fb;
+      font-weight:650;
+      cursor:pointer;
     }
-
-    button:active {
-      transform: scale(.988);
+    button:hover { background:#202c3b; }
+    button.primary { background:#24364d; border-color:#49627e; }
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
     }
-
-    button strong {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 17px;
+    section {
+      min-width:0;
+      border:1px solid #283240;
+      border-radius:14px;
+      background:rgba(14,19,27,.88);
+      padding:14px;
     }
-
-    button small {
-      color: #9aa7b7;
-      line-height: 1.35;
+    section h2 {
+      margin:0 0 12px;
+      font-size:18px;
     }
-
+    section p {
+      margin:-5px 0 12px;
+      color:#8492a4;
+      font-size:12px;
+      line-height:1.4;
+    }
+    .control {
+      display:grid;
+      grid-template-columns:minmax(145px,1fr) minmax(130px,1.45fr) 72px;
+      gap:10px;
+      align-items:center;
+      min-height:42px;
+      border-top:1px solid rgba(255,255,255,.045);
+    }
+    .control:first-of-type { border-top:0; }
+    .control label {
+      font-size:13px;
+      color:#d5dce5;
+    }
+    input[type="range"] { width:100%; }
+    output {
+      text-align:right;
+      color:#b9c6d5;
+      font-variant-numeric:tabular-nums;
+      font-size:13px;
+    }
+    .wide { grid-column:1 / -1; }
+    .result {
+      margin-top:16px;
+      border:1px solid #2a3442;
+      border-radius:14px;
+      padding:14px;
+      background:rgba(12,17,24,.92);
+    }
+    .result-head {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .result h2 { margin:0; font-size:18px; }
+    textarea {
+      width:100%;
+      min-height:230px;
+      resize:vertical;
+      border:1px solid #303d4d;
+      border-radius:10px;
+      padding:12px;
+      background:#080c12;
+      color:#dbe5f0;
+      font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;
+    }
     #status {
-      margin-top: 20px;
-      min-height: 24px;
-      color: #cbd4df;
+      min-height:22px;
+      margin:14px 2px 0;
+      color:#b8c5d5;
     }
-
-    .note {
-      margin-top: 18px;
-      padding-top: 16px;
-      border-top: 1px solid #202936;
-      color: #8793a4;
-      font-size: 13px;
-      line-height: 1.5;
+    .hint {
+      margin-top:10px;
+      color:#7f8c9c;
+      font-size:12px;
+      line-height:1.45;
     }
-
-    @media (max-width: 680px) {
-      .grid {
-        grid-template-columns: 1fr;
+    @media(max-width:760px) {
+      .grid { grid-template-columns:1fr; }
+      .control {
+        grid-template-columns:1fr 1.2fr 64px;
       }
-
-      .controls {
-        grid-template-columns: 1fr;
+    }
+    @media(max-width:480px) {
+      main { width:min(100% - 14px,1050px); padding-top:14px; }
+      .control {
+        grid-template-columns:1fr 64px;
+        padding:8px 0;
       }
+      .control label { grid-column:1 / -1; }
+      .control input { grid-column:1; }
+      .control output { grid-column:2; }
+      .toolbar button { flex:1 1 140px; }
     }
   </style>
 </head>
-
 <body>
 <main>
-  <h1>Pipe Whistle Flutter Lab</h1>
-
+  <h1>Turbo Flutter Sound Editor</h1>
   <p class="lead">
-    Alle Varianten verwenden denselben tiefen „Big Valve“-Flutter.
-    Nur das Pfeifen/Soggeräusch ändert sich. Schwerpunkt:
-    Luft durch Rohr, Ansaugung, Unterdruck und Resonanz statt sauberem Piepton.
+    Ausgangspunkt: dein favorisiertes Big-Valve-Flutter + das breite Sogpfeifen.
+    Stell alles frei ein und schick mir am Ende einfach den Werteblock unten.
   </p>
 
-  <div class="controls">
-    <label for="volume">Test-Lautstärke</label>
-    <input id="volume" type="range" min="10" max="100" value="70">
-    <span id="volumeLabel">70 %</span>
+  <div class="toolbar">
+    <button type="button" class="primary" id="playAll">▶ Gesamt</button>
+    <button type="button" id="playAir">Luft solo</button>
+    <button type="button" id="playWhistle">Pfeifen solo</button>
+    <button type="button" id="playFlutter">Flutter solo</button>
+    <button type="button" id="reset">Startwerte</button>
   </div>
 
   <div class="grid">
-    <button data-v="1"><strong>1 · Vacuum Pipe</strong><small>Hohles Sogpfeifen, weich und luftig</small></button>
-    <button data-v="2"><strong>2 · Narrow Tube</strong><small>Engeres Rohr, höher und fokussierter</small></button>
-    <button data-v="3"><strong>3 · Hollow Intake</strong><small>Breites Ansaugheulen mit Rohrresonanz</small></button>
-    <button data-v="4"><strong>4 · Deep Suction</strong><small>Tieferes Unterdruck-Pfeifen, großer Ansaugtrakt</small></button>
-    <button data-v="5"><strong>5 · Twin Resonance</strong><small>Zwei überlagerte Rohrresonanzen</small></button>
-    <button data-v="6"><strong>6 · Breathy Whistle</strong><small>Sehr viel Luft, Pfeifen nur als Resonanz darin</small></button>
-    <button data-v="7"><strong>7 · Intake Howl</strong><small>Mehr Heulen, Frequenz zieht deutlich nach unten</small></button>
-    <button data-v="8"><strong>8 · Pulsing Vacuum</strong><small>Leicht pulsierendes Soggeräusch vor dem Flutter</small></button>
-    <button data-v="9"><strong>9 · Metal Pipe Air</strong><small>Etwas härtere, metallische Rohrresonanz</small></button>
-    <button data-v="10"><strong>10 · Big Turbo Suction</strong><small>Breit, tief, luftig und maximal präsent</small></button>
+
+    <section>
+      <h2>Gesamt</h2>
+      <p>Grundpegel und zeitlicher Aufbau des kompletten Effekts.</p>
+
+      <div class="control">
+        <label for="master">Test-Lautstärke</label>
+        <input id="master" type="range" min="10" max="100" step="1" value="70">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterDelay">Flutter-Verzögerung</label>
+        <input id="flutterDelay" type="range" min="0" max="300" step="5" value="140">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="randomness">Zufälligkeit</label>
+        <input id="randomness" type="range" min="0" max="30" step="1" value="4">
+        <output></output>
+      </div>
+    </section>
+
+    <section>
+      <h2>Haupt-Luftstoß</h2>
+      <p>Das breite „Fschhhh“, bevor bzw. während das Ventil flattert.</p>
+
+      <div class="control">
+        <label for="airVolume">Luft-Lautstärke</label>
+        <input id="airVolume" type="range" min="0" max="100" step="1" value="72">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="airDuration">Luft-Dauer</label>
+        <input id="airDuration" type="range" min="50" max="700" step="10" value="300">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="airStartHz">Luft Startfrequenz</label>
+        <input id="airStartHz" type="range" min="700" max="7000" step="50" value="4100">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="airEndHz">Luft Endfrequenz</label>
+        <input id="airEndHz" type="range" min="300" max="5000" step="50" value="2100">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="airQ">Luft-Filterbreite</label>
+        <input id="airQ" type="range" min="10" max="180" step="5" value="45">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="airHighpass">Tiefe Luft abschneiden</label>
+        <input id="airHighpass" type="range" min="50" max="1800" step="25" value="450">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="airAttack">Luft Attack</label>
+        <input id="airAttack" type="range" min="1" max="80" step="1" value="10">
+        <output></output>
+      </div>
+    </section>
+
+    <section>
+      <h2>Sog-/Rohrpfeifen</h2>
+      <p>Resonierendes Rauschen statt sauberem Sinus-Piepen.</p>
+
+      <div class="control">
+        <label for="whistleVolume">Pfeifen-Lautstärke</label>
+        <input id="whistleVolume" type="range" min="0" max="100" step="1" value="52">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="whistleDuration">Pfeifen-Dauer</label>
+        <input id="whistleDuration" type="range" min="50" max="700" step="10" value="300">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="whistleStartHz">Pfeifen Start</label>
+        <input id="whistleStartHz" type="range" min="800" max="8000" step="50" value="4100">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="whistleEndHz">Pfeifen Ende</label>
+        <input id="whistleEndHz" type="range" min="400" max="6000" step="50" value="2100">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="whistleQ">Rohr-Resonanz</label>
+        <input id="whistleQ" type="range" min="10" max="180" step="5" value="53">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="whistleAir">Luftanteil im Pfeifen</label>
+        <input id="whistleAir" type="range" min="0" max="100" step="1" value="78">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="secondResVolume">2. Resonanz Lautstärke</label>
+        <input id="secondResVolume" type="range" min="0" max="100" step="1" value="18">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="secondResRatio">2. Resonanz Verhältnis</label>
+        <input id="secondResRatio" type="range" min="30" max="180" step="1" value="58">
+        <output></output>
+      </div>
+    </section>
+
+    <section>
+      <h2>Flutter / Ventilstöße</h2>
+      <p>Anzahl, Rhythmus, Länge und Abfall der einzelnen „fü-fü-fü“-Stöße.</p>
+
+      <div class="control">
+        <label for="flutterCount">Anzahl Zischstöße</label>
+        <input id="flutterCount" type="range" min="1" max="10" step="1" value="4">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterSpacing">Abstand erster Stöße</label>
+        <input id="flutterSpacing" type="range" min="25" max="260" step="5" value="160">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="spacingGrowth">Abstand-Zunahme</label>
+        <input id="spacingGrowth" type="range" min="50" max="180" step="5" value="110">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterDuration">Erste Stoßdauer</label>
+        <input id="flutterDuration" type="range" min="25" max="280" step="5" value="130">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="durationGrowth">Dauer-Zunahme</label>
+        <input id="durationGrowth" type="range" min="50" max="180" step="5" value="108">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="lastTail">Letzter Stoß länger</label>
+        <input id="lastTail" type="range" min="50" max="300" step="5" value="150">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterVolume">Flutter-Luftstärke</label>
+        <input id="flutterVolume" type="range" min="0" max="100" step="1" value="78">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="volumeDecay">Lautstärke-Abfall</label>
+        <input id="volumeDecay" type="range" min="40" max="100" step="1" value="90">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterStartHz">Flutter Startfrequenz</label>
+        <input id="flutterStartHz" type="range" min="500" max="5000" step="50" value="1900">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="frequencyDecay">Frequenz-Abfall je Stoß</label>
+        <input id="frequencyDecay" type="range" min="45" max="100" step="1" value="87">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterEndRatio">Frequenzfall im Stoß</label>
+        <input id="flutterEndRatio" type="range" min="30" max="95" step="1" value="63">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterQ">Flutter-Filterbreite</label>
+        <input id="flutterQ" type="range" min="10" max="160" step="5" value="55">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterHighpass">Flutter Highpass</label>
+        <input id="flutterHighpass" type="range" min="50" max="1600" step="25" value="420">
+        <output></output>
+      </div>
+
+      <div class="control">
+        <label for="flutterWhistle">Pfeifton in Stößen</label>
+        <input id="flutterWhistle" type="range" min="0" max="100" step="1" value="0">
+        <output></output>
+      </div>
+    </section>
   </div>
 
   <div id="status">Bereit.</div>
 
-  <div class="note">
-    Wenn dir z. B. „6 hat die richtige Luft, aber 3 die bessere Tonhöhe“ gefällt,
-    können wir beide Eigenschaften danach direkt zusammenbauen.
+  <div class="result">
+    <div class="result-head">
+      <h2>Deine aktuellen Werte</h2>
+      <button type="button" id="copyValues">Werte kopieren</button>
+    </div>
+    <textarea id="values" readonly></textarea>
+    <div class="hint">
+      Wenn der Sound passt, kopiere diesen kompletten Block und schick ihn mir.
+      Daraus kann ich die Voltune-Version praktisch 1:1 bauen.
+    </div>
   </div>
 </main>
 
 <script>
 (() => {
   let ctx = null;
-  let master = null;
+  let masterGain = null;
   let noiseBuffer = null;
 
-  const volume = document.getElementById("volume");
-  const volumeLabel = document.getElementById("volumeLabel");
+  const ids = [
+    "master","flutterDelay","randomness",
+    "airVolume","airDuration","airStartHz","airEndHz","airQ","airHighpass","airAttack",
+    "whistleVolume","whistleDuration","whistleStartHz","whistleEndHz","whistleQ","whistleAir",
+    "secondResVolume","secondResRatio",
+    "flutterCount","flutterSpacing","spacingGrowth","flutterDuration","durationGrowth","lastTail",
+    "flutterVolume","volumeDecay","flutterStartHz","frequencyDecay","flutterEndRatio",
+    "flutterQ","flutterHighpass","flutterWhistle"
+  ];
+
+  const defaults = {};
+  ids.forEach(id => {
+    defaults[id] = document.getElementById(id).value;
+  });
+
+  const units = {
+    master:" %",
+    flutterDelay:" ms",
+    randomness:" %",
+    airVolume:" %",
+    airDuration:" ms",
+    airStartHz:" Hz",
+    airEndHz:" Hz",
+    airQ:"",
+    airHighpass:" Hz",
+    airAttack:" ms",
+    whistleVolume:" %",
+    whistleDuration:" ms",
+    whistleStartHz:" Hz",
+    whistleEndHz:" Hz",
+    whistleQ:"",
+    whistleAir:" %",
+    secondResVolume:" %",
+    secondResRatio:" %",
+    flutterCount:"",
+    flutterSpacing:" ms",
+    spacingGrowth:" %",
+    flutterDuration:" ms",
+    durationGrowth:" %",
+    lastTail:" %",
+    flutterVolume:" %",
+    volumeDecay:" %",
+    flutterStartHz:" Hz",
+    frequencyDecay:" %",
+    flutterEndRatio:" %",
+    flutterQ:"",
+    flutterHighpass:" Hz",
+    flutterWhistle:" %"
+  };
+
+  const labels = {
+    master:"master",
+    flutterDelay:"flutterDelayMs",
+    randomness:"randomnessPercent",
+    airVolume:"airVolume",
+    airDuration:"airDurationMs",
+    airStartHz:"airStartHz",
+    airEndHz:"airEndHz",
+    airQ:"airQ",
+    airHighpass:"airHighpassHz",
+    airAttack:"airAttackMs",
+    whistleVolume:"whistleVolume",
+    whistleDuration:"whistleDurationMs",
+    whistleStartHz:"whistleStartHz",
+    whistleEndHz:"whistleEndHz",
+    whistleQ:"whistleQ",
+    whistleAir:"whistleAir",
+    secondResVolume:"secondResVolume",
+    secondResRatio:"secondResRatioPercent",
+    flutterCount:"flutterCount",
+    flutterSpacing:"flutterSpacingMs",
+    spacingGrowth:"spacingGrowthPercent",
+    flutterDuration:"flutterDurationMs",
+    durationGrowth:"durationGrowthPercent",
+    lastTail:"lastTailPercent",
+    flutterVolume:"flutterVolume",
+    volumeDecay:"volumeDecayPercent",
+    flutterStartHz:"flutterStartHz",
+    frequencyDecay:"frequencyDecayPercent",
+    flutterEndRatio:"flutterEndRatioPercent",
+    flutterQ:"flutterQ",
+    flutterHighpass:"flutterHighpassHz",
+    flutterWhistle:"flutterWhistle"
+  };
+
   const status = document.getElementById("status");
+  const valuesBox = document.getElementById("values");
+
+  function val(id) {
+    return Number(document.getElementById(id).value);
+  }
+
+  function p(id) {
+    return val(id) / 100;
+  }
+
+  function updateUI() {
+    ids.forEach(id => {
+      const input = document.getElementById(id);
+      const out = input.parentElement.querySelector("output");
+
+      let display = input.value;
+
+      if (id === "airQ" || id === "whistleQ" || id === "flutterQ") {
+        display = (Number(input.value) / 10).toFixed(1);
+      }
+
+      if (id === "secondResRatio") {
+        display = (Number(input.value) / 100).toFixed(2) + "×";
+      } else {
+        display += units[id] || "";
+      }
+
+      out.textContent = display;
+    });
+
+    const lines = [
+      "VOLTUNE_TURBO_FLUTTER_V1",
+      ...ids.map(id => `${labels[id]}=${document.getElementById(id).value}`)
+    ];
+
+    valuesBox.value = lines.join("\n");
+  }
 
   function createNoiseBuffer(seconds = 2) {
     const length = Math.floor(ctx.sampleRate * seconds);
@@ -175,8 +540,7 @@
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       ctx = new AudioCtx();
 
-      master = ctx.createGain();
-      master.gain.value = 0.72;
+      masterGain = ctx.createGain();
 
       const limiter = ctx.createDynamicsCompressor();
       limiter.threshold.value = -1;
@@ -185,59 +549,54 @@
       limiter.attack.value = 0.001;
       limiter.release.value = 0.08;
 
-      master.connect(limiter).connect(ctx.destination);
+      masterGain.connect(limiter).connect(ctx.destination);
       noiseBuffer = createNoiseBuffer();
     }
+
+    masterGain.gain.value = p("master");
 
     if (ctx.state === "suspended") {
       await ctx.resume();
     }
   }
 
-  function level() {
-    return Number(volume.value) / 100;
-  }
-
-  function noiseLayer({
+  function noiseBurst({
     time,
     duration,
     gain,
-    hp = 350,
-    bp = 2400,
-    q = 0.6,
-    sweepTo = null,
-    attack = 0.004,
-    sustain = 0.45
+    highpass,
+    startHz,
+    endHz,
+    q,
+    attack,
+    sustain = 0.5
   }) {
-    const source = ctx.createBufferSource();
-    source.buffer = noiseBuffer;
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuffer;
 
-    const highpass = ctx.createBiquadFilter();
-    highpass.type = "highpass";
-    highpass.frequency.value = hp;
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = Math.max(20, highpass);
 
-    const bandpass = ctx.createBiquadFilter();
-    bandpass.type = "bandpass";
-    bandpass.Q.value = q;
-    bandpass.frequency.setValueAtTime(bp, time);
-
-    if (sweepTo) {
-      bandpass.frequency.exponentialRampToValueAtTime(
-        sweepTo,
-        time + duration
-      );
-    }
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.Q.value = q;
+    bp.frequency.setValueAtTime(Math.max(30, startHz), time);
+    bp.frequency.exponentialRampToValueAtTime(
+      Math.max(30, endHz),
+      time + duration
+    );
 
     const g = ctx.createGain();
-    const peak = Math.max(0.0002, gain * level());
+    const peak = Math.max(0.0002, gain);
 
     g.gain.setValueAtTime(0.0001, time);
     g.gain.exponentialRampToValueAtTime(
       peak,
-      time + attack
+      time + Math.min(attack, duration * 0.35)
     );
     g.gain.exponentialRampToValueAtTime(
-      peak * 0.68,
+      Math.max(0.0002, peak * 0.68),
       time + duration * sustain
     );
     g.gain.exponentialRampToValueAtTime(
@@ -245,350 +604,253 @@
       time + duration
     );
 
-    source
-      .connect(highpass)
-      .connect(bandpass)
-      .connect(g)
-      .connect(master);
-
-    source.start(time);
-    source.stop(time + duration + 0.03);
+    src.connect(hp).connect(bp).connect(g).connect(masterGain);
+    src.start(time);
+    src.stop(time + duration + 0.03);
   }
 
-  function pipeResonance({
+  function resonanceBurst({
     time,
     duration,
+    gain,
     startHz,
     endHz,
-    gain,
-    q = 7,
-    airGain = 0.05,
-    secondRatio = null,
-    secondGain = 0
+    q,
+    highpass = 500
   }) {
-    const source = ctx.createBufferSource();
-    source.buffer = noiseBuffer;
-
-    const hp = ctx.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.value = 500;
-
-    const resonance = ctx.createBiquadFilter();
-    resonance.type = "bandpass";
-    resonance.Q.value = q;
-    resonance.frequency.setValueAtTime(startHz, time);
-    resonance.frequency.exponentialRampToValueAtTime(
+    noiseBurst({
+      time,
+      duration,
+      gain,
+      highpass,
+      startHz,
       endHz,
-      time + duration
-    );
-
-    const g = ctx.createGain();
-    const peak = Math.max(0.0002, gain * level());
-
-    g.gain.setValueAtTime(0.0001, time);
-    g.gain.exponentialRampToValueAtTime(
-      peak,
-      time + 0.012
-    );
-    g.gain.exponentialRampToValueAtTime(
-      peak * 0.78,
-      time + duration * 0.45
-    );
-    g.gain.exponentialRampToValueAtTime(
-      0.0001,
-      time + duration
-    );
-
-    source
-      .connect(hp)
-      .connect(resonance)
-      .connect(g)
-      .connect(master);
-
-    if (secondRatio && secondGain > 0) {
-      const resonance2 = ctx.createBiquadFilter();
-      resonance2.type = "bandpass";
-      resonance2.Q.value = q * 0.75;
-      resonance2.frequency.setValueAtTime(
-        startHz * secondRatio,
-        time
-      );
-      resonance2.frequency.exponentialRampToValueAtTime(
-        endHz * secondRatio,
-        time + duration
-      );
-
-      const g2 = ctx.createGain();
-      const peak2 = Math.max(
-        0.0002,
-        secondGain * level()
-      );
-
-      g2.gain.setValueAtTime(0.0001, time);
-      g2.gain.exponentialRampToValueAtTime(
-        peak2,
-        time + 0.015
-      );
-      g2.gain.exponentialRampToValueAtTime(
-        0.0001,
-        time + duration
-      );
-
-      source
-        .connect(resonance2)
-        .connect(g2)
-        .connect(master);
-    }
-
-    if (airGain > 0) {
-      noiseLayer({
-        time,
-        duration,
-        gain: airGain,
-        hp: 650,
-        bp: startHz * 0.9,
-        q: 0.45,
-        sweepTo: endHz * 0.75,
-        sustain: 0.58
-      });
-    }
-
-    source.start(time);
-    source.stop(time + duration + 0.03);
+      q,
+      attack:0.010,
+      sustain:0.48
+    });
   }
 
-  function pulsingPipe({
+  function toneAccent({
     time,
     duration,
     startHz,
     endHz,
     gain
   }) {
-    const pulses = 5;
-    const gap = duration / pulses;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
 
-    for (let i = 0; i < pulses; i++) {
-      const p = i / (pulses - 1);
-      pipeResonance({
-        time: time + i * gap,
-        duration: gap * 0.78,
-        startHz: startHz * (1 - p * 0.12),
-        endHz: endHz * (1 - p * 0.10),
-        gain: gain * (1 - p * 0.08),
-        q: 6.5,
-        airGain: 0.035
+    osc.frequency.setValueAtTime(Math.max(30,startHz),time);
+    osc.frequency.exponentialRampToValueAtTime(
+      Math.max(30,endHz),
+      time + duration
+    );
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001,time);
+    g.gain.exponentialRampToValueAtTime(
+      Math.max(0.0002,gain),
+      time + 0.004
+    );
+    g.gain.exponentialRampToValueAtTime(
+      0.0001,
+      time + duration
+    );
+
+    osc.connect(g).connect(masterGain);
+    osc.start(time);
+    osc.stop(time + duration + 0.02);
+  }
+
+  function playAirLayer(now) {
+    noiseBurst({
+      time:now,
+      duration:val("airDuration") / 1000,
+      gain:p("airVolume") * 0.28,
+      highpass:val("airHighpass"),
+      startHz:val("airStartHz"),
+      endHz:val("airEndHz"),
+      q:val("airQ") / 10,
+      attack:val("airAttack") / 1000,
+      sustain:0.55
+    });
+  }
+
+  function playWhistleLayer(now) {
+    const duration = val("whistleDuration") / 1000;
+    const volume = p("whistleVolume");
+
+    resonanceBurst({
+      time:now,
+      duration,
+      gain:volume * 0.15,
+      startHz:val("whistleStartHz"),
+      endHz:val("whistleEndHz"),
+      q:val("whistleQ") / 10,
+      highpass:500
+    });
+
+    const airAmount = p("whistleAir");
+
+    if (airAmount > 0.001) {
+      noiseBurst({
+        time:now,
+        duration,
+        gain:airAmount * volume * 0.16,
+        highpass:600,
+        startHz:val("whistleStartHz") * 0.90,
+        endHz:val("whistleEndHz") * 0.72,
+        q:0.45,
+        attack:0.010,
+        sustain:0.58
+      });
+    }
+
+    const secondVolume = p("secondResVolume");
+
+    if (secondVolume > 0.001) {
+      const ratio = val("secondResRatio") / 100;
+
+      resonanceBurst({
+        time:now,
+        duration,
+        gain:secondVolume * volume * 0.10,
+        startHz:val("whistleStartHz") * ratio,
+        endHz:val("whistleEndHz") * ratio,
+        q:(val("whistleQ") / 10) * 0.72,
+        highpass:250
       });
     }
   }
 
-  function bigValveFlutter(start) {
-    noiseLayer({
-      time: start,
-      duration: .16,
-      gain: .15,
-      hp: 380,
-      bp: 2900,
-      q: .5,
-      sweepTo: 1700
-    });
+  function playFlutterLayer(now) {
+    const count = val("flutterCount");
+    const delay = val("flutterDelay") / 1000;
+    const randomness = p("randomness");
 
-    const offsets = [0, .16, .34, .55];
-    const durations = [.13, .14, .16, .24];
-    const freqs = [1900, 1650, 1400, 1180];
-    const ends = [1200, 1000, 800, 580];
-    const airGains = [.22, .20, .18, .16];
+    let offset = delay;
+    let spacing = val("flutterSpacing") / 1000;
+    let duration = val("flutterDuration") / 1000;
+    let frequency = val("flutterStartHz");
+    let strength = p("flutterVolume");
 
-    offsets.forEach((offset, i) => {
-      noiseLayer({
-        time: start + .085 + offset,
-        duration: durations[i],
-        gain: airGains[i],
-        hp: 420,
-        bp: freqs[i],
-        q: [.6,.6,.55,.5][i],
-        sweepTo: ends[i],
-        sustain: .38
+    const spacingGrowth = p("spacingGrowth");
+    const durationGrowth = p("durationGrowth");
+    const frequencyDecay = p("frequencyDecay");
+    const volumeDecay = p("volumeDecay");
+    const endRatio = p("flutterEndRatio");
+    const lastTail = p("lastTail");
+    const whistleAmount = p("flutterWhistle");
+
+    for (let i = 0; i < count; i++) {
+      const isLast = i === count - 1;
+
+      let thisDuration = duration;
+
+      if (isLast) {
+        thisDuration *= lastTail;
+      }
+
+      const randomPitch =
+        1 + (Math.random() * 2 - 1) * randomness * 0.12;
+
+      const randomTime =
+        (Math.random() * 2 - 1) * randomness * 0.018;
+
+      const t = now + Math.max(0, offset + randomTime);
+
+      noiseBurst({
+        time:t,
+        duration:thisDuration,
+        gain:strength * 0.29,
+        highpass:val("flutterHighpass"),
+        startHz:frequency * randomPitch,
+        endHz:Math.max(
+          120,
+          frequency * endRatio * randomPitch
+        ),
+        q:val("flutterQ") / 10,
+        attack:0.004,
+        sustain:0.38
       });
-    });
+
+      if (whistleAmount > 0.001) {
+        toneAccent({
+          time:t,
+          duration:thisDuration * 0.75,
+          startHz:frequency * 1.15,
+          endHz:frequency * endRatio * 0.82,
+          gain:whistleAmount * strength * 0.035
+        });
+      }
+
+      offset += spacing;
+      spacing *= spacingGrowth;
+      duration *= durationGrowth;
+      frequency *= frequencyDecay;
+      strength *= volumeDecay;
+    }
   }
 
-  function playVariant(v) {
+  async function play(mode) {
+    await ensureAudio();
     const now = ctx.currentTime + 0.03;
 
-    switch (v) {
-      case 1:
-        pipeResonance({
-          time: now,
-          duration: .22,
-          startHz: 4300,
-          endHz: 2850,
-          gain: .070,
-          q: 7.5,
-          airGain: .085
-        });
-        break;
-
-      case 2:
-        pipeResonance({
-          time: now,
-          duration: .20,
-          startHz: 5200,
-          endHz: 3450,
-          gain: .062,
-          q: 9.0,
-          airGain: .070
-        });
-        break;
-
-      case 3:
-        pipeResonance({
-          time: now,
-          duration: .24,
-          startHz: 3900,
-          endHz: 2450,
-          gain: .080,
-          q: 5.0,
-          airGain: .110,
-          secondRatio: .56,
-          secondGain: .025
-        });
-        break;
-
-      case 4:
-        pipeResonance({
-          time: now,
-          duration: .26,
-          startHz: 3200,
-          endHz: 1850,
-          gain: .085,
-          q: 5.5,
-          airGain: .120,
-          secondRatio: .62,
-          secondGain: .028
-        });
-        break;
-
-      case 5:
-        pipeResonance({
-          time: now,
-          duration: .23,
-          startHz: 4400,
-          endHz: 2750,
-          gain: .060,
-          q: 8.0,
-          airGain: .075,
-          secondRatio: 1.32,
-          secondGain: .030
-        });
-        break;
-
-      case 6:
-        pipeResonance({
-          time: now,
-          duration: .25,
-          startHz: 4000,
-          endHz: 2550,
-          gain: .050,
-          q: 4.5,
-          airGain: .155
-        });
-        break;
-
-      case 7:
-        pipeResonance({
-          time: now,
-          duration: .30,
-          startHz: 4500,
-          endHz: 1900,
-          gain: .075,
-          q: 6.0,
-          airGain: .105,
-          secondRatio: .52,
-          secondGain: .020
-        });
-        break;
-
-      case 8:
-        pulsingPipe({
-          time: now,
-          duration: .24,
-          startHz: 4200,
-          endHz: 2700,
-          gain: .057
-        });
-        noiseLayer({
-          time: now,
-          duration: .27,
-          gain: .100,
-          hp: 600,
-          bp: 3900,
-          q: .45,
-          sweepTo: 2100
-        });
-        break;
-
-      case 9:
-        pipeResonance({
-          time: now,
-          duration: .22,
-          startHz: 4700,
-          endHz: 2950,
-          gain: .065,
-          q: 11.0,
-          airGain: .065,
-          secondRatio: .48,
-          secondGain: .026
-        });
-        break;
-
-      case 10:
-        pipeResonance({
-          time: now,
-          duration: .30,
-          startHz: 4100,
-          endHz: 2100,
-          gain: .085,
-          q: 5.3,
-          airGain: .165,
-          secondRatio: .58,
-          secondGain: .030
-        });
-        noiseLayer({
-          time: now + .06,
-          duration: .25,
-          gain: .095,
-          hp: 450,
-          bp: 2500,
-          q: .4,
-          sweepTo: 1100
-        });
-        break;
+    if (mode === "all" || mode === "air") {
+      playAirLayer(now);
     }
 
-    bigValveFlutter(now + .14);
+    if (mode === "all" || mode === "whistle") {
+      playWhistleLayer(now);
+    }
+
+    if (mode === "all" || mode === "flutter") {
+      playFlutterLayer(now);
+    }
+
+    status.textContent =
+      mode === "all"
+        ? "Gesamtsound gespielt."
+        : mode === "air"
+          ? "Luft-Layer gespielt."
+          : mode === "whistle"
+            ? "Pfeif-Layer gespielt."
+            : "Flutter-Layer gespielt.";
   }
 
-  volume.addEventListener("input", () => {
-    volumeLabel.textContent = `${volume.value} %`;
+  ids.forEach(id => {
+    document.getElementById(id).addEventListener("input", updateUI);
   });
 
-  document.querySelectorAll("[data-v]").forEach(button => {
-    button.addEventListener("click", async () => {
-      await ensureAudio();
+  document.getElementById("playAll").addEventListener("click", () => play("all"));
+  document.getElementById("playAir").addEventListener("click", () => play("air"));
+  document.getElementById("playWhistle").addEventListener("click", () => play("whistle"));
+  document.getElementById("playFlutter").addEventListener("click", () => play("flutter"));
 
-      const v = Number(button.dataset.v);
-
-      status.textContent =
-        `Spiele Pfeif-Variante ${v} …`;
-
-      playVariant(v);
-
-      setTimeout(() => {
-        status.textContent =
-          `Variante ${v} gespielt.`;
-      }, 1200);
+  document.getElementById("reset").addEventListener("click", () => {
+    ids.forEach(id => {
+      document.getElementById(id).value = defaults[id];
     });
+    updateUI();
+    status.textContent = "Startwerte wiederhergestellt.";
   });
+
+  document.getElementById("copyValues").addEventListener("click", async () => {
+    const text = valuesBox.value;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      status.textContent = "Werte kopiert.";
+    } catch (error) {
+      valuesBox.focus();
+      valuesBox.select();
+      document.execCommand("copy");
+      status.textContent = "Werte zum Kopieren markiert.";
+    }
+  });
+
+  updateUI();
 })();
 </script>
 </body>
