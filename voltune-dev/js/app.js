@@ -1026,10 +1026,16 @@ regenFxIntensity =
         0.75
       );
 
-    accelerationFxCtx.strokeStyle =
-      `rgba(255, 255, 255, ${alpha})`;
-
-    accelerationFxCtx.stroke();
+      const accelerationFxLightTheme =
+        document.documentElement.dataset.theme ===
+        "light";
+      
+      accelerationFxCtx.strokeStyle =
+        accelerationFxLightTheme
+          ? `rgba(42, 72, 100, ${alpha * 0.82})`
+          : `rgba(255, 255, 255, ${alpha})`;
+      
+      accelerationFxCtx.stroke();
   }
 // =========================
 // Rekuperations-Ringe
