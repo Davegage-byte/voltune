@@ -1024,7 +1024,7 @@ function triggerTurboFlutter(
       .connect(highpass)
       .connect(bandpass)
       .connect(gainNode)
-      .connect(loudnessGain);
+      .connect(master);
 
     source.start(
       time
@@ -1124,7 +1124,7 @@ function triggerTurboFlutter(
       .connect(highpass)
       .connect(resonance)
       .connect(resonanceGain)
-      .connect(loudnessGain);
+      .connect(master);
 
 
     // Zweite tiefere Rohrresonanz.
@@ -1177,7 +1177,7 @@ function triggerTurboFlutter(
     source
       .connect(resonance2)
       .connect(resonanceGain2)
-      .connect(loudnessGain);
+      .connect(master);
 
 
     // Breiter Luftstrom unter dem Pfeifen.
