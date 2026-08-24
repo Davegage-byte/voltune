@@ -865,6 +865,467 @@ function stop() {
     ); 
   }
 
+
+// =========================
+// Turbo Flutter
+// =========================
+//
+// Basis:
+// Pipe Whistle Flutter Lab · Variante 10
+//
+// Breites Sog-/Rohrpfeifen +
+// großes, langsames Ventil-Flutter.
+//
+// Der Effekt läuft direkt über loudnessGain.
+// Dadurch wird der luftige Charakter nicht
+// vom normalen Master-Kompressor zerdrückt.
+
+function triggerTurboFlutter(
+  intensity = 1,
+  flutterPercent = 0
+) {
+  if (
+    !started ||
+    !ctx ||
+    !sharedNoiseBuffer ||
+    !loudnessGain
+  ) {
+    return;
+  }
+
+  const amount =
+    clamp(
+      Number(intensity) || 0,
+      0,
+      1
+    );
+
+  const volume =
+    volumeCurve(
+      flutterPercent
+    );
+
+  if (
+    amount <= 0.01 ||
+    volume <= 0.001
+  ) {
+    return;
+  }
+
+
+  // Ladedruck beeinflusst nur die Stärke.
+  //
+  // Bei voller Intensität entspricht
+  // der Klang exakt der Testvariante.
+  const pressureVolume =
+    0.15 +
+    Math.pow(
+      amount,
+      1.10
+    ) * 0.85;
+
+  const flutterAmount =
+    volume *
+    pressureVolume;
+
+  const now =
+    ctx.currentTime;
+
+
+  // =========================
+  // Luft-/Zisch-Layer
+  // =========================
+
+  const playNoiseLayer = ({
+    time,
+    duration,
+    gain,
+    hp = 350,
+    bp = 2400,
+    q = 0.6,
+    sweepTo = null,
+    attack = 0.004,
+    sustain = 0.45
+  }) => {
+    const source =
+      ctx.createBufferSource();
+
+    source.buffer =
+      sharedNoiseBuffer;
+
+
+    const highpass =
+      ctx.createBiquadFilter();
+
+    highpass.type =
+      "highpass";
+
+    highpass.frequency.value =
+      hp;
+
+
+    const bandpass =
+      ctx.createBiquadFilter();
+
+    bandpass.type =
+      "bandpass";
+
+    bandpass.Q.value =
+      q;
+
+    bandpass.frequency.setValueAtTime(
+      bp,
+      time
+    );
+
+    if (sweepTo) {
+      bandpass.frequency.exponentialRampToValueAtTime(
+        sweepTo,
+        time + duration
+      );
+    }
+
+
+    const gainNode =
+      ctx.createGain();
+
+    const peak =
+      Math.max(
+        0.0002,
+        gain * flutterAmount
+      );
+
+    gainNode.gain.setValueAtTime(
+      0.0001,
+      time
+    );
+
+    gainNode.gain.exponentialRampToValueAtTime(
+      peak,
+      time + attack
+    );
+
+    gainNode.gain.exponentialRampToValueAtTime(
+      peak * 0.68,
+      time + duration * sustain
+    );
+
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.0001,
+      time + duration
+    );
+
+
+    source
+      .connect(highpass)
+      .connect(bandpass)
+      .connect(gainNode)
+      .connect(loudnessGain);
+
+    source.start(
+      time
+    );
+
+    source.stop(
+      time +
+      duration +
+      0.03
+    );
+  };
+
+
+  // =========================
+  // Sog-/Rohrpfeifen
+  // =========================
+
+  const playPipeResonance = ({
+    time,
+    duration,
+    startHz,
+    endHz,
+    gain,
+    q,
+    airGain,
+    secondRatio,
+    secondGain
+  }) => {
+    const source =
+      ctx.createBufferSource();
+
+    source.buffer =
+      sharedNoiseBuffer;
+
+
+    const highpass =
+      ctx.createBiquadFilter();
+
+    highpass.type =
+      "highpass";
+
+    highpass.frequency.value =
+      500;
+
+
+    const resonance =
+      ctx.createBiquadFilter();
+
+    resonance.type =
+      "bandpass";
+
+    resonance.Q.value =
+      q;
+
+    resonance.frequency.setValueAtTime(
+      startHz,
+      time
+    );
+
+    resonance.frequency.exponentialRampToValueAtTime(
+      endHz,
+      time + duration
+    );
+
+
+    const resonanceGain =
+      ctx.createGain();
+
+    const resonancePeak =
+      Math.max(
+        0.0002,
+        gain * flutterAmount
+      );
+
+    resonanceGain.gain.setValueAtTime(
+      0.0001,
+      time
+    );
+
+    resonanceGain.gain.exponentialRampToValueAtTime(
+      resonancePeak,
+      time + 0.012
+    );
+
+    resonanceGain.gain.exponentialRampToValueAtTime(
+      resonancePeak * 0.78,
+      time + duration * 0.45
+    );
+
+    resonanceGain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      time + duration
+    );
+
+
+    source
+      .connect(highpass)
+      .connect(resonance)
+      .connect(resonanceGain)
+      .connect(loudnessGain);
+
+
+    // Zweite tiefere Rohrresonanz.
+    const resonance2 =
+      ctx.createBiquadFilter();
+
+    resonance2.type =
+      "bandpass";
+
+    resonance2.Q.value =
+      q * 0.75;
+
+    resonance2.frequency.setValueAtTime(
+      startHz * secondRatio,
+      time
+    );
+
+    resonance2.frequency.exponentialRampToValueAtTime(
+      endHz * secondRatio,
+      time + duration
+    );
+
+
+    const resonanceGain2 =
+      ctx.createGain();
+
+    const resonancePeak2 =
+      Math.max(
+        0.0002,
+        secondGain *
+          flutterAmount
+      );
+
+    resonanceGain2.gain.setValueAtTime(
+      0.0001,
+      time
+    );
+
+    resonanceGain2.gain.exponentialRampToValueAtTime(
+      resonancePeak2,
+      time + 0.015
+    );
+
+    resonanceGain2.gain.exponentialRampToValueAtTime(
+      0.0001,
+      time + duration
+    );
+
+
+    source
+      .connect(resonance2)
+      .connect(resonanceGain2)
+      .connect(loudnessGain);
+
+
+    // Breiter Luftstrom unter dem Pfeifen.
+    playNoiseLayer({
+      time,
+      duration,
+      gain: airGain,
+      hp: 650,
+      bp: startHz * 0.90,
+      q: 0.45,
+      sweepTo:
+        endHz * 0.75,
+      sustain: 0.58
+    });
+
+
+    source.start(
+      time
+    );
+
+    source.stop(
+      time +
+      duration +
+      0.03
+    );
+  };
+
+
+  // =========================
+  // 1. Big Turbo Suction
+  // =========================
+
+  playPipeResonance({
+    time: now,
+    duration: 0.30,
+    startHz: 4100,
+    endHz: 2100,
+    gain: 0.085,
+    q: 5.3,
+    airGain: 0.165,
+    secondRatio: 0.58,
+    secondGain: 0.030
+  });
+
+
+  // Zusätzlicher breiter Sog.
+  playNoiseLayer({
+    time: now + 0.06,
+    duration: 0.25,
+    gain: 0.095,
+    hp: 450,
+    bp: 2500,
+    q: 0.40,
+    sweepTo: 1100
+  });
+
+
+  // =========================
+  // 2. Big Valve Flutter
+  // =========================
+
+  const flutterStart =
+    now + 0.14;
+
+
+  // Erster großer Luftstoß.
+  playNoiseLayer({
+    time: flutterStart,
+    duration: 0.16,
+    gain: 0.15,
+    hp: 380,
+    bp: 2900,
+    q: 0.50,
+    sweepTo: 1700
+  });
+
+
+  const offsets = [
+    0,
+    0.16,
+    0.34,
+    0.55
+  ];
+
+  const durations = [
+    0.13,
+    0.14,
+    0.16,
+    0.24
+  ];
+
+  const frequencies = [
+    1900,
+    1650,
+    1400,
+    1180
+  ];
+
+  const endFrequencies = [
+    1200,
+    1000,
+    800,
+    580
+  ];
+
+  const airGains = [
+    0.22,
+    0.20,
+    0.18,
+    0.16
+  ];
+
+  const filterQ = [
+    0.60,
+    0.60,
+    0.55,
+    0.50
+  ];
+
+
+  offsets.forEach(
+    (offset, index) => {
+      playNoiseLayer({
+        time:
+          flutterStart +
+          0.085 +
+          offset,
+
+        duration:
+          durations[index],
+
+        gain:
+          airGains[index],
+
+        hp: 420,
+
+        bp:
+          frequencies[index],
+
+        q:
+          filterQ[index],
+
+        sweepTo:
+          endFrequencies[index],
+
+        sustain: 0.38
+      });
+    }
+  );
+}
+
+  
 // =========================
 // Schubknallen / Nachblubbern
 // =========================
@@ -2563,6 +3024,11 @@ if (bovRelease) {
       : 700
   );
 
+  triggerTurboFlutter(
+    bovIntensity,
+    settings.flutterVolume
+  );
+  
   // Ein BOV entleert den virtuellen Druck
   // vollständig.
   bovPressure = 0;
@@ -2665,6 +3131,7 @@ lastAccel = accel;
     update,
 
     triggerBov,
+    triggerTurboFlutter,
     triggerOverrun,
     triggerShiftBurble,
     triggerDownshiftBlip,
