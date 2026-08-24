@@ -4029,6 +4029,8 @@ lastAccel = accel;
     triggerOverrun,
     triggerShiftBurble,
     triggerDownshiftBlip,
+
+    setOverrunSound,
     
     setMasterVolume,
     setMuted,
