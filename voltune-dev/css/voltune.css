@@ -14,6 +14,14 @@
   --orange:#ffa94d;
 }
 
+html[data-theme="dark"]{
+  color-scheme:dark;
+}
+
+html[data-theme="light"]{
+  color-scheme:light;
+}
+
 *{
   box-sizing:border-box;
 }
