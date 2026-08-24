@@ -1139,7 +1139,10 @@ function triggerShiftBurble(
     );
 
   const volumeAmount =
-    volumeCurve(volumePercent);
+    Math.pow(
+      volumeCurve(volumePercent),
+      2
+    );
 
   if (volumeAmount <= 0.001) {
     return;
