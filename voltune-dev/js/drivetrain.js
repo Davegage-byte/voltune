@@ -87,7 +87,7 @@ window.VoltuneDrivetrain = (() => {
   const rawDemand =
     Math.pow(
       clamp(
-        Math.max(0, accel) / 2.5,
+        Math.max(0, accel) / 3.5,
         0,
         1
       ),
