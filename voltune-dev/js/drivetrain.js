@@ -42,7 +42,7 @@ window.VoltuneDrivetrain = (() => {
     const maxRpm = Number(config.maxRpm);
     const rangeKmh = Math.max(1, Number(config.gearRange));
     const ratio = gearRatios[gear - 1];
-
+  
     return Math.max(
       0,
       (speedKmh / rangeKmh) *
