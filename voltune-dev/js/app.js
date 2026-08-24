@@ -45,6 +45,11 @@
     gamepadLT:$("gamepadLT"),
     gamepadRT:$("gamepadRT"),
     gamepadAxes:$("gamepadAxes"),
+
+    viewportSize:$("viewportSize"),
+    visualViewportSize:$("visualViewportSize"),
+    visualViewportScale:$("visualViewportScale"),
+    devicePixelRatio:$("devicePixelRatio"),
     
     speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
     volume:$("volume"), base:$("base"), maxBase:$("maxBase"), pitch:$("pitch"),
@@ -70,6 +75,61 @@
   };
 
   let soundActive = false;
+
+  // =========================
+// Browser-Viewport Debug
+// =========================
+
+function updateViewportDebug() {
+  if (ui.viewportSize) {
+    ui.viewportSize.textContent =
+      `${window.innerWidth} × ${window.innerHeight}`;
+  }
+
+  const visualViewport =
+    window.visualViewport;
+
+  if (ui.visualViewportSize) {
+    ui.visualViewportSize.textContent =
+      visualViewport
+        ? `${Math.round(visualViewport.width)} × ${Math.round(visualViewport.height)}`
+        : "nicht verfügbar";
+  }
+
+  if (ui.visualViewportScale) {
+    ui.visualViewportScale.textContent =
+      visualViewport
+        ? visualViewport.scale.toFixed(2)
+        : "–";
+  }
+
+  if (ui.devicePixelRatio) {
+    ui.devicePixelRatio.textContent =
+      Number(
+        window.devicePixelRatio || 1
+      ).toFixed(2);
+  }
+}
+
+
+window.addEventListener(
+  "resize",
+  updateViewportDebug
+);
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener(
+    "resize",
+    updateViewportDebug
+  );
+}
+
+updateViewportDebug();
+
+
+  let soundActive = false;
+
+
 
 // =========================
 // Theme
