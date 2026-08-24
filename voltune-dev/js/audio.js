@@ -45,12 +45,16 @@ window.VoltuneAudio = (() => {
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
   
-  let overrunSampleBuffer = null;
-  
+  let overrunSoundMode =
+    "synthetic";
+
+  let overrunSampleBuffer =
+    null;
+
   let overrunSampleUrl =
-    "sounds/overrun/freesound_community-bang-100662.mp3";
-  
-  let overrunSampleSettings = {
+    null;
+
+  const overrunSampleDefaultSettings = {
     frequency: 3.75,
     irregularity: 100,
     slowdown: 80,
@@ -77,6 +81,10 @@ window.VoltuneAudio = (() => {
     echo: 8,
     echoDelay: 35,
     compress: 25
+  };
+
+    let overrunSampleSettings = {
+    ...overrunSampleDefaultSettings
   };
 
   let lastAccel = 0;
@@ -285,6 +293,84 @@ function getSettingsUrlForAudio(
     };
   }
 }
+
+
+async function setOverrunSound(
+  value
+) {
+  const selected =
+    typeof value === "string"
+      ? value
+      : "synthetic";
+
+  if (
+    !selected ||
+    selected === "synthetic"
+  ) {
+    overrunSoundMode =
+      "synthetic";
+
+    overrunSampleUrl =
+      null;
+
+    overrunSampleBuffer =
+      null;
+
+    overrunSampleSettings = {
+      ...overrunSampleDefaultSettings
+    };
+
+    return true;
+  }
+
+
+  overrunSoundMode =
+    "sample";
+
+  overrunSampleUrl =
+    selected;
+
+  overrunSampleBuffer =
+    null;
+
+  overrunSampleSettings = {
+    ...overrunSampleDefaultSettings
+  };
+
+
+  // Wurde Voltune noch nicht gestartet,
+  // merken wir zunächst nur die Auswahl.
+  // Beim Audio-Start wird sie dann geladen.
+  if (!ctx) {
+    return true;
+  }
+
+
+  const buffer =
+    await loadAudioBuffer(
+      overrunSampleUrl
+    );
+
+  if (!buffer) {
+    return false;
+  }
+
+
+  const settings =
+    await loadSampleSettings(
+      overrunSampleUrl,
+      overrunSampleDefaultSettings
+    );
+
+
+  overrunSampleBuffer =
+    buffer;
+
+  overrunSampleSettings =
+    settings;
+
+  return true;
+}
   
   function createOsc(type) {
     const osc =
@@ -319,16 +405,21 @@ function getSettingsUrlForAudio(
     sharedNoiseBuffer =
       createNoiseBuffer(2);
 
-    overrunSampleBuffer =
-      await loadAudioBuffer(
-        overrunSampleUrl
-      );
-    
-    overrunSampleSettings =
-      await loadSampleSettings(
-        overrunSampleUrl,
-        overrunSampleSettings
-      );
+    if (
+      overrunSoundMode === "sample" &&
+      overrunSampleUrl
+    ) {
+      overrunSampleBuffer =
+        await loadAudioBuffer(
+          overrunSampleUrl
+        );
+
+      overrunSampleSettings =
+        await loadSampleSettings(
+          overrunSampleUrl,
+          overrunSampleDefaultSettings
+        );
+    }
 
     master =
       ctx.createGain();
