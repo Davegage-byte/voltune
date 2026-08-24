@@ -167,7 +167,7 @@ window.VoltuneAudio = (() => {
     
     limiter.threshold.value = -1;
     limiter.knee.value = 0;
-    limiter.ratio.value = 20;
+    limiter.ratio.value = 10;
     limiter.attack.value = 0.001;
     limiter.release.value = 0.08;
     
