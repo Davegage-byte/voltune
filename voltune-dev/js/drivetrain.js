@@ -437,11 +437,11 @@ const downshiftAggression =
   //
   // Deshalb wird 2 -> 1 nicht über die normale
   // Fahrstil-/Bremslogik gesteuert, sondern
-  // erst bei ungefähr 9 km/h freigegeben.
+  // erst bei ungefähr 15 km/h freigegeben.
   if (currentGear === 2) {
     downshiftTarget =
       rpmForGear(
-        12,
+        15,
         2,
         config
       );
