@@ -2040,22 +2040,31 @@ function triggerOverrunSample(
   // Testwert:
   // 3,75 Knaller pro Sekunde.
   const frequency =
-    3.75;
+    Math.max(
+      0.25,
+      overrunSampleSettings.frequency
+    );
 
   const baseInterval =
     1 / frequency;
 
 
-  // Testwert:
-  // 100 % Unregelmäßigkeit.
   const irregularity =
-    1.0;
+    clamp(
+      overrunSampleSettings.irregularity /
+        100,
+      0,
+      1
+    );
 
 
-  // Testwert:
-  // zum Ende 80 % langsamer.
   const slowdown =
-    0.80;
+    clamp(
+      overrunSampleSettings.slowdown /
+        100,
+      0,
+      1
+    );
 
 
   let offset =
