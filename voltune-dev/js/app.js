@@ -63,6 +63,7 @@
     baseVol:$("baseVol"), inverter:$("inverter"), drive:$("drive"),
     regen:$("regen"), air:$("air"), bov:$("bov"),
     turboFlutter:$("turboFlutter"),
+    overrunSound:$("overrunSound"),
     overrun:$("overrun"),
 
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
@@ -133,7 +134,114 @@ updateViewportDebug();
 
   let soundActive = false;
 
+const OVERRUN_SOUND_API_URL =
+  "https://api.github.com/repos/Davegage-byte/voltune/contents/voltune-dev/sounds/overrun?ref=main";
 
+
+function encodeSoundPath(
+  fileName
+) {
+  return (
+    "sounds/overrun/" +
+    encodeURIComponent(
+      fileName
+    )
+  );
+}
+
+
+async function loadOverrunSoundList() {
+  if (!ui.overrunSound) {
+    return;
+  }
+
+  try {
+    const response =
+      await fetch(
+        OVERRUN_SOUND_API_URL
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const files =
+      await response.json();
+
+    const audioFiles =
+      files
+        .filter(file =>
+          file.type === "file" &&
+          /\.(mp3|wav)$/i.test(
+            file.name
+          )
+        )
+        .sort(
+          (a, b) =>
+            a.name.localeCompare(
+              b.name,
+              "de",
+              {
+                sensitivity: "base"
+              }
+            )
+        );
+
+
+    audioFiles.forEach(file => {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        encodeSoundPath(
+          file.name
+        );
+
+      // Nur Dateiendung entfernen.
+      // Leerzeichen, Umlaute usw.
+      // bleiben im sichtbaren Namen erhalten.
+      option.textContent =
+        file.name.replace(
+          /\.(mp3|wav)$/i,
+          ""
+        );
+
+      ui.overrunSound.appendChild(
+        option
+      );
+    });
+
+
+    // Falls bereits ein Sound gespeichert war,
+    // diesen nach dem Laden wieder auswählen.
+    const savedValue =
+      ui.overrunSound.dataset.savedValue;
+
+    if (
+      savedValue &&
+      Array.from(
+        ui.overrunSound.options
+      ).some(
+        option =>
+          option.value ===
+          savedValue
+      )
+    ) {
+      ui.overrunSound.value =
+        savedValue;
+    }
+
+  } catch (error) {
+    console.warn(
+      "Schubknall-Soundliste konnte nicht geladen werden:",
+      error
+    );
+  }
+}
 
 // =========================
 // Theme
@@ -1461,6 +1569,7 @@ function getPersistentSettings() {
     airVolume: Number(ui.air.value),
     bovVolume: Number(ui.bov.value),
     turboFlutterVolume: Number(ui.turboFlutter.value),
+    overrunSound: ui.overrunSound.value,
     overrunVolume: Number(ui.overrun.value),
 
     easyBovEnabled,
@@ -1518,6 +1627,15 @@ function applyPersistentSettings(settings) {
     ui.turboFlutter,
     settings.turboFlutterVolume
   );
+
+    if (
+    typeof settings.overrunSound ===
+      "string"
+  ) {
+    ui.overrunSound.dataset.savedValue =
+      settings.overrunSound;
+  }
+  
   setNumber(ui.overrun, settings.overrunVolume);
 
   if (typeof settings.easyBovEnabled === "boolean") {
