@@ -1,6 +1,6 @@
 VOLTUNE_WAV_OVERrun_LAB_V1
 file=freesound_community-bang-100662.mp3
-count=5
+count=0
 triggerLoad=1.50
 triggerDrop=1.00
 cooldown=1400
