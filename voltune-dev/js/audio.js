@@ -60,6 +60,9 @@ window.VoltuneAudio = (() => {
     slowdown: 80,
     hitVolumeRandom: 30,
     rateRandom: 15,
+    triggerLoad: 0.95,
+    triggerDrop: 0.65,
+    cooldown: 700,
   
     volume: 100,
     rate: 100,
@@ -3220,6 +3223,41 @@ bovPressure =
 // Kräftige Beschleunigung merken.
 // Das Schubknallen arbeitet bewusst
 // unabhängig von EasyBOV und BOV-Druck.
+const overrunTriggerSettings =
+  overrunSoundMode === "sample"
+    ? overrunSampleSettings
+    : overrunSampleDefaultSettings;
+
+const overrunTriggerLoad =
+  Math.max(
+    0.1,
+    overrunTriggerSettings.triggerLoad
+  );
+
+const overrunTriggerDrop =
+  Math.max(
+    0.1,
+    overrunTriggerSettings.triggerDrop
+  );
+
+const overrunCooldown =
+  Math.max(
+    0,
+    overrunTriggerSettings.cooldown
+  );
+    const overrunAbruptLoad =
+  0.75 *
+  (
+    overrunTriggerLoad /
+    0.95
+  );
+
+const overrunAbruptDrop =
+  0.40 *
+  (
+    overrunTriggerDrop /
+    0.65
+  );
 if (accel > 0.65) {
   overrunPeakAccel =
     Math.max(
@@ -3231,7 +3269,8 @@ if (accel > 0.65) {
 // Erst nach deutlich spürbarer Last
 // darf beim späteren Lupfen geknallt werden.
 if (
-  overrunPeakAccel > 0.95
+  overrunPeakAccel >
+    overrunTriggerLoad
 ) {
   overrunArmed = true;
 }
@@ -3940,20 +3979,24 @@ const overrunRelease =
   (
     // Deutliches Lupfen nach stärkerer Last.
     (
-      overrunDrop > 0.65 &&
+      overrunDrop >
+        overrunTriggerDrop &&
       accel < 0.45
     ) ||
 
     // Sehr schnelle Lastwegnahme direkt erkennen.
     (
-      lastAccel > 0.75 &&
-      accelDrop > 0.40
+      lastAccel >
+        overrunAbruptLoad &&
+      accelDrop >
+        overrunAbruptDrop
     )
   );
 
 if (
   overrunRelease &&
-  nowMs - lastOverrunAt > 700
+  nowMs - lastOverrunAt >
+    overrunCooldown
 ) {
   const overrunIntensity =
     clamp(
