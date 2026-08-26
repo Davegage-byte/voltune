@@ -60,6 +60,7 @@ window.VoltuneAudio = (() => {
     slowdown: 80,
     hitVolumeRandom: 30,
     rateRandom: 15,
+    count: 0,
     triggerLoad: 0.95,
     triggerDrop: 0.65,
     cooldown: 700,
@@ -248,8 +249,7 @@ function getSettingsUrlForAudio(
         // Diese Angaben aus dem Testlabor
         // brauchen wir in Voltune nicht.
         if (
-          key === "file" ||
-          key === "count"
+          key === "file"
         ) {
           return;
         }
@@ -2072,17 +2072,30 @@ function triggerOverrunSample(
   }
 
 
-  // =========================
-  // Anzahl nach Fahrstil
-  // =========================
-
-  // 0.0 = 1 Knall
-  // 1.0 = 6 Knaller
-  const popCount =
-    1 +
+  // count aus der TXT:
+  //
+  // 0 = automatisch nach Fahrstil
+  // 1 = immer genau 1 Knall
+  // 2 = immer genau 2 Knaller
+  // usw.
+  const configuredCount =
     Math.round(
-      style * 5
+      Number(
+        overrunSampleSettings.count
+      ) || 0
     );
+  
+  const popCount =
+    configuredCount > 0
+      ? clamp(
+          configuredCount,
+          1,
+          20
+        )
+      : 1 +
+        Math.round(
+          style * 5
+        );
 
 
   // =========================
