@@ -36,7 +36,9 @@ body{
     justify-content:center;
     align-items:center;
 
-    height:100vh;
+    min-height:100vh;
+    padding:40px 0;
+    box-sizing:border-box;
 }
 
 .box{
@@ -58,6 +60,18 @@ h1{
     margin-bottom:30px;
 }
 
+.chart-box {
+    width: min(900px, 92vw);
+    height: 300px;
+    margin: 40px auto;
+}
+
+.chart-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+    
 button{
     background:#222;
     color:white;
@@ -119,6 +133,16 @@ button:disabled{
         Aktualisieren
     </button>
 
+    <div class="chart-box">
+
+    <div class="chart-title">
+        Preisverlauf letzte 24 Stunden
+    </div>
+
+    <canvas id="priceChart"></canvas>
+
+</div>
+
     <div style="margin-top:40px;">
     <h3>🚗 Tesla Fakt</h3>
 
@@ -147,10 +171,277 @@ button:disabled{
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
 <script>
 
 let secondsLeft = 300;
 let lastUpdate = "--:--";
+
+let priceChart = null;
+
+async function loadPriceHistory() {
+
+    try {
+
+        const response = await fetch(
+            "avex-history.json?t=" + Date.now(),
+            {
+                cache: "no-store"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "History HTTP " + response.status
+            );
+        }
+
+        const history =
+            await response.json();
+
+        if (!history.length) {
+            return;
+        }
+
+
+        const now = Date.now();
+
+        const start =
+            now - (24 * 60 * 60 * 1000);
+
+
+        const parsed =
+            history
+                .map(point => ({
+                    x: new Date(point.time).getTime(),
+                    y: Number(point.price)
+                }))
+                .sort((a, b) => a.x - b.x);
+
+
+        /*
+         * Preis ermitteln, der exakt am Anfang
+         * des 24h-Fensters gültig war.
+         */
+        let startPrice = parsed[0].y;
+
+        for (const point of parsed) {
+
+            if (point.x <= start) {
+                startPrice = point.y;
+            }
+            else {
+                break;
+            }
+        }
+
+
+        /*
+         * Nur echte Preisänderungen innerhalb
+         * der letzten 24 Stunden übernehmen.
+         */
+        const visiblePoints =
+            parsed.filter(
+                point => point.x > start
+            );
+
+
+        /*
+         * Künstlicher Startpunkt:
+         * genau vor 24 Stunden.
+         */
+        const chartData = [
+            {
+                x: start,
+                y: startPrice
+            },
+            ...visiblePoints
+        ];
+
+
+        /*
+         * Linie bis zum aktuellen Zeitpunkt
+         * verlängern.
+         */
+        const latestPrice =
+            chartData[
+                chartData.length - 1
+            ].y;
+
+        chartData.push({
+            x: now,
+            y: latestPrice
+        });
+
+
+        const ctx =
+            document
+                .getElementById("priceChart")
+                .getContext("2d");
+
+
+        if (priceChart) {
+
+            priceChart.data.datasets[0].data =
+                chartData;
+
+            priceChart.options.scales.x.min =
+                start;
+
+            priceChart.options.scales.x.max =
+                now;
+
+            priceChart.update();
+
+            return;
+        }
+
+
+        priceChart =
+            new Chart(ctx, {
+
+                type: "line",
+
+                data: {
+                    datasets: [{
+                        label: "Preis €/kWh",
+                        data: chartData,
+
+                        /*
+                         * Harte Preisstufen:
+                         * KEINE Glättung.
+                         */
+                        stepped: "after",
+                        tension: 0,
+
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+
+                options: {
+
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    animation: false,
+
+                    parsing: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                title: function(items) {
+
+                                    const date =
+                                        new Date(
+                                            items[0].parsed.x
+                                        );
+
+                                    return date
+                                        .toLocaleString(
+                                            "de-DE",
+                                            {
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            }
+                                        );
+                                },
+
+                                label: function(context) {
+
+                                    return (
+                                        context.parsed.y
+                                            .toFixed(2)
+                                            .replace(".", ",")
+                                        + " €/kWh"
+                                    );
+                                }
+                            }
+                        }
+                    },
+
+                    scales: {
+
+                        x: {
+
+                            type: "linear",
+
+                            min: start,
+                            max: now,
+
+                            grid: {
+                                color:
+                                    "rgba(255,255,255,0.08)"
+                            },
+
+                            ticks: {
+
+                                color: "#999",
+
+                                maxTicksLimit: 7,
+
+                                callback: function(value) {
+
+                                    const date =
+                                        new Date(value);
+
+                                    return date
+                                        .toLocaleTimeString(
+                                            "de-DE",
+                                            {
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            }
+                                        );
+                                }
+                            }
+                        },
+
+                        y: {
+
+                            grid: {
+                                color:
+                                    "rgba(255,255,255,0.08)"
+                            },
+
+                            ticks: {
+
+                                color: "#999",
+
+                                callback: function(value) {
+
+                                    return (
+                                        Number(value)
+                                            .toFixed(2)
+                                            .replace(".", ",")
+                                        + " €"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+    }
+    catch(err) {
+
+        console.error(
+            "AVEX Preisverlauf konnte nicht geladen werden:",
+            err
+        );
+    }
+}
 
 function updateCountdown() {
 
@@ -239,6 +530,8 @@ async function loadData() {
         document.getElementById("updated").innerHTML =
             `<span class="${statusClass}">${statusText}</span>`;
 
+        await loadPriceHistory();
+        
         btn.disabled = false;
         btn.innerText = "Aktualisieren";
 
