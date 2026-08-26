@@ -180,6 +180,158 @@ let lastUpdate = "--:--";
 
 let priceChart = null;
 
+const priceClickPlugin = {
+
+    id: "priceClickMarker",
+
+    afterDatasetsDraw(chart) {
+
+        const selected =
+            chart.$selectedPrice;
+
+        if (!selected) {
+            return;
+        }
+
+        const ctx = chart.ctx;
+        const area = chart.chartArea;
+
+        const x =
+            chart.scales.x.getPixelForValue(
+                selected.time
+            );
+
+        const y =
+            chart.scales.y.getPixelForValue(
+                selected.price
+            );
+
+
+        ctx.save();
+
+
+        // Senkrechte Markierung
+        ctx.beginPath();
+        ctx.moveTo(x, area.top);
+        ctx.lineTo(x, area.bottom);
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,0.45)";
+
+        ctx.lineWidth = 1;
+
+        ctx.stroke();
+
+
+        // Punkt auf der Preislinie
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+
+
+        const timeText =
+            new Date(selected.time)
+                .toLocaleTimeString(
+                    "de-DE",
+                    {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                );
+
+        const priceText =
+            selected.price
+                .toFixed(2)
+                .replace(".", ",")
+            + " €/kWh";
+
+        const text =
+            timeText + " | " + priceText;
+
+
+        ctx.font =
+            "600 14px Segoe UI, Arial";
+
+        const padding = 8;
+
+        const boxWidth =
+            ctx.measureText(text).width
+            + padding * 2;
+
+        const boxHeight = 30;
+
+
+        let boxX =
+            x - boxWidth / 2;
+
+        let boxY =
+            y - boxHeight - 12;
+
+
+        // Box im Diagramm halten
+        if (boxX < area.left) {
+            boxX = area.left;
+        }
+
+        if (
+            boxX + boxWidth >
+            area.right
+        ) {
+            boxX =
+                area.right - boxWidth;
+        }
+
+        if (boxY < area.top) {
+            boxY = y + 12;
+        }
+
+
+        ctx.fillStyle =
+            "rgba(25,25,25,0.95)";
+
+        ctx.fillRect(
+            boxX,
+            boxY,
+            boxWidth,
+            boxHeight
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,0.35)";
+
+        ctx.strokeRect(
+            boxX,
+            boxY,
+            boxWidth,
+            boxHeight
+        );
+
+
+        ctx.fillStyle = "#ffffff";
+
+        ctx.textBaseline = "middle";
+
+        ctx.fillText(
+            text,
+            boxX + padding,
+            boxY + boxHeight / 2
+        );
+
+
+        ctx.restore();
+    }
+};
+
 async function loadPriceHistory() {
 
     try {
@@ -302,6 +454,9 @@ async function loadPriceHistory() {
             new Chart(ctx, {
 
                 type: "line",
+                plugins: [
+                    priceClickPlugin
+                ],
 
                 data: {
                     datasets: [{
@@ -329,6 +484,38 @@ async function loadPriceHistory() {
                     animation: false,
 
                     parsing: false,
+
+                    onClick: function(event, elements, chart) {
+
+                    const clickedTime =
+                        chart.scales.x.getValueForPixel(
+                            event.x
+                        );
+                
+                
+                    let clickedPrice =
+                        chartData[0].y;
+                
+                
+                    for (const point of chartData) {
+                
+                        if (point.x <= clickedTime) {
+                            clickedPrice = point.y;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                
+                
+                    chart.$selectedPrice = {
+                        time: clickedTime,
+                        price: clickedPrice
+                    };
+                
+                
+                    chart.draw();
+                },
 
                     plugins: {
 
