@@ -1,6 +1,6 @@
 VOLTUNE_WAV_OVERrun_LAB_V1
 file=freesound_community-bang-100662.mp3
-count=5
+count=0
 frequency=3.75
 irregularity=100
 slowdown=80
