@@ -2372,3 +2372,101 @@ html[data-theme="light"]
   background:
     rgba(238,241,245,0);
 }
+/* =========================
+   Kompakte Seitenleiste
+   für Tesla Split-Screen
+   ========================= */
+
+@media
+  (min-width:761px)
+  and (max-height:650px){
+
+  .sideRail{
+    gap:6px;
+  }
+
+
+  /* Gang / Drehzahl kompakter */
+
+  .driveHud{
+    padding:7px;
+  }
+
+  .driveHudInfo{
+    gap:4px;
+  }
+
+  .driveHudInfo > div{
+    padding:5px 6px;
+  }
+
+  .driveHudGear{
+    padding:
+      6px 6px 7px !important;
+  }
+
+  #gearDisplay{
+    font-size:56px;
+  }
+
+  .driveHudRpm{
+    padding:
+      6px !important;
+  }
+
+  #rpmDisplay{
+    font-size:24px;
+  }
+
+  .bar{
+    height:7px;
+    margin-top:6px;
+  }
+
+
+  /* Fahrmodus etwas kompakter */
+
+  .driveModeGroup{
+    gap:4px;
+    padding:6px;
+  }
+
+  .sideRail .driveModeBtn{
+    min-height:30px;
+  }
+
+
+  /* Steuerung in zwei Spalten */
+
+  .controlGroup{
+    gap:4px;
+    padding:6px;
+  }
+
+  .sideButtons{
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
+
+    gap:4px;
+  }
+
+  .sideRail button{
+    min-height:34px;
+
+    border-radius:9px;
+
+    font-size:12px;
+  }
+
+
+  /* Debug bildet unten eine
+     saubere volle Zeile */
+
+  #debug{
+    grid-column:
+      1 / -1;
+  }
+}
