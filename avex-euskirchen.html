@@ -493,19 +493,23 @@ async function loadPriceHistory() {
                         );
                 
                 
-                    let clickedPrice =
-                        chartData[0].y;
-                
-                
-                    for (const point of chartData) {
-                
-                        if (point.x <= clickedTime) {
-                            clickedPrice = point.y;
+                        const currentData =
+                            chart.data.datasets[0].data;
+                        
+                        
+                        let clickedPrice =
+                            currentData[0].y;
+                        
+                        
+                        for (const point of currentData) {
+                        
+                            if (point.x <= clickedTime) {
+                                clickedPrice = point.y;
+                            }
+                            else {
+                                break;
+                            }
                         }
-                        else {
-                            break;
-                        }
-                    }
                 
                 
                     chart.$selectedPrice = {
