@@ -9,7 +9,6 @@ USER_AUTOSTART="$HOME/.config/autostart"
 SYSTEM_AUTOSTART="/etc/xdg/autostart"
 BIN_DIR="$HOME/.local/bin"
 APP_DIR="$HOME/.local/share/applications"
-
 # Neuer 4-Felder-Kiosk
 KIOSK_DESKTOP="$USER_AUTOSTART/diagnostic-4tile-kiosk.desktop"
 OLD_KIOSK_DESKTOP="$USER_AUTOSTART/firefox-snapshot-kiosk.desktop"
@@ -21,7 +20,6 @@ NETWORK_CHECK_AUTOSTART="$USER_AUTOSTART/com.david.NetworkCheck.desktop"
 
 WIPE_AUTO_SCRIPT="$BIN_DIR/wipe-auto-app.sh"
 WIPE_AUTO_APP_DESKTOP="$APP_DIR/com.david.WipeAuto.desktop"
-
 HARDWARE_CHECK_SCRIPT="$BIN_DIR/hardware-check.sh"
 HARDWARE_CHECK_APP_DESKTOP="$APP_DIR/com.david.HardwareCheck.desktop"
 CLOSE_APPS_SCRIPT="$BIN_DIR/close-diagnostic-apps.sh"
@@ -32,7 +30,6 @@ pause() {
     echo
     read -r -p "ENTER zum Fortfahren ..." _
 }
-
 header() {
     clear 2>/dev/null || true
     echo "============================================================"
@@ -48,7 +45,6 @@ desktop_name() {
     [ -n "$name" ] || name="$(basename "$file")"
     printf '%s' "$name"
 }
-
 desktop_exec() {
     local file="$1"
     grep -m1 '^Exec=' "$file" 2>/dev/null | cut -d= -f2-
@@ -63,7 +59,6 @@ gnome_disabled() {
     local file="$1"
     grep -qiE '^X-GNOME-Autostart-enabled=false$' "$file" 2>/dev/null
 }
-
 # Ermittelt den effektiven Zustand eines Desktop-Autostarts.
 # User-Datei mit gleichem Dateinamen überschreibt System-Datei.
 effective_state() {
@@ -79,7 +74,6 @@ effective_state() {
         fi
         return
     fi
-
     if [ -f "$systemfile" ]; then
         if is_hidden "$systemfile" || gnome_disabled "$systemfile"; then
             echo "DEAKTIVIERT"
@@ -97,7 +91,6 @@ build_autostart_index() {
     AUTOSTART_BASES=()
 
     declare -A seen=()
-
     # User-Dateien zuerst
     shopt -s nullglob
     for f in "$USER_AUTOSTART"/*.desktop; do
@@ -107,7 +100,6 @@ build_autostart_index() {
             AUTOSTART_BASES+=("$localbase")
         fi
     done
-
     # System-Dateien ergänzen
     if [ -d "$SYSTEM_AUTOSTART" ]; then
         for f in "$SYSTEM_AUTOSTART"/*.desktop; do
@@ -119,7 +111,6 @@ build_autostart_index() {
         done
     fi
     shopt -u nullglob
-
     # Alphabetisch sortieren
     if [ "${#AUTOSTART_BASES[@]}" -gt 0 ]; then
         mapfile -t AUTOSTART_BASES < <(printf '%s\n' "${AUTOSTART_BASES[@]}" | sort)
@@ -136,7 +127,6 @@ show_autostarts() {
         echo "Keine Autostart-Einträge gefunden."
         return
     fi
-
     printf "%-4s %-12s %-10s %-38s %s\n" "Nr." "Status" "Quelle" "Name" "Datei"
     printf "%-4s %-12s %-10s %-38s %s\n" "----" "------------" "----------" "--------------------------------------" "----------------"
 
@@ -146,7 +136,6 @@ show_autostarts() {
     for base in "${AUTOSTART_BASES[@]}"; do
         userfile="$USER_AUTOSTART/$base"
         systemfile="$SYSTEM_AUTOSTART/$base"
-
         if [ -f "$userfile" ]; then
             displayfile="$userfile"
             if [ -f "$systemfile" ]; then
@@ -164,7 +153,6 @@ show_autostarts() {
 
         printf "%-4s %-12s %-10s %-38.38s %s\n" \
             "$i" "$state" "$source" "$name" "$base"
-
         i=$((i + 1))
     done
 }
@@ -189,7 +177,6 @@ choose_autostart() {
     if [ "$num" -eq 0 ]; then
         return 1
     fi
-
     if [ "$num" -lt 1 ] || [ "$num" -gt "${#AUTOSTART_BASES[@]}" ]; then
         echo "Nummer außerhalb des Bereichs."
         return 1
@@ -210,7 +197,6 @@ show_details() {
     local userfile="$USER_AUTOSTART/$base"
     local systemfile="$SYSTEM_AUTOSTART/$base"
     local file source
-
     if [ -f "$userfile" ]; then
         file="$userfile"
         if [ -f "$systemfile" ]; then
@@ -222,7 +208,6 @@ show_details() {
         file="$systemfile"
         source="Systemeintrag"
     fi
-
     header
     echo "Name   : $(desktop_name "$file")"
     echo "Status : $(effective_state "$base")"
@@ -245,7 +230,6 @@ disable_autostart() {
     local base="$SELECTED_BASE"
     local userfile="$USER_AUTOSTART/$base"
     local systemfile="$SYSTEM_AUTOSTART/$base"
-
     echo
     echo "Deaktiviere: $base"
 
@@ -256,13 +240,11 @@ disable_autostart() {
         else
             printf '\nHidden=true\n' >> "$userfile"
         fi
-
         if grep -q '^X-GNOME-Autostart-enabled=' "$userfile"; then
             sed -i 's/^X-GNOME-Autostart-enabled=.*/X-GNOME-Autostart-enabled=false/' "$userfile"
         else
             printf 'X-GNOME-Autostart-enabled=false\n' >> "$userfile"
         fi
-
         echo "OK: Benutzereintrag deaktiviert."
     else
         # Systemeintrag oder bestehender Override:
@@ -276,7 +258,6 @@ disable_autostart() {
         else
             printf '\nHidden=true\n' >> "$userfile"
         fi
-
         if grep -q '^X-GNOME-Autostart-enabled=' "$userfile"; then
             sed -i 's/^X-GNOME-Autostart-enabled=.*/X-GNOME-Autostart-enabled=false/' "$userfile"
         else
@@ -289,7 +270,6 @@ disable_autostart() {
 
     pause
 }
-
 enable_autostart() {
     header
     if ! choose_autostart; then
@@ -303,7 +283,6 @@ enable_autostart() {
 
     echo
     echo "Aktiviere: $base"
-
     if [ -f "$userfile" ] && [ -f "$systemfile" ]; then
         # Wenn User-Datei ein Override für System ist, entfernen wir ihn.
         rm -f "$userfile"
@@ -315,7 +294,6 @@ enable_autostart() {
         else
             printf '\nHidden=false\n' >> "$userfile"
         fi
-
         if grep -q '^X-GNOME-Autostart-enabled=' "$userfile"; then
             sed -i 's/^X-GNOME-Autostart-enabled=.*/X-GNOME-Autostart-enabled=true/' "$userfile"
         else
@@ -336,7 +314,6 @@ delete_user_autostart() {
         pause
         return
     fi
-
     local base="$SELECTED_BASE"
     local userfile="$USER_AUTOSTART/$base"
     local systemfile="$SYSTEM_AUTOSTART/$base"
@@ -349,7 +326,6 @@ delete_user_autostart() {
         pause
         return
     fi
-
     if [ -f "$systemfile" ]; then
         echo "Achtung: '$base' ist ein Benutzer-Override für einen Systemeintrag."
         echo "Wenn du ihn löschst, wird der originale Systemeintrag wieder aktiv."
@@ -360,7 +336,6 @@ delete_user_autostart() {
 
     echo
     read -r -p "Wirklich löschen? [j/N]: " answer
-
     case "$answer" in
         j|J|ja|JA|Ja)
             rm -f "$userfile"
@@ -373,7 +348,6 @@ delete_user_autostart() {
 
     pause
 }
-
 show_user_services() {
     header
     echo "AKTIVIERTE SYSTEMD-BENUTZERDIENSTE"
@@ -384,7 +358,6 @@ show_user_services() {
     echo "Diese Liste ist zusätzlich zu den GNOME/XDG-Autostarts."
     pause
 }
-
 disable_user_service() {
     header
     echo "Aktivierte systemd-Benutzerdienste:"
@@ -400,7 +373,6 @@ disable_user_service() {
         pause
         return
     fi
-
     local i=1
     for s in "${services[@]}"; do
         printf "%3d) %s\n" "$i" "$s"
@@ -422,7 +394,6 @@ disable_user_service() {
     fi
 
     local service="${services[$((num - 1))]}"
-
     echo
     read -r -p "'$service' wirklich deaktivieren und stoppen? [j/N]: " answer
     case "$answer" in
@@ -443,11 +414,9 @@ install_close_apps_helper() {
     cat > "$CLOSE_APPS_SCRIPT" <<'EOF'
 #!/usr/bin/env bash
 set -u
-
 # Etwas verzögert starten, damit die App, die Strg+Q ausgelöst hat,
 # ihr Tastaturereignis sauber beenden kann.
 sleep 0.08
-
 # Die drei eigenen Diagnoseprogramme gemeinsam beenden.
 pkill -TERM -f '/tmp/network-check-' 2>/dev/null || true
 pkill -TERM -f '/tmp/wipe-auto-' 2>/dev/null || true
@@ -464,7 +433,6 @@ cleanup_legacy_kiosk_items() {
     echo "--- Alte Kiosk-Reste bereinigen ---"
 
     local removed=0
-
     for f in \
         "$USER_AUTOSTART/wipe-auto.desktop" \
         "$USER_AUTOSTART/wipe.desktop"
@@ -475,7 +443,6 @@ cleanup_legacy_kiosk_items() {
             removed=1
         fi
     done
-
     # Der von Ubuntu mitgelieferte Benutzer-ydotoold kollidiert mit
     # unserem eigenen Systemdienst /run/ydotool-kiosk.sock.
     # Unser ydotool-kiosk.service bleibt davon unberührt.
@@ -490,7 +457,6 @@ cleanup_legacy_kiosk_items() {
         echo "Alter Benutzer-Service ydotool.service: deaktiviert + maskiert."
         removed=1
     fi
-
     if [ "$removed" -eq 0 ]; then
         echo "Keine alten Reste gefunden."
     fi
@@ -510,7 +476,6 @@ setup_ydotool() {
     fi
 
     echo "OK: $(command -v ydotool)"
-
     # Prüfen, ob ein nutzbarer Socket existiert.
     local socket=""
     for s in \
@@ -529,7 +494,6 @@ setup_ydotool() {
         echo "OK: ydotool-Socket vorhanden: $socket"
         return 0
     fi
-
     echo "Kein nutzbarer Socket gefunden."
     echo "Richte Kiosk-ydotoold ein ..."
 
@@ -548,7 +512,6 @@ Type=simple
 ExecStart=/usr/bin/ydotoold --socket-path=/run/ydotool-kiosk.sock --socket-perm=0666
 Restart=on-failure
 RestartSec=1
-
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -569,7 +532,6 @@ EOF
 
 setup_pyatspi() {
     echo "--- AT-SPI prüfen ---"
-
     if ! command -v python3 >/dev/null 2>&1; then
         echo "FEHLER: python3 wurde nicht gefunden."
         return 1
@@ -587,7 +549,6 @@ setup_pyatspi() {
     else
         sudo apt-get install -y python3-pyatspi || return 1
     fi
-
     if ! python3 -c 'import pyatspi' >/dev/null 2>&1; then
         echo "FEHLER: pyatspi lässt sich nach der Installation nicht importieren."
         return 1
@@ -607,7 +568,6 @@ install_wipe_auto_app() {
         echo "FEHLER: python3 wurde nicht gefunden."
         return 1
     fi
-
     if ! python3 -c 'import gi; gi.require_version("Gtk","4.0"); from gi.repository import Gtk' >/dev/null 2>&1; then
         echo "GTK4/Python fehlt. Installation wird versucht."
 
@@ -617,7 +577,6 @@ install_wipe_auto_app() {
             sudo apt-get install -y python3-gi gir1.2-gtk-4.0 upower util-linux psmisc
         fi
     fi
-
     if ! python3 -c 'import gi; gi.require_version("Gtk","4.0"); from gi.repository import Gtk' >/dev/null 2>&1; then
         echo "FEHLER: GTK4/Python ist nicht verfügbar."
         return 1
@@ -626,7 +585,6 @@ install_wipe_auto_app() {
     cat > "$WIPE_AUTO_SCRIPT" <<'WIPE_AUTO_EOF'
 #!/usr/bin/env bash
 set -u
-
 # ============================================================
 # Wipe Auto - GTK4
 # ============================================================
@@ -648,7 +606,6 @@ import gi
 gi.require_version("Gtk", "4.0")
 
 from gi.repository import Gtk, GLib, Gdk
-
 import os
 import re
 import subprocess
@@ -665,7 +622,6 @@ ENV_C = os.environ.copy()
 ENV_C["LC_ALL"] = "C"
 ENV_C["LANG"] = "C"
 
-
 def log(message):
     line = f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}  {message}"
     try:
@@ -674,7 +630,6 @@ def log(message):
     except Exception:
         pass
     print(line, flush=True)
-
 
 def run_text(args, timeout=8):
     try:
@@ -693,7 +648,6 @@ def run_text(args, timeout=8):
 
 def sudo_cmd(args, timeout=30):
     return run_text(["sudo", "-n"] + args, timeout=timeout)
-
 
 def compact_battery_time(seconds):
     if seconds is None:
@@ -715,7 +669,6 @@ def compact_battery_time(seconds):
 
     return f"{mins}m"
 
-
 def parse_upower_time(value):
     """
     UPower läuft durch ENV_C auf Englisch und liefert z.B.
@@ -736,7 +689,6 @@ def parse_upower_time(value):
 
     amount = float(m.group(1))
     unit = m.group(2).lower()
-
     if unit.startswith("second"):
         return amount
     if unit.startswith("minute"):
@@ -756,7 +708,6 @@ def battery_power_w_sysfs(battery_name):
     base = Path("/sys/class/power_supply") / battery_name
     if not base.exists():
         return None
-
     def number(name):
         try:
             return float((base / name).read_text().strip())
@@ -770,7 +721,6 @@ def battery_power_w_sysfs(battery_name):
 
     current_now = number("current_now")
     voltage_now = number("voltage_now")
-
     if (
         current_now is not None
         and voltage_now is not None
@@ -791,7 +741,6 @@ def format_battery_power(power_w, state):
         power_w = abs(float(power_w))
     except Exception:
         return ""
-
     # Solange noch kein sinnvoller Leistungswert vorliegt,
     # nichts anzeigen statt "0.0 W".
     if power_w < 0.05:
@@ -810,7 +759,6 @@ def battery_info():
     rc, out, _ = run_text(["upower", "-e"])
     if rc != 0:
         return None, None, None, None
-
     bat = None
     for line in out.splitlines():
         if "BAT" in line:
@@ -829,7 +777,6 @@ def battery_info():
     time_to_empty = None
     time_to_full = None
     power_w = None
-
     for line in info.splitlines():
         m = re.match(r"\s*capacity:\s*([0-9.,]+)%", line, re.I)
         if m:
@@ -841,7 +788,6 @@ def battery_info():
         m = re.match(r"\s*state:\s*(.+?)\s*$", line, re.I)
         if m:
             state = m.group(1).strip().lower()
-
         m = re.match(r"\s*time to empty:\s*(.+?)\s*$", line, re.I)
         if m:
             time_to_empty = parse_upower_time(m.group(1))
@@ -849,7 +795,6 @@ def battery_info():
         m = re.match(r"\s*time to full:\s*(.+?)\s*$", line, re.I)
         if m:
             time_to_full = parse_upower_time(m.group(1))
-
         # UPower liefert die aktuelle Akku-Leistung in Watt.
         m = re.match(
             r"\s*energy-rate:\s*([0-9.,]+)\s*W\s*$",
@@ -861,7 +806,6 @@ def battery_info():
                 power_w = float(m.group(1).replace(",", "."))
             except Exception:
                 power_w = None
-
     # Fallback direkt über /sys/class/power_supply/BATx.
     if power_w is None:
         battery_name = bat.rsplit("/", 1)[-1]
@@ -875,7 +819,6 @@ def battery_info():
         remaining = time_to_empty
     elif state in {"charging", "pending-charge"}:
         remaining = time_to_full
-
     return (
         health,
         state,
@@ -898,7 +841,6 @@ def disk_details():
     model = parts[1].strip() if len(parts) > 1 else "--"
     return {"size": size, "model": model}
 
-
 def disk_is_clean():
     # 1) Keine bekannten Signaturen mehr auf dem Hauptgerät.
     # Das Lesen der Signaturen auf einem Blockgerät benötigt ebenfalls
@@ -910,7 +852,6 @@ def disk_is_clean():
 
     if signatures.strip():
         return False, "Es sind noch Datenträger-Signaturen vorhanden."
-
     # 2) Keine Partitionen mehr unterhalb des NVMe-Geräts.
     rc, out, err = run_text(["lsblk", "-nr", "-o", "NAME,TYPE", DISK])
     if rc != 0:
@@ -927,12 +868,13 @@ def disk_is_clean():
 
     return True, ""
 
-
 class WipeAutoApp(Gtk.Application):
     def __init__(self):
         super().__init__(application_id="com.david.WipeAuto")
         self.window = None
         self.wiping = False
+        self.soh_alert_active = False
+        self.soh_blink_on = False
 
         # Letzte erkannte Größe + Modellbezeichnung der SSD.
         # Diese Information bleibt nach dem Wipe sichtbar.
@@ -943,7 +885,6 @@ class WipeAutoApp(Gtk.Application):
             self.window.present()
             GLib.idle_add(self.focus_wipe_button)
             return
-
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
@@ -953,7 +894,6 @@ class WipeAutoApp(Gtk.Application):
         key_controller = Gtk.EventControllerKey.new()
         key_controller.connect("key-pressed", self.on_key_pressed)
         self.window.add_controller(key_controller)
-
         # Sobald Wipe Auto wirklich das aktive Wayland-Fenster wird,
         # den Tastaturfokus sofort auf WIPE SSD legen.
         self.window.connect(
@@ -966,7 +906,6 @@ class WipeAutoApp(Gtk.Application):
         outer.set_margin_bottom(8)
         outer.set_margin_start(10)
         outer.set_margin_end(10)
-
         # ----------------------------------------------------
         # Kopfzeile
         # ----------------------------------------------------
@@ -978,7 +917,6 @@ class WipeAutoApp(Gtk.Application):
         title = Gtk.Label(label="WIPE AUTO")
         title.set_xalign(0)
         title.add_css_class("main-title")
-
         version = Gtk.Label(label=f"v{VERSION}")
         version.set_xalign(0)
         version.add_css_class("version")
@@ -991,7 +929,6 @@ class WipeAutoApp(Gtk.Application):
         self.refresh_button.set_valign(Gtk.Align.CENTER)
         self.refresh_button.set_focusable(False)
         self.refresh_button.connect("clicked", self.on_refresh)
-
         top.append(title_line)
         top.append(self.refresh_button)
         outer.append(top)
@@ -1006,7 +943,6 @@ class WipeAutoApp(Gtk.Application):
         self.battery_card.add_css_class("card")
 
         bhead = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-
         btitle = Gtk.Label(label="BATTERY")
         btitle.set_xalign(0)
         btitle.set_hexpand(True)
@@ -1022,21 +958,19 @@ class WipeAutoApp(Gtk.Application):
             spacing=8
         )
         battery_metrics.set_homogeneous(False)
-
-        health_metric = Gtk.Box(
+        self.health_metric = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=2
         )
-        health_metric.add_css_class("metric")
-        health_metric.set_size_request(220, -1)
-        health_metric.set_hexpand(False)
+        self.health_metric.add_css_class("metric")
+        self.health_metric.set_size_request(220, -1)
+        self.health_metric.set_hexpand(False)
 
         self.battery_value = Gtk.Label(label="--")
         self.battery_value.add_css_class("metric-value")
         self.battery_value.add_css_class("neutral")
 
-        health_metric.append(self.battery_value)
-
+        self.health_metric.append(self.battery_value)
         charging_metric = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=2
@@ -1049,8 +983,7 @@ class WipeAutoApp(Gtk.Application):
         self.charging_value.add_css_class("neutral")
 
         charging_metric.append(self.charging_value)
-
-        battery_metrics.append(health_metric)
+        battery_metrics.append(self.health_metric)
         battery_metrics.append(charging_metric)
         self.battery_card.append(battery_metrics)
 
@@ -1061,7 +994,6 @@ class WipeAutoApp(Gtk.Application):
         self.battery_card.append(self.battery_note)
 
         outer.append(self.battery_card)
-
         # ----------------------------------------------------
         # SSD
         # ----------------------------------------------------
@@ -1072,7 +1004,6 @@ class WipeAutoApp(Gtk.Application):
         self.disk_card.add_css_class("card")
 
         dhead = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-
         dtitle = Gtk.Label(label="SSD")
         dtitle.set_xalign(0)
         dtitle.set_hexpand(True)
@@ -1085,7 +1016,6 @@ class WipeAutoApp(Gtk.Application):
         dhead.append(dtitle)
         dhead.append(self.disk_badge)
         self.disk_card.append(dhead)
-
         self.disk_device = Gtk.Label(label=DISK)
         self.disk_device.set_xalign(0)
         self.disk_device.add_css_class("interface")
@@ -1096,7 +1026,6 @@ class WipeAutoApp(Gtk.Application):
         self.disk_value.add_css_class("disk-result")
         self.disk_value.add_css_class("neutral")
         self.disk_card.append(self.disk_value)
-
         self.disk_note = Gtk.Label(label="")
         self.disk_note.set_xalign(0)
         self.disk_note.set_wrap(True)
@@ -1108,7 +1037,6 @@ class WipeAutoApp(Gtk.Application):
             spacing=8
         )
         self.action_area.set_halign(Gtk.Align.END)
-
         self.wipe_button = Gtk.Button(label="WIPE SSD")
         self.wipe_button.add_css_class("danger-action")
         self.wipe_button.connect("clicked", self.on_wipe_clicked)
@@ -1123,7 +1051,6 @@ class WipeAutoApp(Gtk.Application):
         outer.append(self.disk_card)
 
         self.window.set_child(outer)
-
         # ENTER soll direkt WIPE SSD auslösen.
         self.window.set_default_widget(self.wipe_button)
         self.wipe_button.grab_focus()
@@ -1136,7 +1063,8 @@ class WipeAutoApp(Gtk.Application):
         # Charging Status jede Sekunde aktuell halten, ohne SSD-Ergebnis
         # oder Bestätigungszustand anzufassen.
         GLib.timeout_add_seconds(1, self.refresh_battery_timer)
-
+        # Unter 75 % SoH blinkt das komplette linke SoH-Feld rot.
+        GLib.timeout_add(450, self.update_soh_blink)
         # Nach dem Refresh Fokus sicher wieder auf WIPE SSD setzen.
         GLib.idle_add(self.focus_wipe_button)
 
@@ -1158,7 +1086,6 @@ class WipeAutoApp(Gtk.Application):
             font-size: 9px;
             font-weight: 700;
         }
-
         .card {
             background: #191c22;
             border: 2px solid #303641;
@@ -1181,11 +1108,21 @@ class WipeAutoApp(Gtk.Application):
             padding: 5px 10px;
             font-weight: 800;
         }
-
         .metric {
             background: #111318;
+            border: 2px solid transparent;
             border-radius: 9px;
             padding: 6px 5px;
+        }
+
+        .metric.soh-alert {
+            background: #9b1414;
+            border-color: #ff4c4c;
+        }
+
+        .metric.soh-alert .bad {
+            color: #ffffff;
+            background: transparent;
         }
 
         .metric-caption {
@@ -1198,7 +1135,6 @@ class WipeAutoApp(Gtk.Application):
             font-size: 24px;
             font-weight: 800;
         }
-
         .disk-result {
             background: #111318;
             border-radius: 9px;
@@ -1224,7 +1160,6 @@ class WipeAutoApp(Gtk.Application):
         .warn {
             color: #ffb84d;
         }
-
         .neutral {
             color: #d8dde5;
         }
@@ -1243,7 +1178,6 @@ class WipeAutoApp(Gtk.Application):
             font-weight: 800;
             padding: 4px 14px;
         }
-
         /* Sehr deutlich sichtbarer Tastaturfokus */
         button.danger-action.keyboard-focus,
         button.danger-action:focus {
@@ -1261,7 +1195,6 @@ class WipeAutoApp(Gtk.Application):
             padding: 7px 12px;
             font-weight: 900;
         }
-
         button.confirm {
             color: #ff6464;
             font-weight: 900;
@@ -1282,7 +1215,6 @@ class WipeAutoApp(Gtk.Application):
             padding: 4px 14px;
         }
         """
-
         provider = Gtk.CssProvider()
         provider.load_from_data(css)
 
@@ -1296,7 +1228,6 @@ class WipeAutoApp(Gtk.Application):
         for c in ("good", "bad", "warn", "neutral", "live"):
             widget.remove_css_class(c)
         widget.add_css_class(klass)
-
     def on_wipe_focus_changed(self, widget, pspec):
         try:
             focused = widget.get_property("has-focus")
@@ -1313,7 +1244,6 @@ class WipeAutoApp(Gtk.Application):
             active = window.get_property("is-active")
         except Exception:
             active = False
-
         if active and not self.wiping:
             GLib.idle_add(self.focus_wipe_button)
 
@@ -1326,7 +1256,6 @@ class WipeAutoApp(Gtk.Application):
             self.window.set_default_widget(self.wipe_button)
             self.wipe_button.grab_focus()
         return False
-
     def on_refresh(self, button):
         if not self.wiping:
             # Nach einem erfolgreichen Wipe ist der WIPE-Button bewusst
@@ -1338,9 +1267,10 @@ class WipeAutoApp(Gtk.Application):
 
     def refresh_battery(self):
         health, state, remaining, power_w = battery_info()
-
         power_text = format_battery_power(power_w, state)
-
+        self.set_soh_alert(
+            health is not None and health < BATTERY_BAD_BELOW
+        )
         # ----------------------------------------------------
         # LINKS: nur State of Health
         # ----------------------------------------------------
@@ -1362,7 +1292,6 @@ class WipeAutoApp(Gtk.Application):
             self.battery_note.set_text(
                 "Battery Health innerhalb der Prüfgrenze."
             )
-
         # ----------------------------------------------------
         # RECHTS: Charging/Discharging + Restzeit + Leistung
         # ----------------------------------------------------
@@ -1377,7 +1306,6 @@ class WipeAutoApp(Gtk.Application):
                 parts = ["Fully Charged"]
             else:
                 parts = ["Charging"]
-
                 if remaining:
                     parts.append(remaining)
 
@@ -1395,7 +1323,6 @@ class WipeAutoApp(Gtk.Application):
 
             self.charging_value.set_text(" · ".join(parts))
             self.set_class(self.charging_value, "warn")
-
         else:
             parts = ["Discharging"]
 
@@ -1408,6 +1335,36 @@ class WipeAutoApp(Gtk.Application):
             self.charging_value.set_text(" · ".join(parts))
             self.set_class(self.charging_value, "warn")
 
+    def set_soh_alert(self, active):
+        active = bool(active)
+        if active == self.soh_alert_active:
+            return
+
+        self.soh_alert_active = active
+        self.soh_blink_on = active
+
+        if active:
+            self.health_metric.add_css_class("soh-alert")
+        else:
+            self.health_metric.remove_css_class("soh-alert")
+
+    def update_soh_blink(self):
+        if self.window is None:
+            return False
+
+        if not self.soh_alert_active:
+            self.soh_blink_on = False
+            self.health_metric.remove_css_class("soh-alert")
+            return True
+
+        self.soh_blink_on = not self.soh_blink_on
+        if self.soh_blink_on:
+            self.health_metric.add_css_class("soh-alert")
+        else:
+            self.health_metric.remove_css_class("soh-alert")
+
+        return True
+
     def refresh_battery_timer(self):
         if self.window is None:
             return False
@@ -1417,10 +1374,8 @@ class WipeAutoApp(Gtk.Application):
 
     def refresh_all(self):
         self.refresh_battery()
-
         # SSD
         details = disk_details()
-
         if details is None:
             self.disk_badge.set_text("NOT FOUND")
             self.set_class(self.disk_badge, "warn")
@@ -1433,7 +1388,6 @@ class WipeAutoApp(Gtk.Application):
         else:
             self.disk_badge.set_text("READY")
             self.set_class(self.disk_badge, "neutral")
-
             self.last_disk_display = (
                 f"{details['size']}  •  {details['model']}"
             )
@@ -1442,14 +1396,12 @@ class WipeAutoApp(Gtk.Application):
             self.set_class(self.disk_value, "neutral")
             self.disk_note.set_text("Bereit zum Löschen.")
             self.wipe_button.set_sensitive(True)
-
     def clear_action_area(self):
         child = self.action_area.get_first_child()
         while child:
             nxt = child.get_next_sibling()
             self.action_area.remove(child)
             child = nxt
-
     def restore_wipe_button(self):
         self.clear_action_area()
         self.action_area.set_hexpand(False)
@@ -1463,7 +1415,6 @@ class WipeAutoApp(Gtk.Application):
             return
 
         self.clear_action_area()
-
         # Bestätigungszeile über die verfügbare Breite ziehen.
         self.action_area.set_halign(Gtk.Align.FILL)
         self.action_area.set_hexpand(True)
@@ -1472,7 +1423,6 @@ class WipeAutoApp(Gtk.Application):
         warning.set_xalign(0)
         warning.set_hexpand(True)
         warning.add_css_class("confirm-warning")
-
         yes = Gtk.Button(label="YES")
         yes.add_css_class("confirm")
         yes.connect("clicked", self.on_confirm_wipe)
@@ -1488,7 +1438,6 @@ class WipeAutoApp(Gtk.Application):
         self.action_area.append(warning)
         self.action_area.append(cancel)
         self.action_area.append(yes)
-
         # Zweites ENTER bestätigt direkt mit YES.
         self.window.set_default_widget(yes)
         yes.grab_focus()
@@ -1502,7 +1451,6 @@ class WipeAutoApp(Gtk.Application):
     def on_cancel_wipe(self, button):
         if self.wiping:
             return
-
         self.restore_wipe_button()
         self.refresh_all()
         GLib.idle_add(self.focus_wipe_button)
@@ -1518,7 +1466,6 @@ class WipeAutoApp(Gtk.Application):
 
         self.disk_badge.set_text("WIPING")
         self.set_class(self.disk_badge, "live")
-
         if self.last_disk_display:
             self.disk_value.set_text(
                 f"{self.last_disk_display} • Wird Gelöscht …"
@@ -1534,7 +1481,6 @@ class WipeAutoApp(Gtk.Application):
 
     def wipe_worker(self):
         log(f"Wipe gestartet: {DISK}")
-
         # Sicherheitscheck: Zielgerät muss existieren und ein block device sein.
         if not Path(DISK).exists():
             GLib.idle_add(
@@ -1545,7 +1491,6 @@ class WipeAutoApp(Gtk.Application):
 
         # Alle Child-Partitionen zuerst aushängen.
         rc, out, _ = run_text(["lsblk", "-nrpo", "NAME,TYPE", DISK])
-
         if rc == 0:
             children = []
             for line in out.splitlines()[1:]:
@@ -1556,14 +1501,12 @@ class WipeAutoApp(Gtk.Application):
             for part in reversed(children):
                 sudo_cmd(["umount", part], timeout=10)
                 sudo_cmd(["fuser", "-k", part], timeout=10)
-
         # Hauptgerät vorsichtshalber ebenfalls unmount/fuser.
         sudo_cmd(["umount", DISK], timeout=10)
         sudo_cmd(["fuser", "-k", DISK], timeout=10)
 
         # Eigentliche destruktive Aktion.
         rc, out, err = sudo_cmd(["wipefs", "-a", DISK], timeout=30)
-
         if rc != 0:
             log(f"wipefs FEHLER rc={rc}: {err}")
             GLib.idle_add(
@@ -1576,7 +1519,6 @@ class WipeAutoApp(Gtk.Application):
         sudo_cmd(["partprobe", DISK], timeout=15)
 
         clean, reason = disk_is_clean()
-
         if not clean:
             log(f"Verifikation FEHLER: {reason}")
             GLib.idle_add(
@@ -1594,7 +1536,6 @@ class WipeAutoApp(Gtk.Application):
 
         self.disk_badge.set_text("PASS")
         self.set_class(self.disk_badge, "good")
-
         if self.last_disk_display:
             self.disk_value.set_text(
                 f"{self.last_disk_display} • Erfolgreich Gelöscht"
@@ -1609,7 +1550,6 @@ class WipeAutoApp(Gtk.Application):
         )
 
         self.clear_action_area()
-
         # Nach Erfolg bewusst NICHT refresh_all() aufrufen:
         # Der Erfolg soll sichtbar stehen bleiben.
         return False
@@ -1620,7 +1560,6 @@ class WipeAutoApp(Gtk.Application):
 
         self.disk_badge.set_text("ERROR")
         self.set_class(self.disk_badge, "bad")
-
         if self.last_disk_display:
             self.disk_value.set_text(
                 f"{self.last_disk_display} • Löschen Fehlgeschlagen"
@@ -1637,12 +1576,10 @@ class WipeAutoApp(Gtk.Application):
 
     def on_key_pressed(self, controller, keyval, keycode, state):
         name = Gdk.keyval_name(keyval) or ""
-
         if state & Gdk.ModifierType.CONTROL_MASK:
             if name.lower() == "w":
                 self.quit()
                 return True
-
             if name.lower() == "q":
                 helper = Path.home() / ".local/bin/close-diagnostic-apps.sh"
                 try:
@@ -1655,7 +1592,6 @@ class WipeAutoApp(Gtk.Application):
                 except Exception as exc:
                     log(f"Strg+Q Fehler: {exc}")
                 return True
-
         return False
 
     def do_shutdown(self):
@@ -1671,7 +1607,6 @@ python3 "$TMP_PY"
 WIPE_AUTO_EOF
 
     chmod +x "$WIPE_AUTO_SCRIPT"
-
     cat > "$WIPE_AUTO_APP_DESKTOP" <<EOF
 [Desktop Entry]
 Type=Application
@@ -1689,7 +1624,6 @@ EOF
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
-
     echo "OK: Wipe Auto GTK-App installiert/aktualisiert."
     echo "App-ID: com.david.WipeAuto"
     echo "Programm: $WIPE_AUTO_SCRIPT"
@@ -1711,7 +1645,6 @@ set -u
 
 TMP_PY="$(mktemp /tmp/hardware-check.XXXXXX.py)"
 trap 'rm -f "$TMP_PY"' EXIT
-
 cat > "$TMP_PY" <<'PY'
 #!/usr/bin/env python3
 import gi
@@ -1738,7 +1671,6 @@ LOG_FILE = Path.home() / "hardware_check.log"
 
 SYS_USB = Path("/sys/bus/usb/devices")
 SYS_TYPEC = Path("/sys/class/typec")
-
 CSS = """
 window { background: #17171c; color: #f4f4f5; }
 .header-title { font-size: 22px; font-weight: 800; }
@@ -1756,7 +1688,6 @@ button.action { min-height: 44px; border-radius: 10px; font-weight: 800; }
 button.action-orange { background: #3a3020; color: #f5a623; border: 1px solid #71501c; }
 button.action-green { background: #1d3c29; color: #48d17a; border: 1px solid #2e7547; }
 button.secondary { min-height: 34px; border-radius: 9px; }
-
 button.speaker-button {
     min-height: 26px;
     min-width: 44px;
@@ -1782,7 +1713,6 @@ button.tiny-button {
     font-size: 10px;
     font-weight: 800;
 }
-
 button.benchmark-open {
     min-height: 27px;
     padding: 1px 8px;
@@ -1812,7 +1742,6 @@ button.benchmark-choice {
     padding-top: 5px;
     padding-bottom: 5px;
 }
-
 button.speaker-both {
     min-height: 26px;
     min-width: 44px;
@@ -1821,7 +1750,6 @@ button.speaker-both {
     font-size: 15px;
     font-weight: 800;
 }
-
 .usb-row {
     background: #1d1d22;
     border: 1px solid #34343c;
@@ -1843,7 +1771,6 @@ button.speaker-both {
 .key-tested-blue { background: #245ea8; color: #ffffff; border-color: #5a9df2; }
 .progress-label { font-size: 14px; font-weight: 800; }
 """
-
 def log(msg):
     try:
         with LOG_FILE.open("a", encoding="utf-8") as f:
@@ -1861,7 +1788,6 @@ def detect_tpm():
     tpm = Path("/sys/class/tpm/tpm0")
     if not tpm.exists():
         return "red", "TPM AUS", "Kein TPM erkannt"
-
     for p in (tpm/"tpm_version_major", tpm/"device"/"tpm_version_major"):
         v = read_text(p)
         if v == "2":
@@ -1875,9 +1801,7 @@ def detect_tpm():
     caps = read_text(tpm/"caps").lower()
     if "2.0" in caps:
         return "green", "TPM 2.0 AN", "TPM 2.0 erkannt"
-
     return "orange", "TPM AN", "TPM vorhanden, Version nicht eindeutig"
-
 def detect_secure_boot():
     if shutil.which("mokutil"):
         try:
@@ -1891,7 +1815,6 @@ def detect_secure_boot():
                 return "orange", "SECURE BOOT AUS", "UEFI Secure Boot deaktiviert"
         except Exception:
             pass
-
     for f in glob.glob("/sys/firmware/efi/efivars/SecureBoot-*"):
         try:
             b = Path(f).read_bytes()
@@ -1901,7 +1824,6 @@ def detect_secure_boot():
             pass
 
     return "orange", "SECURE BOOT AUS", "Secure Boot nicht aktiv/ermittelbar"
-
 def read_float(path):
     try:
         return float(read_text(path))
@@ -1927,7 +1849,6 @@ def symlink_target(path):
 
 def root_usb_hubs():
     result = []
-
     if not SYS_USB.exists():
         return result
 
@@ -1944,7 +1865,6 @@ def root_usb_hubs():
             continue
 
         interface = resolved / f"{bus}-0:1.0"
-
         if not interface.exists():
             candidates = sorted(
                 resolved.glob(f"{bus}-0:*"),
@@ -1963,7 +1883,6 @@ def root_usb_hubs():
         })
 
     return result
-
 
 def port_number_from_name(name):
     m = re.search(r"-port(\d+)$", name)
@@ -1984,7 +1903,6 @@ def collect_root_port_objects(include_unknown=False, superspeed_only=False):
             continue
 
         pattern = f"usb{hub['bus']}-port*"
-
         for port in sorted(
             hub["interface"].glob(pattern),
             key=lambda p: natural_key(p.name),
@@ -1997,13 +1915,11 @@ def collect_root_port_objects(include_unknown=False, superspeed_only=False):
 
             if not include_unknown and connect_type != "hotplug":
                 continue
-
             if include_unknown and connect_type in {"hardwired", "not used", "unused"}:
                 continue
 
             peer = symlink_target(port / "peer")
             connector = symlink_target(port / "connector")
-
             objects.append({
                 "path": str(port.resolve()),
                 "name": port.name,
@@ -2017,7 +1933,6 @@ def collect_root_port_objects(include_unknown=False, superspeed_only=False):
             })
 
     return objects
-
 
 def canonical_group_key(obj):
     paths = [obj["path"]]
@@ -2041,7 +1956,6 @@ def group_physical_ports(objects):
         for i, key_a in enumerate(keys):
             if key_a not in groups:
                 continue
-
             paths_a = {
                 item["path"] for item in groups[key_a]
             } | {
@@ -2057,7 +1971,6 @@ def group_physical_ports(objects):
                 } | {
                     item["peer"] for item in groups[key_b] if item["peer"]
                 }
-
                 if paths_a & paths_b:
                     groups[key_a].extend(groups.pop(key_b))
                     changed = True
@@ -2073,7 +1986,6 @@ def group_physical_ports(objects):
         for item in items:
             unique[item["path"]] = item
         items = list(unique.values())
-
         typec_name = None
         for item in items:
             connector = item["connector"]
@@ -2089,7 +2001,6 @@ def group_physical_ports(objects):
             if m:
                 typec_name = m.group(1)
                 break
-
         result.append({
             "key": f"physical-{idx}",
             "raw_key": " | ".join(sorted(x["path"] for x in items)),
@@ -2109,7 +2020,6 @@ def discover_typec_ports():
     for path in sorted(SYS_TYPEC.glob("port*"), key=lambda p: natural_key(p.name)):
         if not re.fullmatch(r"port\d+", path.name):
             continue
-
         result.append({
             "name": path.name,
             "path": str(path.resolve()),
@@ -2124,7 +2034,6 @@ def group_present(group):
         if (SYS_USB / item["device_name"]).exists():
             return True
     return False
-
 
 def boot_usb_device_name():
     try:
@@ -2144,7 +2053,6 @@ def boot_usb_device_name():
             stderr=subprocess.DEVNULL,
             timeout=2,
         ).strip()
-
         if not parent:
             return None
 
@@ -2166,7 +2074,6 @@ def discover_physical_ports():
         include_unknown=False,
         superspeed_only=False,
     )
-
     if not objects:
         mode = "fallback-superspeed"
         objects = collect_root_port_objects(
@@ -2186,7 +2093,6 @@ def discover_physical_ports():
 
     raw_count = len(groups)
     c_count_hint = min(len(typec), len(groups))
-
     a_map = {}
     c_map = {}
     classification = "generic"
@@ -2204,7 +2110,6 @@ def discover_physical_ports():
 
     def group_has_peer(group):
         return any(bool(item.get("peer")) for item in group["items"])
-
     unpaired_ss = [
         g for g in groups
         if not group_has_peer(g) and group_max_speed(g) > 480.0
@@ -2222,7 +2127,6 @@ def discover_physical_ports():
         ports = group_port_numbers(group)
         if len(ports) == 1:
             ss_by_port[ports[0]] = group
-
     for group in unpaired_usb2:
         ports = group_port_numbers(group)
         if len(ports) == 1:
@@ -2234,7 +2138,6 @@ def discover_physical_ports():
         classification = "ucsi-companion-topology"
         c_ports = common_ports[:c_count_hint]
         used_keys = set()
-
         for idx, port_no in enumerate(c_ports):
             ss_group = ss_by_port[port_no]
             usb2_group = usb2_by_port[port_no]
@@ -2243,7 +2146,6 @@ def discover_physical_ports():
             c_map[usb2_group["raw_key"]] = idx
             used_keys.add(ss_group["raw_key"])
             used_keys.add(usb2_group["raw_key"])
-
         a_groups = [g for g in groups if g["raw_key"] not in used_keys]
         a_groups.sort(
             key=lambda g: (
@@ -2258,7 +2160,6 @@ def discover_physical_ports():
         c_count = len(c_ports)
         a_count = len(a_groups)
         physical_total = a_count + c_count
-
     else:
         classification = "generic-fallback"
         direct_c = [g for g in groups if g.get("typec_name")]
@@ -2271,7 +2172,6 @@ def discover_physical_ports():
         c_count = min(c_count, len(groups))
         used_keys = set(c_map)
         a_groups = [g for g in groups if g["raw_key"] not in used_keys]
-
         if c_count > 0 and len(groups) >= 2 * c_count:
             physical_total = max(c_count, len(groups) - c_count)
         else:
@@ -2281,7 +2181,6 @@ def discover_physical_ports():
 
         for idx, group in enumerate(a_groups[:a_count]):
             a_map[group["raw_key"]] = idx
-
     return {
         "mode": mode,
         "classification": classification,
@@ -2301,7 +2200,6 @@ def usb_device_snapshot():
 
     if not SYS_USB.exists():
         return result
-
     for dev in SYS_USB.iterdir():
         name = dev.name
         if not re.fullmatch(r"\d+-\d+(?:\.\d+)*", name):
@@ -2315,7 +2213,6 @@ def usb_device_snapshot():
         result[name] = title
 
     return result
-
 
 def group_contains_device(group, device_name):
     if not device_name:
@@ -2336,7 +2233,6 @@ def group_min_port(group):
         if item.get("port_no") is not None
     ]
     return min(ports) if ports else 999
-
 def make_tone(channel):
     # Kurzer, weicher 3-Ton-Testklang: C5 - E5 - G5.
     # Derselbe Klang wird ausschließlich auf dem gewählten Stereokanal
@@ -2353,7 +2249,6 @@ def make_tone(channel):
     path = Path(tempfile.gettempdir()) / f"hardware-check-{channel}.wav"
 
     frames = bytearray()
-
     def add_sample(left, right):
         frames.extend(struct.pack("<hh", left, right))
 
@@ -2366,7 +2261,6 @@ def make_tone(channel):
             fade_in = min(1.0, i / fade_len)
             fade_out = min(1.0, (count - 1 - i) / fade_len)
             envelope = max(0.0, min(fade_in, fade_out))
-
             # Grundton + sehr leise zweite Harmonische, damit es
             # weniger nach technischem Sinuston klingt.
             t = i / sr
@@ -2376,7 +2270,6 @@ def make_tone(channel):
             ) / 1.16
 
             value = int(32767 * amp * envelope * sample)
-
             if channel == "left":
                 left, right = value, 0
             elif channel == "right":
@@ -2389,7 +2282,6 @@ def make_tone(channel):
         if note_index != len(notes) - 1:
             for _ in range(int(sr * gap)):
                 add_sample(0, 0)
-
     with wave.open(str(path), "wb") as w:
         w.setnchannels(2)
         w.setsampwidth(2)
@@ -2397,9 +2289,6 @@ def make_tone(channel):
         w.writeframes(bytes(frames))
 
     return path
-
-
-
 def read_cpu_temperature():
     """
     CPU-Package-/Die-Temperatur in °C.
@@ -2417,7 +2306,6 @@ def read_cpu_temperature():
     try:
         preferred = []
         fallback = []
-
         for hwmon in Path("/sys/class/hwmon").glob("hwmon*"):
             name = read_text(hwmon / "name").lower()
 
@@ -2429,7 +2317,6 @@ def read_cpu_temperature():
                 "cpu-thermal",
             }:
                 continue
-
             for temp_file in hwmon.glob("temp*_input"):
                 try:
                     raw = float(temp_file.read_text().strip())
@@ -2442,7 +2329,6 @@ def read_cpu_temperature():
 
                 stem = temp_file.name.replace("_input", "")
                 label = read_text(hwmon / f"{stem}_label").lower()
-
                 if any(
                     token in label
                     for token in (
@@ -2459,7 +2345,6 @@ def read_cpu_temperature():
         values = preferred or fallback
         if values:
             return max(values)
-
         for zone in Path("/sys/class/thermal").glob("thermal_zone*"):
             ztype = read_text(zone / "type").lower()
 
@@ -2473,7 +2358,6 @@ def read_cpu_temperature():
                 )
             ):
                 continue
-
             try:
                 raw = float((zone / "temp").read_text().strip())
                 value = raw / 1000.0 if raw > 500 else raw
@@ -2489,7 +2373,6 @@ def read_cpu_temperature():
         pass
 
     return None
-
 
 CPU_BENCH_WORKER = r"""
 import hashlib
@@ -2512,7 +2395,6 @@ def worker(deadline, q, seed):
         count += 1
 
     q.put(count)
-
 if __name__ == "__main__":
     ctx = mp.get_context("fork")
     q = ctx.Queue()
@@ -2536,7 +2418,6 @@ if __name__ == "__main__":
             total += q.get(timeout=1.0)
         except queue.Empty:
             pass
-
     elapsed = max(0.001, time.monotonic() - start)
     print(f"RESULT CPU {total} {elapsed:.6f} {workers}", flush=True)
 """
@@ -2553,7 +2434,6 @@ mode = sys.argv[2]
 MIB = 1024 * 1024
 GIB = 1024 * MIB
 CHUNK = 1 * MIB
-
 def mem_available():
     try:
         with open("/proc/meminfo", "r", encoding="utf-8") as f:
@@ -2565,7 +2445,6 @@ def mem_available():
     return 512 * MIB
 
 available = mem_available()
-
 # Genug RAM für GNOME / Live-System freilassen.
 reserve = max(768 * MIB, int(available * 0.25))
 usable = max(64 * MIB, available - reserve)
@@ -2579,7 +2458,6 @@ else:
 
 target = max(64 * MIB, int(target))
 target = (target // CHUNK) * CHUNK
-
 try:
     mem = mmap.mmap(-1, target, access=mmap.ACCESS_WRITE)
 except Exception as exc:
@@ -2596,7 +2474,6 @@ try:
     while time.monotonic() < deadline:
         for pattern in patterns:
             expected = bytes([pattern]) * CHUNK
-
             # Schreiben: alle Seiten wirklich anfassen.
             for offset in range(0, target, CHUNK):
                 end = min(offset + CHUNK, target)
@@ -2609,7 +2486,6 @@ try:
                 if data != expected[:end-offset]:
                     errors += 1
                 checked += end - offset
-
             passes += 1
 
             if time.monotonic() >= deadline:
@@ -2629,11 +2505,9 @@ def format_test_clock(seconds):
     seconds = max(0, int(seconds))
     minutes, sec = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
-
     if hours:
         return f"{hours:d}:{minutes:02d}:{sec:02d}"
     return f"{minutes:02d}:{sec:02d}"
-
 
 class App(Gtk.Application):
     def __init__(self):
@@ -2664,7 +2538,6 @@ class App(Gtk.Application):
         self.test_started = 0.0
         self.test_cancelled = False
         self.benchmark_buttons = []
-
     def do_activate(self):
         if self.window:
             self.window.present()
@@ -2677,7 +2550,6 @@ class App(Gtk.Application):
         provider = Gtk.CssProvider()
         provider.load_from_data(CSS.encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
         controller = Gtk.EventControllerKey.new()
         controller.connect("key-pressed", self.on_key)
         self.window.add_controller(controller)
@@ -2687,7 +2559,6 @@ class App(Gtk.Application):
         self.stack.add_named(self.build_overview(), "overview")
         self.stack.add_named(self.build_keyboard(), "keyboard")
         self.stack.add_named(self.build_benchmarks(), "benchmarks")
-
         # Die Hardware-Test-Buttons dürfen niemals Tastaturfokus bekommen.
         # Dadurch kann z.B. SPACE im Tastatur-Test nicht versehentlich
         # "ÜBERSICHT", "RESET" oder einen anderen Button auslösen.
@@ -2701,7 +2572,6 @@ class App(Gtk.Application):
 
         log("Hardware Check gestartet")
         self.window.present()
-
     def header(self, title, back=False, refresh=False, version=None):
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         row.set_margin_start(10)
@@ -2714,7 +2584,6 @@ class App(Gtk.Application):
             b.add_css_class("secondary")
             b.connect("clicked", self.show_overview)
             row.append(b)
-
         title_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         title_row.set_hexpand(True)
 
@@ -2731,7 +2600,6 @@ class App(Gtk.Application):
             title_row.append(v)
 
         row.append(title_row)
-
         if refresh:
             b = Gtk.Button(label="REFRESH")
             b.add_css_class("refresh-button")
@@ -2744,7 +2612,6 @@ class App(Gtk.Application):
     def disable_button_focus(self, widget):
         if isinstance(widget, Gtk.Button):
             widget.set_focusable(False)
-
         child = widget.get_first_child()
         while child is not None:
             self.disable_button_focus(child)
@@ -2756,7 +2623,6 @@ class App(Gtk.Application):
         l = Gtk.Label(label=title); l.set_xalign(0); l.add_css_class("card-title")
         box.append(l)
         return box
-
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.1"))
@@ -2765,7 +2631,6 @@ class App(Gtk.Application):
         content.set_margin_start(8)
         content.set_margin_end(8)
         content.set_margin_bottom(6)
-
         # =====================================================
         # LINKE SPALTE
         # TPM -> Secure Boot -> Lautsprecher -> Tastatur
@@ -2773,7 +2638,6 @@ class App(Gtk.Application):
         left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         left.set_size_request(285, -1)
         left.set_hexpand(False)
-
         # TPM
         tpm = self.card("TPM")
         self.tpm_status = Gtk.Label(label="● PRÜFE …")
@@ -2787,7 +2651,6 @@ class App(Gtk.Application):
         tpm.append(self.tpm_status)
         tpm.append(self.tpm_detail)
         left.append(tpm)
-
         # Secure Boot
         sb = self.card("SECURE BOOT")
         self.sb_status = Gtk.Label(label="● PRÜFE …")
@@ -2801,7 +2664,6 @@ class App(Gtk.Application):
         sb.append(self.sb_status)
         sb.append(self.sb_detail)
         left.append(sb)
-
         # Lautsprecher
         speaker = self.card("LAUTSPRECHER")
         speaker.add_css_class("speaker-card")
@@ -2810,7 +2672,6 @@ class App(Gtk.Application):
         sr.set_halign(Gtk.Align.CENTER)
 
         self.speaker_buttons = {}
-
         left_btn = Gtk.Button(label="←")
         left_btn.add_css_class("speaker-button")
         left_btn.add_css_class("action-orange")
@@ -2818,7 +2679,6 @@ class App(Gtk.Application):
         left_btn.connect("clicked", self.test_speaker, "left")
         self.speaker_buttons["left"] = left_btn
         sr.append(left_btn)
-
         both_btn = Gtk.Button(label="🔊")
         both_btn.add_css_class("speaker-both")
         both_btn.add_css_class("action-orange")
@@ -2826,7 +2686,6 @@ class App(Gtk.Application):
         both_btn.connect("clicked", self.test_speaker, "both")
         self.speaker_buttons["both"] = both_btn
         sr.append(both_btn)
-
         right_btn = Gtk.Button(label="→")
         right_btn.add_css_class("speaker-button")
         right_btn.add_css_class("action-orange")
@@ -2840,7 +2699,6 @@ class App(Gtk.Application):
 
         # Tastatur
         kb = self.card("TASTATUR")
-
         kb_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
 
         self.keyboard_summary = Gtk.Label(label="● Noch nicht getestet")
@@ -2852,7 +2710,6 @@ class App(Gtk.Application):
         kb_btn.add_css_class("tiny-button")
         kb_btn.set_valign(Gtk.Align.START)
         kb_btn.connect("clicked", self.show_keyboard)
-
         kb_row.append(self.keyboard_summary)
         kb_row.append(kb_btn)
         kb.append(kb_row)
@@ -2862,7 +2719,6 @@ class App(Gtk.Application):
         benchmark_btn.add_css_class("benchmark-open")
         benchmark_btn.connect("clicked", self.show_benchmarks)
         left.append(benchmark_btn)
-
         # =====================================================
         # RECHTE SPALTE
         # Nur USB, über praktisch die komplette verfügbare Höhe.
@@ -2875,7 +2731,6 @@ class App(Gtk.Application):
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(True)
         scroll.set_min_content_height(205)
-
         self.usb_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=4
@@ -2888,13 +2743,11 @@ class App(Gtk.Application):
 
         root.append(content)
         return root
-
     def set_status(self, widget, color, text):
         for c in ("status-green", "status-orange", "status-red"):
             widget.remove_css_class(c)
         widget.add_css_class("status-" + color)
         widget.set_text("● " + text)
-
     def refresh_security(self):
         c, t, d = detect_tpm()
         self.set_status(self.tpm_status, c, t); self.tpm_detail.set_text(d)
@@ -2906,7 +2759,6 @@ class App(Gtk.Application):
         b = self.speaker_buttons.get(ch)
         if not b:
             return
-
         b.remove_css_class("action-orange")
         b.remove_css_class("action-green")
 
@@ -2922,7 +2774,6 @@ class App(Gtk.Application):
     def update_both_speaker_state(self):
         both_ok = self.speaker_tested["left"] and self.speaker_tested["right"]
         self.set_speaker_button_state("both", both_ok)
-
     def test_speaker(self, button, ch):
         player = shutil.which("paplay") or shutil.which("aplay")
         if not player:
@@ -2941,7 +2792,6 @@ class App(Gtk.Application):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
-
         if ch == "both":
             self.speaker_tested["left"] = True
             self.speaker_tested["right"] = True
@@ -2954,13 +2804,11 @@ class App(Gtk.Application):
             self.update_both_speaker_state()
 
         log(f"Lautsprechertest {ch}")
-
     def reset_speakers(self):
         self.speaker_tested = {"left": False, "right": False}
         self.set_speaker_button_state("left", False)
         self.set_speaker_button_state("right", False)
         self.set_speaker_button_state("both", False)
-
     def reset_all(self, *_):
         # REFRESH setzt den kompletten Hardware-Test auf Anfang.
         # Aktuell belegte Ports werden direkt wieder blau erkannt.
@@ -2973,7 +2821,6 @@ class App(Gtk.Application):
         self.window.set_default_size(860, 360)
 
         log("REFRESH: kompletter Hardware-Test zurückgesetzt")
-
     def build_usb_slots(self):
         discovery = self.usb_discovery
         groups_by_key = {
@@ -2988,7 +2835,6 @@ class App(Gtk.Application):
                 {"type": "USB-A", "groups": set()},
             )
             slot["groups"].add(raw_key)
-
         for raw_key, local_idx in discovery.get("c_map", {}).items():
             slot = raw_slots.setdefault(
                 ("USB-C", int(local_idx)),
@@ -3004,7 +2850,6 @@ class App(Gtk.Application):
 
         expected = int(discovery.get("physical_total") or 0)
         missing = max(0, expected - len(raw_slots))
-
         if missing:
             unmapped = [
                 group
@@ -3018,7 +2863,6 @@ class App(Gtk.Application):
                     "type": "USB",
                     "groups": {group["raw_key"]},
                 }
-
         slots = []
         for slot in raw_slots.values():
             groups = [
@@ -3031,7 +2875,6 @@ class App(Gtk.Application):
                 default=999,
             )
             slots.append(slot)
-
         slots.sort(
             key=lambda slot: (
                 slot["sort"],
@@ -3045,7 +2888,6 @@ class App(Gtk.Application):
         for slot_idx, slot in enumerate(self.usb_slots):
             for raw_key in slot["groups"]:
                 self.usb_group_to_slot[raw_key] = slot_idx
-
     def usb_slot_for_device(self, device_name):
         if not device_name or not self.usb_discovery:
             return None
@@ -3057,7 +2899,6 @@ class App(Gtk.Application):
                     return slot_idx
 
         return None
-
     def usb_group_states(self):
         if not self.usb_discovery:
             return {}
@@ -3072,7 +2913,6 @@ class App(Gtk.Application):
         for raw_key, present in group_states.items():
             if not present:
                 continue
-
             slot_idx = self.usb_group_to_slot.get(raw_key)
             if slot_idx is None:
                 continue
@@ -3089,7 +2929,6 @@ class App(Gtk.Application):
             nxt = child.get_next_sibling()
             self.usb_box.remove(child)
             child = nxt
-
         for idx, slot in enumerate(self.usb_slots):
             connected = idx in self.usb_connected
             tested = idx in self.usb_tested
@@ -3103,7 +2942,6 @@ class App(Gtk.Application):
             else:
                 css_class = "status-orange"
                 state_text = "NICHT GETESTET"
-
             label = f"USB-Port {idx + 1} · {slot['type']}"
             if idx == self.usb_boot_slot:
                 label += " · Uwuntu Stick"
@@ -3113,7 +2951,6 @@ class App(Gtk.Application):
 
             dot = Gtk.Label(label="●")
             dot.add_css_class(css_class)
-
             name = Gtk.Label(label=label)
             name.set_xalign(0)
             name.set_hexpand(True)
@@ -3129,7 +2966,6 @@ class App(Gtk.Application):
             row.append(name)
             row.append(state)
             self.usb_box.append(row)
-
         # Backup: nur neue/geänderte Geräte, die keiner bekannten
         # physischen Buchse sicher zugeordnet werden konnten.
         for dev_name in sorted(self.usb_fallback, key=natural_key):
@@ -3138,7 +2974,6 @@ class App(Gtk.Application):
 
             css_class = "status-blue" if connected else "status-green"
             state_text = "BELEGT" if connected else "GETESTET"
-
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
             row.add_css_class("usb-row")
 
@@ -3151,7 +2986,6 @@ class App(Gtk.Application):
             name.set_hexpand(True)
             name.set_ellipsize(3)
             name.add_css_class("usb-port-name")
-
             state = Gtk.Label(label=state_text)
             state.set_xalign(1)
             state.add_css_class(css_class)
@@ -3161,7 +2995,6 @@ class App(Gtk.Application):
             row.append(name)
             row.append(state)
             self.usb_box.append(row)
-
         if not self.usb_slots and not self.usb_fallback:
             empty = Gtk.Label(label="Keine USB-Ports erkannt")
             empty.set_xalign(0)
@@ -3176,7 +3009,6 @@ class App(Gtk.Application):
             self.usb_tested.clear()
             self.usb_connected.clear()
             self.usb_fallback.clear()
-
         self.usb_boot_device = boot_usb_device_name()
         self.usb_boot_slot = self.usb_slot_for_device(self.usb_boot_device)
 
@@ -3184,7 +3016,6 @@ class App(Gtk.Application):
         self.usb_last_group_present = dict(group_states)
         self.sync_usb_connected(group_states, mark_tested=True)
         self.usb_last_devices = usb_device_snapshot()
-
         discovery = self.usb_discovery
         log(
             "USB Topologie: "
@@ -3195,13 +3026,11 @@ class App(Gtk.Application):
             f"USB-A={discovery['usb_a_count']} | "
             f"USB-C={discovery['usb_c_count']}"
         )
-
         for idx, slot in enumerate(self.usb_slots):
             log(
                 f"USB-Port {idx + 1}: type={slot['type']} | "
                 f"groups={' || '.join(sorted(slot['groups']))}"
             )
-
         if self.usb_boot_device:
             if self.usb_boot_slot is not None:
                 log(
@@ -3215,7 +3044,6 @@ class App(Gtk.Application):
                 )
 
         self.rebuild_usb()
-
     def poll_usb(self):
         if self.window is None or not self.usb_discovery:
             return False
@@ -3228,7 +3056,6 @@ class App(Gtk.Application):
             before = self.usb_last_group_present.get(raw_key, False)
             if present == before:
                 continue
-
             slot_idx = self.usb_group_to_slot.get(raw_key)
             if present:
                 if slot_idx is not None:
@@ -3240,7 +3067,6 @@ class App(Gtk.Application):
                 if slot_idx is not None:
                     log(f"USB-Port {slot_idx + 1}: Pfad entfernt")
             changed = True
-
         self.sync_usb_connected(current_groups, mark_tested=True)
         if self.usb_connected != old_connected:
             changed = True
@@ -3249,7 +3075,6 @@ class App(Gtk.Application):
         current_devices = usb_device_snapshot()
         previous_names = set(self.usb_last_devices)
         current_names = set(current_devices)
-
         for dev_name in sorted(current_names - previous_names, key=natural_key):
             if self.usb_slot_for_device(dev_name) is not None:
                 continue
@@ -3262,7 +3087,6 @@ class App(Gtk.Application):
                 f"{current_devices[dev_name]}"
             )
             changed = True
-
         for dev_name in sorted(previous_names - current_names, key=natural_key):
             if dev_name not in self.usb_fallback:
                 continue
@@ -3270,7 +3094,6 @@ class App(Gtk.Application):
             self.usb_fallback[dev_name]["connected"] = False
             log(f"USB Backup entfernt: {dev_name}")
             changed = True
-
         for dev_name in current_names:
             if dev_name in self.usb_fallback:
                 if not self.usb_fallback[dev_name].get("connected"):
@@ -3284,7 +3107,6 @@ class App(Gtk.Application):
             self.rebuild_usb()
 
         return True
-
     def reset_usb(self, *_):
         log("USB REFRESH / Neu-Erkennung")
         self.usb_rediscover(reset=True)
@@ -3298,7 +3120,6 @@ class App(Gtk.Application):
         body.set_margin_start(10)
         body.set_margin_end(10)
         body.set_margin_bottom(8)
-
         grid = Gtk.Grid()
         grid.set_row_spacing(6)
         grid.set_column_spacing(6)
@@ -3312,7 +3133,6 @@ class App(Gtk.Application):
         ]
 
         self.benchmark_buttons = []
-
         for label, kind, duration, col, row in specs:
             b = Gtk.Button(label=label)
             b.add_css_class("benchmark-choice")
@@ -3322,7 +3142,6 @@ class App(Gtk.Application):
             grid.attach(b, col, row, 1, 1)
 
         body.append(grid)
-
         self.benchmark_status = Gtk.Label(label="Bereit")
         self.benchmark_status.set_xalign(0)
         self.benchmark_status.add_css_class("benchmark-status")
@@ -3332,7 +3151,6 @@ class App(Gtk.Application):
         self.benchmark_progress.set_fraction(0.0)
         self.benchmark_progress.set_show_text(False)
         body.append(self.benchmark_progress)
-
         progress_row = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL,
             spacing=8
@@ -3342,7 +3160,6 @@ class App(Gtk.Application):
         self.benchmark_time.set_xalign(0)
         self.benchmark_time.set_hexpand(True)
         self.benchmark_time.add_css_class("muted")
-
         self.cancel_test_button = Gtk.Button(label="ABBRECHEN")
         self.cancel_test_button.add_css_class("tiny-button")
         self.cancel_test_button.set_sensitive(False)
@@ -3351,7 +3168,6 @@ class App(Gtk.Application):
         progress_row.append(self.benchmark_time)
         progress_row.append(self.cancel_test_button)
         body.append(progress_row)
-
         self.benchmark_result = Gtk.Label(label="")
         self.benchmark_result.set_xalign(0)
         self.benchmark_result.set_wrap(True)
@@ -3364,7 +3180,6 @@ class App(Gtk.Application):
     def set_benchmark_result_class(self, color):
         for cls in ("status-green", "status-orange", "status-red"):
             self.benchmark_result.remove_css_class(cls)
-
         if color:
             self.benchmark_result.add_css_class("status-" + color)
 
@@ -3379,7 +3194,6 @@ class App(Gtk.Application):
             self.benchmark_status.add_css_class("status-red")
         elif temp_c >= 90.0:
             self.benchmark_status.add_css_class("status-yellow")
-
     def update_cpu_benchmark_status(self):
         cores = os.cpu_count() or 1
 
@@ -3395,7 +3209,6 @@ class App(Gtk.Application):
 
         if temp_c is not None:
             text += f" · {temp_c:.0f}°C"
-
         self.benchmark_status.set_text(text)
         self.set_benchmark_status_temp_class(temp_c)
 
@@ -3409,7 +3222,6 @@ class App(Gtk.Application):
     def show_benchmarks(self, *_):
         self.stack.set_visible_child_name("benchmarks")
         self.window.set_default_size(860, 360)
-
     def start_test(self, button, kind, duration):
         if self.test_proc is not None and self.test_proc.poll() is None:
             return
@@ -3420,7 +3232,6 @@ class App(Gtk.Application):
         self.test_duration = float(duration)
         self.test_started = time.monotonic()
         self.test_cancelled = False
-
         self.benchmark_progress.set_fraction(0.0)
         self.benchmark_time.set_text(
             f"00:00 / {format_test_clock(duration)}"
@@ -3435,9 +3246,7 @@ class App(Gtk.Application):
                 f"CPU Benchmark wird vorbereitet: "
                 f"{kind}, Dauer={duration:.0f}s, Kerne={cores}"
             )
-
             self.update_cpu_benchmark_status()
-
             args = [
                 sys.executable,
                 "-c",
@@ -3456,7 +3265,6 @@ class App(Gtk.Application):
                 self.benchmark_status.set_text(
                     "RAM Test (Erweitert) läuft · Dauerprüfung"
                 )
-
             args = [
                 sys.executable,
                 "-c",
@@ -3468,7 +3276,6 @@ class App(Gtk.Application):
         log(
             f"Test gestartet: {kind}, Dauer={duration:.0f}s"
         )
-
         try:
             self.test_proc = subprocess.Popen(
                 args,
@@ -3483,7 +3290,6 @@ class App(Gtk.Application):
             self.benchmark_result.set_text(str(exc))
             self.set_benchmark_result_class("red")
             return
-
         self.set_benchmark_controls(True)
         GLib.timeout_add(200, self.poll_test)
 
@@ -3495,7 +3301,6 @@ class App(Gtk.Application):
 
         elapsed = max(0.0, time.monotonic() - self.test_started)
         duration = max(0.1, self.test_duration)
-
         if proc.poll() is None:
             fraction = min(0.99, elapsed / duration)
             self.benchmark_progress.set_fraction(fraction)
@@ -3508,7 +3313,6 @@ class App(Gtk.Application):
                 self.update_cpu_benchmark_status()
 
             return True
-
         try:
             output = proc.communicate(timeout=1)[0] or ""
         except Exception:
@@ -3524,7 +3328,6 @@ class App(Gtk.Application):
 
         if self.test_cancelled:
             return False
-
         self.finish_test_result(output, proc.returncode)
         return False
 
@@ -3539,12 +3342,10 @@ class App(Gtk.Application):
             (line for line in reversed(lines) if line.startswith("RESULT ")),
             None,
         )
-
         error = next(
             (line for line in reversed(lines) if line.startswith("ERROR ")),
             None,
         )
-
         if returncode != 0 or not result:
             self.set_benchmark_status_temp_class(None)
             self.benchmark_status.set_text("Test fehlgeschlagen")
@@ -3559,7 +3360,6 @@ class App(Gtk.Application):
                 f"returncode={returncode}; output={output[-1000:]}"
             )
             return
-
         parts = result.split()
 
         if len(parts) >= 5 and parts[1] == "CPU":
@@ -3569,7 +3369,6 @@ class App(Gtk.Application):
 
             points = int((total / max(0.001, elapsed)) / 1000.0)
             points_text = f"{points:,}".replace(",", ".")
-
             self.set_benchmark_status_temp_class(None)
             self.benchmark_status.set_text("CPU Benchmark abgeschlossen")
             self.benchmark_result.set_text(
@@ -3578,7 +3377,6 @@ class App(Gtk.Application):
                 f"{elapsed:.1f}s"
             )
             self.set_benchmark_result_class("green")
-
             log(
                 f"CPU Benchmark fertig: "
                 f"{points} Punkte, {workers} Threads, {elapsed:.2f}s"
@@ -3591,11 +3389,9 @@ class App(Gtk.Application):
             elapsed = float(parts[4])
             target = int(parts[5])
             passes = int(parts[6])
-
             target_gib = target / (1024 ** 3)
             checked_gib = checked / (1024 ** 3)
             throughput = checked_gib / max(0.001, elapsed)
-
             if errors == 0:
                 self.benchmark_status.set_text("RAM Test abgeschlossen")
                 self.benchmark_result.set_text(
@@ -3615,7 +3411,6 @@ class App(Gtk.Application):
                     f"{passes} Prüfmuster"
                 )
                 self.set_benchmark_result_class("red")
-
             log(
                 f"RAM Test fertig: errors={errors}, "
                 f"target={target}, checked={checked}, "
@@ -3632,7 +3427,6 @@ class App(Gtk.Application):
 
         if proc is None:
             return
-
         if proc.poll() is None:
             try:
                 os.killpg(proc.pid, signal.SIGTERM)
@@ -3641,7 +3435,6 @@ class App(Gtk.Application):
                     proc.terminate()
                 except Exception:
                     pass
-
             try:
                 proc.wait(timeout=2.0)
             except Exception:
@@ -3658,7 +3451,6 @@ class App(Gtk.Application):
     def cancel_test(self, *_):
         if self.test_proc is None:
             return
-
         self.test_cancelled = True
         self.stop_test_process()
         self.set_benchmark_controls(False)
@@ -3671,7 +3463,6 @@ class App(Gtk.Application):
 
         log(f"Test abgebrochen: {self.test_kind}")
 
-
     def build_keyboard(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         root.append(self.header("TASTATUR TEST", back=True))
@@ -3680,7 +3471,6 @@ class App(Gtk.Application):
         tools.set_margin_start(8)
         tools.set_margin_end(8)
         tools.set_margin_bottom(4)
-
         self.keyboard_progress = Gtk.Label(label="0 / 0 getestet")
         self.keyboard_progress.set_xalign(0)
         self.keyboard_progress.set_hexpand(True)
@@ -3693,7 +3483,6 @@ class App(Gtk.Application):
         tools.append(self.keyboard_progress)
         tools.append(reset)
         root.append(tools)
-
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(True)
@@ -3707,7 +3496,6 @@ class App(Gtk.Application):
             key = Gtk.Label(label=label)
             key.add_css_class("key")
             key.set_size_request(width, height)
-
             key_id = label + "|" + ",".join(aliases)
             self.key_widgets[key_id] = key
 
@@ -3724,7 +3512,6 @@ class App(Gtk.Application):
 
             for label, aliases, width in row_spec:
                 add_key(row, label, aliases, width)
-
             # Pfeilblock rechts neben der untersten Tastenreihe:
             #
             #       ↑
@@ -3737,7 +3524,6 @@ class App(Gtk.Application):
                     orientation=Gtk.Orientation.VERTICAL,
                     spacing=2
                 )
-
                 upper = Gtk.Box(
                     orientation=Gtk.Orientation.HORIZONTAL,
                     spacing=2
@@ -3751,7 +3537,6 @@ class App(Gtk.Application):
                 blank_left.set_size_request(24, 22)
                 blank_right = Gtk.Box()
                 blank_right.set_size_request(24, 22)
-
                 upper.append(blank_left)
                 add_key(upper, "↑", ("Up",), 24, 22)
                 upper.append(blank_right)
@@ -3768,13 +3553,11 @@ class App(Gtk.Application):
 
         scroll.set_child(board)
         root.append(scroll)
-
         self.update_keyboard()
         return root
 
     def keyboard_layout(self):
         K = lambda l, a=None, w=32: (l, tuple(a or (l,)), w)
-
         return [
             [
                 K("Esc", ("Escape",), 34),
@@ -3863,7 +3646,6 @@ class App(Gtk.Application):
                 K("Ctrl R", ("Control_R",), 48),
             ],
         ]
-
     def show_keyboard(self, *_):
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
@@ -3878,7 +3660,6 @@ class App(Gtk.Application):
                 "Test läuft noch · zuerst abbrechen oder warten"
             )
             return
-
         self.stack.set_visible_child_name("overview")
         self.window.set_default_size(860, 360)
 
@@ -3892,7 +3673,6 @@ class App(Gtk.Application):
 
         self.update_keyboard()
         log("Keyboard-Test zurückgesetzt")
-
     def update_keyboard(self):
         total, tested = len(self.key_widgets), len(self.key_tested)
         if hasattr(self, "keyboard_progress"):
@@ -3906,7 +3686,6 @@ class App(Gtk.Application):
                 self.keyboard_summary.set_text(f"● {tested} / {total} Tasten"); self.keyboard_summary.add_css_class("status-orange")
             else:
                 self.keyboard_summary.set_text("● Noch nicht getestet"); self.keyboard_summary.add_css_class("status-orange")
-
 
     def do_shutdown(self):
         self.stop_test_process()
@@ -3922,7 +3701,6 @@ class App(Gtk.Application):
                 log("Beendet per Strg+W")
                 self.quit()
                 return True
-
             if name.lower() == "q":
                 log("Strg+Q: alle drei Diagnoseprogramme beenden")
                 helper = Path.home() / ".local/bin/close-diagnostic-apps.sh"
@@ -3937,6 +3715,22 @@ class App(Gtk.Application):
                     log(f"Strg+Q Fehler: {exc}")
                 return True
 
+        # Pfeiltasten auf der Hardware-Check-Übersicht starten direkt
+        # den vorhandenen Lautsprechertest. Im Tastaturtest bleiben
+        # die Pfeiltasten normale Prüftasten.
+        if self.stack.get_visible_child_name() == "overview":
+            speaker_shortcuts = {
+                "Left": "left",
+                "Right": "right",
+                "Up": "both",
+            }
+            channel = speaker_shortcuts.get(name)
+            if channel:
+                button = self.speaker_buttons.get(channel)
+                if button is not None:
+                    self.test_speaker(button, channel)
+                    return True
+
         # Normale Tasten nur dann als Tastaturtest auswerten, wenn
         # ausdrücklich die Seite "TASTATUR TEST" geöffnet wurde.
         # Auf der Hardware-Check-Übersicht wird nichts mitgezählt.
@@ -3948,7 +3742,6 @@ class App(Gtk.Application):
 
         if key_id:
             widget = self.key_widgets[key_id]
-
             if key_id not in self.key_tested:
                 # Erster Anschlag = grün.
                 self.key_tested.add(key_id)
@@ -3959,7 +3752,6 @@ class App(Gtk.Application):
 
             widget.remove_css_class("key-tested")
             widget.remove_css_class("key-tested-blue")
-
             if self.key_phase.get(key_id, 0) == 0:
                 widget.add_css_class("key-tested")
             else:
@@ -3976,7 +3768,6 @@ class App(Gtk.Application):
 app = App()
 raise SystemExit(app.run([]))
 PY
-
 if ! python3 -c 'import gi; gi.require_version("Gtk","4.0"); from gi.repository import Gtk' >/dev/null 2>&1; then
     echo "FEHLER: Python GTK4 / PyGObject fehlt."
     echo "Benötigt werden python3-gi und GTK4."
@@ -3987,7 +3778,6 @@ python3 "$TMP_PY"
 HARDWARE_CHECK_EOF
 
     chmod +x "$HARDWARE_CHECK_SCRIPT"
-
     cat > "$HARDWARE_CHECK_APP_DESKTOP" <<EOF
 [Desktop Entry]
 Type=Application
@@ -4005,7 +3795,6 @@ EOF
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
-
     echo "OK: Hardware Check installiert/aktualisiert."
     echo "App-ID: com.david.HardwareCheck"
     echo "Programm: $HARDWARE_CHECK_SCRIPT"
@@ -4022,7 +3811,6 @@ setup_wipe_dock_favorite() {
         echo "FEHLER: gsettings wurde nicht gefunden."
         return 1
     fi
-
     local current new_value
     current="$(gsettings get org.gnome.shell favorite-apps 2>/dev/null || echo "[]")"
 
@@ -4038,10 +3826,8 @@ try:
     items = ast.literal_eval(raw)
 except Exception:
     items = []
-
 # Alte Dublette entfernen.
 items = [x for x in items if x != desktop_id]
-
 # Wipe Auto anhängen. Super+1 ... Super+9 funktionieren für die ersten
 # neun Favoriten. Falls bereits >=9 Favoriten existieren, Wipe Auto an
 # Position 9 setzen; die übrigen Favoriten bleiben erhalten.
@@ -4058,7 +3844,6 @@ PY
         echo "FEHLER: Wipe Auto konnte nicht als GNOME-Favorit eingetragen werden."
         return 1
     }
-
     local pos
     pos="$(
         python3 - "$new_value" "$desktop_id" <<'PY'
@@ -4079,7 +3864,6 @@ PY
     return 0
 }
 
-
 install_kiosk() {
     header
     echo "4-Felder Diagnose-Kiosk einrichten"
@@ -4097,7 +3881,6 @@ install_kiosk() {
         pause
         return
     fi
-
     if [ ! -x "$NETWORK_CHECK_SCRIPT" ]; then
         echo "FEHLER: Network Check ist noch nicht installiert."
         echo
@@ -4116,7 +3899,6 @@ install_kiosk() {
         pause
         return
     fi
-
     if ! install_hardware_check_app; then
         pause
         return
@@ -4137,14 +3919,12 @@ install_kiosk() {
         pause
         return
     fi
-
     if ! setup_wipe_dock_favorite; then
         echo
         echo "FEHLER beim Einrichten des GNOME-Dock-Fokus."
         pause
         return
     fi
-
     # Network Check darf im 4-Felder-Modus NICHT zusätzlich separat
     # per GNOME-Autostart starten. Er wird vom Tiling Assistant
     # zusammen mit Snapshot und Wipe Auto gestartet.
@@ -4158,7 +3938,6 @@ install_kiosk() {
     cat > "$KIOSK_LAUNCHER" <<'EOF'
 #!/usr/bin/env bash
 set -u
-
 LOG="$HOME/kiosk_start.log"
 
 MAX_TILING_WAIT_SECONDS=90
@@ -4171,7 +3950,6 @@ echo
 echo "============================================================"
 echo "4-Felder-Kiosk Start: $(date)"
 echo "============================================================"
-
 # ------------------------------------------------------------
 # Bildschirmhelligkeit auf Maximum
 # ------------------------------------------------------------
@@ -4188,7 +3966,6 @@ set_max_brightness() {
 
     local changed=0
     local dev max value_file
-
     for dev in /sys/class/backlight/*; do
         [ -d "$dev" ] || continue
 
@@ -4203,7 +3980,6 @@ set_max_brightness() {
             printf '%s\n' "$max" \
                 | sudo -n tee "$value_file" >/dev/null 2>&1 || true
         fi
-
         if [ "$(cat "$value_file" 2>/dev/null || true)" = "$max" ]; then
             changed=1
         fi
@@ -4217,7 +3993,6 @@ set_max_brightness() {
 }
 
 set_max_brightness
-
 # ------------------------------------------------------------
 # 1) Auf Tiling Assistant warten
 # ------------------------------------------------------------
@@ -4226,7 +4001,6 @@ echo "Warte auf Tiling Assistant ..."
 
 TILING_READY=0
 TILING_LOOPS="$(python3 -c "print(int(${MAX_TILING_WAIT_SECONDS}/${POLL_SECONDS}))")"
-
 for i in $(seq 1 "$TILING_LOOPS"); do
     if gnome-extensions info tiling-assistant@ubuntu.com 2>/dev/null \
         | grep -qE 'State:[[:space:]]*ACTIVE|ACTIVE'
@@ -4244,7 +4018,6 @@ if [ "$TILING_READY" -ne 1 ]; then
 fi
 
 echo "Tiling Assistant ist bereit."
-
 # AT-SPI für den abschließenden, gezielten Tastaturfokus aktivieren.
 OLD_TOOLKIT_ACCESSIBILITY="$(
     gsettings get org.gnome.desktop.interface toolkit-accessibility 2>/dev/null         || echo false
@@ -4255,7 +4028,6 @@ if [ "$OLD_TOOLKIT_ACCESSIBILITY" != "true" ]; then
     gsettings set org.gnome.desktop.interface toolkit-accessibility true         >/dev/null 2>&1 || true
     ACCESSIBILITY_CHANGED=1
 fi
-
 restore_accessibility() {
     if [ "$ACCESSIBILITY_CHANGED" -eq 1 ]; then
         gsettings set org.gnome.desktop.interface toolkit-accessibility             "$OLD_TOOLKIT_ACCESSIBILITY" >/dev/null 2>&1 || true
@@ -4264,7 +4036,6 @@ restore_accessibility() {
 }
 
 trap restore_accessibility EXIT
-
 # ------------------------------------------------------------
 # 2) Auf ydotool warten
 # ------------------------------------------------------------
@@ -4284,7 +4055,6 @@ find_socket() {
 
     return 1
 }
-
 echo "Warte auf ydotool ..."
 
 YD_SOCKET=""
@@ -4307,97 +4077,23 @@ fi
 
 export YDOTOOL_SOCKET="$YD_SOCKET"
 echo "ydotool ist bereit: $YDOTOOL_SOCKET"
-
 # ------------------------------------------------------------
-# 3) Tiling-Assistant-Layout ROBUST starten
+# 3) Tiling-Assistant-Layout EINMAL starten
 #
-# Direkt nach dem GNOME-Login kann Tiling Assistant bereits ACTIVE sein,
-# obwohl der Strg+D-Keybinding-Pfad der Shell noch nicht zuverlässig reagiert.
+# Das Layout selbst startet:
+#   oben links   Network Check
+#   oben rechts  Snapshot
+#   unten links  Wipe Auto
+#   unten rechts Hardware Check
 #
-# Deshalb keine feste Startpause:
-#   1) Strg+D sofort versuchen.
-#   2) Prüfen, ob wenigstens EINES der vier Layout-Programme wirklich startet.
-#   3) Nur wenn GAR KEINS startet, Strg+D automatisch erneut senden.
-#
-# Sobald ein Programm gestartet wurde, war der Shortcut erfolgreich und
-# es wird NICHT erneut gesendet. Dadurch entstehen bei normalem Start
-# keine Doppelstarts.
+# Firefox ist vollständig aus dem Kiosk entfernt.
 # ------------------------------------------------------------
-
-MAX_LAYOUT_TRIGGER_ATTEMPTS=6
-LAYOUT_TRIGGER_PROBE_LOOPS=25
-LAYOUT_TRIGGER_POLL_SECONDS=0.10
-LAYOUT_TRIGGER_RETRY_SECONDS=0.35
-
-layout_start_signal_present() {
-    if pgrep -x snapshot >/dev/null 2>&1; then
-        return 0
-    fi
-
-    if pgrep -f "$HOME/.local/bin/network-check\.sh|/tmp/network-check-[^ ]*\.py" \
-        >/dev/null 2>&1
-    then
-        return 0
-    fi
-
-    if pgrep -f "$HOME/.local/bin/wipe-auto-app\.sh|/tmp/wipe-auto-[^ ]*\.py" \
-        >/dev/null 2>&1
-    then
-        return 0
-    fi
-
-    if pgrep -f "$HOME/.local/bin/hardware-check\.sh|/tmp/hardware-check\.[^ ]*\.py" \
-        >/dev/null 2>&1
-    then
-        return 0
-    fi
-
-    return 1
-}
-
-wait_for_layout_start_signal() {
-    local i
-
-    for i in $(seq 1 "$LAYOUT_TRIGGER_PROBE_LOOPS"); do
-        if layout_start_signal_present; then
-            return 0
-        fi
-
-        sleep "$LAYOUT_TRIGGER_POLL_SECONDS"
-    done
-
-    return 1
-}
 
 echo "Starte 4-Felder-Layout mit Strg+D ..."
 
-LAYOUT_STARTED=0
+/usr/bin/ydotool key 29:1 32:1 32:0 29:0
 
-for attempt in $(seq 1 "$MAX_LAYOUT_TRIGGER_ATTEMPTS"); do
-    echo "Layout-Aufruf Versuch ${attempt}/${MAX_LAYOUT_TRIGGER_ATTEMPTS} ..."
-
-    /usr/bin/ydotool key 29:1 32:1 32:0 29:0
-
-    if wait_for_layout_start_signal; then
-        LAYOUT_STARTED=1
-        echo "Layout-Start bestätigt."
-        break
-    fi
-
-    if [ "$attempt" -lt "$MAX_LAYOUT_TRIGGER_ATTEMPTS" ]; then
-        echo "Noch kein Diagnoseprogramm gestartet."
-        echo "GNOME war vermutlich noch nicht vollständig bereit - neuer Versuch."
-        sleep "$LAYOUT_TRIGGER_RETRY_SECONDS"
-    fi
-done
-
-if [ "$LAYOUT_STARTED" -ne 1 ]; then
-    echo "FEHLER: Strg+D wurde ${MAX_LAYOUT_TRIGGER_ATTEMPTS}x gesendet,"
-    echo "aber keines der vier Diagnoseprogramme wurde gestartet."
-    echo "Kiosk wird hier beendet, damit nicht nur Wipe Auto einzeln erscheint."
-    exit 32
-fi
-
+echo "Layout-Aufruf gesendet."
 # ------------------------------------------------------------
 # Snapshot erst sichtbar werden lassen
 # ------------------------------------------------------------
@@ -4409,7 +4105,6 @@ echo "Warte kurz auf das Snapshot-Fenster ..."
 if python3 - <<'PY'
 import time
 import pyatspi
-
 MAX_SECONDS = 12.0
 STABLE_SECONDS = 1.2
 POLL_SECONDS = 0.12
@@ -4426,7 +4121,6 @@ def geometry(obj):
     except Exception:
         pass
     return None
-
 def find_snapshot_window():
     try:
         desktop = pyatspi.Registry.getDesktop(0)
@@ -4445,7 +4139,6 @@ def find_snapshot_window():
             child_count = app.childCount
         except Exception:
             continue
-
         for j in range(child_count):
             try:
                 child = app.getChildAtIndex(j)
@@ -4459,7 +4152,6 @@ def find_snapshot_window():
 
             if "snapshot" not in app_name and "snapshot" not in child_name:
                 continue
-
             g = geometry(child)
             if g:
                 return g
@@ -4474,7 +4166,6 @@ while time.monotonic() < deadline:
         stable_since = None
         time.sleep(POLL_SECONDS)
         continue
-
     if current != last_geometry:
         last_geometry = current
         stable_since = time.monotonic()
@@ -4491,7 +4182,6 @@ else
     echo "WARNUNG: Snapshot-Fenster nach 12s nicht eindeutig erkannt."
     echo "Fokus wird trotzdem versucht."
 fi
-
 # ------------------------------------------------------------
 # Hardware Check ebenfalls vollständig erscheinen lassen
 # ------------------------------------------------------------
@@ -4503,7 +4193,6 @@ echo "Warte kurz auf das Hardware-Check-Fenster ..."
 if python3 - <<'PY'
 import time
 import pyatspi
-
 MAX_SECONDS = 12.0
 STABLE_SECONDS = 0.8
 POLL_SECONDS = 0.12
@@ -4520,7 +4209,6 @@ def geometry(obj):
     except Exception:
         pass
     return None
-
 def find_hardware_check_window():
     try:
         desktop = pyatspi.Registry.getDesktop(0)
@@ -4539,7 +4227,6 @@ def find_hardware_check_window():
             child_count = app.childCount
         except Exception:
             continue
-
         for j in range(child_count):
             try:
                 child = app.getChildAtIndex(j)
@@ -4554,7 +4241,6 @@ def find_hardware_check_window():
             haystack = f"{app_name} {child_name}"
             if "hardware check" not in haystack and "hardwarecheck" not in haystack:
                 continue
-
             g = geometry(child)
             if g:
                 return g
@@ -4569,7 +4255,6 @@ while time.monotonic() < deadline:
         stable_since = None
         time.sleep(POLL_SECONDS)
         continue
-
     if current != last_geometry:
         last_geometry = current
         stable_since = time.monotonic()
@@ -4586,12 +4271,10 @@ else
     echo "WARNUNG: Hardware Check nach 12s nicht eindeutig erkannt."
     echo "Fokus wird trotzdem versucht."
 fi
-
 # Keine separate 90-Sekunden-App-Erkennung mehr.
 # Die anschließende AT-SPI-Fokusprüfung wartet selbst darauf,
 # dass Wipe Auto und der Button WIPE SSD wirklich vorhanden sind.
 # Dadurch gibt es beim Boot keinen unnötigen 90s-Timeout mehr.
-
 # Falls Wipe Auto bereits registriert ist, vorhandene Instanz aktivieren.
 # Falls noch nicht, ist das unkritisch: AT-SPI wartet weiter auf den Button.
 if command -v gapplication >/dev/null 2>&1; then
@@ -4599,7 +4282,6 @@ if command -v gapplication >/dev/null 2>&1; then
 else
     gtk-launch com.david.WipeAuto >/dev/null 2>&1 || true
 fi
-
 # Wipe Auto gezielt über GNOMEs native Dock-/Favoriten-Tastenkürzel aktivieren.
 #
 # Wipe Auto wurde beim Kiosk-Setup als Favorit eingetragen. GNOME Shell
@@ -4618,7 +4300,6 @@ fi
 #
 # Anschließend bestätigt AT-SPI, dass WIPE SSD wirklich FOCUSED ist.
 echo "Aktiviere Wipe Auto gezielt über GNOME Super+N ..."
-
 FOCUS_OK=0
 
 if python3 - <<'PY'
@@ -4632,7 +4313,6 @@ DESKTOP_ID = "com.david.WipeAuto.desktop"
 MAX_SECONDS = 10.0
 POLL_SECONDS = 0.12
 RETRY_SECONDS = 1.0
-
 def get_favorite_position():
     try:
         out = subprocess.check_output(
@@ -4651,7 +4331,6 @@ def get_favorite_position():
     except Exception:
         pass
     return None
-
 def walk(obj):
     try:
         count = obj.childCount
@@ -4671,7 +4350,6 @@ def find_wipe_button():
         desktop = pyatspi.Registry.getDesktop(0)
     except Exception:
         return None
-
     for item in walk(desktop):
         try:
             name = (item.name or "").strip()
@@ -4691,7 +4369,6 @@ def focused(obj):
         return obj.getState().contains(pyatspi.STATE_FOCUSED)
     except Exception:
         return False
-
 def grab(obj):
     if obj is None:
         return
@@ -4705,7 +4382,6 @@ def send_super_number(pos):
     # KEY_LEFTMETA = 125
     # KEY_1 = 2 ... KEY_9 = 10
     number_keycode = pos + 1
-
     try:
         subprocess.run(
             [
@@ -4723,7 +4399,6 @@ def send_super_number(pos):
         )
     except Exception:
         pass
-
 pos = get_favorite_position()
 if pos is None:
     print("Wipe Auto ist nicht unter GNOME Super+1..Super+9.", flush=True)
@@ -4740,7 +4415,6 @@ while time.monotonic() < deadline:
 
     if focused(button):
         raise SystemExit(0)
-
     now = time.monotonic()
     if now - last_activation >= RETRY_SECONDS:
         attempt += 1
@@ -4755,7 +4429,6 @@ while time.monotonic() < deadline:
         if button is not None:
             grab(button)
             time.sleep(0.08)
-
             if focused(button):
                 raise SystemExit(0)
 
@@ -4771,14 +4444,12 @@ else
 fi
 
 restore_accessibility
-
 # ------------------------------------------------------------
 # Begrüßungs-/Bereitschaftssound
 # ------------------------------------------------------------
 # Der Sound kommt ganz am Ende. Damit ist er gleichzeitig das Signal:
 # Wipe Auto ist bereit und WIPE SSD sollte den Tastaturfokus haben.
 LOGIN_SOUND="/usr/share/sounds/Yaru/stereo/desktop-login.oga"
-
 if [ "$FOCUS_OK" -eq 1 ]; then
     if command -v paplay >/dev/null 2>&1 && [ -f "$LOGIN_SOUND" ]; then
         echo "Spiele Bereitschaftssound ..."
@@ -4794,7 +4465,6 @@ echo "Kiosk fertig: $(date)"
 EOF
 
     chmod +x "$KIOSK_LAUNCHER"
-
     # Alten Firefox/Snapshot-Autostart entfernen, damit nicht zwei
     # Kiosk-Einträge gleichzeitig feuern.
     rm -f "$OLD_KIOSK_DESKTOP"
@@ -4810,7 +4480,6 @@ X-GNOME-Autostart-enabled=true
 Hidden=false
 NoDisplay=false
 EOF
-
     echo
     echo "OK: 4-Felder-Kiosk eingerichtet."
     echo
@@ -4825,7 +4494,7 @@ EOF
     echo
     echo "WICHTIG:"
     echo "Im Tiling Assistant die Apps genau diesen vier Feldern zuordnen."
-    echo "Der Shortcut bleibt Strg+D."\n    echo "Bei einem zu frühen GNOME-Start wird Strg+D automatisch wiederholt."
+    echo "Der Shortcut bleibt Strg+D."
     echo
     echo "Firefox wird vom Kiosk nicht mehr gestartet."
     echo
@@ -4846,7 +4515,6 @@ EOF
     echo "Bereitschaftssound:"
     echo "  /usr/share/sounds/Yaru/stereo/desktop-login.oga"
     echo "  Er ertönt erst, wenn der Kiosk vollständig bereit ist."
-
     pause
 }
 
@@ -4859,7 +4527,6 @@ test_kiosk() {
         pause
         return
     fi
-
     echo "4-Felder-Kiosk wird jetzt manuell gestartet."
     echo
     echo "Für einen sauberen Test vorher schließen:"
@@ -4868,7 +4535,7 @@ test_kiosk() {
     echo "  - Hardware Check"
     echo "  - offene Wipe-Auto/Zenity-Fenster"
     echo
-    echo "Strg+D wird automatisch ausgelöst."\n    echo "Wenn GNOME noch nicht bereit ist, wird der Shortcut automatisch wiederholt."
+    echo "Danach sollte Strg+D genau einmal ausgelöst werden."
     echo
 
     "$KIOSK_LAUNCHER" &
@@ -4879,7 +4546,6 @@ test_kiosk() {
 
     pause
 }
-
 show_kiosk_log() {
     header
     echo "KIOSK-LOG"
@@ -4898,7 +4564,6 @@ network_check_status() {
         echo "NICHT INSTALLIERT"
         return
     fi
-
     if [ ! -f "$NETWORK_CHECK_AUTOSTART" ]; then
         echo "INSTALLIERT / AUTOSTART AUS"
         return
@@ -4912,7 +4577,6 @@ network_check_status() {
         echo "AUTOSTART EIN"
     fi
 }
-
 write_network_check_desktop() {
     cat > "$NETWORK_CHECK_APP_DESKTOP" <<EOF
 [Desktop Entry]
@@ -4933,7 +4597,6 @@ write_network_check_autostart() {
     local enabled="${1:-true}"
 
     cp "$NETWORK_CHECK_APP_DESKTOP" "$NETWORK_CHECK_AUTOSTART"
-
     if [ "$enabled" = "true" ]; then
         printf '\nX-GNOME-Autostart-enabled=true\nHidden=false\n' >> "$NETWORK_CHECK_AUTOSTART"
     else
@@ -4943,7 +4606,6 @@ write_network_check_autostart() {
 
 install_network_check() {
     install_close_apps_helper
-
     header
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
@@ -4955,7 +4617,6 @@ install_network_check() {
     cat > "$NETWORK_CHECK_SCRIPT" <<'NETWORK_CHECK_SCRIPT_EOF'
 #!/usr/bin/env bash
 set -u
-
 # ============================================================
 # Network Check - separater Test
 # ============================================================
@@ -4972,7 +4633,6 @@ set -u
 #   Download: Datalix Looking Glass Frankfurt
 #   Upload:   Cloudflare /__up
 # ============================================================
-
 need_install=0
 
 if ! python3 -c 'import gi; gi.require_version("Gtk","4.0"); from gi.repository import Gtk' >/dev/null 2>&1; then
@@ -4988,7 +4648,6 @@ done
 if [ "$need_install" -eq 1 ]; then
     echo "Einige kleine Abhängigkeiten fehlen."
     echo "Installiere GTK-Python, curl, NetworkManager-Tools, iproute2 und iw ..."
-
     if sudo -n true 2>/dev/null; then
         sudo -n apt-get install -y \
             python3-gi gir1.2-gtk-4.0 curl network-manager iproute2 iw
@@ -5002,7 +4661,6 @@ if ! python3 -c 'import gi; gi.require_version("Gtk","4.0"); from gi.repository 
     echo "FEHLER: GTK4/Python ist nicht verfügbar."
     exit 10
 fi
-
 for cmd in curl nmcli ip; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         echo "FEHLER: $cmd fehlt."
@@ -5030,9 +4688,7 @@ import time
 import queue
 from datetime import datetime
 from pathlib import Path
-
 VERSION = "2.6"
-
 # ============================================================
 # EINSTELLUNGEN
 # Diese Grenzwerte sind für den ersten Praxistest bewusst
@@ -5044,7 +4700,6 @@ LAN_LINK_MIN = 1000.0       # Mbps
 
 # WLAN-Link: vorläufiger Mindestwert
 WIFI_LINK_MIN = 100.0       # Mbps
-
 # Internet-Durchsatz: vorläufige PASS-Grenzen
 LAN_DOWNLOAD_MIN = 800.0    # Mbps
 LAN_UPLOAD_MIN = 800.0      # Mbps
@@ -5055,7 +4710,6 @@ WIFI_UPLOAD_MIN = 100.0     # Mbps
 # Gesamttest pro Verbindung damit ungefähr 5 Sekunden.
 PHASE_SECONDS = 5.0
 SAMPLE_SECONDS = 0.25
-
 # Mehrere parallele Transfers sättigen schnelle Gigabit-Leitungen.
 #
 # Download:
@@ -5067,7 +4721,6 @@ DOWNLOAD_STREAMS = 4
 # 4 Streams reichen; jeder Stream bekommt 250 MB Daten angeboten.
 # Bei insgesamt 1 Gbit/s wird auch davon keiner innerhalb von 5 Sekunden fertig.
 UPLOAD_STREAMS = 4
-
 # Die ersten Millisekunden enthalten Verbindungsaufbau / Hochlauf.
 # Sie werden live angezeigt, aber nicht in den End-Durchschnitt genommen.
 WARMUP_SECONDS = 0.5
@@ -5079,7 +4732,6 @@ TOP_SAMPLE_FRACTION = 0.50
 
 # Kleine Cloudflare-Anfrage als Internet-Bereitschaftstest.
 CONNECTIVITY_TIMEOUT = 15.0
-
 # Der öffentliche Cloudflare-Endpunkt reagiert bei sehr großen
 # Einzelrequests nicht auf allen Systemen zuverlässig.
 # 99.999.999 Bytes pro Stream ist groß genug für unseren kurzen Test.
@@ -5088,7 +4740,6 @@ CONNECTIVITY_TIMEOUT = 15.0
 # 10 GB pro Stream sind absichtlich viel größer als nötig:
 # Wir brechen nach 5 Sekunden ab, sodass kein Stream neu gestartet werden muss.
 DOWNLOAD_URL = "https://lg.datalix.de/download.php?size=10gb"
-
 # Upload bleibt bei Cloudflare, weil dieser Test bei uns stabil funktioniert.
 CF_UP_BYTES = 250000000
 
@@ -5099,8 +4750,6 @@ LOG = Path.home() / "network_check.log"
 ENV_C = os.environ.copy()
 ENV_C["LC_ALL"] = "C"
 ENV_C["LANG"] = "C"
-
-
 # ============================================================
 # Hilfsfunktionen
 # ============================================================
@@ -5113,7 +4762,6 @@ def log(message):
     except Exception:
         pass
     print(line, flush=True)
-
 
 def run_text(args, timeout=4):
     try:
@@ -5137,7 +4785,6 @@ def format_mbps(value, decimals=0):
         return f"{value:.1f} Mbps"
     return f"{value:,.0f}".replace(",", ".") + " Mbps"
 
-
 def get_devices():
     """
     Liefert pro Typ (ethernet/wifi) alle von NetworkManager
@@ -5145,7 +4792,6 @@ def get_devices():
     """
     out = run_text(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device", "status"])
     result = {"ethernet": [], "wifi": []}
-
     for raw in out.splitlines():
         # nmcli escaped Doppelpunkte sind bei normalen Interface-Namen
         # nicht relevant; maxsplit hält den Parser trotzdem klein.
@@ -5158,7 +4804,6 @@ def get_devices():
             continue
         if not dev or dev == "lo":
             continue
-
         result[typ].append({
             "iface": dev,
             "type": typ,
@@ -5180,7 +4825,6 @@ def get_default_iface():
         parts = line.split()
         if "dev" not in parts:
             continue
-
         try:
             iface = parts[parts.index("dev") + 1]
         except Exception:
@@ -5201,7 +4845,6 @@ def get_default_iface():
     candidates.sort()
     return candidates[0][1]
 
-
 def ethernet_link_speed(iface):
     p = Path("/sys/class/net") / iface / "speed"
     try:
@@ -5219,7 +4862,6 @@ def wifi_link_speed(iface):
         return None
 
     out = run_text(["iw", "dev", iface, "link"])
-
     # Bevorzugt RX, falls vorhanden, sonst TX.
     rx = re.search(r"rx bitrate:\s*([0-9.]+)\s*MBit/s", out, re.I)
     tx = re.search(r"tx bitrate:\s*([0-9.]+)\s*MBit/s", out, re.I)
@@ -5232,7 +4874,6 @@ def wifi_link_speed(iface):
         return float(match.group(1))
     except Exception:
         return None
-
 
 def shutil_which(cmd):
     for directory in os.environ.get("PATH", "").split(os.pathsep):
@@ -5247,7 +4888,6 @@ def link_speed(iface, kind):
         return ethernet_link_speed(iface)
     return wifi_link_speed(iface)
 
-
 def iface_counter(iface, direction):
     stat = "rx_bytes" if direction == "download" else "tx_bytes"
     p = Path("/sys/class/net") / iface / "statistics" / stat
@@ -5255,7 +4895,6 @@ def iface_counter(iface, direction):
         return int(p.read_text().strip())
     except Exception:
         return 0
-
 
 def iface_mac(iface):
     """Aktuelle MAC-Adresse des Interfaces aus sysfs lesen."""
@@ -5267,8 +4906,6 @@ def iface_mac(iface):
     except Exception:
         pass
     return None
-
-
 # ============================================================
 # GTK-Karte
 # ============================================================
@@ -5282,7 +4919,6 @@ class ConnectionCard:
         self.root.add_css_class("card")
 
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-
         self.title_label = Gtk.Label(label=title)
         self.title_label.set_xalign(0)
         self.title_label.add_css_class("card-title")
@@ -5295,7 +4931,6 @@ class ConnectionCard:
         header.append(self.title_label)
         header.append(self.state_label)
         self.root.append(header)
-
         self.interface_label = Gtk.Label(label="Interface: --")
         self.interface_label.set_xalign(0)
         self.interface_label.add_css_class("interface")
@@ -5307,7 +4942,6 @@ class ConnectionCard:
         self.link_value = self.metric(metrics, "LINK")
         self.down_value = self.metric(metrics, "DOWNLOAD")
         self.up_value = self.metric(metrics, "UPLOAD")
-
         self.root.append(metrics)
 
         self.note_label = Gtk.Label(label="")
@@ -5322,7 +4956,6 @@ class ConnectionCard:
 
         cap = Gtk.Label(label=caption)
         cap.add_css_class("metric-caption")
-
         value = Gtk.Label(label="--")
         value.add_css_class("metric-value")
         value.add_css_class("neutral")
@@ -5336,7 +4969,6 @@ class ConnectionCard:
         for c in ("good", "bad", "warn", "neutral", "live"):
             widget.remove_css_class(c)
         widget.add_css_class(klass)
-
     def set_title_mac(self, mac=None):
         # MAC-Probleme müssen sofort auffallen:
         # - keine/ungültige MAC -> "KEINE MAC" rot
@@ -5348,7 +4980,6 @@ class ConnectionCard:
             self.title_label.set_text(f"{self.base_title} - KEINE MAC")
             self.title_label.add_css_class("mac-error")
             return
-
         self.title_label.set_text(f"{self.base_title} - {mac}")
 
         if mac == "00:00:00:00:00:00":
@@ -5357,7 +4988,6 @@ class ConnectionCard:
     def set_state(self, text, klass):
         self.state_label.set_text(text)
         self.set_widget_class(self.state_label, klass)
-
     def set_metric(self, which, text, klass="neutral"):
         widget = {
             "link": self.link_value,
@@ -5366,8 +4996,6 @@ class ConnectionCard:
         }[which]
         widget.set_text(text)
         self.set_widget_class(widget, klass)
-
-
 # ============================================================
 # Hauptanwendung
 # ============================================================
@@ -5378,7 +5006,6 @@ class NetworkCheckApp(Gtk.Application):
 
         self.window = None
         self.cards = {}
-
         self.stop_event = threading.Event()
         self.test_queue = queue.Queue()
         self.pending = set()
@@ -5392,7 +5019,6 @@ class NetworkCheckApp(Gtk.Application):
         self.last_lan_link = {}
         self.max_wifi_link = {}
         self.initial_scan_done = False
-
         # Ergebnisse bleiben während der gesamten Programmsitzung erhalten.
         self.results = {
             "lan": {
@@ -5412,7 +5038,6 @@ class NetworkCheckApp(Gtk.Application):
                 "passed": None,
             },
         }
-
     # --------------------------------------------------------
     # GUI
     # --------------------------------------------------------
@@ -5427,7 +5052,6 @@ class NetworkCheckApp(Gtk.Application):
         self.window = Gtk.ApplicationWindow(application=self)
         self.window.set_title("Network Check")
         self.window.set_default_size(690, 395)
-
         key_controller = Gtk.EventControllerKey.new()
         key_controller.connect("key-pressed", self.on_key_pressed)
         self.window.add_controller(key_controller)
@@ -5439,7 +5063,6 @@ class NetworkCheckApp(Gtk.Application):
         outer.set_margin_end(10)
 
         top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-
         title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         title_box.set_hexpand(True)
 
@@ -5452,7 +5075,6 @@ class NetworkCheckApp(Gtk.Application):
         version_label = Gtk.Label(label=f"v{VERSION}")
         version_label.set_xalign(0)
         version_label.add_css_class("version")
-
         title_line.append(title)
         title_line.append(version_label)
 
@@ -5466,7 +5088,6 @@ class NetworkCheckApp(Gtk.Application):
         refresh_button.add_css_class("action")
         refresh_button.set_valign(Gtk.Align.CENTER)
         refresh_button.connect("clicked", self.on_test_clicked)
-
         top.append(title_box)
         top.append(refresh_button)
 
@@ -5485,7 +5106,6 @@ class NetworkCheckApp(Gtk.Application):
 
         # Worker nur einmal starten.
         threading.Thread(target=self.worker, daemon=True).start()
-
         # Zustandsüberwachung. Kein fester Start-Sleep:
         # die App reagiert, sobald NetworkManager einen Zustand meldet.
         GLib.timeout_add(750, self.poll_network)
@@ -5502,7 +5122,6 @@ class NetworkCheckApp(Gtk.Application):
             font-weight: 800;
             letter-spacing: 0.6px;
         }
-
         .version {
             color: #7f8792;
             font-size: 9px;
@@ -5525,7 +5144,6 @@ class NetworkCheckApp(Gtk.Application):
             font-size: 19px;
             font-weight: 800;
         }
-
         .mac-error {
             color: #ff4c4c;
         }
@@ -5546,7 +5164,6 @@ class NetworkCheckApp(Gtk.Application):
             border-radius: 9px;
             padding: 6px 5px;
         }
-
         .metric-caption {
             color: #8f97a3;
             font-size: 11px;
@@ -5575,7 +5192,6 @@ class NetworkCheckApp(Gtk.Application):
         .warn {
             color: #ffd34d;
         }
-
         .neutral {
             color: #d8dde5;
         }
@@ -5597,7 +5213,6 @@ class NetworkCheckApp(Gtk.Application):
             provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
-
     # --------------------------------------------------------
     # Netzwerkzustand
     # --------------------------------------------------------
@@ -5613,7 +5228,6 @@ class NetworkCheckApp(Gtk.Application):
 
         devices = get_devices()
         default_iface = get_default_iface()
-
         lan = self.best_device(devices["ethernet"])
         wifi = self.best_device(devices["wifi"])
 
@@ -5629,7 +5243,6 @@ class NetworkCheckApp(Gtk.Application):
             iface_to_kind[dev["iface"]] = "wifi"
             if dev["connected"]:
                 current_connected.add(dev["iface"])
-
         self.refresh_card_presence("lan", lan, default_iface)
         self.refresh_card_presence("wifi", wifi, default_iface)
 
@@ -5640,12 +5253,10 @@ class NetworkCheckApp(Gtk.Application):
             self.initial_scan_done = True
             self.last_connected = set(current_connected)
             self.last_default = default_iface
-
             if default_iface in current_connected:
                 kind = iface_to_kind.get(default_iface)
                 if kind:
                     self.enqueue_test(default_iface, kind, "initial active connection")
-
         else:
             # Nur wenn die aktive Standardverbindung wirklich wechselt,
             # wird die neue Verbindung automatisch getestet.
@@ -5653,7 +5264,6 @@ class NetworkCheckApp(Gtk.Application):
                 kind = iface_to_kind.get(default_iface)
                 if kind:
                     self.enqueue_test(default_iface, kind, "active connection changed")
-
             # LAN-Link-Speed-Wechsel ist wichtig:
             # z.B. 1000 -> 100 Mbps bei Stecker/Kontaktproblem.
             for dev in devices["ethernet"]:
@@ -5664,7 +5274,6 @@ class NetworkCheckApp(Gtk.Application):
                 speed = ethernet_link_speed(iface)
                 previous = self.last_lan_link.get(iface)
                 self.last_lan_link[iface] = speed
-
                 if (
                     previous is not None
                     and speed is not None
@@ -5676,13 +5285,11 @@ class NetworkCheckApp(Gtk.Application):
 
             self.last_connected = set(current_connected)
             self.last_default = default_iface
-
         return True
 
     def refresh_card_presence(self, kind, dev, default_iface):
         card = self.cards[kind]
         result = self.results[kind]
-
         if dev is None:
             card.set_title_mac(None)
             card.interface_label.set_text("Interface: --")
@@ -5696,7 +5303,6 @@ class NetworkCheckApp(Gtk.Application):
         iface = dev["iface"]
         mac = iface_mac(iface)
         card.set_title_mac(mac)
-
         is_default = iface == default_iface
         suffix = " • ACTIVE" if is_default else ""
         card.interface_label.set_text(f"Interface: {iface}{suffix}")
@@ -5708,7 +5314,6 @@ class NetworkCheckApp(Gtk.Application):
                     "Adapter vorhanden, aktuell aber nicht verbunden."
                 )
             return
-
         # Sichtbaren LINK-Wert nur für die Verbindung aktualisieren,
         # die gerade wirklich getestet wird.
         if self.testing_kind == kind:
@@ -5717,14 +5322,12 @@ class NetworkCheckApp(Gtk.Application):
             if speed is not None:
                 result["link"] = speed
                 result["iface"] = iface
-
                 if kind == "lan":
                     klass = "good" if speed >= LAN_LINK_MIN else "bad"
                 else:
                     klass = "good" if speed >= WIFI_LINK_MIN else "bad"
 
                 card.set_metric("link", format_mbps(speed), klass)
-
         # Wenn gerade nicht getestet wird, vorheriges Testergebnis erhalten.
         if self.testing_kind != kind:
             if result["tested"]:
@@ -5736,7 +5339,6 @@ class NetworkCheckApp(Gtk.Application):
     # --------------------------------------------------------
     # Queue / Buttons
     # --------------------------------------------------------
-
     def best_link_speed(self, iface, kind, speed):
         if speed is None:
             return None
@@ -5754,7 +5356,6 @@ class NetworkCheckApp(Gtk.Application):
             )
 
         return self.max_wifi_link[iface]
-
     def enqueue_test(self, iface, kind, reason):
         key = (iface, kind)
 
@@ -5770,7 +5371,6 @@ class NetworkCheckApp(Gtk.Application):
     def on_test_clicked(self, button):
         devices = get_devices()
         default_iface = get_default_iface()
-
         if not default_iface:
             self.global_status.set_text("No active network connection.")
             return
@@ -5787,7 +5387,6 @@ class NetworkCheckApp(Gtk.Application):
                 if dev["iface"] == default_iface and dev["connected"]:
                     kind = "wifi"
                     break
-
         if kind is None:
             self.global_status.set_text(
                 f"Active interface {default_iface} is not LAN/WLAN."
@@ -5799,7 +5398,6 @@ class NetworkCheckApp(Gtk.Application):
     # --------------------------------------------------------
     # Worker
     # --------------------------------------------------------
-
     def worker(self):
         while not self.stop_event.is_set():
             try:
@@ -5811,7 +5409,6 @@ class NetworkCheckApp(Gtk.Application):
 
             if self.stop_event.is_set():
                 break
-
             # Ist Interface immer noch verbunden?
             devices = get_devices()
             typ = "ethernet" if kind == "lan" else "wifi"
@@ -5826,7 +5423,6 @@ class NetworkCheckApp(Gtk.Application):
 
             self.testing_iface = iface
             self.testing_kind = kind
-
             try:
                 self.run_full_test(iface, kind, reason)
             except Exception as e:
@@ -5835,7 +5431,6 @@ class NetworkCheckApp(Gtk.Application):
             finally:
                 self.testing_iface = None
                 self.testing_kind = None
-
     def run_full_test(self, iface, kind, reason):
         log(f"START {kind.upper()} {iface} ({reason})")
         GLib.idle_add(self.mark_testing, kind, iface, "WAITING FOR INTERNET")
@@ -5845,7 +5440,6 @@ class NetworkCheckApp(Gtk.Application):
 
         if self.stop_event.is_set():
             return
-
         current_link = self.best_link_speed(iface, kind, link_speed(iface, kind))
         if current_link is not None:
             self.results[kind]["link"] = current_link
@@ -5857,7 +5451,6 @@ class NetworkCheckApp(Gtk.Application):
 
         if self.stop_event.is_set():
             return
-
         # Downloadphase ist fertig:
         # sofort den endgültigen TOP-AVG-Wert anzeigen und bewerten.
         self.results[kind]["down"] = down
@@ -5873,7 +5466,6 @@ class NetworkCheckApp(Gtk.Application):
 
         if self.stop_event.is_set():
             return
-
         # Uploadphase ist fertig:
         # ebenfalls sofort den endgültigen Wert anzeigen.
         self.results[kind]["up"] = up
@@ -5889,7 +5481,6 @@ class NetworkCheckApp(Gtk.Application):
         result["down"] = down
         result["up"] = up
         result["tested"] = True
-
         # Link nach dem Test nochmals lesen.
         final_link = self.best_link_speed(iface, kind, link_speed(iface, kind))
         if final_link is not None:
@@ -5903,7 +5494,6 @@ class NetworkCheckApp(Gtk.Application):
             f"Down={down:.1f} Mbps, Up={up:.1f} Mbps, "
             f"PASS={result['passed']}"
         )
-
         GLib.idle_add(self.apply_result_to_ui, kind)
 
     # --------------------------------------------------------
@@ -5912,7 +5502,6 @@ class NetworkCheckApp(Gtk.Application):
 
     def wait_for_internet(self, iface):
         deadline = time.monotonic() + CONNECTIVITY_TIMEOUT
-
         while time.monotonic() < deadline and not self.stop_event.is_set():
             try:
                 p = subprocess.run(
@@ -5935,7 +5524,6 @@ class NetworkCheckApp(Gtk.Application):
                     return True
             except Exception:
                 pass
-
             # Zustandsbasiertes Retry, kein Start-Delay.
             for _ in range(5):
                 if self.stop_event.is_set():
@@ -5947,13 +5535,11 @@ class NetworkCheckApp(Gtk.Application):
     # --------------------------------------------------------
     # Speedtest
     # --------------------------------------------------------
-
     def launch_download_stream(self, iface, remaining, stream_no):
         # Große Datalix-Testdatei aus Frankfurt.
         # Cache-Buster nur zur Sicherheit; der Transfer wird nach 5s beendet.
         sep = "&" if "?" in DOWNLOAD_URL else "?"
         url = f"{DOWNLOAD_URL}{sep}stream={stream_no}-{time.time_ns()}"
-
         cmd = [
             "curl",
             "--ipv4",
@@ -5968,7 +5554,6 @@ class NetworkCheckApp(Gtk.Application):
             "--output", "/dev/null",
             url,
         ]
-
         return subprocess.Popen(
             cmd,
             stdout=subprocess.DEVNULL,
@@ -5976,7 +5561,6 @@ class NetworkCheckApp(Gtk.Application):
             env=ENV_C,
             start_new_session=True,
         )
-
     def launch_upload_stream(self, iface, remaining, stream_no):
         # Cloudflares eigener Referenz-Speedtest verwendet Uploadgrößen
         # bis 50 MB. Mehrere parallele Streams vermeiden, dass eine
@@ -5993,7 +5577,6 @@ class NetworkCheckApp(Gtk.Application):
             '--data-binary @- '
             '"$3"'
         )
-
         return subprocess.Popen(
             [
                 "bash", "-c", shell,
@@ -6012,7 +5595,6 @@ class NetworkCheckApp(Gtk.Application):
     def set_current_proc(self, procs):
         with self.proc_lock:
             self.current_proc = procs
-
     def kill_process(self, proc):
         if proc is None:
             return
@@ -6024,7 +5606,6 @@ class NetworkCheckApp(Gtk.Application):
                 proc.terminate()
             except Exception:
                 pass
-
         try:
             proc.wait(timeout=0.5)
         except Exception:
@@ -6041,7 +5622,6 @@ class NetworkCheckApp(Gtk.Application):
             return
         for proc in procs:
             self.kill_process(proc)
-
     def kill_current_process(self):
         with self.proc_lock:
             procs = self.current_proc
@@ -6057,7 +5637,6 @@ class NetworkCheckApp(Gtk.Application):
 
     def start_parallel_streams(self, iface, direction, remaining):
         procs = []
-
         stream_count = (
             DOWNLOAD_STREAMS
             if direction == "download"
@@ -6074,7 +5653,6 @@ class NetworkCheckApp(Gtk.Application):
                     iface, remaining, stream_no
                 )
             procs.append(proc)
-
         self.set_current_proc(procs)
         return procs
 
@@ -6089,7 +5667,6 @@ class NetworkCheckApp(Gtk.Application):
         # Der Hochlauf der ersten WARMUP_SECONDS wird nicht eingerechnet.
         stable_samples = []
         all_samples = []
-
         procs = self.start_parallel_streams(
             iface,
             direction,
@@ -6104,7 +5681,6 @@ class NetworkCheckApp(Gtk.Application):
 
             dt = now - last_t
             delta = max(0, cur - last_bytes)
-
             if dt > 0:
                 live = delta * 8.0 / dt / 1_000_000.0
                 all_samples.append(live)
@@ -6121,7 +5697,6 @@ class NetworkCheckApp(Gtk.Application):
 
             last_bytes = cur
             last_t = now
-
             # Falls alle Transfers auf einer schnellen Leitung schon
             # komplett fertig sind, sofort neue parallele Streams starten.
             if procs and all(p.poll() is not None for p in procs):
@@ -6132,7 +5707,6 @@ class NetworkCheckApp(Gtk.Application):
                         direction,
                         remaining,
                     )
-
         self.kill_processes(procs)
         self.set_current_proc(None)
 
@@ -6143,7 +5717,6 @@ class NetworkCheckApp(Gtk.Application):
 
         if not useful:
             raise RuntimeError(f"Keine {direction}-Daten gemessen")
-
         # Nicht den gesamten Mittelwert verwenden:
         # Der Verbindungsaufbau am Anfang ist real, aber für unsere
         # Prüfstation interessiert die stabil erreichbare Geschwindigkeit.
@@ -6154,7 +5727,6 @@ class NetworkCheckApp(Gtk.Application):
         sorted_samples = sorted(useful, reverse=True)
         top_count = max(1, int(len(sorted_samples) * TOP_SAMPLE_FRACTION + 0.5))
         top_samples = sorted_samples[:top_count]
-
         raw_avg = sum(useful) / len(useful)
         avg = sum(top_samples) / len(top_samples)
 
@@ -6172,7 +5744,6 @@ class NetworkCheckApp(Gtk.Application):
         )
 
         return avg
-
     # --------------------------------------------------------
     # Bewertung
     # --------------------------------------------------------
@@ -6189,7 +5760,6 @@ class NetworkCheckApp(Gtk.Application):
                 and r["down"] >= LAN_DOWNLOAD_MIN
                 and r["up"] >= LAN_UPLOAD_MIN
             )
-
         return (
             r["link"] >= WIFI_LINK_MIN
             and r["down"] >= WIFI_DOWNLOAD_MIN
@@ -6199,7 +5769,6 @@ class NetworkCheckApp(Gtk.Application):
     def metric_class(self, kind, metric, value):
         if value is None:
             return "warn"
-
         if metric == "link":
             minimum = LAN_LINK_MIN if kind == "lan" else WIFI_LINK_MIN
         elif metric == "down":
@@ -6212,13 +5781,11 @@ class NetworkCheckApp(Gtk.Application):
     # --------------------------------------------------------
     # UI-Updates aus Worker
     # --------------------------------------------------------
-
     def mark_testing(self, kind, iface, phase):
         card = self.cards[kind]
         card.interface_label.set_text(f"Interface: {iface}")
         card.set_state(phase, "live")
         card.note_label.set_text("Speedtest läuft …")
-
         # Die gerade laufende Phase ist vom ersten Moment an GELB.
         # Bereits abgeschlossene Werte bleiben in ihrer Endfarbe sichtbar.
         if phase == "DOWNLOAD":
@@ -6228,7 +5795,6 @@ class NetworkCheckApp(Gtk.Application):
 
         self.global_status.set_text(f"{kind.upper()} {iface}: {phase}")
         return False
-
     def update_link(self, kind, speed):
         card = self.cards[kind]
         card.set_metric(
@@ -6241,7 +5807,6 @@ class NetworkCheckApp(Gtk.Application):
     def update_live_speed(self, kind, direction, speed):
         card = self.cards[kind]
         metric = "down" if direction == "download" else "up"
-
         # Solange die Messung läuft, ist der Live-Wert bewusst GELB.
         # So ist auf einen Blick erkennbar, dass noch gemessen wird.
         # Erst der fertige Messwert wird wieder grün/rot bewertet.
@@ -6254,7 +5819,6 @@ class NetworkCheckApp(Gtk.Application):
 
     def update_phase_final_value(self, kind, metric, speed):
         card = self.cards[kind]
-
         # Nach Abschluss einer Phase sofort den gleichen Endwert einsetzen,
         # der später auch im fertigen Ergebnis stehen wird.
         card.set_metric(
@@ -6263,7 +5827,6 @@ class NetworkCheckApp(Gtk.Application):
             self.metric_class(kind, metric, speed),
         )
         return False
-
     def mark_test_error(self, kind, iface, error):
         card = self.cards[kind]
         card.set_state("TEST ERROR", "bad")
@@ -6274,7 +5837,6 @@ class NetworkCheckApp(Gtk.Application):
     def apply_result_to_ui(self, kind):
         r = self.results[kind]
         card = self.cards[kind]
-
         card.set_metric(
             "link",
             format_mbps(r["link"]),
@@ -6292,7 +5854,6 @@ class NetworkCheckApp(Gtk.Application):
         )
 
         self.apply_final_state(kind)
-
         self.global_status.set_text(
             f"{kind.upper()} test finished • "
             f"Down {r['down']:.1f} / Up {r['up']:.1f} Mbps"
@@ -6306,7 +5867,6 @@ class NetworkCheckApp(Gtk.Application):
 
         if not r["tested"]:
             return
-
         # LAN-Linkfehler hat Priorität.
         if kind == "lan" and r["link"] is not None and r["link"] < LAN_LINK_MIN:
             card.set_state("LAN LINK ERROR", "bad")
@@ -6314,7 +5874,6 @@ class NetworkCheckApp(Gtk.Application):
                 "LAN unter 1.000 Mbps – Stecker, Buchse oder Kontakt prüfen!"
             )
             return
-
         if r["passed"]:
             card.set_state("PASS", "good")
             card.note_label.set_text(
@@ -6325,7 +5884,6 @@ class NetworkCheckApp(Gtk.Application):
             card.note_label.set_text(
                 "Endwerte = schnelle stabile Messwerte; mindestens ein Wert ist zu niedrig."
             )
-
     # --------------------------------------------------------
     # Ende
     # --------------------------------------------------------
@@ -6337,7 +5895,6 @@ class NetworkCheckApp(Gtk.Application):
             if name.lower() == "w":
                 self.quit()
                 return True
-
             if name.lower() == "q":
                 helper = Path.home() / ".local/bin/close-diagnostic-apps.sh"
                 try:
@@ -6350,7 +5907,6 @@ class NetworkCheckApp(Gtk.Application):
                 except Exception as exc:
                     log(f"Strg+Q Fehler: {exc}")
                 return True
-
         return False
 
     def do_shutdown(self):
@@ -6371,7 +5927,6 @@ NETWORK_CHECK_SCRIPT_EOF
 
     # App-Launcher für GNOME / Tiling Assistant
     write_network_check_desktop
-
     # Beim ersten Installieren standardmäßig Autostart EIN.
     # Bei Updates bestehenden EIN/AUS-Zustand beibehalten.
     if [ -f "$NETWORK_CHECK_AUTOSTART" ]; then
@@ -6385,12 +5940,10 @@ NETWORK_CHECK_SCRIPT_EOF
     else
         write_network_check_autostart true
     fi
-
     # Desktop-Datenbank aktualisieren, falls vorhanden.
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
-
     echo
     echo "OK: Network Check installiert/aktualisiert."
     echo
@@ -6414,7 +5967,6 @@ NETWORK_CHECK_SCRIPT_EOF
 
 enable_network_check_autostart() {
     header
-
     if [ ! -x "$NETWORK_CHECK_SCRIPT" ]; then
         echo "Network Check ist noch nicht installiert."
         echo "Bitte zuerst Menüpunkt 11 verwenden."
@@ -6433,7 +5985,6 @@ enable_network_check_autostart() {
 
 disable_network_check_autostart() {
     header
-
     if [ ! -x "$NETWORK_CHECK_SCRIPT" ]; then
         echo "Network Check ist noch nicht installiert."
         pause
@@ -6452,7 +6003,6 @@ disable_network_check_autostart() {
 
 start_network_check() {
     header
-
     if [ ! -x "$NETWORK_CHECK_SCRIPT" ]; then
         echo "Network Check ist noch nicht installiert."
         echo "Bitte zuerst Menüpunkt 11 verwenden."
@@ -6472,7 +6022,6 @@ start_network_check() {
     pause
 }
 
-
 install_wipe_auto_menu() {
     header
     echo "Wipe Auto installieren / aktualisieren"
@@ -6491,7 +6040,6 @@ install_wipe_auto_menu() {
 
 start_wipe_auto() {
     header
-
     if [ ! -x "$WIPE_AUTO_SCRIPT" ]; then
         echo "Wipe Auto ist noch nicht installiert."
         echo "Bitte zuerst Menüpunkt 15 verwenden."
@@ -6505,7 +6053,6 @@ start_wipe_auto() {
     echo "Bei einer bereits laufenden Instanz wird das vorhandene Fenster aktiviert."
     pause
 }
-
 
 install_hardware_check_menu() {
     header
@@ -6525,7 +6072,6 @@ install_hardware_check_menu() {
 
 start_hardware_check() {
     header
-
     if [ ! -x "$HARDWARE_CHECK_SCRIPT" ]; then
         echo "Hardware Check ist noch nicht installiert."
         echo "Bitte zuerst Menüpunkt 17 verwenden."
@@ -6544,7 +6090,6 @@ start_hardware_check() {
 main_menu() {
     while true; do
         header
-
         echo "KIOSK"
         echo "  1) 4-Felder Diagnose-Kiosk installieren/aktualisieren"
         echo "  2) 4-Felder-Kiosk jetzt testen"
@@ -6577,10 +6122,8 @@ main_menu() {
         echo
         echo "  0) Beenden"
         echo
-
         local choice
         read -r -p "Auswahl: " choice
-
         case "$choice" in
             1) install_kiosk ;;
             2) test_kiosk ;;
@@ -6616,5 +6159,4 @@ main_menu() {
         esac
     done
 }
-
 main_menu
