@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -u
-
+#testeintrag
 # ============================================================
 # Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v15
 # ============================================================
