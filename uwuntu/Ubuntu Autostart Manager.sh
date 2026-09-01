@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.2 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -613,7 +613,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.2"
+VERSION = "3.3"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -1663,8 +1663,10 @@ import struct
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import wave
+import select
 
 APP_ID = "com.david.HardwareCheck"
 LOG_FILE = Path.home() / "hardware_check.log"
@@ -2501,6 +2503,92 @@ print(
 """
 
 
+def run_global_arrow_monitor(parent_pid):
+    """Nur LEFT/RIGHT/UP aus Linux input_event lesen und ausgeben.
+
+    Dieser Modus läuft als separater Hilfsprozess. Falls der normale Benutzer
+    /dev/input/event* nicht lesen darf, kann exakt derselbe Helfer mit
+    ``sudo -n`` gestartet werden. Es wird kein EVIOCGRAB verwendet.
+    """
+    event_struct = struct.Struct("llHHI")
+    ev_key = 0x01
+    key_map = {
+        105: "left",   # KEY_LEFT
+        106: "right",  # KEY_RIGHT
+        103: "both",   # KEY_UP
+    }
+    fds = {}
+    next_scan = 0.0
+    first_scan = True
+
+    while Path(f"/proc/{parent_pid}").exists():
+        now = time.monotonic()
+        if now >= next_scan:
+            next_scan = now + 2.0
+            current_paths = set(glob.glob("/dev/input/event*"))
+
+            for fd, path in list(fds.items()):
+                if path not in current_paths:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+                    fds.pop(fd, None)
+
+            opened_paths = set(fds.values())
+            for path in sorted(current_paths - opened_paths):
+                try:
+                    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+                except OSError:
+                    continue
+                fds[fd] = path
+
+            if first_scan and not fds:
+                return 77
+            first_scan = False
+
+        if not fds:
+            time.sleep(0.25)
+            continue
+
+        try:
+            ready, _, _ = select.select(list(fds), [], [], 0.35)
+        except (OSError, ValueError):
+            ready = []
+
+        for fd in ready:
+            try:
+                data = os.read(fd, event_struct.size * 32)
+            except BlockingIOError:
+                continue
+            except OSError:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                fds.pop(fd, None)
+                continue
+
+            usable = len(data) - (len(data) % event_struct.size)
+            for offset in range(0, usable, event_struct.size):
+                _, _, event_type, code, value = event_struct.unpack_from(data, offset)
+                if event_type != ev_key or value != 1:
+                    continue
+                channel = key_map.get(code)
+                if channel:
+                    try:
+                        print(channel, flush=True)
+                    except BrokenPipeError:
+                        return 0
+
+    for fd in list(fds):
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+    return 0
+
+
 def format_test_clock(seconds):
     seconds = max(0, int(seconds))
     minutes, sec = divmod(seconds, 60)
@@ -2529,6 +2617,15 @@ class App(Gtk.Application):
         self.key_tested = set()
         self.key_phase = {}
         self.speaker_tested = {"left": False, "right": False}
+        # Globaler, nicht-blockierender Pfeiltasten-Listener. Er liest
+        # /dev/input/event* nur mit und greift die Geräte ausdrücklich
+        # NICHT exklusiv. Damit funktionieren die Pfeiltasten im gerade
+        # aktiven Programm weiterhin ganz normal.
+        self.global_input_stop = threading.Event()
+        self.global_input_thread = None
+        self.global_input_proc = None
+        self.global_input_active = False
+        self.last_global_speaker_at = {"left": 0.0, "right": 0.0, "both": 0.0}
         self.left_tone = make_tone("left")
         self.right_tone = make_tone("right")
         self.both_tone = make_tone("both")
@@ -2569,6 +2666,7 @@ class App(Gtk.Application):
         self.refresh_security()
         self.usb_rediscover(reset=True)
         GLib.timeout_add(300, self.poll_usb)
+        self.start_global_speaker_listener()
 
         log("Hardware Check gestartet")
         self.window.present()
@@ -2625,7 +2723,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.1"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.2"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -2754,6 +2852,140 @@ class App(Gtk.Application):
         c, t, d = detect_secure_boot()
         self.set_status(self.sb_status, c, t); self.sb_detail.set_text(d)
         log(f"Security aktualisiert: {self.tpm_status.get_text()} | {self.sb_status.get_text()}")
+
+    def start_global_speaker_listener(self):
+        """Pfeiltasten auch ohne Fensterfokus erkennen.
+
+        Der Monitor liest nur mit und greift kein Eingabegerät exklusiv.
+        Zuerst wird er als normaler Benutzer probiert; falls Ubuntu den Zugriff
+        auf /dev/input/event* verweigert, folgt automatisch ``sudo -n``.
+        """
+        if self.global_input_thread and self.global_input_thread.is_alive():
+            return
+
+        self.global_input_stop.clear()
+        self.global_input_thread = threading.Thread(
+            target=self.global_speaker_listener_loop,
+            name="hardware-check-global-arrows",
+            daemon=True,
+        )
+        self.global_input_thread.start()
+
+    def start_input_monitor_process(self, use_sudo=False):
+        cmd = [
+            sys.executable,
+            "-u",
+            sys.argv[0],
+            "--global-arrow-monitor",
+            str(os.getpid()),
+        ]
+        if use_sudo:
+            sudo = shutil.which("sudo")
+            if not sudo:
+                return None
+            cmd = [sudo, "-n"] + cmd
+
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                bufsize=0,
+            )
+        except Exception:
+            return None
+
+        # Der Helfer beendet sich sofort mit 77, wenn kein Event-Device
+        # lesbar ist. Kurz Gelegenheit für diesen Startcheck geben.
+        for _ in range(10):
+            if proc.poll() is not None:
+                return None
+            if self.global_input_stop.wait(0.025):
+                try:
+                    proc.terminate()
+                except Exception:
+                    pass
+                return None
+        return proc
+
+    def global_speaker_listener_loop(self):
+        proc = self.start_input_monitor_process(use_sudo=False)
+        used_sudo = False
+        if proc is None and not self.global_input_stop.is_set():
+            proc = self.start_input_monitor_process(use_sudo=True)
+            used_sudo = proc is not None
+
+        self.global_input_proc = proc
+        self.global_input_active = proc is not None
+
+        if proc is None or proc.stdout is None:
+            log("Globale Pfeiltasten: kein Zugriff auf /dev/input/event*; GTK-Fallback aktiv")
+            self.global_input_active = False
+            self.global_input_proc = None
+            return
+
+        log(
+            "Globale Pfeiltasten aktiv"
+            + (" (sudo -n)" if used_sudo else " (direkter Zugriff)")
+        )
+
+        pending = b""
+        fd = proc.stdout.fileno()
+        try:
+            while not self.global_input_stop.is_set() and proc.poll() is None:
+                try:
+                    ready, _, _ = select.select([fd], [], [], 0.35)
+                except (OSError, ValueError):
+                    break
+                if not ready:
+                    continue
+
+                try:
+                    chunk = os.read(fd, 4096)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+
+                pending += chunk
+                while b"\n" in pending:
+                    raw, pending = pending.split(b"\n", 1)
+                    channel = raw.decode("ascii", errors="ignore").strip()
+                    if channel in {"left", "right", "both"}:
+                        GLib.idle_add(self.handle_global_speaker_key, channel)
+        finally:
+            self.global_input_active = False
+            self.global_input_proc = None
+            if proc.poll() is None:
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=0.5)
+                except Exception:
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
+
+    def handle_global_speaker_key(self, channel):
+        # Im Tastatur-Test sollen die Pfeiltasten weiterhin ausschließlich
+        # als Prüftasten dienen und keinen Lautsprecherton auslösen.
+        if not self.window or not self.stack:
+            return False
+        if self.stack.get_visible_child_name() == "keyboard":
+            return False
+
+        # Manche Tastaturen tauchen über mehr als ein Event-Device auf.
+        # Sehr kurze Duplikate deshalb zusammenfassen.
+        now = time.monotonic()
+        if now - self.last_global_speaker_at.get(channel, 0.0) < 0.12:
+            return False
+        self.last_global_speaker_at[channel] = now
+
+        button = self.speaker_buttons.get(channel)
+        if button is not None:
+            self.test_speaker(button, channel)
+        return False
 
     def set_speaker_button_state(self, ch, tested):
         b = self.speaker_buttons.get(ch)
@@ -3688,6 +3920,7 @@ class App(Gtk.Application):
                 self.keyboard_summary.set_text("● Noch nicht getestet"); self.keyboard_summary.add_css_class("status-orange")
 
     def do_shutdown(self):
+        self.global_input_stop.set()
         self.stop_test_process()
         log("Hardware Check beendet.")
         Gtk.Application.do_shutdown(self)
@@ -3715,10 +3948,15 @@ class App(Gtk.Application):
                     log(f"Strg+Q Fehler: {exc}")
                 return True
 
-        # Pfeiltasten auf der Hardware-Check-Übersicht starten direkt
-        # den vorhandenen Lautsprechertest. Im Tastaturtest bleiben
-        # die Pfeiltasten normale Prüftasten.
-        if self.stack.get_visible_child_name() == "overview":
+        # Fallback für Systeme, auf denen /dev/input/event* für den Benutzer
+        # nicht lesbar ist: Solange Hardware Check selbst den Fokus hat,
+        # funktionieren die Pfeiltasten weiterhin wie bisher. Wenn der globale
+        # Listener aktiv ist, übernimmt ausschließlich dieser, damit kein Ton
+        # doppelt gestartet wird.
+        if (
+            not self.global_input_active
+            and self.stack.get_visible_child_name() == "overview"
+        ):
             speaker_shortcuts = {
                 "Left": "left",
                 "Right": "right",
@@ -3764,6 +4002,13 @@ class App(Gtk.Application):
             return True
 
         return False
+
+if len(sys.argv) >= 3 and sys.argv[1] == "--global-arrow-monitor":
+    try:
+        monitor_parent_pid = int(sys.argv[2])
+    except (TypeError, ValueError):
+        raise SystemExit(2)
+    raise SystemExit(run_global_arrow_monitor(monitor_parent_pid))
 
 app = App()
 raise SystemExit(app.run([]))
