@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.2 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.3 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -2503,12 +2503,53 @@ print(
 """
 
 
-def run_global_arrow_monitor(parent_pid):
-    """Nur LEFT/RIGHT/UP aus Linux input_event lesen und ausgeben.
+def get_keyboard_event_paths():
+    """Linux-event-Geräte ermitteln, die wirklich als Tastatur (kbd) gelten.
 
-    Dieser Modus läuft als separater Hilfsprozess. Falls der normale Benutzer
-    /dev/input/event* nicht lesen darf, kann exakt derselbe Helfer mit
-    ``sudo -n`` gestartet werden. Es wird kein EVIOCGRAB verwendet.
+    /proc/bus/input/devices ist auch ohne Root lesbar und nennt pro Gerät die
+    Handler, z. B. ``Handlers=sysrq kbd event3 leds``. Damit vermeiden wir,
+    dass ein lesbares Touchpad-/Sensor-event fälschlich als funktionierender
+    globaler Tastaturzugriff gewertet wird.
+    """
+    paths = set()
+    try:
+        text = Path("/proc/bus/input/devices").read_text(
+            encoding="utf-8", errors="ignore"
+        )
+        for block in text.split("\n\n"):
+            handlers = ""
+            for line in block.splitlines():
+                if line.startswith("H: Handlers="):
+                    handlers = line.split("=", 1)[1].strip()
+                    break
+            tokens = handlers.split()
+            if "kbd" not in tokens:
+                continue
+            for token in tokens:
+                if token.startswith("event") and token[5:].isdigit():
+                    paths.add(f"/dev/input/{token}")
+    except OSError:
+        pass
+
+    # Fallback für ungewöhnliche Systeme, auf denen /proc unvollständig ist.
+    if not paths:
+        for link in glob.glob("/dev/input/by-path/*-event-kbd"):
+            try:
+                paths.add(os.path.realpath(link))
+            except OSError:
+                pass
+
+    return sorted(paths)
+
+
+def run_global_arrow_monitor(parent_pid):
+    """Nur LEFT/RIGHT/UP von echten Linux-Tastaturgeräten ausgeben.
+
+    Dieser Modus läuft als separater Hilfsprozess. Kann der normale Benutzer
+    auch nur eines der erkannten Tastatur-event-Geräte nicht öffnen, beendet
+    sich der Helfer beim ersten Scan mit Code 77. Der Hauptprozess startet ihn
+    dann erneut über ``sudo -n``. Es wird kein EVIOCGRAB verwendet: Die Tasten
+    bleiben für das Vordergrundprogramm vollständig erhalten.
     """
     event_struct = struct.Struct("llHHI")
     ev_key = 0x01
@@ -2525,7 +2566,7 @@ def run_global_arrow_monitor(parent_pid):
         now = time.monotonic()
         if now >= next_scan:
             next_scan = now + 2.0
-            current_paths = set(glob.glob("/dev/input/event*"))
+            current_paths = set(get_keyboard_event_paths())
 
             for fd, path in list(fds.items()):
                 if path not in current_paths:
@@ -2536,16 +2577,31 @@ def run_global_arrow_monitor(parent_pid):
                     fds.pop(fd, None)
 
             opened_paths = set(fds.values())
+            open_failures = 0
             for path in sorted(current_paths - opened_paths):
                 try:
                     fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
                 except OSError:
+                    open_failures += 1
                     continue
                 fds[fd] = path
 
-            if first_scan and not fds:
-                return 77
-            first_scan = False
+            if first_scan:
+                # Wichtig: Ein lesbares Touchpad kann diesen Test nicht mehr
+                # positiv machen, weil current_paths ausschließlich kbd-Geräte
+                # enthält. Bei Teilzugriff ebenfalls Root-Fallback verlangen.
+                if not fds or open_failures:
+                    for fd in list(fds):
+                        try:
+                            os.close(fd)
+                        except OSError:
+                            pass
+                    return 77
+                try:
+                    print(f"ready {len(fds)}", flush=True)
+                except BrokenPipeError:
+                    return 0
+                first_scan = False
 
         if not fds:
             time.sleep(0.25)
@@ -2723,7 +2779,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.2"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.3"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -2952,7 +3008,13 @@ class App(Gtk.Application):
                 while b"\n" in pending:
                     raw, pending = pending.split(b"\n", 1)
                     channel = raw.decode("ascii", errors="ignore").strip()
-                    if channel in {"left", "right", "both"}:
+                    if channel.startswith("ready "):
+                        log(
+                            "Globaler Pfeiltasten-Monitor: "
+                            + channel.split(" ", 1)[1]
+                            + " Tastaturgerät(e) aktiv"
+                        )
+                    elif channel in {"left", "right", "both"}:
                         GLib.idle_add(self.handle_global_speaker_key, channel)
         finally:
             self.global_input_active = False
