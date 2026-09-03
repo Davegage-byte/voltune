@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.1 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -2782,7 +2782,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.1"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -3045,7 +3045,7 @@ class App(Gtk.Application):
         # sowohl über GTK als auch über /dev/input. Sehr kurze Duplikate
         # zusammenfassen, damit EIN B nicht gleichzeitig öffnet UND startet.
         now = time.monotonic()
-        if now - self.last_global_hotkey_at.get(action, 0.0) < 0.18:
+        if now - self.last_global_hotkey_at.get(action, 0.0) < 0.05:
             return False
         self.last_global_hotkey_at[action] = now
 
