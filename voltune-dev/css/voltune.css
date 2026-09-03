@@ -61,7 +61,7 @@ main{
     calc(100vw - 194px);
 
   margin:
-    8px
+    0px
     8px
     16px
     186px;
@@ -86,7 +86,7 @@ main{
   position:fixed;
 
   left:8px;
-  top:8px;
+  top:0;
 
   width:170px;
 
