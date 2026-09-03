@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.1 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.2 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -2782,7 +2782,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.1"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.2"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -2945,56 +2945,81 @@ class App(Gtk.Application):
             cmd = [sudo, "-n"] + cmd
 
         try:
-            proc = subprocess.Popen(
+            return subprocess.Popen(
                 cmd,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 bufsize=0,
             )
-        except Exception:
+        except Exception as exc:
+            log(
+                "Globaler Hotkey-Monitor konnte nicht gestartet werden: "
+                f"{exc}"
+            )
             return None
 
-        # Der Helfer beendet sich sofort mit 77, wenn kein Event-Device
-        # lesbar ist. Kurz Gelegenheit für diesen Startcheck geben.
-        for _ in range(10):
-            if proc.poll() is not None:
-                return None
-            if self.global_input_stop.wait(0.025):
-                try:
-                    proc.terminate()
-                except Exception:
-                    pass
-                return None
-        return proc
+    def sudo_input_monitor_available(self):
+        sudo = shutil.which("sudo")
+        if not sudo:
+            return False
+        try:
+            check = subprocess.run(
+                [sudo, "-n", "true"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5,
+            )
+            return check.returncode == 0
+        except Exception:
+            return False
 
-    def global_speaker_listener_loop(self):
-        proc = self.start_input_monitor_process(use_sudo=False)
-        used_sudo = False
-        if proc is None and not self.global_input_stop.is_set():
-            proc = self.start_input_monitor_process(use_sudo=True)
-            used_sudo = proc is not None
-
-        self.global_input_proc = proc
-        self.global_input_active = proc is not None
-
-        if proc is None or proc.stdout is None:
-            log("Globale Pfeiltasten: kein Zugriff auf /dev/input/event*; GTK-Fallback aktiv")
-            self.global_input_active = False
-            self.global_input_proc = None
+    def stop_input_monitor_process(self, proc):
+        if proc is None or proc.poll() is not None:
             return
+        try:
+            proc.terminate()
+            proc.wait(timeout=0.5)
+        except Exception:
+            try:
+                proc.kill()
+            except Exception:
+                pass
 
-        log(
-            "Globale Pfeiltasten aktiv"
-            + (" (sudo -n)" if used_sudo else " (direkter Zugriff)")
-        )
+    def run_input_monitor_session(self, use_sudo):
+        """Eine Monitor-Sitzung ausführen.
+
+        True = echte Tastatur wurde geöffnet (ready empfangen).
+        False = Start/Handshake fehlgeschlagen, anderer Modus probieren.
+        """
+        proc = self.start_input_monitor_process(use_sudo=use_sudo)
+        if proc is None or proc.stdout is None:
+            return False
+
+        mode = "sudo -n" if use_sudo else "direkter Zugriff"
+        self.global_input_proc = proc
+        self.global_input_active = False
 
         pending = b""
         fd = proc.stdout.fileno()
+        ready_seen = False
+        ready_deadline = time.monotonic() + 1.5
+
         try:
             while not self.global_input_stop.is_set() and proc.poll() is None:
+                # Erst nach einem echten 'ready N' gilt der globale Listener
+                # als aktiv. So kann ein kurzlebiger/fehlerhafter Helfer den
+                # GTK-Fallback nicht fälschlich abschalten.
+                if not ready_seen and time.monotonic() >= ready_deadline:
+                    log(
+                        "Globaler Hotkey-Monitor ohne Tastatur-READY "
+                        f"({mode})"
+                    )
+                    break
+
                 try:
-                    ready, _, _ = select.select([fd], [], [], 0.35)
+                    ready, _, _ = select.select([fd], [], [], 0.25)
                 except (OSError, ValueError):
                     break
                 if not ready:
@@ -3010,29 +3035,71 @@ class App(Gtk.Application):
                 pending += chunk
                 while b"\n" in pending:
                     raw, pending = pending.split(b"\n", 1)
-                    channel = raw.decode("ascii", errors="ignore").strip()
-                    if channel.startswith("ready "):
+                    token = raw.decode("ascii", errors="ignore").strip()
+
+                    if token.startswith("ready "):
+                        ready_seen = True
+                        self.global_input_active = True
                         log(
-                            "Globaler Hotkey-Monitor: "
-                            + channel.split(" ", 1)[1]
-                            + " Tastaturgerät(e) aktiv"
+                            "Globaler Hotkey-Monitor aktiv ("
+                            + mode
+                            + "): "
+                            + token.split(" ", 1)[1]
+                            + " Tastaturgerät(e)"
                         )
-                    elif channel in {
+                        continue
+
+                    if token in {
                         "left", "right", "both", "benchmark", "ram"
                     }:
-                        GLib.idle_add(self.handle_global_hotkey, channel)
+                        GLib.idle_add(self.handle_global_hotkey, token)
         finally:
             self.global_input_active = False
             self.global_input_proc = None
-            if proc.poll() is None:
-                try:
-                    proc.terminate()
-                    proc.wait(timeout=0.5)
-                except Exception:
-                    try:
-                        proc.kill()
-                    except Exception:
-                        pass
+            self.stop_input_monitor_process(proc)
+
+        if ready_seen and not self.global_input_stop.is_set():
+            log(
+                "Globaler Hotkey-Monitor unerwartet beendet; "
+                "wird automatisch neu gestartet"
+            )
+
+        return ready_seen
+
+    def global_speaker_listener_loop(self):
+        # Selbstheilender Listener: Der globale Monitor läuft so lange neu an,
+        # wie Hardware Check geöffnet ist. Auf Uwuntu bevorzugen wir sudo -n,
+        # weil /dev/input/event* für normale Desktop-Benutzer häufig nur
+        # teilweise lesbar ist. Direkter Zugriff bleibt als Fallback erhalten.
+        while not self.global_input_stop.is_set():
+            modes = []
+            if self.sudo_input_monitor_available():
+                modes.append(True)
+            modes.append(False)
+
+            had_ready = False
+            for use_sudo in modes:
+                if self.global_input_stop.is_set():
+                    break
+
+                had_ready = self.run_input_monitor_session(use_sudo)
+                if had_ready:
+                    # Eine funktionierende Sitzung ist erst hierher
+                    # zurückgekehrt, wenn sie beendet wurde. Danach nicht noch
+                    # einen zweiten Modus starten, sondern sauber neu verbinden.
+                    break
+
+            if self.global_input_stop.is_set():
+                break
+
+            if not had_ready:
+                log(
+                    "Globaler Hotkey-Monitor: keine Tastatur lesbar; "
+                    "erneuter Versuch in 1 Sekunde"
+                )
+                self.global_input_stop.wait(1.0)
+            else:
+                self.global_input_stop.wait(0.35)
 
     def handle_global_hotkey(self, action):
         if action in {"left", "right", "both"}:
@@ -4021,6 +4088,7 @@ class App(Gtk.Application):
 
     def do_shutdown(self):
         self.global_input_stop.set()
+        self.stop_input_monitor_process(self.global_input_proc)
         self.stop_test_process()
         log("Hardware Check beendet.")
         Gtk.Application.do_shutdown(self)
@@ -4055,7 +4123,7 @@ class App(Gtk.Application):
         # doppelt gestartet wird.
         if (
             not self.global_input_active
-            and self.stack.get_visible_child_name() == "overview"
+            and self.stack.get_visible_child_name() != "keyboard"
         ):
             speaker_shortcuts = {
                 "Left": "left",
