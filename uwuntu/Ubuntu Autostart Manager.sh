@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.2 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.3 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -2782,7 +2782,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.2"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.3"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -3106,6 +3106,11 @@ class App(Gtk.Application):
             return self.handle_global_speaker_key(action)
 
         if not self.window or not self.stack:
+            return False
+
+        # Im Tastatur-Test sind B und R ausschließlich normale Prüftasten.
+        # Globale Benchmark-/RAM-Hotkeys dürfen die Seite nicht verlassen.
+        if self.stack.get_visible_child_name() == "keyboard":
             return False
 
         # Wenn Hardware Check selbst den Fokus hat, kommt dieselbe Taste
@@ -4140,13 +4145,11 @@ class App(Gtk.Application):
         # B/R auch über GTK behandeln, wenn Hardware Check den Fokus hat.
         # Der Hotkey-Handler entprellt das parallele /dev/input-Ereignis.
         lower_name = name.lower()
-        if lower_name == "b":
+        visible = self.stack.get_visible_child_name()
+        if lower_name == "b" and visible != "keyboard":
             self.handle_global_hotkey("benchmark")
             return True
-        if (
-            lower_name == "r"
-            and self.stack.get_visible_child_name() == "benchmarks"
-        ):
+        if lower_name == "r" and visible == "benchmarks":
             self.handle_global_hotkey("ram")
             return True
 
