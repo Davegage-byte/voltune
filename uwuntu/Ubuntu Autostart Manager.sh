@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.7 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.8 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -29,7 +29,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090302
+MANAGER_BUILD=2026090303
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -2989,12 +2989,49 @@ def detect_ssd_info():
     return candidates[0][2]
 
 
+def detect_system_serial():
+    # Bewährte Seriennummer-Erkennung aus dem separaten Dell-Test.
+    # Wichtig ist die Reihenfolge: erst Geräte-/Chassis-Seriennummern,
+    # Mainboard-Seriennummer nur als letzter sysfs-Fallback.
+    candidates = [
+        Path("/sys/class/dmi/id/product_serial"),
+        Path("/sys/devices/virtual/dmi/id/product_serial"),
+        Path("/sys/class/dmi/id/chassis_serial"),
+        Path("/sys/class/dmi/id/board_serial"),
+    ]
+
+    for path in candidates:
+        value = clean_dmi_value(read_text(path))
+        if value != "--":
+            return value
+
+    # Auf Uwuntu steht dmidecode über sudo -n bereits ohne Interaktion zur
+    # Verfügung. Das liefert auf getesteten Dell-Geräten zuverlässig den
+    # Service-Tag / die System-Seriennummer.
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", "dmidecode", "-s", "system-serial-number"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        value = clean_dmi_value(result.stdout or "")
+        if value != "--":
+            return value
+    except Exception:
+        pass
+
+    return "--"
+
+
 def system_information():
     dmi = Path("/sys/class/dmi/id")
     return [
         ("Hersteller", read_first_value(dmi / "sys_vendor", dmi / "board_vendor")),
         ("Modell", read_first_value(dmi / "product_name", dmi / "board_name")),
-        ("Seriennummer", read_first_value(dmi / "product_serial", dmi / "board_serial")),
+        ("Seriennummer", detect_system_serial()),
         ("CPU", detect_cpu_name()),
         ("RAM", detect_ram_size()),
         ("SSD", detect_ssd_info()),
@@ -3145,7 +3182,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.7"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.8"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
