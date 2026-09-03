@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.4 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.5 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -2945,7 +2945,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.4"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.5"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -3386,7 +3386,10 @@ class App(Gtk.Application):
             value.set_xalign(0)
             value.set_hexpand(True)
             value.set_wrap(True)
-            value.set_selectable(True)
+            # Info-Werte sind reine Anzeige. Nicht auswählbar/fokussierbar,
+            # damit beim Öffnen z.B. "Dell Inc." nicht markiert erscheint.
+            value.set_selectable(False)
+            value.set_focusable(False)
             value.add_css_class("info-value")
 
             card.attach(label, 0, row, 1, 1)
