@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.6 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.7 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -25,10 +25,11 @@ HARDWARE_CHECK_APP_DESKTOP="$APP_DIR/com.david.HardwareCheck.desktop"
 CLOSE_APPS_SCRIPT="$BIN_DIR/close-diagnostic-apps.sh"
 FORCE_UPDATE_SCRIPT="$BIN_DIR/uwuntu-force-update.sh"
 MANAGER_PATH_FILE="$HOME/.config/uwuntu-manager-path"
+MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090301
+MANAGER_BUILD=2026090302
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -440,11 +441,34 @@ EOF
 
 
 install_force_update_helper() {
-    # Merkt sich genau die Manager-Datei, mit der die Diagnoseprogramme
-    # installiert wurden. U ersetzt später genau diese Datei.
-    local manager_path
-    manager_path="$(readlink -f "$0" 2>/dev/null || printf '%s' "$0")"
-    printf '%s\n' "$manager_path" > "$MANAGER_PATH_FILE"
+    # Der U-Updater braucht einen dauerhaft vorhandenen Manager. Der Ort,
+    # von dem der Benutzer die heruntergeladene Installationsdatei gestartet
+    # hat (Downloads, USB, /tmp, ...), darf deshalb keine Rolle spielen.
+    # Wir halten immer eine feste, ausführbare Kopie unter ~/.local/bin vor.
+    local manager_source manager_source_real manager_install_real
+    manager_source="$(readlink -f "$0" 2>/dev/null || printf '%s' "$0")"
+    manager_source_real="$(readlink -f "$manager_source" 2>/dev/null || printf '%s' "$manager_source")"
+    manager_install_real="$(readlink -f "$MANAGER_INSTALL_PATH" 2>/dev/null || printf '%s' "$MANAGER_INSTALL_PATH")"
+
+    if [ "$manager_source_real" != "$manager_install_real" ]; then
+        local manager_tmp="${MANAGER_INSTALL_PATH}.new.$$"
+        cp "$manager_source" "$manager_tmp" || {
+            echo "FEHLER: Feste Manager-Kopie konnte nicht erstellt werden."
+            return 1
+        }
+        chmod +x "$manager_tmp" || true
+        mv -f "$manager_tmp" "$MANAGER_INSTALL_PATH" || {
+            rm -f "$manager_tmp" 2>/dev/null || true
+            echo "FEHLER: Feste Manager-Kopie konnte nicht installiert werden."
+            return 1
+        }
+    else
+        chmod +x "$MANAGER_INSTALL_PATH" 2>/dev/null || true
+    fi
+
+    # Kompatibilitätsdatei für bereits installierte Helper. Sie zeigt ab
+    # jetzt immer auf den stabilen Installationsort und niemals auf Downloads.
+    printf '%s\n' "$MANAGER_INSTALL_PATH" > "$MANAGER_PATH_FILE"
 
     local helper_tmp="${FORCE_UPDATE_SCRIPT}.new.$$"
     cat > "$helper_tmp" <<'EOF'
@@ -453,6 +477,7 @@ set -u
 
 RAW_URL="https://raw.githubusercontent.com/Davegage-byte/voltune/refs/heads/main/uwuntu/Ubuntu%20Autostart%20Manager.sh"
 PATH_FILE="$HOME/.config/uwuntu-manager-path"
+DEFAULT_TARGET="$HOME/.local/bin/Ubuntu Autostart Manager.sh"
 LOG="$HOME/uwuntu_force_update.log"
 KIOSK="$HOME/.local/bin/start-kiosk-apps.sh"
 
@@ -466,10 +491,18 @@ fail() {
     exit "${2:-1}"
 }
 
-[ -f "$PATH_FILE" ] || fail "Pfad zum Ubuntu Autostart Manager fehlt." 10
-TARGET="$(cat "$PATH_FILE" 2>/dev/null || true)"
-[ -n "$TARGET" ] || fail "Pfad zum Ubuntu Autostart Manager ist leer." 11
+# Neue Installationen verwenden immer den festen Pfad. Für eine ältere
+# Installation lesen wir die bisherige Pfaddatei nur noch als Fallback.
+TARGET="$DEFAULT_TARGET"
+if [ ! -f "$TARGET" ] && [ -f "$PATH_FILE" ]; then
+    legacy_target="$(cat "$PATH_FILE" 2>/dev/null || true)"
+    if [ -n "$legacy_target" ] && [ -f "$legacy_target" ]; then
+        TARGET="$legacy_target"
+    fi
+fi
+
 [ -f "$TARGET" ] || fail "Ubuntu Autostart Manager wurde nicht gefunden." 12
+printf '%s\n' "$TARGET" > "$PATH_FILE" 2>/dev/null || true
 command -v curl >/dev/null 2>&1 || fail "curl ist nicht installiert." 13
 
 status "Suche nach Update …"
@@ -3112,7 +3145,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.6"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.7"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
