@@ -1,3 +1,5 @@
+# AVEX Scraper Version: 2026-09-03-v3
+
 import re
 import json
 import urllib.request
@@ -26,6 +28,8 @@ STATUS_URL = (
 )
 
 TIMEZONE = ZoneInfo("Europe/Berlin")
+
+SCRAPER_VERSION = "2026-09-03-v3"
 
 DATA_FILE = "avex-data.json"
 HISTORY_FILE = "avex-history.json"
@@ -102,6 +106,8 @@ def load_json(filename, default):
         return default
 
 
+print("AVEX Scraper Version:", SCRAPER_VERSION)
+
 # --------------------------------------------------
 # Vorherige Werte laden
 # --------------------------------------------------
@@ -146,22 +152,85 @@ try:
         price_html
     )
 
-    # Gezielt NUR den Preis hinter
-    # "Ad-Hoc-Tarif HPC" auslesen.
+    # --------------------------------------------------
+    # Robuste Preiserkennung
+    # --------------------------------------------------
     #
-    # Dadurch greifen wir nicht versehentlich
-    # irgendeinen anderen €/kWh-Wert auf der Seite ab.
-    price_candidates = re.findall(
-        r'Ad-Hoc-Tarif\s*HPC\s*'
-        r'(\d+,\d{2})\s*€/kWh',
-        price_page_text,
+    # e-Stations wiederholt den aktuellen Ad-Hoc-Preis
+    # bei jedem der 8 Ladepunkte.
+    #
+    # Deshalb suchen wir ALLE €/kWh-Werte und nehmen
+    # den am häufigsten vorkommenden Wert.
+    #
+    # Aktuell sollte 0,56 €/kWh achtmal vorkommen.
+    normalized_text = price_page_text.replace(
+        "\xa0",
+        " "
+    )
+
+    normalized_text = re.sub(
+        r"\s+",
+        " ",
+        normalized_text
+    )
+
+    all_price_candidates = re.findall(
+        r'(\d+[,.]\d{2})\s*'
+        r'(?:€|EUR)\s*/\s*kWh',
+        normalized_text,
         re.I
     )
 
-    if not price_candidates:
-        raise ValueError(
-            "Kein Ad-Hoc-Tarif HPC gefunden"
+    all_price_candidates = [
+        value.replace(".", ",")
+        for value in all_price_candidates
+    ]
+
+    if not all_price_candidates:
+        # Zusätzlicher Fallback direkt auf dem HTML,
+        # falls das €-Zeichen als HTML-Entity codiert ist.
+        all_price_candidates = re.findall(
+            r'(\d+[,.]\d{2})\s*'
+            r'(?:€|EUR|&euro;|&#8364;)\s*/\s*kWh',
+            price_html,
+            re.I
         )
+
+        all_price_candidates = [
+            value.replace(".", ",")
+            for value in all_price_candidates
+        ]
+
+    if not all_price_candidates:
+        raise ValueError(
+            "Auf e-Stations wurde kein €/kWh-Wert gefunden"
+        )
+
+    all_counter = Counter(
+        all_price_candidates
+    )
+
+    most_common_price, occurrences = (
+        all_counter.most_common(1)[0]
+    )
+
+    # Bei dieser AVEX-Station wird derselbe Preis
+    # normalerweise 8x angezeigt. Zwei Treffer reichen
+    # als Sicherheitscheck, falls sich die Seite ändert.
+    if occurrences < 2:
+        raise ValueError(
+            "Kein eindeutig wiederholter Preis gefunden. "
+            f"Treffer: {all_price_candidates}"
+        )
+
+    price_candidates = [
+        most_common_price
+    ] * occurrences
+
+    print(
+        "Preis-Kandidaten auf e-Stations:",
+        dict(all_counter)
+    )
 
     # Auf der Station wird derselbe Tarif bei
     # mehreren EVSEs wiederholt.
