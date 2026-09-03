@@ -3,5 +3,9 @@
   "free": 7,
   "occupied": 1,
   "offline": 0,
-  "updated": "11:28"
+  "updated": "11:55",
+  "price_source": "e-stations / Mobilithek / EW Pricing",
+  "status_source": "adhocladen",
+  "price_fresh": false,
+  "status_fresh": true
 }
