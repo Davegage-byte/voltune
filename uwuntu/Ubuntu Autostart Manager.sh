@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.3 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.4 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -1772,6 +1772,23 @@ button.speaker-both {
 .key-tested { background: #1e6b3b; color: #ffffff; border-color: #45d47a; }
 .key-tested-blue { background: #245ea8; color: #ffffff; border-color: #5a9df2; }
 .progress-label { font-size: 14px; font-weight: 800; }
+.info-title { font-size: 20px; font-weight: 800; }
+.info-card {
+    background: #232329;
+    border: 1px solid #34343c;
+    border-radius: 14px;
+    padding: 14px;
+}
+.info-label {
+    color: #9d9da7;
+    font-size: 11px;
+    font-weight: 700;
+}
+.info-value {
+    color: #f4f4f5;
+    font-size: 14px;
+    font-weight: 800;
+}
 """
 def log(msg):
     try:
@@ -2543,7 +2560,7 @@ def get_keyboard_event_paths():
 
 
 def run_global_arrow_monitor(parent_pid):
-    """Nur LEFT/RIGHT/UP von echten Linux-Tastaturgeräten ausgeben.
+    """Globale Diagnose-Hotkeys von echten Linux-Tastaturgeräten ausgeben.
 
     Dieser Modus läuft als separater Hilfsprozess. Kann der normale Benutzer
     auch nur eines der erkannten Tastatur-event-Geräte nicht öffnen, beendet
@@ -2559,6 +2576,7 @@ def run_global_arrow_monitor(parent_pid):
         103: "both",       # KEY_UP
         48: "benchmark",   # KEY_B
         19: "ram",         # KEY_R
+        23: "info",        # KEY_I
     }
     fds = {}
     next_scan = 0.0
@@ -2647,6 +2665,146 @@ def run_global_arrow_monitor(parent_pid):
     return 0
 
 
+def clean_dmi_value(value):
+    value = (value or "").strip()
+    if not value:
+        return "--"
+
+    placeholders = {
+        "none",
+        "not specified",
+        "not applicable",
+        "to be filled by o.e.m.",
+        "default string",
+        "system serial number",
+    }
+    if value.lower() in placeholders:
+        return "--"
+    return value
+
+
+def read_first_value(*paths):
+    for path in paths:
+        value = clean_dmi_value(read_text(path))
+        if value != "--":
+            return value
+    return "--"
+
+
+def detect_cpu_name():
+    try:
+        text = Path("/proc/cpuinfo").read_text(
+            encoding="utf-8", errors="ignore"
+        )
+        for line in text.splitlines():
+            if line.lower().startswith("model name") and ":" in line:
+                value = line.split(":", 1)[1].strip()
+                if value:
+                    return re.sub(r"\s+", " ", value)
+    except Exception:
+        pass
+
+    try:
+        env = os.environ.copy()
+        env["LC_ALL"] = "C"
+        out = subprocess.check_output(
+            ["lscpu"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=2,
+            env=env,
+        )
+        for line in out.splitlines():
+            if line.startswith("Model name:"):
+                value = line.split(":", 1)[1].strip()
+                if value:
+                    return re.sub(r"\s+", " ", value)
+    except Exception:
+        pass
+
+    return "--"
+
+
+def detect_ram_size():
+    try:
+        text = Path("/proc/meminfo").read_text(
+            encoding="utf-8", errors="ignore"
+        )
+        m = re.search(r"^MemTotal:\s+(\d+)\s+kB$", text, re.M)
+        if m:
+            gib = int(m.group(1)) * 1024 / (1024 ** 3)
+            return f"{gib:.1f} GB"
+    except Exception:
+        pass
+    return "--"
+
+
+def detect_ssd_info():
+    try:
+        env = os.environ.copy()
+        env["LC_ALL"] = "C"
+        out = subprocess.check_output(
+            [
+                "lsblk", "-bdn",
+                "-o", "NAME,SIZE,MODEL,ROTA,TYPE,RM",
+            ],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=3,
+            env=env,
+        )
+    except Exception:
+        return "--"
+
+    candidates = []
+    for raw in out.splitlines():
+        parts = raw.split()
+        if len(parts) < 5:
+            continue
+
+        name = parts[0]
+        try:
+            size = int(parts[1])
+        except Exception:
+            continue
+
+        # Die letzten drei Spalten sind sicher ROTA, TYPE und RM.
+        try:
+            rota = int(parts[-3])
+            dev_type = parts[-2]
+            removable = int(parts[-1])
+        except Exception:
+            continue
+
+        model = " ".join(parts[2:-3]).strip() or "Unbekanntes Modell"
+
+        if dev_type != "disk" or removable != 0 or rota != 0:
+            continue
+
+        size_gb = size / 1_000_000_000.0
+        display = f"{size_gb:.0f} GB · {model}"
+        priority = 0 if name == "nvme0n1" else 1
+        candidates.append((priority, natural_key(name), display))
+
+    if not candidates:
+        return "--"
+
+    candidates.sort(key=lambda item: (item[0], item[1]))
+    return candidates[0][2]
+
+
+def system_information():
+    dmi = Path("/sys/class/dmi/id")
+    return [
+        ("Hersteller", read_first_value(dmi / "sys_vendor", dmi / "board_vendor")),
+        ("Modell", read_first_value(dmi / "product_name", dmi / "board_name")),
+        ("Seriennummer", read_first_value(dmi / "product_serial", dmi / "board_serial")),
+        ("CPU", detect_cpu_name()),
+        ("RAM", detect_ram_size()),
+        ("SSD", detect_ssd_info()),
+    ]
+
+
 def format_test_clock(seconds):
     seconds = max(0, int(seconds))
     minutes, sec = divmod(seconds, 60)
@@ -2684,7 +2842,12 @@ class App(Gtk.Application):
         self.global_input_proc = None
         self.global_input_active = False
         self.last_global_speaker_at = {"left": 0.0, "right": 0.0, "both": 0.0}
-        self.last_global_hotkey_at = {"benchmark": 0.0, "ram": 0.0}
+        self.last_global_hotkey_at = {
+            "benchmark": 0.0,
+            "ram": 0.0,
+            "info": 0.0,
+        }
+        self.info_window = None
         self.left_tone = make_tone("left")
         self.right_tone = make_tone("right")
         self.both_tone = make_tone("both")
@@ -2782,7 +2945,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.3"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.4"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -3050,7 +3213,7 @@ class App(Gtk.Application):
                         continue
 
                     if token in {
-                        "left", "right", "both", "benchmark", "ram"
+                        "left", "right", "both", "benchmark", "ram", "info"
                     }:
                         GLib.idle_add(self.handle_global_hotkey, token)
         finally:
@@ -3101,6 +3264,142 @@ class App(Gtk.Application):
             else:
                 self.global_input_stop.wait(0.35)
 
+    def close_system_info(self, *_):
+        window = self.info_window
+        self.info_window = None
+        if window is not None:
+            try:
+                window.destroy()
+            except Exception:
+                pass
+        return True
+
+    def on_info_key(self, controller, keyval, keycode, state):
+        name = Gdk.keyval_name(keyval) or ""
+        if name == "Escape":
+            self.close_system_info()
+            return True
+        return False
+
+    def restore_center_new_windows(self, previous):
+        try:
+            subprocess.run(
+                [
+                    "gsettings", "set",
+                    "org.gnome.mutter",
+                    "center-new-windows",
+                    previous,
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5,
+                check=False,
+            )
+        except Exception:
+            pass
+        return False
+
+    def present_centered(self, window):
+        # Unter Wayland dürfen Anwendungen Fenster nicht selbst per X/Y
+        # verschieben. Für dieses einzelne Infofenster bitten wir daher
+        # Mutter kurzzeitig um zentrierte Platzierung und stellen die
+        # vorherige Einstellung direkt danach wieder her.
+        previous = None
+        try:
+            current = subprocess.check_output(
+                [
+                    "gsettings", "get",
+                    "org.gnome.mutter",
+                    "center-new-windows",
+                ],
+                text=True,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5,
+            ).strip().lower()
+            if current in {"true", "false"}:
+                previous = current
+                if current != "true":
+                    subprocess.run(
+                        [
+                            "gsettings", "set",
+                            "org.gnome.mutter",
+                            "center-new-windows",
+                            "true",
+                        ],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=1.5,
+                        check=False,
+                    )
+        except Exception:
+            previous = None
+
+        window.present()
+
+        if previous == "false":
+            GLib.timeout_add(500, self.restore_center_new_windows, previous)
+
+    def show_system_info(self, *_):
+        if not self.stack or self.stack.get_visible_child_name() == "keyboard":
+            return False
+
+        if self.info_window is not None:
+            try:
+                self.info_window.present()
+                return False
+            except Exception:
+                self.info_window = None
+
+        info = Gtk.ApplicationWindow(application=self)
+        info.set_title("Systeminformationen")
+        info.set_default_size(560, 330)
+        info.set_resizable(False)
+        info.connect("close-request", self.close_system_info)
+
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect("key-pressed", self.on_info_key)
+        info.add_controller(key_controller)
+
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        outer.set_margin_top(14)
+        outer.set_margin_bottom(14)
+        outer.set_margin_start(16)
+        outer.set_margin_end(16)
+
+        title = Gtk.Label(label="SYSTEMINFORMATIONEN")
+        title.set_xalign(0)
+        title.add_css_class("info-title")
+        outer.append(title)
+
+        card = Gtk.Grid()
+        card.set_row_spacing(8)
+        card.set_column_spacing(18)
+        card.add_css_class("info-card")
+
+        for row, (label_text, value_text) in enumerate(system_information()):
+            label = Gtk.Label(label=label_text)
+            label.set_xalign(0)
+            label.set_valign(Gtk.Align.START)
+            label.add_css_class("info-label")
+
+            value = Gtk.Label(label=value_text)
+            value.set_xalign(0)
+            value.set_hexpand(True)
+            value.set_wrap(True)
+            value.set_selectable(True)
+            value.add_css_class("info-value")
+
+            card.attach(label, 0, row, 1, 1)
+            card.attach(value, 1, row, 1, 1)
+
+        outer.append(card)
+        info.set_child(outer)
+
+        self.info_window = info
+        self.present_centered(info)
+        log("Systeminformationen per I mittig geöffnet")
+        return False
+
     def handle_global_hotkey(self, action):
         if action in {"left", "right", "both"}:
             return self.handle_global_speaker_key(action)
@@ -3108,8 +3407,8 @@ class App(Gtk.Application):
         if not self.window or not self.stack:
             return False
 
-        # Im Tastatur-Test sind B und R ausschließlich normale Prüftasten.
-        # Globale Benchmark-/RAM-Hotkeys dürfen die Seite nicht verlassen.
+        # Im Tastatur-Test sind B, R und I ausschließlich normale Prüftasten.
+        # Globale Diagnose-Hotkeys dürfen die Seite nicht verlassen.
         if self.stack.get_visible_child_name() == "keyboard":
             return False
 
@@ -3122,6 +3421,10 @@ class App(Gtk.Application):
         self.last_global_hotkey_at[action] = now
 
         visible = self.stack.get_visible_child_name()
+
+        if action == "info":
+            self.show_system_info()
+            return False
 
         if action == "benchmark":
             if visible == "benchmarks":
@@ -4092,6 +4395,12 @@ class App(Gtk.Application):
                 self.keyboard_summary.set_text("● Noch nicht getestet"); self.keyboard_summary.add_css_class("status-orange")
 
     def do_shutdown(self):
+        if self.info_window is not None:
+            try:
+                self.info_window.destroy()
+            except Exception:
+                pass
+            self.info_window = None
         self.global_input_stop.set()
         self.stop_input_monitor_process(self.global_input_proc)
         self.stop_test_process()
@@ -4142,7 +4451,7 @@ class App(Gtk.Application):
                     self.test_speaker(button, channel)
                     return True
 
-        # B/R auch über GTK behandeln, wenn Hardware Check den Fokus hat.
+        # B/R/I auch über GTK behandeln, wenn Hardware Check den Fokus hat.
         # Der Hotkey-Handler entprellt das parallele /dev/input-Ereignis.
         lower_name = name.lower()
         visible = self.stack.get_visible_child_name()
@@ -4151,6 +4460,9 @@ class App(Gtk.Application):
             return True
         if lower_name == "r" and visible == "benchmarks":
             self.handle_global_hotkey("ram")
+            return True
+        if lower_name == "i" and visible != "keyboard":
+            self.handle_global_hotkey("info")
             return True
 
         # Normale Tasten nur dann als Tastaturtest auswerten, wenn
