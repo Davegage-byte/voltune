@@ -23,9 +23,10 @@ WIPE_AUTO_APP_DESKTOP="$APP_DIR/com.david.WipeAuto.desktop"
 HARDWARE_CHECK_SCRIPT="$BIN_DIR/hardware-check.sh"
 HARDWARE_CHECK_APP_DESKTOP="$APP_DIR/com.david.HardwareCheck.desktop"
 CAMERA_TEST_SCRIPT="$BIN_DIR/uwuntu-camera-test.sh"
-# Bewusst dieselbe Desktop-ID wie GNOME Snapshot: bestehende Tiling-Assistant-
-# Zuordnungen für oben rechts starten dadurch direkt unseren Kamera-Test.
-CAMERA_TEST_APP_DESKTOP="$APP_DIR/org.gnome.Snapshot.desktop"
+# Eigene Desktop-ID für den Uwuntu-Kamera-Test. Der alte Snapshot-Override
+# wird bei der Installation gezielt entfernt, damit keine veraltete Zuordnung bleibt.
+CAMERA_TEST_APP_DESKTOP="$APP_DIR/com.david.UwuntuCameraTest.desktop"
+CAMERA_TEST_LEGACY_DESKTOP="$APP_DIR/org.gnome.Snapshot.desktop"
 TOUCH_TEST_SCRIPT="$BIN_DIR/uwuntu-touch-tester.sh"
 TOUCH_STATE_FILE="$HOME/.local/state/uwuntu/touch_tester_status.json"
 CLOSE_APPS_SCRIPT="$BIN_DIR/close-diagnostic-apps.sh"
@@ -35,7 +36,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090404
+MANAGER_BUILD=2026090407
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -785,6 +786,13 @@ install_camera_test_app() {
 #!/usr/bin/env bash
 set -u
 
+# XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
+# der echten Gtk.Application-ID kann GNOME/Tiling Assistant das Fenster so
+# eindeutig einer Desktop-App zuordnen und normal verschieben/kacheln.
+if [[ -n "${DISPLAY:-}" ]]; then
+    export GDK_BACKEND=x11
+fi
+
 REQUIRED_PKGS=(
   python3-gi
   gir1.2-gtk-3.0
@@ -816,36 +824,99 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("Gst", "1.0")
+gi.require_version("Gio", "2.0")
 
-from gi.repository import Gtk, Gdk, Gst, GLib
+from gi.repository import Gtk, Gdk, Gst, GLib, Gio
+
+APP_ID = "com.david.UwuntuCameraTest"
+APP_NAME = "Uwuntu Kamera Test"
+VERSION = "1.3"
+ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 Gst.init(None)
+GLib.set_application_name(APP_NAME)
+try:
+    Gdk.set_program_class("UwuntuCameraTest")
+except Exception:
+    pass
 
-ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
-devices = sorted(glob.glob("/dev/video*")) or ["/dev/video0"]
 
-modes = [
-    ("MJPEG 1920x1080 @ 30 FPS", "image/jpeg,width=1920,height=1080,framerate=30/1 ! jpegdec"),
-    ("MJPEG 1280x720 @ 30 FPS", "image/jpeg,width=1280,height=720,framerate=30/1 ! jpegdec"),
+def camera_devices():
+    """Nur echte Video-Capture-Nodes verwenden.
+
+    Viele Notebook-Kameras legen zusätzlich Metadata-/Neben-Nodes unter
+    /dev/video* an. Ein Klick soll zur nächsten *Kamera* wechseln und nicht
+    auf einen Metadata-Node springen, der gar kein Bild liefern kann.
+    """
+    devices = sorted(glob.glob("/dev/video*"))
+    if not devices:
+        return ["/dev/video0"]
+
+    capture = []
+    unknown = []
+    for dev in devices:
+        try:
+            p = subprocess.run(
+                ["udevadm", "info", "--query=property", f"--name={dev}"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1.5,
+                check=False,
+            )
+            props = {}
+            for line in p.stdout.splitlines():
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    props[key] = value
+            caps = props.get("ID_V4L_CAPABILITIES", "")
+            if ":capture:" in caps:
+                capture.append(dev)
+            elif not caps:
+                unknown.append(dev)
+        except Exception:
+            unknown.append(dev)
+
+    return capture or unknown or devices
+
+
+MODES = [
+    (
+        "MJPEG 1920x1080 @ 30 FPS",
+        "image/jpeg,width=1920,height=1080,framerate=30/1 ! jpegdec",
+    ),
+    (
+        "MJPEG 1280x720 @ 30 FPS",
+        "image/jpeg,width=1280,height=720,framerate=30/1 ! jpegdec",
+    ),
     ("AUTO", None),
 ]
 
-tests = [(dev, label, caps) for dev in devices for label, caps in modes]
 
-class CameraWindow(Gtk.Window):
-    def __init__(self):
-        super().__init__(title="Uwuntu Kamera Test")
-
-        self.set_decorated(False)
+class CameraWindow(Gtk.ApplicationWindow):
+    def __init__(self, application):
+        super().__init__(application=application)
+        self.set_title(f"{APP_NAME} v{VERSION}")
+        self.set_decorated(True)
+        self.set_resizable(True)
+        self.set_keep_above(False)
+        self.set_skip_taskbar_hint(False)
+        self.set_skip_pager_hint(False)
         self.set_default_size(960, 540)
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.connect("destroy", self.on_destroy)
+        try:
+            self.set_type_hint(Gdk.WindowTypeHint.NORMAL)
+        except Exception:
+            pass
+
         self.connect("key-press-event", self.on_key_press)
+        self.connect("delete-event", self.on_delete)
 
         self.pipeline = None
-        self.index = -1
-        self.frame_seen = False
         self.serial = 0
+        self.frame_seen = False
+        self.devices = camera_devices()
+        self.device_index = 0
+        self.mode_index = 0
 
         css = Gtk.CssProvider()
         css.load_from_data(b'''
@@ -859,7 +930,7 @@ window { background: #000; }
         Gtk.StyleContext.add_provider_for_screen(
             Gdk.Screen.get_default(),
             css,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
         self.overlay = Gtk.Overlay()
@@ -876,10 +947,20 @@ window { background: #000; }
         self.error_label.set_valign(Gtk.Align.CENTER)
         self.overlay.add_overlay(self.error_label)
 
+        # Transparente Klickfläche über dem Videobereich. So ist der Klick zum
+        # Kamerawechsel unabhängig vom konkreten gtksink-Widget zuverlässig.
+        # Die normale Titelleiste liegt außerhalb und bleibt zum Ziehen frei.
+        self.click_layer = Gtk.EventBox()
+        self.click_layer.set_visible_window(False)
+        self.click_layer.set_hexpand(True)
+        self.click_layer.set_vexpand(True)
+        self.click_layer.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
+        self.click_layer.connect("button-release-event", self.on_camera_click)
+        self.overlay.add_overlay(self.click_layer)
+
         self.show_all()
         self.error_label.hide()
-
-        GLib.idle_add(self.try_next)
+        GLib.idle_add(self.try_current)
 
     def stop_pipeline(self):
         if self.pipeline:
@@ -887,7 +968,10 @@ window { background: #000; }
                 self.pipeline.get_bus().remove_signal_watch()
             except Exception:
                 pass
-            self.pipeline.set_state(Gst.State.NULL)
+            try:
+                self.pipeline.set_state(Gst.State.NULL)
+            except Exception:
+                pass
             self.pipeline = None
 
     def clear_video(self):
@@ -910,29 +994,45 @@ window { background: #000; }
             'gtksink name=sink sync=false'
         )
 
-    def try_next(self):
+    def current_device(self):
+        if not self.devices:
+            return "/dev/video0"
+        self.device_index %= len(self.devices)
+        return self.devices[self.device_index]
+
+    def try_current(self):
         self.serial += 1
         current_serial = self.serial
-
         self.stop_pipeline()
         self.clear_video()
-
-        self.index += 1
         self.frame_seen = False
+        self.error_label.hide()
 
-        if self.index >= len(tests):
+        if not self.devices:
             self.error_label.show()
-            print("Keine funktionierende Kamera-Konfiguration gefunden.", flush=True)
             return False
 
-        device, label, caps = tests[self.index]
-        print(f"Teste {device}: {label}", flush=True)
+        if self.mode_index >= len(MODES):
+            self.device_index += 1
+            self.mode_index = 0
+            if self.device_index >= len(self.devices):
+                self.device_index = 0
+                self.error_label.show()
+                print("Keine funktionierende Kamera-Konfiguration gefunden.", flush=True)
+                return False
+
+        device = self.current_device()
+        label, caps = MODES[self.mode_index]
+        print(
+            f"Kamera v{VERSION} · teste {device}: {label} · "
+            f"Backend={os.environ.get('GDK_BACKEND', 'auto')}",
+            flush=True,
+        )
 
         try:
             self.pipeline = Gst.parse_launch(self.build_pipeline(device, caps))
             sink = self.pipeline.get_by_name("sink")
             probe = self.pipeline.get_by_name("probe")
-
             if sink is None or probe is None:
                 raise RuntimeError("GStreamer-Element fehlt")
 
@@ -943,7 +1043,6 @@ window { background: #000; }
             widget.show()
 
             probe.connect("handoff", self.on_frame, current_serial)
-
             bus = self.pipeline.get_bus()
             bus.add_signal_watch()
             bus.connect("message::error", self.on_error, current_serial)
@@ -954,9 +1053,8 @@ window { background: #000; }
                 GLib.idle_add(self.fail_current, current_serial)
             else:
                 GLib.timeout_add(2200, self.check_timeout, current_serial)
-
         except Exception as exc:
-            print("  Fehler:", exc, flush=True)
+            print(f"Kamera-Fehler: {exc}", flush=True)
             GLib.idle_add(self.fail_current, current_serial)
 
         return False
@@ -964,10 +1062,10 @@ window { background: #000; }
     def on_frame(self, element, buffer, current_serial):
         if current_serial != self.serial:
             return
-
         if not self.frame_seen:
             self.frame_seen = True
-            device, label, _ = tests[self.index]
+            device = self.current_device()
+            label, _ = MODES[self.mode_index]
             print(f"Kamera aktiv: {device} | {label}", flush=True)
             GLib.idle_add(self.error_label.hide)
 
@@ -979,25 +1077,56 @@ window { background: #000; }
     def fail_current(self, current_serial):
         if current_serial != self.serial or self.frame_seen:
             return False
-        self.try_next()
+        self.mode_index += 1
+        GLib.idle_add(self.try_current)
         return False
 
     def on_error(self, bus, message, current_serial):
         if current_serial == self.serial and not self.frame_seen:
-            err, _ = message.parse_error()
-            print("  GStreamer:", err.message, flush=True)
+            try:
+                err, _ = message.parse_error()
+                print("GStreamer:", err.message, flush=True)
+            except Exception:
+                pass
             GLib.idle_add(self.fail_current, current_serial)
 
     def on_eos(self, bus, message, current_serial):
         if current_serial == self.serial and not self.frame_seen:
             GLib.idle_add(self.fail_current, current_serial)
 
+    def on_camera_click(self, widget, event):
+        if getattr(event, "button", 0) != 1:
+            return False
+
+        refreshed = camera_devices()
+        active = self.current_device() if self.devices else None
+        self.devices = refreshed
+
+        if len(self.devices) <= 1:
+            print("Keine weitere Kamera vorhanden.", flush=True)
+            return True
+
+        try:
+            pos = self.devices.index(active)
+        except (ValueError, TypeError):
+            pos = -1
+
+        self.device_index = (pos + 1) % len(self.devices)
+        self.mode_index = 0
+        self.error_label.hide()
+        print(
+            f"Klick: wechsle zur nächsten Kamera {self.current_device()}",
+            flush=True,
+        )
+        GLib.idle_add(self.try_current)
+        return True
+
     def on_key_press(self, widget, event):
         ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
         if event.keyval == Gdk.KEY_Escape or (
             ctrl and event.keyval in (Gdk.KEY_w, Gdk.KEY_W)
         ):
-            self.close()
+            self.get_application().quit()
             return True
         if ctrl and event.keyval in (Gdk.KEY_q, Gdk.KEY_Q):
             helper = os.path.expanduser("~/.local/bin/close-diagnostic-apps.sh")
@@ -1013,39 +1142,70 @@ window { background: #000; }
             return True
         return False
 
-    def on_destroy(self, *args):
+    def on_delete(self, *_args):
+        self.get_application().quit()
+        return True
+
+    def cleanup(self):
         self.serial += 1
         self.stop_pipeline()
-        Gtk.main_quit()
 
-CameraWindow()
-Gtk.main()
+
+class CameraApplication(Gtk.Application):
+    def __init__(self):
+        super().__init__(
+            application_id=APP_ID,
+            flags=Gio.ApplicationFlags.FLAGS_NONE,
+        )
+        self.window = None
+
+    def do_activate(self):
+        if self.window is None:
+            self.window = CameraWindow(self)
+        self.window.present()
+
+    def do_shutdown(self):
+        if self.window is not None:
+            self.window.cleanup()
+            self.window = None
+        Gtk.Application.do_shutdown(self)
+
+
+app = CameraApplication()
+raise SystemExit(app.run(None))
 PY
 CAMERA_TEST_EOF
     chmod +x "$CAMERA_TEST_SCRIPT"
 
-    # User-Override für die bisherige GNOME-Snapshot-ID. Dadurch bleibt eine
-    # bestehende Tiling-Assistant-Zuordnung oben rechts erhalten, startet aber
-    # ab jetzt unseren cleanen Kamera-Test.
     cat > "$CAMERA_TEST_APP_DESKTOP" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test
+Comment=Cleaner Uwuntu Kamera-Test v1.3
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
 StartupNotify=true
-StartupWMClass=Uwuntu Kamera Test
+StartupWMClass=UwuntuCameraTest
 Categories=Utility;System;
 NoDisplay=false
 EOF
+
+    # Alten Uwuntu-Snapshot-Override entfernen, aber nur wenn er eindeutig von
+    # unserem Kamera-Test stammt. Das originale Ubuntu-Snapshot-Paket bleibt.
+    if [ -f "$CAMERA_TEST_LEGACY_DESKTOP" ] \
+        && grep -q 'Name=Uwuntu Kamera Test' "$CAMERA_TEST_LEGACY_DESKTOP" 2>/dev/null
+    then
+        rm -f "$CAMERA_TEST_LEGACY_DESKTOP"
+        echo "Alter Snapshot-Kamera-Override entfernt."
+    fi
 
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.3 installiert/aktualisiert."
+    echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
     return 0
@@ -6408,8 +6568,45 @@ fi
 
 export YDOTOOL_SOCKET="$YD_SOCKET"
 echo "ydotool ist bereit: $YDOTOOL_SOCKET"
+
 # ------------------------------------------------------------
-# 3) Tiling-Assistant-Layout EINMAL starten
+# 3) Touchscreen: falls vorhanden, VOR allen Diagnosefenstern testen
+# ------------------------------------------------------------
+has_touchscreen() {
+    local dev
+    for dev in /dev/input/event*; do
+        [ -e "$dev" ] || continue
+        if udevadm info --query=property --name="$dev" 2>/dev/null \
+            | grep -q '^ID_INPUT_TOUCHSCREEN=1$'
+        then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Ergebnis gehört immer nur zum aktuell getesteten Notebook.
+rm -f "$HOME/.local/state/uwuntu/touch_tester_status.json" 2>/dev/null || true
+
+if has_touchscreen; then
+    echo "Touchscreen erkannt: Touch-Test startet vor dem 4-Felder-Layout ..."
+
+    if [ -x "$HOME/.local/bin/uwuntu-touch-tester.sh" ]; then
+        "$HOME/.local/bin/uwuntu-touch-tester.sh" >>"$LOG" 2>&1 &
+        TOUCH_PID=$!
+        # Solange der fullscreen XWayland-Touch-Tester offen ist, werden die
+        # vier Diagnosefenster bewusst noch NICHT gestartet.
+        wait "$TOUCH_PID" || true
+        echo "Touch-Test geschlossen/abgeschlossen; starte jetzt das 4-Felder-Layout."
+    else
+        echo "WARNUNG: Touch-Tester ist nicht installiert."
+    fi
+else
+    echo "Kein Touchscreen erkannt: Touch-Test wird nicht automatisch gestartet."
+fi
+
+# ------------------------------------------------------------
+# 4) Tiling-Assistant-Layout EINMAL starten
 #
 # Das Layout selbst startet:
 #   oben links   Network Check
@@ -6602,42 +6799,6 @@ then
 else
     echo "WARNUNG: Hardware Check nach 12s nicht eindeutig erkannt."
     echo "Fokus wird trotzdem versucht."
-fi
-# ------------------------------------------------------------
-# Touchscreen: falls vorhanden, Touch-Test ZUERST erledigen
-# ------------------------------------------------------------
-has_touchscreen() {
-    local dev
-    for dev in /dev/input/event*; do
-        [ -e "$dev" ] || continue
-        if udevadm info --query=property --name="$dev" 2>/dev/null \
-            | grep -q '^ID_INPUT_TOUCHSCREEN=1$'
-        then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# Ergebnis gehört immer nur zum aktuell getesteten Notebook.
-rm -f "$HOME/.local/state/uwuntu/touch_tester_status.json" 2>/dev/null || true
-
-if has_touchscreen; then
-    echo "Touchscreen erkannt: Touch-Test wird als erstes geöffnet ..."
-
-    if [ -x "$HOME/.local/bin/uwuntu-touch-tester.sh" ]; then
-        "$HOME/.local/bin/uwuntu-touch-tester.sh" >>"$LOG" 2>&1 &
-        TOUCH_PID=$!
-        # Der XWayland-Touch-Tester ist fullscreen + keep-above und holt sich
-        # während der ersten Sekunden mehrfach nach vorne. Solange er offen
-        # ist, wird der abschließende Wipe-Auto-Fokus bewusst NICHT gesetzt.
-        wait "$TOUCH_PID" || true
-        echo "Touch-Test geschlossen/abgeschlossen; fahre mit Kiosk-Fokus fort."
-    else
-        echo "WARNUNG: Touch-Tester ist nicht installiert."
-    fi
-else
-    echo "Kein Touchscreen erkannt: Touch-Test wird nicht automatisch gestartet."
 fi
 
 # Keine separate 90-Sekunden-App-Erkennung mehr.
