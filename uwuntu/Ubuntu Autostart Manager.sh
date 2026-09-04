@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -u
-#test
+
 # ============================================================
 # Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.5.0 + Wipe Auto v3.3
 # ============================================================
