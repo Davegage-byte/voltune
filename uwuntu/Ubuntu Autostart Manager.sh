@@ -38,7 +38,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090412
+MANAGER_BUILD=2026090413
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -834,7 +834,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.5"
+VERSION = "1.6"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 Gst.init(None)
@@ -1186,11 +1186,11 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.5
+Comment=Cleaner Uwuntu Kamera-Test v1.6
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
-StartupNotify=true
+StartupNotify=false
 StartupWMClass=UwuntuCameraTest
 Categories=Utility;System;
 NoDisplay=false
@@ -1209,7 +1209,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.5 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.6 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
