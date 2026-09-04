@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.5.1 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.5.2 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -38,7 +38,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090410
+MANAGER_BUILD=2026090411
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1703,15 +1703,21 @@ class DisplayArea(Gtk.DrawingArea):
         self.owner = owner
         self.set_hexpand(True)
         self.set_vexpand(True)
+        self.set_app_paintable(True)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.TOUCH_MASK)
         self.connect("draw", self.on_draw)
         self.connect("button-press-event", self.on_button)
         self.connect("touch-event", self.on_touch)
 
     def on_draw(self, widget, cr):
+        # Vollständig deckend selbst zeichnen. Wichtig: TRUE zurückgeben,
+        # damit GTK anschließend keinen Theme-/Standard-Hintergrund mehr
+        # über unsere Testfarbe malt.
         width = max(1, self.get_allocated_width())
-        height = max(1, self.get_allocated_height())
         _, color = SCREENS[self.owner.index]
+
+        cr.save()
+        cr.set_operator(cairo.OPERATOR_SOURCE)
         if color is None:
             gradient = cairo.LinearGradient(0, 0, width, 0)
             gradient.add_color_stop_rgb(0.0, 0.0, 0.0, 0.0)
@@ -1719,9 +1725,9 @@ class DisplayArea(Gtk.DrawingArea):
             cr.set_source(gradient)
         else:
             cr.set_source_rgb(*color)
-        cr.rectangle(0, 0, width, height)
-        cr.fill()
-        return False
+        cr.paint()
+        cr.restore()
+        return True
 
     def on_button(self, widget, event):
         # Manche XWayland-Treiber erzeugen direkt nach einem Touch zusätzlich
@@ -1773,6 +1779,7 @@ class DisplayWindow(Gtk.Window):
         self.show_all()
         self.present()
         self.grab_focus()
+        GLib.idle_add(self.redraw)
         GLib.timeout_add(150, self.force_front)
         write_state("running", self.index, "Display-Test gestartet")
 
@@ -4424,7 +4431,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.5.1"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.5.2"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
