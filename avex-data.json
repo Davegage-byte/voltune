@@ -1,9 +1,9 @@
 {
   "price": "0,56",
-  "free": 7,
-  "occupied": 1,
+  "free": 8,
+  "occupied": 0,
   "offline": 0,
-  "updated": "20:11",
+  "updated": "22:44",
   "price_source": "e-stations / Mobilithek / EW Pricing",
   "status_source": "adhocladen",
   "price_fresh": true,
