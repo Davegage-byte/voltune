@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.5.2 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.5.3 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -38,7 +38,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090411
+MANAGER_BUILD=2026090412
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1633,7 +1633,7 @@ if [[ -z "${DISPLAY:-}" ]]; then
     exit 4
 fi
 
-REQUIRED_PKGS=(python3-gi gir1.2-gtk-3.0 python3-cairo)
+REQUIRED_PKGS=(python3-gi gir1.2-gtk-3.0)
 missing=()
 for pkg in "${REQUIRED_PKGS[@]}"; do
     dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
@@ -1654,7 +1654,6 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import cairo
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
@@ -1697,37 +1696,61 @@ def write_state(result, index=0, note=None):
     tmp.replace(STATE_FILE)
 
 
-class DisplayArea(Gtk.DrawingArea):
+class DisplayArea(Gtk.EventBox):
     def __init__(self, owner):
         super().__init__()
         self.owner = owner
+        self.set_name("display_surface")
+        self.set_visible_window(True)
         self.set_hexpand(True)
         self.set_vexpand(True)
-        self.set_app_paintable(True)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.TOUCH_MASK)
-        self.connect("draw", self.on_draw)
         self.connect("button-press-event", self.on_button)
         self.connect("touch-event", self.on_touch)
 
-    def on_draw(self, widget, cr):
-        # Vollständig deckend selbst zeichnen. Wichtig: TRUE zurückgeben,
-        # damit GTK anschließend keinen Theme-/Standard-Hintergrund mehr
-        # über unsere Testfarbe malt.
-        width = max(1, self.get_allocated_width())
-        _, color = SCREENS[self.owner.index]
+        # Den Hintergrund NICHT mehr über Cairo/"draw" erzeugen. Auf einigen
+        # Uwuntu/XWayland-Systemen wurde der DrawingArea-Renderpfad vom Theme /
+        # Compositor überlagert und erschien dadurch unabhängig von der
+        # Sollfarbe grau. Eine sichtbare EventBox mit lokalem USER-CSS malt
+        # ihren eigenen deckenden Hintergrund direkt über GTK.
+        self.provider = Gtk.CssProvider()
+        self.get_style_context().add_provider(
+            self.provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_USER,
+        )
+        self.apply_screen()
 
-        cr.save()
-        cr.set_operator(cairo.OPERATOR_SOURCE)
+    def apply_screen(self):
+        name, color = SCREENS[self.owner.index]
         if color is None:
-            gradient = cairo.LinearGradient(0, 0, width, 0)
-            gradient.add_color_stop_rgb(0.0, 0.0, 0.0, 0.0)
-            gradient.add_color_stop_rgb(1.0, 1.0, 1.0, 1.0)
-            cr.set_source(gradient)
+            background = (
+                "background-color: #000000; "
+                "background-image: linear-gradient(to right, #000000, #ffffff);"
+            )
         else:
-            cr.set_source_rgb(*color)
-        cr.paint()
-        cr.restore()
-        return True
+            r = max(0, min(255, int(round(color[0] * 255))))
+            g = max(0, min(255, int(round(color[1] * 255))))
+            b = max(0, min(255, int(round(color[2] * 255))))
+            background = (
+                f"background-color: rgb({r},{g},{b}); "
+                "background-image: none;"
+            )
+
+        css = (
+            "#display_surface { "
+            f"{background} "
+            "border: none; box-shadow: none; padding: 0; margin: 0; "
+            "}"
+        ).encode("utf-8")
+        try:
+            self.provider.load_from_data(css)
+        except Exception as exc:
+            write_state(
+                "error",
+                self.owner.index,
+                f"Display-CSS konnte nicht gesetzt werden: {exc}",
+            )
+        self.queue_draw()
 
     def on_button(self, widget, event):
         # Manche XWayland-Treiber erzeugen direkt nach einem Touch zusätzlich
@@ -1753,7 +1776,6 @@ class DisplayArea(Gtk.DrawingArea):
             self.owner.previous_screen()
         return True
 
-
 class DisplayWindow(Gtk.Window):
     def __init__(self):
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
@@ -1768,6 +1790,15 @@ class DisplayWindow(Gtk.Window):
         self.finished = False
         self.front_attempts = 0
         self.last_touch_at = 0.0
+
+        # Schwarzer Fallback-Hintergrund am Top-Level. Die eigentliche
+        # Testfarbe kommt deckend von DisplayArea/EventBox.
+        self.window_provider = Gtk.CssProvider()
+        self.window_provider.load_from_data(b"window { background: #000000; }")
+        self.get_style_context().add_provider(
+            self.window_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_USER,
+        )
 
         self.area = DisplayArea(self)
         self.add(self.area)
@@ -1804,7 +1835,7 @@ class DisplayWindow(Gtk.Window):
         return self.front_attempts < 12
 
     def redraw(self):
-        self.area.queue_draw()
+        self.area.apply_screen()
         write_state("running", self.index, f"Anzeige: {SCREENS[self.index][0]}")
 
     def next_screen(self):
@@ -4431,7 +4462,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.5.2"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.5.3"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
