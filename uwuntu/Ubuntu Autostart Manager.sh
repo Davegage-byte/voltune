@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.5.0 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.5.1 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -29,6 +29,8 @@ CAMERA_TEST_APP_DESKTOP="$APP_DIR/com.david.UwuntuCameraTest.desktop"
 CAMERA_TEST_LEGACY_DESKTOP="$APP_DIR/org.gnome.Snapshot.desktop"
 TOUCH_TEST_SCRIPT="$BIN_DIR/uwuntu-touch-tester.sh"
 TOUCH_STATE_FILE="$HOME/.local/state/uwuntu/touch_tester_status.json"
+DISPLAY_TEST_SCRIPT="$BIN_DIR/uwuntu-display-test.sh"
+DISPLAY_STATE_FILE="$HOME/.local/state/uwuntu/display_test_status.json"
 CLOSE_APPS_SCRIPT="$BIN_DIR/close-diagnostic-apps.sh"
 FORCE_UPDATE_SCRIPT="$BIN_DIR/uwuntu-force-update.sh"
 MANAGER_PATH_FILE="$HOME/.config/uwuntu-manager-path"
@@ -36,7 +38,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090407
+MANAGER_BUILD=2026090410
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -436,7 +438,7 @@ set -u
 # ihr Tastaturereignis sauber beenden kann.
 sleep 0.08
 # Alle eigenen Diagnoseprogramme gemeinsam beenden.
-# Kamera/Touch bestehen aus einem Shell-Wrapper + Python-Kindprozess.
+# Kamera/Touch/Display bestehen aus einem Shell-Wrapper + Python-Kindprozess.
 # Deshalb deren Prozessbaum gezielt von innen nach außen beenden.
 kill_script_tree() {
     local pattern="$1" pid
@@ -455,6 +457,7 @@ pkill -TERM -f '/tmp/wipe-auto-' 2>/dev/null || true
 pkill -TERM -f '/tmp/hardware-check\.' 2>/dev/null || true
 kill_script_tree '/.local/bin/uwuntu-camera-test.sh'
 kill_script_tree '/.local/bin/uwuntu-touch-tester.sh'
+kill_script_tree '/.local/bin/uwuntu-display-test.sh'
 # Alte Snapshot-Instanz ebenfalls beseitigen, falls sie noch von einer
 # früheren Installation übrig geblieben ist.
 pkill -TERM -x snapshot 2>/dev/null || true
@@ -613,7 +616,8 @@ pkill -TERM -f '/tmp/wipe-auto-' 2>/dev/null || true
 pkill -TERM -f '/tmp/hardware-check\.' 2>/dev/null || true
 for wrapper in \
     '/.local/bin/uwuntu-camera-test.sh' \
-    '/.local/bin/uwuntu-touch-tester.sh'
+    '/.local/bin/uwuntu-touch-tester.sh' \
+    '/.local/bin/uwuntu-display-test.sh'
 do
     while read -r pid; do
         [ -n "$pid" ] || continue
@@ -830,7 +834,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.3"
+VERSION = "1.5"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 Gst.init(None)
@@ -1123,9 +1127,9 @@ window { background: #000; }
 
     def on_key_press(self, widget, event):
         ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
-        if event.keyval == Gdk.KEY_Escape or (
-            ctrl and event.keyval in (Gdk.KEY_w, Gdk.KEY_W)
-        ):
+        # ESC bleibt bewusst ohne Schließfunktion. STRG+W / STRG+Q sind
+        # Diagnose-Hotkeys; Titelleisten-X und Alt+F4 dürfen normal schließen.
+        if ctrl and event.keyval in (Gdk.KEY_w, Gdk.KEY_W):
             self.get_application().quit()
             return True
         if ctrl and event.keyval in (Gdk.KEY_q, Gdk.KEY_Q):
@@ -1143,8 +1147,9 @@ window { background: #000; }
         return False
 
     def on_delete(self, *_args):
-        self.get_application().quit()
-        return True
+        # Normales Fensterschließen erlauben: Titelleisten-X und Alt+F4.
+        # ESC wird weiterhin nicht als Schließbefehl behandelt.
+        return False
 
     def cleanup(self):
         self.serial += 1
@@ -1181,7 +1186,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.3
+Comment=Cleaner Uwuntu Kamera-Test v1.5
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -1204,7 +1209,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.3 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.5 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
@@ -1610,6 +1615,272 @@ TOUCH_TEST_EOF
     echo "OK: Touch-Tester installiert/aktualisiert."
     echo "Programm: $TOUCH_TEST_SCRIPT"
     echo "Status:   $TOUCH_STATE_FILE"
+    return 0
+}
+
+
+install_display_test_app() {
+    echo "--- Uwuntu Display-Test installieren / aktualisieren ---"
+
+    cat > "$DISPLAY_TEST_SCRIPT" <<'DISPLAY_TEST_EOF'
+#!/usr/bin/env bash
+set -u
+
+export GDK_BACKEND=x11
+
+if [[ -z "${DISPLAY:-}" ]]; then
+    echo "Display-Test: Kein X11/XWayland DISPLAY gefunden."
+    exit 4
+fi
+
+REQUIRED_PKGS=(python3-gi gir1.2-gtk-3.0 python3-cairo)
+missing=()
+for pkg in "${REQUIRED_PKGS[@]}"; do
+    dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+done
+
+if ((${#missing[@]})); then
+    if command -v pkexec >/dev/null 2>&1; then
+        pkexec env DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}" || exit 1
+    else
+        sudo apt-get install -y "${missing[@]}" || exit 1
+    fi
+fi
+
+python3 - <<'PY'
+import json
+import subprocess
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+import cairo
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+
+STATE_DIR = Path.home() / ".local" / "state" / "uwuntu"
+STATE_FILE = STATE_DIR / "display_test_status.json"
+
+SCREENS = [
+    ("Weiß", (1.0, 1.0, 1.0)),
+    ("Rot", (1.0, 0.0, 0.0)),
+    ("Grün", (0.0, 1.0, 0.0)),
+    ("Blau", (0.0, 0.0, 1.0)),
+    ("Grau", (0.5, 0.5, 0.5)),
+    ("Schwarz-Weiß Farbverlauf", None),
+]
+TOTAL = len(SCREENS)
+
+
+def now_iso():
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+
+
+def write_state(result, index=0, note=None):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    index = max(0, min(int(index), TOTAL - 1))
+    data = {
+        "test": "display",
+        "result": result,
+        "screen_index": index,
+        "screen_number": index + 1,
+        "total_screens": TOTAL,
+        "screen_name": SCREENS[index][0],
+        "timestamp": now_iso(),
+    }
+    if note:
+        data["note"] = note
+    tmp = STATE_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(STATE_FILE)
+
+
+class DisplayArea(Gtk.DrawingArea):
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.TOUCH_MASK)
+        self.connect("draw", self.on_draw)
+        self.connect("button-press-event", self.on_button)
+        self.connect("touch-event", self.on_touch)
+
+    def on_draw(self, widget, cr):
+        width = max(1, self.get_allocated_width())
+        height = max(1, self.get_allocated_height())
+        _, color = SCREENS[self.owner.index]
+        if color is None:
+            gradient = cairo.LinearGradient(0, 0, width, 0)
+            gradient.add_color_stop_rgb(0.0, 0.0, 0.0, 0.0)
+            gradient.add_color_stop_rgb(1.0, 1.0, 1.0, 1.0)
+            cr.set_source(gradient)
+        else:
+            cr.set_source_rgb(*color)
+        cr.rectangle(0, 0, width, height)
+        cr.fill()
+        return False
+
+    def on_button(self, widget, event):
+        # Manche XWayland-Treiber erzeugen direkt nach einem Touch zusätzlich
+        # ein emuliertes Mausereignis. Dieses nicht doppelt werten.
+        if time.monotonic() - self.owner.last_touch_at < 0.35:
+            return True
+        if event.button == 1:
+            self.owner.next_screen()
+            return True
+        if event.button == 3:
+            self.owner.previous_screen()
+            return True
+        return True
+
+    def on_touch(self, widget, event):
+        if event.type != Gdk.EventType.TOUCH_BEGIN:
+            return True
+        self.owner.last_touch_at = time.monotonic()
+        width = max(1, self.get_allocated_width())
+        if event.x >= width / 2.0:
+            self.owner.next_screen()
+        else:
+            self.owner.previous_screen()
+        return True
+
+
+class DisplayWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("Uwuntu Display-Test")
+        self.set_decorated(False)
+        self.set_keep_above(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_accept_focus(True)
+        self.set_focus_on_map(True)
+        self.index = 0
+        self.finished = False
+        self.front_attempts = 0
+        self.last_touch_at = 0.0
+
+        self.area = DisplayArea(self)
+        self.add(self.area)
+        self.connect("key-press-event", self.on_key)
+        self.connect("delete-event", self.on_delete)
+        self.connect("realize", self.on_realize)
+
+        self.fullscreen()
+        self.show_all()
+        self.present()
+        self.grab_focus()
+        GLib.timeout_add(150, self.force_front)
+        write_state("running", self.index, "Display-Test gestartet")
+
+    def on_realize(self, *_):
+        try:
+            display = Gdk.Display.get_default()
+            cursor = Gdk.Cursor.new_for_display(display, Gdk.CursorType.BLANK_CURSOR)
+            self.get_window().set_cursor(cursor)
+        except Exception:
+            pass
+
+    def force_front(self):
+        if self.finished:
+            return False
+        self.front_attempts += 1
+        try:
+            self.set_keep_above(True)
+            self.present()
+            self.grab_focus()
+        except Exception:
+            pass
+        return self.front_attempts < 12
+
+    def redraw(self):
+        self.area.queue_draw()
+        write_state("running", self.index, f"Anzeige: {SCREENS[self.index][0]}")
+
+    def next_screen(self):
+        if self.finished:
+            return
+        if self.index >= TOTAL - 1:
+            self.finish_success()
+            return
+        self.index += 1
+        self.redraw()
+
+    def previous_screen(self):
+        if self.finished:
+            return
+        if self.index > 0:
+            self.index -= 1
+            self.redraw()
+
+    def finish_success(self):
+        if self.finished:
+            return
+        self.finished = True
+        write_state("success", TOTAL - 1, "Alle Display-Farben vollständig geprüft")
+        Gtk.main_quit()
+
+    def abort(self, reason="Display-Test abgebrochen"):
+        if self.finished:
+            return
+        self.finished = True
+        write_state("aborted", self.index, reason)
+        Gtk.main_quit()
+
+    def abort_all(self):
+        if not self.finished:
+            self.finished = True
+            write_state("aborted", self.index, "Display-Test durch STRG+Q abgebrochen")
+        helper = Path.home() / ".local/bin/close-diagnostic-apps.sh"
+        try:
+            subprocess.Popen(
+                [str(helper)],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except Exception:
+            pass
+        Gtk.main_quit()
+
+    def on_key(self, widget, event):
+        ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
+        if event.keyval == Gdk.KEY_Escape:
+            self.abort("Display-Test mit ESC abgebrochen")
+            return True
+        if ctrl and event.keyval in (Gdk.KEY_w, Gdk.KEY_W):
+            self.abort("Display-Test mit STRG+W abgebrochen")
+            return True
+        if ctrl and event.keyval in (Gdk.KEY_q, Gdk.KEY_Q):
+            self.abort_all()
+            return True
+        if event.keyval in (Gdk.KEY_Right, Gdk.KEY_space):
+            self.next_screen()
+            return True
+        if event.keyval == Gdk.KEY_Left:
+            self.previous_screen()
+            return True
+        return True
+
+    def on_delete(self, *_):
+        self.abort("Display-Test durch Fenster-Schließen abgebrochen")
+        return True
+
+
+win = DisplayWindow()
+Gtk.main()
+PY
+DISPLAY_TEST_EOF
+
+    chmod +x "$DISPLAY_TEST_SCRIPT"
+    mkdir -p "$(dirname "$DISPLAY_STATE_FILE")"
+    echo "OK: Display-Test installiert/aktualisiert."
+    echo "Programm: $DISPLAY_TEST_SCRIPT"
+    echo "Status:   $DISPLAY_STATE_FILE"
     return 0
 }
 
@@ -3682,7 +3953,10 @@ def run_global_arrow_monitor(parent_pid):
         34: "warranty",    # KEY_G
         59: "hotkeys",     # KEY_F1
         20: "touch",       # KEY_T
+        32: "display",     # KEY_D
     }
+    ctrl_codes = {29, 97}  # KEY_LEFTCTRL, KEY_RIGHTCTRL
+    ctrl_down = set()
     fds = {}
     next_scan = 0.0
     first_scan = True
@@ -3753,7 +4027,18 @@ def run_global_arrow_monitor(parent_pid):
             usable = len(data) - (len(data) % event_struct.size)
             for offset in range(0, usable, event_struct.size):
                 _, _, event_type, code, value = event_struct.unpack_from(data, offset)
-                if event_type != ev_key or value != 1:
+                if event_type != ev_key:
+                    continue
+                if code in ctrl_codes:
+                    token = (fd, code)
+                    if value in (1, 2):
+                        ctrl_down.add(token)
+                    elif value == 0:
+                        ctrl_down.discard(token)
+                    continue
+                if value != 1:
+                    continue
+                if code == 32 and ctrl_down:
                     continue
                 channel = key_map.get(code)
                 if channel:
@@ -4023,6 +4308,7 @@ class App(Gtk.Application):
             "warranty": 0.0,
             "hotkeys": 0.0,
             "touch": 0.0,
+            "display": 0.0,
         }
         self.info_window = None
         self.hotkeys_window = None
@@ -4043,6 +4329,9 @@ class App(Gtk.Application):
         self.touch_status_cache = None
         self.touch_present_cache = None
         self.touch_present_checked_at = 0.0
+        self.display_state_file = Path.home() / ".local/state/uwuntu/display_test_status.json"
+        self.display_script = Path.home() / ".local/bin/uwuntu-display-test.sh"
+        self.display_test_active = False
     def do_activate(self):
         if self.window:
             self.window.present()
@@ -4074,8 +4363,10 @@ class App(Gtk.Application):
         self.refresh_security()
         self.usb_rediscover(reset=True)
         self.refresh_touch_status()
+        self.refresh_display_status()
         GLib.timeout_add(300, self.poll_usb)
         GLib.timeout_add(500, self.poll_touch_status)
+        GLib.timeout_add(500, self.poll_display_status)
         self.start_global_speaker_listener()
 
         log("Hardware Check gestartet")
@@ -4133,7 +4424,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.5.0"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.5.1"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -4250,7 +4541,7 @@ class App(Gtk.Application):
         usb.append(scroll)
         right.append(usb)
 
-        touch = self.card("TOUCH-TEST")
+        touch = self.card("TOUCH-TEST (T)")
         touch.set_hexpand(True)
         touch_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
         touch_row.add_css_class("usb-row")
@@ -4272,6 +4563,27 @@ class App(Gtk.Application):
         touch_row.append(self.touch_status_detail)
         touch.append(touch_row)
         right.append(touch)
+
+        display = self.card("BILDSCHIRMTEST (D)")
+        display.set_hexpand(True)
+        display_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+        display_row.add_css_class("usb-row")
+        self.display_status_dot = Gtk.Label(label="●")
+        self.display_status_dot.add_css_class("status-orange")
+        self.display_status_text = Gtk.Label(label="NICHT GETESTET")
+        self.display_status_text.set_xalign(0)
+        self.display_status_text.set_hexpand(True)
+        self.display_status_text.add_css_class("usb-port-name")
+        self.display_status_text.add_css_class("status-orange")
+        self.display_status_detail = Gtk.Label(label="D")
+        self.display_status_detail.set_xalign(1)
+        self.display_status_detail.add_css_class("usb-port-state")
+        self.display_status_detail.add_css_class("status-orange")
+        display_row.append(self.display_status_dot)
+        display_row.append(self.display_status_text)
+        display_row.append(self.display_status_detail)
+        display.append(display_row)
+        right.append(display)
 
         content.append(left)
         content.append(right)
@@ -4410,6 +4722,83 @@ class App(Gtk.Application):
         except Exception as exc:
             self.set_touch_status_ui("red", "TOUCH-TEST STARTFEHLER", "T")
             log(f"Touch-Test per T Startfehler: {exc}")
+        return False
+
+    def set_display_status_ui(self, color, text, detail="D"):
+        if not hasattr(self, "display_status_text"):
+            return False
+        for widget in (self.display_status_dot, self.display_status_text, self.display_status_detail):
+            for cls in ("status-green", "status-orange", "status-red"):
+                widget.remove_css_class(cls)
+            widget.add_css_class("status-" + color)
+        self.display_status_text.set_text(text)
+        self.display_status_detail.set_text(detail)
+        return False
+
+    def refresh_display_status(self):
+        data = None
+        try:
+            if self.display_state_file.exists():
+                data = json.loads(self.display_state_file.read_text(encoding="utf-8"))
+        except Exception as exc:
+            log(f"Display-Status nicht lesbar: {exc}")
+        result = (data or {}).get("result")
+        current = int((data or {}).get("screen_number") or 0)
+        total = int((data or {}).get("total_screens") or 6)
+        if result == "success":
+            self.display_test_active = False
+            self.set_display_status_ui("green", "ABGESCHLOSSEN", f"{total}/{total}")
+        elif result == "running":
+            self.display_test_active = True
+            self.set_display_status_ui("orange", "TEST LÄUFT", f"{current}/{total}")
+        elif result == "aborted":
+            self.display_test_active = False
+            self.set_display_status_ui("orange", "ABGEBROCHEN", "D")
+        else:
+            self.display_test_active = False
+            self.set_display_status_ui("orange", "NICHT GETESTET", "D")
+        return False
+
+    def poll_display_status(self):
+        if self.window is None:
+            return False
+        self.refresh_display_status()
+        return True
+
+    def start_display_test(self, *_):
+        if not self.display_script.exists():
+            self.set_display_status_ui("orange", "DISPLAY-TESTER FEHLT", "D")
+            log("Display-Test per D fehlgeschlagen: Script fehlt")
+            return False
+        try:
+            running = subprocess.run(
+                ["pgrep", "-f", str(self.display_script)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.0,
+                check=False,
+            ).returncode == 0
+        except Exception:
+            running = False
+        if running:
+            self.display_test_active = True
+            log("Display-Test per D bereits geöffnet")
+            return False
+        try:
+            subprocess.Popen(
+                [str(self.display_script)],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            self.display_test_active = True
+            self.set_display_status_ui("orange", "TEST WIRD GESTARTET", "D")
+            log("Display-Test per D gestartet")
+        except Exception as exc:
+            self.display_test_active = False
+            self.set_display_status_ui("orange", "DISPLAY-TEST STARTFEHLER", "D")
+            log(f"Display-Test per D Startfehler: {exc}")
         return False
 
     def start_global_speaker_listener(self):
@@ -4552,7 +4941,7 @@ class App(Gtk.Application):
                     if token in {
                         "left", "right", "both",
                         "benchmark", "ram", "info", "update", "warranty",
-                        "hotkeys", "touch"
+                        "hotkeys", "touch", "display"
                     }:
                         GLib.idle_add(self.handle_global_hotkey, token)
         finally:
@@ -4910,6 +5299,7 @@ class App(Gtk.Application):
             ("U", "Uwuntu-Update suchen und installieren"),
             ("G", "Dell-Support für erkannte Seriennummer öffnen"),
             ("T", "Touch-Tester manuell öffnen"),
+            ("D", "Display-Test starten"),
             ("ENTER", "Wipe Auto: WIPE SSD / danach YES bestätigen"),
             ("STRG+W", "Aktuelles Diagnosefenster schließen"),
             ("STRG+Q", "Alle Uwuntu-Diagnosefenster schließen"),
@@ -4936,7 +5326,7 @@ class App(Gtk.Application):
 
         note = Gtk.Label(
             label=(
-                "Hinweis: Im TASTATUR TEST sind F1, B, R, I, U, G, T und die "
+                "Hinweis: Im TASTATUR TEST sind F1, B, R, I, U, G, T, D und die "
                 "Pfeiltasten ausschließlich normale Prüftasten."
             )
         )
@@ -5111,9 +5501,11 @@ class App(Gtk.Application):
         if not self.window or not self.stack:
             return False
 
-        # Im Tastatur-Test sind B, R, I, U, G, T und F1 ausschließlich normale Prüftasten.
+        # Im Tastatur-Test sind B, R, I, U, G, T, D und F1 ausschließlich normale Prüftasten.
         # Globale Diagnose-Hotkeys dürfen die Seite nicht verlassen.
         if self.stack.get_visible_child_name() == "keyboard":
+            return False
+        if self.display_test_active:
             return False
 
         # Wenn Hardware Check selbst den Fokus hat, kommt dieselbe Taste
@@ -5146,6 +5538,10 @@ class App(Gtk.Application):
             self.start_touch_test()
             return False
 
+        if action == "display":
+            self.start_display_test()
+            return False
+
         if action == "benchmark":
             if visible == "benchmarks":
                 self.start_test(None, "cpu-short", 10.0)
@@ -5168,6 +5564,8 @@ class App(Gtk.Application):
         if not self.window or not self.stack:
             return False
         if self.stack.get_visible_child_name() == "keyboard":
+            return False
+        if self.display_test_active:
             return False
 
         # Manche Tastaturen tauchen über mehr als ein Event-Device auf.
@@ -6208,6 +6606,13 @@ class App(Gtk.Application):
         if lower_name == "t" and visible != "keyboard":
             self.handle_global_hotkey("touch")
             return True
+        if (
+            lower_name == "d"
+            and visible != "keyboard"
+            and not (state & Gdk.ModifierType.CONTROL_MASK)
+        ):
+            self.handle_global_hotkey("display")
+            return True
         if name == "F1" and visible != "keyboard":
             self.handle_global_hotkey("hotkeys")
             return True
@@ -6383,6 +6788,10 @@ install_kiosk() {
         return
     fi
     if ! install_touch_test_app; then
+        pause
+        return
+    fi
+    if ! install_display_test_app; then
         pause
         return
     fi
@@ -6587,6 +6996,7 @@ has_touchscreen() {
 
 # Ergebnis gehört immer nur zum aktuell getesteten Notebook.
 rm -f "$HOME/.local/state/uwuntu/touch_tester_status.json" 2>/dev/null || true
+rm -f "$HOME/.local/state/uwuntu/display_test_status.json" 2>/dev/null || true
 
 if has_touchscreen; then
     echo "Touchscreen erkannt: Touch-Test startet vor dem 4-Felder-Layout ..."
@@ -7141,7 +7551,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere die aktuell getestete Network-Check-Version v2.7."
+    echo "Installiere die aktuell getestete Network-Check-Version v2.8."
     echo "Das Programm bleibt ein eigenes Fenster."
     echo
 
@@ -7219,7 +7629,7 @@ import time
 import queue
 from datetime import datetime
 from pathlib import Path
-VERSION = "2.7"
+VERSION = "2.8"
 # ============================================================
 # EINSTELLUNGEN
 # Diese Grenzwerte sind für den ersten Praxistest bewusst
@@ -7915,8 +8325,48 @@ class NetworkCheckApp(Gtk.Application):
         self.test_queue.put((iface, kind, reason))
         log(f"Test eingeplant: {kind.upper()} {iface} ({reason})")
 
+    def reset_refresh_values(self, devices):
+        """Alle sichtbaren und internen Speedtest-Werte sofort verwerfen.
+
+        REFRESH soll auf den ersten Blick zeigen, dass wirklich neu gemessen
+        wird. Deshalb werden LINK/DOWNLOAD/UPLOAD beider Karten direkt auf
+        ``--`` gesetzt und alte Ergebniswerte nicht in den neuen Test
+        übernommen. Hardware-/MAC-/Interface-Erkennung bleibt erhalten.
+        """
+        for kind in ("lan", "wifi"):
+            result = self.results[kind]
+            result["iface"] = None
+            result["link"] = None
+            result["down"] = None
+            result["up"] = None
+            result["tested"] = False
+            result["passed"] = None
+
+            card = self.cards[kind]
+            card.set_metric("link", "--", "neutral")
+            card.set_metric("down", "--", "neutral")
+            card.set_metric("up", "--", "neutral")
+
+            connected = any(
+                dev["connected"]
+                for dev in devices["ethernet" if kind == "lan" else "wifi"]
+            )
+            if connected:
+                card.set_state("REFRESH", "live")
+                card.note_label.set_text("Neue Messung wird gestartet …")
+
+        # WLAN-LINK ist absichtlich ein Maximum während eines einzelnen
+        # Tests. Bei REFRESH muss dieses Maximum ebenfalls neu beginnen.
+        self.max_wifi_link.clear()
+        self.global_status.set_text("Messwerte gelöscht · neue Tests werden gestartet …")
+
     def on_test_clicked(self, button):
         devices = get_devices()
+
+        # Zuerst ALLE bisherigen Werte sichtbar und intern löschen. Erst
+        # danach neue Tests einplanen, damit der REFRESH sofort erkennbar ist.
+        self.reset_refresh_values(devices)
+
         scheduled = 0
 
         for dev in devices["ethernet"]:
