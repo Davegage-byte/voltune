@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.8 + Wipe Auto v3.3
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Hardware Check v4.4.9 + Wipe Auto v3.3
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -29,7 +29,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090303
+MANAGER_BUILD=2026090401
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1975,6 +1975,22 @@ button.speaker-both {
     font-size: 14px;
     font-weight: 800;
 }
+button.info-serial-link {
+    color: #5aa2ff;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 2px 6px;
+    min-height: 24px;
+    font-size: 14px;
+    font-weight: 800;
+}
+button.info-serial-link:focus {
+    background: #1d2f4a;
+    border-color: #5aa2ff;
+    outline: 2px solid #5aa2ff;
+    outline-offset: 1px;
+}
 .update-status {
     background: #232329;
     border: 1px solid #34343c;
@@ -2773,6 +2789,7 @@ def run_global_arrow_monitor(parent_pid):
         19: "ram",         # KEY_R
         23: "info",        # KEY_I
         22: "update",      # KEY_U
+        34: "warranty",    # KEY_G
     }
     fds = {}
     next_scan = 0.0
@@ -3038,6 +3055,37 @@ def system_information():
     ]
 
 
+def dell_support_target():
+    """Dell-Supportziel nur für eindeutig nutzbare Geräteinformationen.
+
+    Aktuell unterstützen wir bewusst ausschließlich Dell. Hersteller anderer
+    Geräte oder unbrauchbare Seriennummern führen zu ``None`` und damit zu
+    keinerlei Browser-Aktion.
+    """
+    dmi = Path("/sys/class/dmi/id")
+    manufacturer = read_first_value(
+        dmi / "sys_vendor",
+        dmi / "board_vendor",
+    )
+    serial = detect_system_serial()
+
+    if manufacturer == "--" or "dell" not in manufacturer.lower():
+        return None
+
+    # Dell Service-Tags bestehen aus Buchstaben/Ziffern. Die etwas großzügige
+    # Längenprüfung lässt auch ältere/abweichende Dell-Seriennummern zu, ohne
+    # beliebigen DMI-Text in eine URL zu übernehmen.
+    if serial == "--" or not re.fullmatch(r"[A-Za-z0-9]{5,20}", serial):
+        return None
+
+    url = (
+        "https://www.dell.com/support/product-details/de-de/servicetag/"
+        + serial
+        + "/overview"
+    )
+    return manufacturer, serial, url
+
+
 def format_test_clock(seconds):
     seconds = max(0, int(seconds))
     minutes, sec = divmod(seconds, 60)
@@ -3080,6 +3128,7 @@ class App(Gtk.Application):
             "ram": 0.0,
             "info": 0.0,
             "update": 0.0,
+            "warranty": 0.0,
         }
         self.info_window = None
         self.update_window = None
@@ -3182,7 +3231,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.8"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.9"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -3451,7 +3500,7 @@ class App(Gtk.Application):
 
                     if token in {
                         "left", "right", "both",
-                        "benchmark", "ram", "info", "update"
+                        "benchmark", "ram", "info", "update", "warranty"
                     }:
                         GLib.idle_add(self.handle_global_hotkey, token)
         finally:
@@ -3577,6 +3626,48 @@ class App(Gtk.Application):
         if previous == "false":
             GLib.timeout_add(500, self.restore_center_new_windows, previous)
 
+    def open_dell_support(self, *_):
+        target = dell_support_target()
+        if target is None:
+            # Gewolltes No-op: aktuell wird nur Dell unterstützt.
+            log("Dell-Support per G/Klick ignoriert: kein unterstütztes Dell-Gerät oder keine nutzbare Seriennummer")
+            return False
+
+        _, serial, url = target
+        opener = shutil.which("xdg-open")
+        cmd = [opener, url] if opener else None
+
+        if cmd is None:
+            gio = shutil.which("gio")
+            if gio:
+                cmd = [gio, "open", url]
+
+        if cmd is None:
+            log("Dell-Support konnte nicht geöffnet werden: xdg-open/gio fehlt")
+            return False
+
+        try:
+            subprocess.Popen(
+                cmd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            log(f"Dell-Support geöffnet: Service-Tag {serial}")
+        except Exception as exc:
+            log(f"Dell-Support konnte nicht geöffnet werden: {exc}")
+
+        return False
+
+    def focus_info_serial_button(self, button):
+        if self.info_window is not None:
+            try:
+                button.grab_focus()
+            except Exception:
+                pass
+        return False
+
     def show_system_info(self, *_):
         if not self.stack or self.stack.get_visible_child_name() == "keyboard":
             return False
@@ -3614,21 +3705,44 @@ class App(Gtk.Application):
         card.set_column_spacing(18)
         card.add_css_class("info-card")
 
-        for row, (label_text, value_text) in enumerate(system_information()):
+        info_values = system_information()
+        support_target = dell_support_target()
+        support_serial = support_target[1] if support_target else None
+        serial_button = None
+
+        for row, (label_text, value_text) in enumerate(info_values):
             label = Gtk.Label(label=label_text)
             label.set_xalign(0)
             label.set_valign(Gtk.Align.START)
             label.add_css_class("info-label")
 
-            value = Gtk.Label(label=value_text)
-            value.set_xalign(0)
-            value.set_hexpand(True)
-            value.set_wrap(True)
-            # Info-Werte sind reine Anzeige. Nicht auswählbar/fokussierbar,
-            # damit beim Öffnen z.B. "Dell Inc." nicht markiert erscheint.
-            value.set_selectable(False)
-            value.set_focusable(False)
-            value.add_css_class("info-value")
+            if (
+                label_text == "Seriennummer"
+                and support_serial is not None
+                and value_text == support_serial
+            ):
+                # Bei unterstützten Dell-Geräten ist die Seriennummer direkt
+                # bedienbar. Sie bekommt beim Öffnen Fokus, damit Enter oder
+                # Leertaste ohne weitere Navigation die Dell-Seite öffnet.
+                value = Gtk.Button(label=value_text)
+                value.set_halign(Gtk.Align.START)
+                value.set_focusable(True)
+                value.add_css_class("info-serial-link")
+                value.set_tooltip_text(
+                    "Dell Support / Garantieabfrage öffnen (Enter oder Leertaste)"
+                )
+                value.connect("clicked", self.open_dell_support)
+                serial_button = value
+            else:
+                value = Gtk.Label(label=value_text)
+                value.set_xalign(0)
+                value.set_hexpand(True)
+                value.set_wrap(True)
+                # Alle übrigen Info-Werte sind reine Anzeige und bekommen
+                # keinen Fokus bzw. keine Textauswahl.
+                value.set_selectable(False)
+                value.set_focusable(False)
+                value.add_css_class("info-value")
 
             card.attach(label, 0, row, 1, 1)
             card.attach(value, 1, row, 1, 1)
@@ -3637,7 +3751,11 @@ class App(Gtk.Application):
         info.set_child(outer)
 
         self.info_window = info
+        if serial_button is not None:
+            info.set_default_widget(serial_button)
         self.present_centered(info)
+        if serial_button is not None:
+            GLib.timeout_add(60, self.focus_info_serial_button, serial_button)
         log("Systeminformationen per I mittig geöffnet")
         return False
 
@@ -3798,7 +3916,7 @@ class App(Gtk.Application):
         if not self.window or not self.stack:
             return False
 
-        # Im Tastatur-Test sind B, R, I und U ausschließlich normale Prüftasten.
+        # Im Tastatur-Test sind B, R, I, U und G ausschließlich normale Prüftasten.
         # Globale Diagnose-Hotkeys dürfen die Seite nicht verlassen.
         if self.stack.get_visible_child_name() == "keyboard":
             return False
@@ -3819,6 +3937,10 @@ class App(Gtk.Application):
 
         if action == "update":
             self.show_force_update()
+            return False
+
+        if action == "warranty":
+            self.open_dell_support()
             return False
 
         if action == "benchmark":
@@ -4855,7 +4977,7 @@ class App(Gtk.Application):
                     self.test_speaker(button, channel)
                     return True
 
-        # B/R/I/U auch über GTK behandeln, wenn Hardware Check den Fokus hat.
+        # B/R/I/U/G auch über GTK behandeln, wenn Hardware Check den Fokus hat.
         # Der Hotkey-Handler entprellt das parallele /dev/input-Ereignis.
         lower_name = name.lower()
         visible = self.stack.get_visible_child_name()
@@ -4870,6 +4992,9 @@ class App(Gtk.Application):
             return True
         if lower_name == "u" and visible != "keyboard":
             self.handle_global_hotkey("update")
+            return True
+        if lower_name == "g" and visible != "keyboard":
+            self.handle_global_hotkey("warranty")
             return True
 
         # Normale Tasten nur dann als Tastaturtest auswerten, wenn
