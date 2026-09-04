@@ -29,7 +29,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090401
+MANAGER_BUILD=2026090402
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3231,7 +3231,7 @@ class App(Gtk.Application):
         return box
     def build_overview(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.9"))
+        root.append(self.header("HARDWARE CHECK", refresh=True, version="v4.4.10"))
 
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         content.set_margin_start(8)
@@ -3626,6 +3626,28 @@ class App(Gtk.Application):
         if previous == "false":
             GLib.timeout_add(500, self.restore_center_new_windows, previous)
 
+    def copy_serial_to_clipboard(self, serial):
+        """Service-Tag für anschließendes Strg+V in die Zwischenablage legen.
+
+        GTK/GDK funktioniert dabei nativ unter Wayland und X11. Ein Fehler beim
+        Kopieren darf das Öffnen der Dell-Seite nicht verhindern.
+        """
+        if not serial:
+            return False
+
+        try:
+            clipboard = (
+                self.window.get_clipboard()
+                if self.window is not None
+                else Gdk.Display.get_default().get_clipboard()
+            )
+            clipboard.set_text(serial)
+            log(f"Dell Service-Tag in Zwischenablage kopiert: {serial}")
+            return True
+        except Exception as exc:
+            log(f"Service-Tag konnte nicht in Zwischenablage kopiert werden: {exc}")
+            return False
+
     def open_dell_support(self, *_):
         target = dell_support_target()
         if target is None:
@@ -3634,6 +3656,12 @@ class App(Gtk.Application):
             return False
 
         _, serial, url = target
+
+        # Vor jedem Öffnen zuerst kopieren. Falls Dell auf der direkten
+        # Supportseite nichts anzeigt, kann der Service-Tag anschließend
+        # auf einer anderen Dell-Seite sofort per Strg+V eingefügt werden.
+        self.copy_serial_to_clipboard(serial)
+
         opener = shutil.which("xdg-open")
         cmd = [opener, url] if opener else None
 
