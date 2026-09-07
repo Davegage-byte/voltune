@@ -3,33 +3,69 @@ name: Update AVEX
 'on':
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
 
 permissions:
   contents: write
 
+concurrency:
+  group: update-avex
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 4
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - name: Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Scrape AVEX
-        run: python update_avex.py
+        shell: bash
+        run: |
+          set -e
+
+          for attempt in 1 2 3; do
+            echo "AVEX Abruf - Versuch $attempt/3"
+
+            if python update_avex.py; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "Abruf fehlgeschlagen - neuer Versuch in 15 Sekunden"
+              sleep 15
+            fi
+          done
+
+          echo "AVEX Abruf nach 3 Versuchen fehlgeschlagen"
+          exit 1
 
       - name: Commit
+        shell: bash
         run: |
+          set -e
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add avex-data.json avex-history.json
 
-          git diff --cached --quiet && exit 0
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen"
+            exit 0
+          fi
 
           git commit -m "Update AVEX"
-          git push
+
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+
+          git push origin HEAD:"${GITHUB_REF_NAME}"
