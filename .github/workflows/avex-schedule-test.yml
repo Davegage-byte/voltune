@@ -1,0 +1,16 @@
+name: AVEX Schedule Test
+
+'on':
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scheduler Test
+        run: |
+          echo "GitHub Scheduler funktioniert"
+          date -u
