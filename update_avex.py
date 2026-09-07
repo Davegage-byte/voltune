@@ -1,4 +1,4 @@
-# AVEX Scraper Version: 2026-09-03-v3
+# AVEX Scraper Version: 2026-09-07-v4
 
 import re
 import json
@@ -10,26 +10,19 @@ from zoneinfo import ZoneInfo
 
 
 # --------------------------------------------------
-# Quellen
+# Quelle
 # --------------------------------------------------
 
-# Preis:
-# e-Stations zeigt den AFIR-/Mobilithek-Datensatz von EW Pricing
-PRICE_URL = (
-    "https://www.e-stations.de/ladestationen/"
-    "euskirchen/avex-euskirchen-108"
-)
-
-# Belegung:
-# Bestehende Quelle beibehalten, da sie im bisherigen Projekt funktioniert
-STATUS_URL = (
+# Preis UND Belegung direkt von adhocladen.
+# Damit stammen alle Live-Werte aus derselben Quelle.
+AVEX_URL = (
     "https://adhocladen.de/euskirchen/"
     "avex-mineraloelhandelsgesellschaft/"
 )
 
 TIMEZONE = ZoneInfo("Europe/Berlin")
 
-SCRAPER_VERSION = "2026-09-03-v3"
+SCRAPER_VERSION = "2026-09-07-v4"
 
 DATA_FILE = "avex-data.json"
 HISTORY_FILE = "avex-history.json"
@@ -106,7 +99,18 @@ def load_json(filename, default):
         return default
 
 
+def normalize_price(value):
+    return value.replace(".", ",")
+
+
+def price_as_float(value):
+    return float(
+        normalize_price(value).replace(",", ".")
+    )
+
+
 print("AVEX Scraper Version:", SCRAPER_VERSION)
+
 
 # --------------------------------------------------
 # Vorherige Werte laden
@@ -135,145 +139,168 @@ old_offline = int(
 
 
 # --------------------------------------------------
+# adhocladen einmalig laden
+# --------------------------------------------------
+
+page_html = None
+page_text = None
+page_download_fresh = False
+
+try:
+    page_html = download(
+        AVEX_URL
+    )
+
+    page_text = html_to_text(
+        page_html
+    )
+
+    page_download_fresh = True
+
+except Exception as exc:
+    print(
+        "WARNUNG: adhocladen konnte nicht "
+        "geladen werden:",
+        repr(exc)
+    )
+
+
+# --------------------------------------------------
 # PREIS
-# e-Stations -> Mobilithek -> EW Pricing
+# adhocladen
 # --------------------------------------------------
 
 price_text = old_price
 price_fresh = False
 price_candidates = []
 
-try:
-    price_html = download(
-        PRICE_URL
-    )
+if page_download_fresh:
+    try:
+        normalized_text = page_text.replace(
+            "\xa0",
+            " "
+        )
 
-    price_page_text = html_to_text(
-        price_html
-    )
+        normalized_text = re.sub(
+            r"\s+",
+            " ",
+            normalized_text
+        )
 
-    # --------------------------------------------------
-    # Robuste Preiserkennung
-    # --------------------------------------------------
-    #
-    # e-Stations wiederholt den aktuellen Ad-Hoc-Preis
-    # bei jedem der 8 Ladepunkte.
-    #
-    # Deshalb suchen wir ALLE €/kWh-Werte und nehmen
-    # den am häufigsten vorkommenden Wert.
-    #
-    # Aktuell sollte 0,56 €/kWh achtmal vorkommen.
-    normalized_text = price_page_text.replace(
-        "\xa0",
-        " "
-    )
-
-    normalized_text = re.sub(
-        r"\s+",
-        " ",
-        normalized_text
-    )
-
-    all_price_candidates = re.findall(
-        r'(\d+[,.]\d{2})\s*'
-        r'(?:€|EUR)\s*/\s*kWh',
-        normalized_text,
-        re.I
-    )
-
-    all_price_candidates = [
-        value.replace(".", ",")
-        for value in all_price_candidates
-    ]
-
-    if not all_price_candidates:
-        # Zusätzlicher Fallback direkt auf dem HTML,
-        # falls das €-Zeichen als HTML-Entity codiert ist.
-        all_price_candidates = re.findall(
+        # 1. Bevorzugt den ausdrücklich bezeichneten
+        #    "Günstigsten Ad-Hoc-Preis" der Station lesen.
+        direct_price_match = re.search(
+            r'GÜNSTIGSTER\s+AD-HOC-PREIS'
+            r'.{0,250}?'
             r'(\d+[,.]\d{2})\s*'
-            r'(?:€|EUR|&euro;|&#8364;)\s*/\s*kWh',
-            price_html,
+            r'(?:€|EUR)\s*/\s*kWh',
+            normalized_text,
             re.I
         )
 
-        all_price_candidates = [
-            value.replace(".", ",")
-            for value in all_price_candidates
-        ]
+        if direct_price_match:
+            price_text = normalize_price(
+                direct_price_match.group(1)
+            )
 
-    if not all_price_candidates:
-        raise ValueError(
-            "Auf e-Stations wurde kein €/kWh-Wert gefunden"
-        )
+            price_candidates = [
+                price_text
+            ]
 
-    all_counter = Counter(
-        all_price_candidates
-    )
+            print(
+                "Ad-Hoc-Preis direkt gefunden:",
+                price_text,
+                "€/kWh"
+            )
 
-    most_common_price, occurrences = (
-        all_counter.most_common(1)[0]
-    )
+        else:
+            # 2. Fallback:
+            #    Alle €/kWh-Werte der Seite sammeln.
+            all_price_candidates = re.findall(
+                r'(\d+[,.]\d{2})\s*'
+                r'(?:€|EUR)\s*/\s*kWh',
+                normalized_text,
+                re.I
+            )
 
-    # Bei dieser AVEX-Station wird derselbe Preis
-    # normalerweise 8x angezeigt. Zwei Treffer reichen
-    # als Sicherheitscheck, falls sich die Seite ändert.
-    if occurrences < 2:
-        raise ValueError(
-            "Kein eindeutig wiederholter Preis gefunden. "
-            f"Treffer: {all_price_candidates}"
-        )
+            if not all_price_candidates:
+                # Falls das Euro-Zeichen im HTML
+                # als Entity vorliegt.
+                all_price_candidates = re.findall(
+                    r'(\d+[,.]\d{2})\s*'
+                    r'(?:€|EUR|&euro;|&#8364;)\s*/\s*kWh',
+                    page_html,
+                    re.I
+                )
 
-    price_candidates = [
-        most_common_price
-    ] * occurrences
+            all_price_candidates = [
+                normalize_price(value)
+                for value in all_price_candidates
+            ]
 
-    print(
-        "Preis-Kandidaten auf e-Stations:",
-        dict(all_counter)
-    )
+            # Offensichtlich unplausible Treffer verwerfen.
+            plausible_candidates = []
 
-    # Auf der Station wird derselbe Tarif bei
-    # mehreren EVSEs wiederholt.
-    #
-    # Falls die Seite einmal unterschiedliche Preise
-    # liefert, verwenden wir den am häufigsten
-    # vorkommenden und schreiben eine Warnung ins Log.
-    counter = Counter(
-        price_candidates
-    )
+            for value in all_price_candidates:
+                try:
+                    number = price_as_float(
+                        value
+                    )
+                except ValueError:
+                    continue
 
-    price_text = counter.most_common(
-        1
-    )[0][0]
+                if 0.05 <= number <= 3.00:
+                    plausible_candidates.append(
+                        value
+                    )
 
-    price_fresh = True
+            if not plausible_candidates:
+                raise ValueError(
+                    "Auf adhocladen wurde kein "
+                    "plausibler €/kWh-Wert gefunden"
+                )
 
-    unique_prices = sorted(
-        set(price_candidates)
-    )
+            counter = Counter(
+                plausible_candidates
+            )
 
-    if len(unique_prices) > 1:
+            price_text, occurrences = (
+                counter.most_common(1)[0]
+            )
+
+            price_candidates = (
+                plausible_candidates
+            )
+
+            print(
+                "Preis-Kandidaten auf adhocladen:",
+                dict(counter)
+            )
+
+            print(
+                "Verwendeter Preis:",
+                price_text,
+                "€/kWh",
+                f"({occurrences} Treffer)"
+            )
+
+        price_fresh = True
+
+    except Exception as exc:
         print(
-            "WARNUNG: Unterschiedliche "
-            "Ad-Hoc-Preise gefunden:",
-            unique_prices
+            "WARNUNG: Preis konnte nicht "
+            "von adhocladen gelesen werden:",
+            repr(exc)
         )
-
-except Exception as exc:
-    print(
-        "WARNUNG: Preis konnte nicht "
-        "von e-Stations geladen werden:",
-        repr(exc)
-    )
-    print(
-        "Verwende letzten bekannten Preis:",
-        old_price
-    )
+        print(
+            "Verwende letzten bekannten Preis:",
+            old_price
+        )
 
 
 # --------------------------------------------------
 # STATUS
-# Bestehende adhocladen-Quelle
+# adhocladen
 # --------------------------------------------------
 
 free = old_free
@@ -281,73 +308,68 @@ occupied = old_occupied
 offline = old_offline
 status_fresh = False
 
-try:
-    status_html = download(
-        STATUS_URL
-    )
-
-    free_match = re.search(
-        r'<strong>(\d+)</strong>\s*'
-        r'<span>\s*frei',
-        status_html,
-        re.I
-    )
-
-    occupied_match = re.search(
-        r'<strong>(\d+)</strong>\s*'
-        r'<span>\s*belegt',
-        status_html,
-        re.I
-    )
-
-    offline_match = re.search(
-        r'<strong>(\d+)</strong>\s*'
-        r'<span>\s*offline',
-        status_html,
-        re.I
-    )
-
-    # Frei + Belegt sollten vorhanden sein.
-    # Offline darf fehlen -> dann 0.
-    if (
-        free_match is None
-        or occupied_match is None
-    ):
-        raise ValueError(
-            "Frei/Belegt konnte nicht "
-            "aus adhocladen gelesen werden"
+if page_download_fresh:
+    try:
+        free_match = re.search(
+            r'<strong>(\d+)</strong>\s*'
+            r'<span>\s*frei',
+            page_html,
+            re.I
         )
 
-    free = int(
-        free_match.group(1)
-    )
+        occupied_match = re.search(
+            r'<strong>(\d+)</strong>\s*'
+            r'<span>\s*belegt',
+            page_html,
+            re.I
+        )
 
-    occupied = int(
-        occupied_match.group(1)
-    )
+        offline_match = re.search(
+            r'<strong>(\d+)</strong>\s*'
+            r'<span>\s*offline',
+            page_html,
+            re.I
+        )
 
-    offline = (
-        int(offline_match.group(1))
-        if offline_match
-        else 0
-    )
+        if (
+            free_match is None
+            or occupied_match is None
+        ):
+            raise ValueError(
+                "Frei/Belegt konnte nicht "
+                "aus adhocladen gelesen werden"
+            )
 
-    status_fresh = True
+        free = int(
+            free_match.group(1)
+        )
 
-except Exception as exc:
-    print(
-        "WARNUNG: Status konnte nicht "
-        "von adhocladen geladen werden:",
-        repr(exc)
-    )
-    print(
-        "Verwende letzten bekannten Status:",
-        {
-            "free": old_free,
-            "occupied": old_occupied,
-            "offline": old_offline
-        }
-    )
+        occupied = int(
+            occupied_match.group(1)
+        )
+
+        offline = (
+            int(offline_match.group(1))
+            if offline_match
+            else 0
+        )
+
+        status_fresh = True
+
+    except Exception as exc:
+        print(
+            "WARNUNG: Status konnte nicht "
+            "von adhocladen gelesen werden:",
+            repr(exc)
+        )
+        print(
+            "Verwende letzten bekannten Status:",
+            {
+                "free": old_free,
+                "occupied": old_occupied,
+                "offline": old_offline
+            }
+        )
 
 
 # --------------------------------------------------
@@ -364,14 +386,11 @@ data = {
     "occupied": occupied,
     "offline": offline,
     "updated": now.strftime("%H:%M"),
-
-    # Zusätzliche Infos.
-    # Die bestehende Webseite ignoriert diese Felder,
-    # sie sind aber später für Diagnose praktisch.
-    "price_source": "e-stations / Mobilithek / EW Pricing",
+    "price_source": "adhocladen",
     "status_source": "adhocladen",
     "price_fresh": price_fresh,
-    "status_fresh": status_fresh
+    "status_fresh": status_fresh,
+    "scraper_version": SCRAPER_VERSION
 }
 
 with open(
@@ -396,12 +415,9 @@ history = load_json(
     []
 )
 
-# Nur einen neuen Verlaufspunkt schreiben,
+# Nur dann einen neuen Verlaufspunkt schreiben,
 # wenn der Preis bei DIESEM Lauf erfolgreich
-# von e-Stations gelesen wurde.
-#
-# Dadurch erzeugt ein Seiten-/Netzwerkfehler
-# keine falsche Preisänderung.
+# frisch von adhocladen gelesen wurde.
 if (
     price_fresh
     and price_text != "?"
@@ -430,11 +446,15 @@ if (
             "price": current_price
         })
 
+        print(
+            "PREISÄNDERUNG:",
+            current_price,
+            "€/kWh"
+        )
+
     # Nur die letzten 24 Stunden behalten.
-    #
     # Zusätzlich den letzten Punkt VOR dem
-    # 24h-Fenster behalten, damit das Diagramm
-    # den zu Beginn gültigen Preis kennt.
+    # 24h-Fenster behalten.
     cutoff = now - timedelta(
         hours=24
     )
@@ -501,7 +521,7 @@ print(
 
 if price_candidates:
     print(
-        "Gefundene HPC-Preiswerte:",
+        "Gefundene Preiswerte:",
         price_candidates
     )
 
