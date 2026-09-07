@@ -1,11 +1,12 @@
 {
-  "price": "0,56",
+  "price": "0,38",
   "free": 8,
   "occupied": 0,
   "offline": 0,
-  "updated": "07:25",
-  "price_source": "e-stations / Mobilithek / EW Pricing",
+  "updated": "07:33",
+  "price_source": "adhocladen",
   "status_source": "adhocladen",
   "price_fresh": true,
-  "status_fresh": true
+  "status_fresh": true,
+  "scraper_version": "2026-09-07-v4"
 }
