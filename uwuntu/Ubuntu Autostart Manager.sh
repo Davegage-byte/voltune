@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090817
+MANAGER_BUILD=2026090818
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -971,14 +971,30 @@ install_all_dependencies() {
         echo "Fehlende Pakete: ${missing[*]}"
         echo "Installation wird automatisch gestartet ..."
 
-        local sudo_cmd=(sudo)
+        # U-Updates laufen aus dem Hardware-Check ohne Terminal. Ein normales
+        # sudo kann dort kein Passwort abfragen. Deshalb:
+        # 1) passwortloses sudo verwenden, wenn vorhanden
+        # 2) sonst pkexec für die grafische Ubuntu-Authentifizierung
+        # 3) klassisches sudo nur als letzter Fallback für Terminal-Starts
         if sudo -n true >/dev/null 2>&1; then
-            sudo_cmd=(sudo -n)
-        fi
+            echo "Paketinstallation: sudo -n"
+            sudo -n apt-get update || return 1
+            sudo -n env DEBIAN_FRONTEND=noninteractive \
+                apt-get install -y "${missing[@]}" || return 1
 
-        "${sudo_cmd[@]}" apt-get update || return 1
-        "${sudo_cmd[@]}" env DEBIAN_FRONTEND=noninteractive \
-            apt-get install -y "${missing[@]}" || return 1
+        elif command -v pkexec >/dev/null 2>&1; then
+            echo "Paketinstallation: grafische Authentifizierung via pkexec"
+            pkexec env DEBIAN_FRONTEND=noninteractive \
+                apt-get update || return 1
+            pkexec env DEBIAN_FRONTEND=noninteractive \
+                apt-get install -y "${missing[@]}" || return 1
+
+        else
+            echo "Paketinstallation: sudo-Fallback"
+            sudo apt-get update || return 1
+            sudo env DEBIAN_FRONTEND=noninteractive \
+                apt-get install -y "${missing[@]}" || return 1
+        fi
     else
         echo "OK: Alle Basis-Abhängigkeiten sind bereits installiert."
     fi
@@ -1051,10 +1067,18 @@ for pkg in "${REQUIRED_PKGS[@]}"; do
 done
 
 if ((${#missing[@]})); then
-    if command -v pkexec >/dev/null 2>&1; then
-        pkexec env DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}" || exit 1
+    if sudo -n true >/dev/null 2>&1; then
+        sudo -n apt-get update || exit 1
+        sudo -n env DEBIAN_FRONTEND=noninteractive \
+            apt-get install -y "${missing[@]}" || exit 1
+    elif command -v pkexec >/dev/null 2>&1; then
+        pkexec env DEBIAN_FRONTEND=noninteractive apt-get update || exit 1
+        pkexec env DEBIAN_FRONTEND=noninteractive \
+            apt-get install -y "${missing[@]}" || exit 1
     else
-        sudo apt-get install -y "${missing[@]}" || exit 1
+        sudo apt-get update || exit 1
+        sudo env DEBIAN_FRONTEND=noninteractive \
+            apt-get install -y "${missing[@]}" || exit 1
     fi
 fi
 
@@ -1079,10 +1103,15 @@ raise SystemExit(0 if any(os.path.isfile(p) for p in candidates) else 1)
 PY_FACE_MODEL_CHECK
 then
     if ! dpkg -s opencv-data >/dev/null 2>&1; then
-        if command -v pkexec >/dev/null 2>&1; then
-            pkexec env DEBIAN_FRONTEND=noninteractive apt-get install -y opencv-data || exit 1
+        if sudo -n true >/dev/null 2>&1; then
+            sudo -n env DEBIAN_FRONTEND=noninteractive \
+                apt-get install -y opencv-data || exit 1
+        elif command -v pkexec >/dev/null 2>&1; then
+            pkexec env DEBIAN_FRONTEND=noninteractive \
+                apt-get install -y opencv-data || exit 1
         else
-            sudo apt-get install -y opencv-data || exit 1
+            sudo env DEBIAN_FRONTEND=noninteractive \
+                apt-get install -y opencv-data || exit 1
         fi
     fi
 fi
