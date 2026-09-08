@@ -1,9 +1,9 @@
 {
   "price": "0,38",
-  "free": 6,
-  "occupied": 0,
-  "offline": 2,
-  "updated": "11:00",
+  "free": 1,
+  "occupied": 3,
+  "offline": 0,
+  "updated": "15:27",
   "price_source": "adhocladen",
   "status_source": "adhocladen",
   "price_fresh": true,
