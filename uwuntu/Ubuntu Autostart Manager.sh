@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090820
+MANAGER_BUILD=2026090821
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1010,12 +1010,16 @@ install_all_dependencies() {
         # 3) klassisches sudo nur als letzter Fallback für Terminal-Starts
         if sudo -n true >/dev/null 2>&1; then
             echo "Paketinstallation: sudo -n"
+            echo "APT-Cache wird vor der Installation bereinigt ..."
+            sudo -n apt-get clean || return 1
             sudo -n apt-get update || return 1
             sudo -n env DEBIAN_FRONTEND=noninteractive \
                 apt-get install -y "${missing[@]}" || return 1
 
         elif command -v pkexec >/dev/null 2>&1; then
             echo "Paketinstallation: grafische Authentifizierung via pkexec"
+            echo "APT-Cache wird vor der Installation bereinigt ..."
+            pkexec apt-get clean || return 1
             pkexec env DEBIAN_FRONTEND=noninteractive \
                 apt-get update || return 1
             pkexec env DEBIAN_FRONTEND=noninteractive \
@@ -1023,6 +1027,8 @@ install_all_dependencies() {
 
         else
             echo "Paketinstallation: sudo-Fallback"
+            echo "APT-Cache wird vor der Installation bereinigt ..."
+            sudo apt-get clean || return 1
             sudo apt-get update || return 1
             sudo env DEBIAN_FRONTEND=noninteractive \
                 apt-get install -y "${missing[@]}" || return 1
@@ -1117,14 +1123,17 @@ repair_camera_dpkg() {
 if ((${#missing[@]})); then
     repair_camera_dpkg || exit 1
     if sudo -n true >/dev/null 2>&1; then
+        sudo -n apt-get clean || exit 1
         sudo -n apt-get update || exit 1
         sudo -n env DEBIAN_FRONTEND=noninteractive \
             apt-get install -y "${missing[@]}" || exit 1
     elif command -v pkexec >/dev/null 2>&1; then
+        pkexec apt-get clean || exit 1
         pkexec env DEBIAN_FRONTEND=noninteractive apt-get update || exit 1
         pkexec env DEBIAN_FRONTEND=noninteractive \
             apt-get install -y "${missing[@]}" || exit 1
     else
+        sudo apt-get clean || exit 1
         sudo apt-get update || exit 1
         sudo env DEBIAN_FRONTEND=noninteractive \
             apt-get install -y "${missing[@]}" || exit 1
