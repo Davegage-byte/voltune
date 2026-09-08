@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.34 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.35 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090829
+MANAGER_BUILD=2026090830
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6089,34 +6089,113 @@ print(
 
 
 def get_keyboard_event_paths():
-    """Linux-event-Geräte ermitteln, die wirklich als Tastatur (kbd) gelten.
+    """Nur echte Tastatur-event-Geräte für den globalen Monitor ermitteln.
 
-    /proc/bus/input/devices ist auch ohne Root lesbar und nennt pro Gerät die
-    Handler, z. B. ``Handlers=sysrq kbd event3 leds``. Damit vermeiden wir,
-    dass ein lesbares Touchpad-/Sensor-event fälschlich als funktionierender
-    globaler Tastaturzugriff gewertet wird.
+    Wichtig für EVIOCGRAB:
+    Ein event-Gerät darf nur exklusiv übernommen werden, wenn es wirklich eine
+    reine Tastatur ist. Manche Laptop-/USB-Geräte besitzen gleichzeitig einen
+    ``kbd``-Handler UND Pointer-Funktionen. Würden wir so ein kombiniertes
+    Gerät greifen, könnte anschließend z. B. die Touchpad-/Mausbewegung
+    blockiert sein.
+
+    Deshalb:
+    - Kandidaten zunächst aus /proc/bus/input/devices mit ``kbd``-Handler.
+    - Geräte mit mouse-Handler sofort ausschließen.
+    - Wenn udev verfügbar ist, ID_INPUT_KEYBOARD=1 verlangen und
+      TOUCHPAD/MOUSE/POINTINGSTICK/TABLET ausschließen.
+    - Offensichtliche Systemtasten wie Power/Sleep/Video Bus nicht greifen.
     """
-    paths = set()
+    candidates = []
     try:
-        text = Path("/proc/bus/input/devices").read_text(
+        raw = Path("/proc/bus/input/devices").read_text(
             encoding="utf-8", errors="ignore"
         )
-        for block in text.split("\n\n"):
+        for block in raw.split("\n\n"):
             handlers = ""
+            name = ""
+
             for line in block.splitlines():
-                if line.startswith("H: Handlers="):
+                if line.startswith("N: Name="):
+                    name = line.split("=", 1)[1].strip().strip('"')
+                elif line.startswith("H: Handlers="):
                     handlers = line.split("=", 1)[1].strip()
-                    break
+
             tokens = handlers.split()
             if "kbd" not in tokens:
                 continue
+
+            # Ein Event-Knoten mit mouseN ist ein gemischtes Pointer-Gerät.
+            if any(token.startswith("mouse") for token in tokens):
+                continue
+
+            lowered = name.lower()
+            if any(
+                marker in lowered
+                for marker in (
+                    "touchpad",
+                    "trackpoint",
+                    "pointing stick",
+                    "mouse",
+                )
+            ):
+                continue
+
+            if lowered in {
+                "power button",
+                "sleep button",
+                "video bus",
+            }:
+                continue
+
             for token in tokens:
                 if token.startswith("event") and token[5:].isdigit():
-                    paths.add(f"/dev/input/{token}")
+                    candidates.append((f"/dev/input/{token}", name))
+
     except OSError:
         pass
 
-    # Fallback für ungewöhnliche Systeme, auf denen /proc unvollständig ist.
+    paths = set()
+    udevadm = shutil.which("udevadm")
+
+    for dev, name in candidates:
+        if udevadm:
+            try:
+                p = subprocess.run(
+                    [udevadm, "info", "--query=property", f"--name={dev}"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    timeout=1.0,
+                    check=False,
+                )
+                props = set(
+                    line.strip()
+                    for line in (p.stdout or "").splitlines()
+                    if line.strip()
+                )
+
+                if p.returncode == 0 and props:
+                    if "ID_INPUT_KEYBOARD=1" not in props:
+                        continue
+
+                    if any(
+                        flag in props
+                        for flag in (
+                            "ID_INPUT_TOUCHPAD=1",
+                            "ID_INPUT_MOUSE=1",
+                            "ID_INPUT_POINTINGSTICK=1",
+                            "ID_INPUT_TABLET=1",
+                        )
+                    ):
+                        continue
+            except Exception:
+                # /proc-Filter bleibt als sicherer Fallback bestehen.
+                pass
+
+        paths.add(dev)
+
+    # Fallback für ungewöhnliche Systeme ohne brauchbare /proc-/udev-Daten.
+    # *-event-kbd verweist gezielt auf Tastatur-Interfaces.
     if not paths:
         for link in glob.glob("/dev/input/by-path/*-event-kbd"):
             try:
@@ -6204,6 +6283,9 @@ def run_global_arrow_monitor(parent_pid):
     next_scan = 0.0
     first_scan = True
     grab_active = False
+    grab_escape_count = 0
+    grab_escape_last_at = 0.0
+    grab_escape_window = 3.0
     command_buffer = b""
 
     try:
@@ -6226,7 +6308,7 @@ def run_global_arrow_monitor(parent_pid):
             return False
 
     def apply_grab(enabled):
-        nonlocal grab_active
+        nonlocal grab_active, grab_escape_count, grab_escape_last_at
         ok = 0
         failed = 0
 
@@ -6237,6 +6319,8 @@ def run_global_arrow_monitor(parent_pid):
                 failed += 1
 
         grab_active = enabled
+        grab_escape_count = 0
+        grab_escape_last_at = 0.0
 
         if enabled:
             emit(f"grabbed {ok} {failed}")
@@ -6356,6 +6440,12 @@ def run_global_arrow_monitor(parent_pid):
                         state = "down" if value == 1 else "up"
                         if not emit(f"keycode:{state}:{code}"):
                             return 0
+
+                    # Während des exklusiven Tests zählt jede andere gedrückte
+                    # Taste als Unterbrechung einer begonnenen ESC-x3-Folge.
+                    if grab_active and value == 1:
+                        grab_escape_count = 0
+                        grab_escape_last_at = 0.0
                     continue
 
                 # Roh-Keycode als PRESS und RELEASE melden:
@@ -6366,6 +6456,39 @@ def run_global_arrow_monitor(parent_pid):
                         return 0
 
                 if value != 1:
+                    continue
+
+                # Während EVIOCGRAB aktiv ist, bleiben ALLE Tasten reine
+                # Prüftasten. Es werden bewusst keine Diagnose-Hotkeys
+                # (K/U/B/F1/Pfeile/...) erzeugt. So kann z. B. ein noch
+                # wartendes K-Ereignis den Tastatur-Test nach ESC x3 nicht
+                # direkt wieder öffnen.
+                if grab_active:
+                    now_key = time.monotonic()
+
+                    if code == 1:  # KEY_ESC
+                        if (
+                            grab_escape_last_at <= 0.0
+                            or now_key - grab_escape_last_at > grab_escape_window
+                        ):
+                            grab_escape_count = 1
+                        else:
+                            grab_escape_count += 1
+
+                        grab_escape_last_at = now_key
+
+                        if grab_escape_count >= 3:
+                            # Sicherheitsentscheidend: Erst IM HELFER selbst
+                            # freigeben, danach die GUI informieren. Selbst
+                            # wenn GTK kurz hängt, ist kein Input-Gerät mehr
+                            # exklusiv blockiert.
+                            apply_grab(False)
+                            if not emit("keyboard-exit"):
+                                return 0
+                    else:
+                        grab_escape_count = 0
+                        grab_escape_last_at = 0.0
+
                     continue
 
                 if code == 32 and ctrl_down:
@@ -6637,6 +6760,7 @@ class App(Gtk.Application):
         self.global_input_active = False
         self.global_input_command_lock = threading.Lock()
         self.keyboard_input_grab_desired = False
+        self.keyboard_input_grab_active = False
         self.last_global_hotkey_at = {
             "escape": 0.0,
             "benchmark": 0.0,
@@ -6697,7 +6821,7 @@ class App(Gtk.Application):
         # So bleibt ESC weiterhin als normale Prüftaste testbar.
         self.keyboard_escape_count = 0
         self.keyboard_escape_last_at = 0.0
-        self.keyboard_escape_window = 1.5
+        self.keyboard_escape_window = 3.0
 
         # Linux input-event Keycodes -> Alias aus keyboard_layout().
         # Damit arbeitet der Tastatur-Test direkt mit der physischen
@@ -6741,14 +6865,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.34")
+        self.window.set_title("Hardware Check v4.5.35")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.34")
+        title_label = Gtk.Label(label="Hardware Check v4.5.35")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7508,8 +7632,21 @@ class App(Gtk.Application):
             return False
 
     def set_keyboard_input_grab(self, enabled):
-        """Exklusive Tastaturübernahme für den Tastatur-Test schalten."""
-        self.keyboard_input_grab_desired = bool(enabled)
+        """Exklusive Tastaturübernahme für den Tastatur-Test schalten.
+
+        Beim Freigeben gilt Sicherheit vor Komfort: Kann das UNGRAB-Kommando
+        nicht an einen noch laufenden Helfer gesendet werden, wird der Helfer
+        beendet. Der Linux-Kernel löst EVIOCGRAB beim Schließen der FDs
+        garantiert auf. Der selbstheilende Listener startet danach ohne Grab
+        neu, weil ``keyboard_input_grab_desired`` bereits False ist.
+        """
+        enabled = bool(enabled)
+        self.keyboard_input_grab_desired = enabled
+
+        if not enabled:
+            # GUI-seitig sofort als freigegeben behandeln; die Bestätigung
+            # vom Helfer dient danach nur noch der Diagnose.
+            self.keyboard_input_grab_active = False
 
         command = "grab" if enabled else "ungrab"
         if self.send_global_input_command(command):
@@ -7524,7 +7661,20 @@ class App(Gtk.Application):
                 "Tastatur-Test: exklusiver Grab noch nicht verfügbar; "
                 "wird beim nächsten Monitor-READY automatisch angefordert"
             )
+            return False
+
+        # UNGRAB konnte nicht zugestellt werden. Falls der alte Helfer noch
+        # existiert, durch Prozessende den Kernel-Grab zwangsweise lösen.
+        proc = self.global_input_proc
+        if proc is not None and proc.poll() is None:
+            log(
+                "Tastatur-Test: UNGRAB nicht zustellbar · "
+                "Input-Helfer wird zur sicheren Freigabe beendet"
+            )
+            self.stop_input_monitor_process(proc)
+
         return False
+
 
     def sudo_input_monitor_available(self):
         sudo = shutil.which("sudo")
@@ -7621,8 +7771,12 @@ class App(Gtk.Application):
                     if token.startswith("grabbed "):
                         try:
                             _, ok, failed = token.split()
-                        except ValueError:
+                            ok_count = int(ok)
+                        except (ValueError, TypeError):
                             ok, failed = "?", "?"
+                            ok_count = 0
+
+                        self.keyboard_input_grab_active = ok_count > 0
                         log(
                             "Tastatur-Test: exklusiver Input-Grab aktiv "
                             f"({ok} Gerät(e), {failed} Fehler)"
@@ -7630,7 +7784,14 @@ class App(Gtk.Application):
                         continue
 
                     if token.startswith("ungrabbed "):
+                        self.keyboard_input_grab_active = False
                         log("Tastatur-Test: exklusiver Input-Grab freigegeben")
+                        continue
+
+                    if token == "keyboard-exit":
+                        self.keyboard_input_grab_active = False
+                        self.keyboard_input_grab_desired = False
+                        GLib.idle_add(self.finish_keyboard_test_from_monitor)
                         continue
 
                     if token.startswith("grab-device-failed "):
@@ -7649,6 +7810,7 @@ class App(Gtk.Application):
                         GLib.idle_add(self.handle_global_hotkey, token)
         finally:
             self.global_input_active = False
+            self.keyboard_input_grab_active = False
             self.global_input_proc = None
             self.stop_input_monitor_process(proc)
 
@@ -9754,7 +9916,21 @@ class App(Gtk.Application):
 
         return False
 
+    def finish_keyboard_test_from_monitor(self):
+        """ESC x3 wurde direkt im exklusiven Input-Helfer erkannt."""
+        if self.stack.get_visible_child_name() != "keyboard":
+            return False
+
+        log("Tastatur-Test: ESC x3 vom Input-Helfer bestätigt")
+        self.show_overview()
+        return False
+
     def show_keyboard(self, *_):
+        # Stale/duplizierte K-Ereignisse dürfen einen bereits laufenden
+        # Tastatur-Test weder neu initialisieren noch erneut grabben.
+        if self.stack.get_visible_child_name() == "keyboard":
+            return False
+
         self.keyboard_escape_count = 0
         self.keyboard_escape_last_at = 0.0
 
@@ -9867,13 +10043,14 @@ class App(Gtk.Application):
         if alias:
             self.mark_keyboard_alias(alias, pressed=pressed)
 
-        # ESC-x3 zählt nur die echten Tastendrücke. Das Loslassen zählt
-        # nicht als weiterer ESC-Anschlag.
+        # Bei aktivem EVIOCGRAB zählt der Input-Helfer ESC x3 selbst und
+        # gibt die Tastatur beim dritten ESC SOFORT frei. Die GUI zählt nur
+        # als Fallback, wenn kein exklusiver Grab bestätigt ist.
         if pressed:
             if code == 1:
-                self.handle_keyboard_escape_sequence()
+                if not self.keyboard_input_grab_active:
+                    self.handle_keyboard_escape_sequence()
             else:
-                # "3x hintereinander": jede andere gedrückte Taste setzt zurück.
                 self.keyboard_escape_count = 0
                 self.keyboard_escape_last_at = 0.0
 
