@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.25 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.26 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090814
+MANAGER_BUILD=2026090815
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6166,14 +6166,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.25")
+        self.window.set_title("Hardware Check v4.5.26")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.25")
+        title_label = Gtk.Label(label="Hardware Check v4.5.26")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7339,17 +7339,13 @@ class App(Gtk.Application):
 
         window = Gtk.ApplicationWindow(application=self)
         window.set_title("Shortcuts / Hotkeys")
-        window.set_default_size(560, 470)
+        window.set_default_size(470, 470)
         window.set_resizable(False)
 
-        # Als echtes Zusatzfenster an Hardware Check binden. Die eigentliche
-        # Breitenbegrenzung entsteht zusätzlich durch kurze feste Zeilen im
-        # Hinweistext, damit kein Label eine riesige Natural Width anfordert.
-        try:
-            window.set_transient_for(self.window)
-            window.set_modal(False)
-        except Exception:
-            pass
+        # Bewusst NICHT transient an Hardware Check binden:
+        # Mutter kann das Fenster dadurch über present_centered() wieder in
+        # der Bildschirmmitte platzieren, statt relativ zum HC-Fenster.
+        window.set_modal(False)
 
         window.connect("close-request", self.close_hotkeys_window)
 
@@ -7360,8 +7356,8 @@ class App(Gtk.Application):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         outer.set_margin_top(14)
         outer.set_margin_bottom(14)
-        outer.set_margin_start(14)
-        outer.set_margin_end(14)
+        outer.set_margin_start(12)
+        outer.set_margin_end(12)
 
         title = Gtk.Label(label="SHORTCUTS / HOTKEYS")
         title.set_xalign(0)
@@ -7371,8 +7367,8 @@ class App(Gtk.Application):
         grid = Gtk.Grid()
         grid.set_row_spacing(8)
         grid.set_column_spacing(14)
-        grid.set_hexpand(False)
-        grid.set_halign(Gtk.Align.START)
+        grid.set_hexpand(True)
+        grid.set_halign(Gtk.Align.FILL)
         grid.add_css_class("hotkey-grid")
 
         shortcuts = [
@@ -7405,8 +7401,8 @@ class App(Gtk.Application):
 
             desc = Gtk.Label(label=desc_text)
             desc.set_xalign(0)
-            desc.set_halign(Gtk.Align.START)
-            desc.set_hexpand(False)
+            desc.set_halign(Gtk.Align.FILL)
+            desc.set_hexpand(True)
             desc.set_wrap(True)
             desc.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
             desc.set_max_width_chars(38)
@@ -7427,7 +7423,8 @@ class App(Gtk.Application):
             )
         )
         note.set_xalign(0)
-        note.set_halign(Gtk.Align.START)
+        note.set_halign(Gtk.Align.FILL)
+        note.set_hexpand(True)
         note.set_wrap(False)
         note.set_focusable(False)
         note.add_css_class("hotkey-note")
