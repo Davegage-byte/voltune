@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.43 + Wipe Auto v3.22 + Audio Test v1.17
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.44 + Wipe Auto v3.22 + Audio Test v1.17
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090838
+MANAGER_BUILD=2026090839
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6301,6 +6301,7 @@ def run_global_arrow_monitor(parent_pid):
 
     # Linux: #define EVIOCGRAB _IOW('E', 0x90, int)
     IOC_WRITE = 1
+    IOC_READ = 2
     IOC_NRBITS = 8
     IOC_TYPEBITS = 8
     IOC_SIZEBITS = 14
@@ -6314,6 +6315,51 @@ def run_global_arrow_monitor(parent_pid):
         | (0x90 << IOC_NRSHIFT)
         | (struct.calcsize("i") << IOC_SIZESHIFT)
     )
+
+    def eviocgbit(event_type, length):
+        # Linux: EVIOCGBIT(ev, len) = _IOC(_IOC_READ, 'E', 0x20 + ev, len)
+        return (
+            (IOC_READ << IOC_DIRSHIFT)
+            | (ord("E") << IOC_TYPESHIFT)
+            | ((0x20 + event_type) << IOC_NRSHIFT)
+            | (length << IOC_SIZESHIFT)
+        )
+
+    def bit_is_set(buf, bit):
+        byte_index = bit // 8
+        if byte_index >= len(buf):
+            return False
+        return bool(buf[byte_index] & (1 << (bit % 8)))
+
+    def fd_has_pointer_movement(fd):
+        """Kernel-seitig prüfen, ob das Event-Gerät Zeigerbewegung liefert.
+
+        Udev-/proc-Klassifikation allein ist bei manchen Laptop-HID-Geräten
+        nicht eindeutig genug. Ein Gerät mit echten X/Y-Maus-, Touchpad- oder
+        Multitouch-Achsen darf niemals per EVIOCGRAB übernommen werden.
+        """
+        # EV_REL: REL_X=0, REL_Y=1
+        rel_bits = bytearray(16)
+        try:
+            fcntl.ioctl(fd, eviocgbit(0x02, len(rel_bits)), rel_bits, True)
+            if bit_is_set(rel_bits, 0) or bit_is_set(rel_bits, 1):
+                return True
+        except OSError:
+            pass
+
+        # EV_ABS: ABS_X=0, ABS_Y=1, ABS_MT_POSITION_X=53, Y=54
+        abs_bits = bytearray(16)
+        try:
+            fcntl.ioctl(fd, eviocgbit(0x03, len(abs_bits)), abs_bits, True)
+            if any(
+                bit_is_set(abs_bits, bit)
+                for bit in (0, 1, 53, 54)
+            ):
+                return True
+        except OSError:
+            pass
+
+        return False
 
     key_map = {
         1: "escape",        # KEY_ESC
@@ -6334,6 +6380,7 @@ def run_global_arrow_monitor(parent_pid):
     ctrl_codes = {29, 97}
     ctrl_down = set()
     fds = {}
+    grabbable_fds = set()
     next_scan = 0.0
     first_scan = True
     grab_active = False
@@ -6366,13 +6413,24 @@ def run_global_arrow_monitor(parent_pid):
         ok = 0
         failed = 0
 
-        for fd in list(fds):
+        for fd in list(grabbable_fds):
             if set_fd_grab(fd, enabled):
                 ok += 1
-            else:
-                failed += 1
+                continue
 
-        grab_active = enabled
+            failed += 1
+
+            # Beim UNGRAB ist Schließen des FDs die letzte Instanz:
+            # Der Kernel löst jeden EVIOCGRAB beim Close garantiert.
+            if not enabled:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                fds.pop(fd, None)
+                grabbable_fds.discard(fd)
+
+        grab_active = bool(enabled and ok > 0)
         grab_escape_count = 0
         grab_escape_last_at = 0.0
 
@@ -6396,6 +6454,7 @@ def run_global_arrow_monitor(parent_pid):
                     except OSError:
                         pass
                     fds.pop(fd, None)
+                    grabbable_fds.discard(fd)
 
             opened_paths = set(fds.values())
             open_failures = 0
@@ -6408,10 +6467,19 @@ def run_global_arrow_monitor(parent_pid):
 
                 fds[fd] = path
 
-                # Wird während eines laufenden Tastatur-Tests z.B. eine
-                # externe USB-Tastatur angesteckt, ebenfalls sofort greifen.
-                if grab_active and not set_fd_grab(fd, True):
-                    emit(f"grab-device-failed {path}")
+                # Zweite Sicherheitsstufe direkt aus den Kernel-Capabilities:
+                # Keyboard-Ereignisse dürfen wir weiterhin LESEN, aber Geräte
+                # mit Pointer-Achsen werden niemals exklusiv gegriffen.
+                if fd_has_pointer_movement(fd):
+                    emit(f"pointer-capable-keyboard {path}")
+                else:
+                    grabbable_fds.add(fd)
+
+                    # Wird während eines laufenden Keyboard-Tests z.B. eine
+                    # externe USB-Tastatur angesteckt, ebenfalls sofort greifen.
+                    if grab_active and not set_fd_grab(fd, True):
+                        grabbable_fds.discard(fd)
+                        emit(f"grab-device-failed {path}")
 
             if first_scan:
                 if not fds or open_failures:
@@ -6473,6 +6541,7 @@ def run_global_arrow_monitor(parent_pid):
                 except OSError:
                     pass
                 fds.pop(fd, None)
+                grabbable_fds.discard(fd)
                 continue
 
             usable = len(data) - (len(data) % event_struct.size)
@@ -6556,7 +6625,7 @@ def run_global_arrow_monitor(parent_pid):
     # Sauber freigeben; beim Schließen der FDs würde der Kernel den Grab
     # ebenfalls lösen, explizit ist es aber leichter nachvollziehbar.
     for fd in list(fds):
-        if grab_active:
+        if grab_active and fd in grabbable_fds:
             set_fd_grab(fd, False)
         try:
             os.close(fd)
@@ -6921,14 +6990,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.43")
+        self.window.set_title("Hardware Check v4.5.44")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.43")
+        title_label = Gtk.Label(label="Hardware Check v4.5.44")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7150,6 +7219,7 @@ class App(Gtk.Application):
         self.touch_status_name.set_xalign(0)
         self.touch_status_name.set_hexpand(True)
         self.touch_status_name.add_css_class("usb-port-name")
+        self.touch_status_name.add_css_class("status-orange")
 
         self.touch_status_text = Gtk.Label(label="NICHT GETESTET")
         self.touch_status_text.set_xalign(1)
@@ -7573,7 +7643,11 @@ class App(Gtk.Application):
         if not hasattr(self, "touch_status_text"):
             return False
 
-        for widget in (self.touch_status_dot, self.touch_status_text):
+        for widget in (
+            self.touch_status_dot,
+            self.touch_status_name,
+            self.touch_status_text,
+        ):
             for cls in ("status-green", "status-orange", "status-red", "status-blue"):
                 widget.remove_css_class(cls)
             widget.add_css_class("status-" + color)
@@ -7778,6 +7852,7 @@ class App(Gtk.Application):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 bufsize=0,
+                start_new_session=True,
             )
         except Exception as exc:
             log(
@@ -7865,14 +7940,29 @@ class App(Gtk.Application):
     def stop_input_monitor_process(self, proc):
         if proc is None or proc.poll() is not None:
             return
+
+        # Der Helfer läuft in einer eigenen Session/Prozessgruppe. Dadurch
+        # wird auch ein möglicher sudo->python-Kindprozess sicher beendet und
+        # dessen /dev/input-FDs werden garantiert geschlossen.
         try:
-            proc.terminate()
-            proc.wait(timeout=0.5)
+            os.killpg(proc.pid, signal.SIGTERM)
+            proc.wait(timeout=0.7)
+            return
         except Exception:
-            try:
-                proc.kill()
-            except Exception:
-                pass
+            pass
+
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait(timeout=0.5)
+            return
+        except Exception:
+            pass
+
+        try:
+            proc.kill()
+        except Exception:
+            pass
+
 
     def run_input_monitor_session(self, use_sudo):
         """Eine Monitor-Sitzung ausführen.
@@ -7965,7 +8055,15 @@ class App(Gtk.Application):
                         continue
 
                     if token.startswith("grab-device-failed "):
-                        log("Tastatur-Test: Grab fehlgeschlagen: " + token.split(" ", 1)[1])
+                        log("Keyboard-Test: Grab fehlgeschlagen: " + token.split(" ", 1)[1])
+                        continue
+
+                    if token.startswith("pointer-capable-keyboard "):
+                        log(
+                            "Keyboard-Test: Gerät liefert auch Pointer-Achsen "
+                            "und wird deshalb NICHT exklusiv gegriffen: "
+                            + token.split(" ", 1)[1]
+                        )
                         continue
 
                     if (
@@ -8448,7 +8546,7 @@ class App(Gtk.Application):
 
         note = Gtk.Label(
             label=(
-                "Hinweis: Im TASTATUR TEST sind F1, B, K, R, I, U, G, T, D,\n"
+                "Hinweis: Im KEYBOARD TEST sind F1, B, K, R, I, U, G, T, D,\n"
                 "SUPER und alle Pfeiltasten normale Prüftasten. ESC zählt ebenfalls\n"
                 "als Prüftaste; erst ESC x3 beendet den Tastatur-Test. SUPER allein,\n"
                 "SUPER+Pfeile und ALT+SPACE lösen während des Tests keine\n"
@@ -9489,7 +9587,7 @@ class App(Gtk.Application):
         self.keyboard_focus_widget = root
         root.append(
             self.header(
-                "TASTATUR TEST",
+                "KEYBOARD TEST",
                 back=True,
                 back_label="← ÜBERSICHT (ESC x3)",
             )
@@ -10113,6 +10211,27 @@ class App(Gtk.Application):
 
         return False
 
+    def restart_input_monitor_after_keyboard_test(self):
+        """Nach jedem Keyboard-Test alle Input-FDs garantiert neu öffnen.
+
+        Selbst wenn ein Gerät oder Treiber ein normales UNGRAB verschluckt,
+        beendet das Schließen des gesamten Helferprozesses jeden verbliebenen
+        Kernel-Grab. Der selbstheilende Listener startet direkt danach wieder
+        ohne exklusiven Grab.
+        """
+        if self.keyboard_input_grab_desired:
+            return False
+
+        proc = self.global_input_proc
+        if proc is not None and proc.poll() is None:
+            log(
+                "Keyboard-Test: Input-Helfer wird nach Testende vorsorglich "
+                "neu gestartet, damit alle Grabs sicher gelöst sind"
+            )
+            self.stop_input_monitor_process(proc)
+
+        return False
+
     def finish_keyboard_test_from_monitor(self):
         """ESC x3 wurde direkt im exklusiven Input-Helfer erkannt."""
         if self.stack.get_visible_child_name() != "keyboard":
@@ -10173,7 +10292,21 @@ class App(Gtk.Application):
         return False
 
     def show_overview(self, *_):
+        leaving_keyboard = (
+            self.stack is not None
+            and self.stack.get_visible_child_name() == "keyboard"
+        )
+
         self.set_keyboard_input_grab(False)
+
+        if leaving_keyboard:
+            # UNGRAB zuerst normal zustellen; kurz danach den kompletten
+            # Helfer neu starten. Das garantiert geschlossene /dev/input-FDs.
+            GLib.timeout_add(
+                180,
+                self.restart_input_monitor_after_keyboard_test,
+            )
+
         # Alte GSettings-Sicherungen nur noch vorsorglich restaurieren.
         # HC4.5.29 blockiert Desktop-Shortcuts über EVIOCGRAB statt sie
         # während des Tests einzeln umzuschreiben.
