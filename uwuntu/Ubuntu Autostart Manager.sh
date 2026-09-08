@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.30 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.31 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090825
+MANAGER_BUILD=2026090826
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6680,14 +6680,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.30")
+        self.window.set_title("Hardware Check v4.5.31")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.30")
+        title_label = Gtk.Label(label="Hardware Check v4.5.31")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7714,12 +7714,9 @@ class App(Gtk.Application):
     def copy_serial_to_clipboard(self, serial):
         """Erkannte Seriennummer für anschließendes Strg+V kopieren.
 
-        Primär wird die native GTK/GDK-Zwischenablage verwendet. Die Referenz
-        bleibt am App-Objekt erhalten, solange Hardware Check läuft. Falls die
-        GTK-Zwischenablage ausnahmsweise nicht gesetzt werden kann, werden
-        bereits vorhandene Systemwerkzeuge (wl-copy/xclip) als Fallback
-        verwendet. Dafür werden bewusst keine neuen Pakete installiert und
-        keine Desktop-Benachrichtigungen erzeugt.
+        GTK4: Die Zwischenablage gehört zum Gdk.Display, nicht zum Fenster.
+        Primär wird daher direkt die native GDK-Zwischenablage gesetzt.
+        Vorhandene wl-copy/xclip-Werkzeuge dienen nur als zusätzlicher Fallback.
         """
         if not serial:
             return False
@@ -7728,28 +7725,36 @@ class App(Gtk.Application):
         if not serial:
             return False
 
-        # Native GTK4-Zwischenablage: funktioniert unter Wayland und X11.
+        # Native GTK4/GDK-Zwischenablage unter Wayland und X11.
         try:
             display = Gdk.Display.get_default()
-            clipboard = (
-                self.window.get_clipboard()
-                if self.window is not None
-                else display.get_clipboard()
-            )
+            if display is None:
+                raise RuntimeError("Kein GDK-Display verfügbar")
+
+            clipboard = display.get_clipboard()
+            if clipboard is None:
+                raise RuntimeError("Keine GDK-Zwischenablage verfügbar")
+
             clipboard.set_text(serial)
 
-            # Referenzen absichtlich halten. So bleibt eindeutig, dass der
-            # Clipboard-Owner die laufende Hardware-Check-App ist.
+            # Referenzen halten, solange Hardware Check läuft.
             self.serial_clipboard = clipboard
             self.serial_clipboard_text = serial
 
-            log(f"Seriennummer in Zwischenablage kopiert: {serial}")
+            # Ausstehende Display-Anfragen direkt an den Display-Server senden.
+            try:
+                display.flush()
+            except Exception:
+                pass
+
+            log(f"Seriennummer in GTK4-Zwischenablage kopiert: {serial}")
             return True
         except Exception as exc:
-            log(f"GTK-Zwischenablage fehlgeschlagen: {exc}")
+            log(f"GTK4-Zwischenablage fehlgeschlagen: {exc}")
 
         # Optionaler Fallback ohne zusätzliche Abhängigkeiten.
         fallbacks = []
+
         wl_copy = shutil.which("wl-copy")
         if wl_copy:
             fallbacks.append([wl_copy])
@@ -7760,11 +7765,11 @@ class App(Gtk.Application):
 
         for cmd in fallbacks:
             try:
+                # input= setzt stdin intern bereits auf PIPE.
                 proc = subprocess.run(
                     cmd,
                     input=serial,
                     text=True,
-                    stdin=subprocess.PIPE,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     timeout=2.0,
