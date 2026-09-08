@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.26 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.27 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090815
+MANAGER_BUILD=2026090816
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -595,9 +595,16 @@ DEFAULT_TARGET="$HOME/.local/bin/Ubuntu Autostart Manager.sh"
 LOG="$HOME/uwuntu_force_update.log"
 KIOSK="$HOME/.local/bin/start-kiosk-apps.sh"
 CLOSE_APPS="$HOME/.local/bin/close-diagnostic-apps.sh"
+STATUS_PIPE_ACTIVE=1
 
 status() {
-    printf 'STATUS|%s\n' "$1"
+    # Solange Hardware Check lebt, bekommt dessen Update-Fenster STATUS-Zeilen.
+    # Vor dem Diagnose-Shutdown wird diese Pipe bewusst abgeschaltet, damit
+    # der Updater nach dem Beenden von Hardware Check keinen SIGPIPE /
+    # Broken-Pipe-Abbruch mehr bekommen kann.
+    if [ "${STATUS_PIPE_ACTIVE:-0}" -eq 1 ]; then
+        printf 'STATUS|%s\n' "$1" 2>/dev/null || true
+    fi
     printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$LOG" 2>/dev/null || true
 }
 
@@ -693,9 +700,18 @@ fi
 rm -f "$BACKUP" 2>/dev/null || true
 status "Update erfolgreich · Anwendungen werden neu gestartet …"
 
-# Status noch kurz sichtbar lassen. Danach laufen wir unabhängig vom
-# Hardware-Check-Prozess weiter und können ihn selbst gefahrlos beenden.
+# Status noch kurz sichtbar lassen.
 sleep 0.7
+
+# KRITISCH: Ab hier darf der Updater keinerlei Abhängigkeit mehr vom alten
+# Hardware-Check-Prozess haben. force_update_worker() liest unsere stdout-Pipe.
+# Sobald HC vom Close-Helper beendet wird, verschwindet deren Leseseite.
+# Deshalb Status-Pipe vorher deaktivieren und stdin/stdout/stderr vollständig
+# auf /dev/null bzw. die Logdatei umhängen.
+STATUS_PIPE_ACTIVE=0
+exec </dev/null >>"$LOG" 2>&1
+
+echo "$(date '+%Y-%m-%d %H:%M:%S')  Neustartphase vom Hardware Check entkoppelt."
 
 # Ab dieser Generation nicht mehr zwei verschiedene Schließlogiken pflegen:
 # Der zentrale STRG+Q-Helper kennt alle aktuellen Wrapper, Cache-Prozesse und
@@ -727,16 +743,36 @@ else
     pkill -KILL -f 'uwuntu-audio-test-python' 2>/dev/null || true
 fi
 
-sleep 0.35
+# Den alten Prozessen etwas Zeit geben, vollständig aus Mutter/AT-SPI zu
+# verschwinden, bevor das neue Tiling-Layout ausgelöst wird.
+sleep 0.8
 
 if [ -x "$KIOSK" ]; then
-    status "Starte Diagnose-Kiosk neu …"
-    nohup "$KIOSK" >> "$LOG" 2>&1 </dev/null &
-    status "Diagnose-Kiosk wurde neu gestartet"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Starte Diagnose-Kiosk in eigener Session …"
+
+    # Eigene Session: Der Kiosk überlebt das Ende dieses Update-Helfers sicher
+    # und ist weder an Hardware Check noch an dessen früheres stdout gebunden.
+    if command -v setsid >/dev/null 2>&1; then
+        nohup setsid "$KIOSK" >> "$LOG" 2>&1 </dev/null &
+    else
+        nohup "$KIOSK" >> "$LOG" 2>&1 </dev/null &
+    fi
+    KIOSK_PID=$!
+
+    sleep 0.4
+    if kill -0 "$KIOSK_PID" 2>/dev/null; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S')  Diagnose-Kiosk gestartet · PID $KIOSK_PID"
+    else
+        echo "$(date '+%Y-%m-%d %H:%M:%S')  WARNUNG: Kiosk-Prozess ist direkt wieder beendet."
+    fi
 else
     # Fallback, falls nur die Einzelprogramme installiert sind.
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Kiosk-Launcher fehlt · starte Einzelprogramme als Fallback."
+
     [ -x "$HOME/.local/bin/network-check.sh" ] \
         && nohup "$HOME/.local/bin/network-check.sh" >> "$LOG" 2>&1 </dev/null &
+    [ -x "$HOME/.local/bin/uwuntu-camera-test.sh" ] \
+        && nohup "$HOME/.local/bin/uwuntu-camera-test.sh" >> "$LOG" 2>&1 </dev/null &
     [ -x "$HOME/.local/bin/uwuntu-audio-test.sh" ] \
         && nohup "$HOME/.local/bin/uwuntu-audio-test.sh" >> "$LOG" 2>&1 </dev/null &
     [ -x "$HOME/.local/bin/hardware-check.sh" ] \
@@ -6166,14 +6202,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.26")
+        self.window.set_title("Hardware Check v4.5.27")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.26")
+        title_label = Gtk.Label(label="Hardware Check v4.5.27")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
