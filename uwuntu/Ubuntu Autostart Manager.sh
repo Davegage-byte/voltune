@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.41 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.42 + Wipe Auto v3.22 + Audio Test v1.17
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090836
+MANAGER_BUILD=2026090837
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1141,14 +1141,16 @@ install_camera_test_app() {
 set -u
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_12.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_13.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
-mkdir -p "$CACHE_DIR"
+STATE_FILE="$HOME/.local/state/uwuntu/camera_test_status.json"
+mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
+rm -f "$STATE_FILE" 2>/dev/null || true
 
 {
     echo
     echo "============================================================"
-    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.12 Start"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.13 Start"
 } >> "$LOG_FILE" 2>/dev/null || true
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
@@ -1209,9 +1211,11 @@ fi
 
 cat > "$PY_FILE" <<'PY'
 import glob
+import json
 import os
 import subprocess
 import time
+from pathlib import Path
 import gi
 
 try:
@@ -1231,8 +1235,23 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.12"
+VERSION = "1.13"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
+
+STATE_DIR = Path.home() / ".local/state/uwuntu"
+STATE_FILE = STATE_DIR / "camera_test_status.json"
+
+
+def write_camera_state(status):
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        data = {"status": str(status), "time": time.time(), "pid": os.getpid()}
+        tmp = STATE_FILE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data), encoding="utf-8")
+        tmp.replace(STATE_FILE)
+    except Exception as exc:
+        print(f"Kamera-Statusdatei konnte nicht geschrieben werden: {exc}", flush=True)
+
 
 Gst.init(None)
 GLib.set_application_name(APP_NAME)
@@ -1488,6 +1507,16 @@ window { background: #000; }
             ctx.remove_class(cls)
 
         ctx.add_class(f"camera-status-{color}")
+
+        state = {
+            "red": "missing",
+            "orange": "detected",
+            "blue": "face",
+            "green": "tested",
+        }.get(color)
+        if state:
+            write_camera_state(state)
+
         return False
 
     def update_face_status(self, face_visible):
@@ -1853,7 +1882,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.12
+Comment=Cleaner Uwuntu Kamera-Test v1.13
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -1876,7 +1905,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.12 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.13 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
@@ -3712,9 +3741,11 @@ set -u
 
 APP_NAME="Uwuntu Audio Test"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-audio-test"
-PY_FILE="$CACHE_DIR/audio_test_v1_16.py"
+PY_FILE="$CACHE_DIR/audio_test_v1_17.py"
+STATE_FILE="$HOME/.local/state/uwuntu/audio_test_status.json"
 
-mkdir -p "$CACHE_DIR"
+mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
+rm -f "$STATE_FILE" 2>/dev/null || true
 
 need_install=0
 
@@ -3767,7 +3798,9 @@ cat > "$PY_FILE" <<'PYCODE'
 # -*- coding: utf-8 -*-
 
 import sys
+import json
 import math
+import os
 import time
 import wave
 import struct
@@ -3789,7 +3822,22 @@ gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Gio
 
 
-VERSION = "v1.16"
+VERSION = "v1.17"
+
+STATE_DIR = Path.home() / ".local/state/uwuntu"
+STATE_FILE = STATE_DIR / "audio_test_status.json"
+
+
+def write_mic_state(status):
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        data = {"status": str(status), "time": time.time(), "pid": os.getpid()}
+        tmp = STATE_FILE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data), encoding="utf-8")
+        tmp.replace(STATE_FILE)
+    except Exception:
+        pass
+
 
 SAMPLE_RATE = 48000
 INPUT_BLOCK = 512
@@ -4833,10 +4881,12 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.connect("close-request", self.on_close)
 
-        if not self.analyzer.start():
+        if self.analyzer.start():
+            write_mic_state("detected")
+        else:
             # Waveform bleibt trotzdem sichtbar; bei fehlendem Mikrofon
             # können die Lautsprechertests nur nicht automatisch bestehen.
-            pass
+            write_mic_state("missing")
 
         self.speaker_tester = SpeakerTester(
             self.analyzer,
@@ -4998,6 +5048,7 @@ class MainWindow(Gtk.ApplicationWindow):
             self.quick_play_enabled = False
             self.reset_side_buttons()
             self.set_button_state("auto", "blue")
+            write_mic_state("auto" if self.analyzer.running else "missing")
             return False
 
         # ----------------------------------------------------
@@ -5030,10 +5081,12 @@ class MainWindow(Gtk.ApplicationWindow):
         if event == "auto_pass":
             self.set_button_state("auto", "green")
             self.quick_play_enabled = True
+            write_mic_state("tested" if self.analyzer.running else "missing")
             return False
 
         if event in ("auto_fail", "auto_weak"):
             self.set_button_state("auto", "red")
+            write_mic_state("detected" if self.analyzer.running else "missing")
             # Auch nach einem fehlgeschlagenen AUTO-Test soll der Techniker
             # Links/Rechts schnell akustisch vergleichen können.
             self.quick_play_enabled = True
@@ -5159,7 +5212,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Uwuntu Audio Test v1.16 installiert/aktualisiert."
+    echo "OK: Uwuntu Audio Test v1.17 installiert/aktualisiert."
     echo "Programm: $AUDIO_TEST_SCRIPT"
     echo "Desktop-Slot: $AUDIO_TEST_APP_DESKTOP"
     return 0
@@ -6795,6 +6848,8 @@ class App(Gtk.Application):
         self.display_state_file = Path.home() / ".local/state/uwuntu/display_test_status.json"
         self.display_script = Path.home() / ".local/bin/uwuntu-display-test.sh"
         self.display_test_active = False
+        self.camera_state_file = Path.home() / ".local/state/uwuntu/camera_test_status.json"
+        self.audio_state_file = Path.home() / ".local/state/uwuntu/audio_test_status.json"
 
         # Während des Tastatur-Tests wird nur Mutters Overlay-Key (einzelne
         # SUPER-Taste) temporär deaktiviert. Der Originalwert wird beim
@@ -6866,14 +6921,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.41")
+        self.window.set_title("Hardware Check v4.5.42")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.41")
+        title_label = Gtk.Label(label="Hardware Check v4.5.42")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -6912,10 +6967,12 @@ class App(Gtk.Application):
         self.usb_rediscover(reset=True)
         self.refresh_touch_status()
         self.refresh_display_status()
+        self.refresh_media_status()
         GLib.timeout_add(300, self.poll_usb)
         GLib.timeout_add(500, self.poll_hdmi_status)
         GLib.timeout_add(500, self.poll_touch_status)
         GLib.timeout_add(500, self.poll_display_status)
+        GLib.timeout_add(400, self.poll_media_status)
         self.start_global_input_listener()
 
         log("Hardware Check gestartet")
@@ -6981,7 +7038,7 @@ class App(Gtk.Application):
         content.set_margin_bottom(4)
         # =====================================================
         # LINKE SPALTE
-        # Security kompakt -> HDMI -> Eingabegeräte
+        # Security -> Webcam/Mic -> Eingabegeräte
         # =====================================================
         left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         left.set_size_request(285, -1)
@@ -7012,6 +7069,47 @@ class App(Gtk.Application):
         security.append(tpm_row)
         security.append(sb_row)
         left.append(security)
+
+        # =====================================================
+        # WEBCAM / MIC
+        # =====================================================
+        media = self.card("WEBCAM / MIC")
+
+        webcam_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+        webcam_row.add_css_class("usb-row")
+        self.webcam_status_dot = Gtk.Label(label="●")
+        self.webcam_status_dot.add_css_class("status-red")
+        webcam_name = Gtk.Label(label="WEBCAM")
+        webcam_name.set_xalign(0)
+        webcam_name.set_hexpand(True)
+        webcam_name.add_css_class("usb-port-name")
+        self.webcam_status_text = Gtk.Label(label="NICHT ERKANNT")
+        self.webcam_status_text.set_xalign(1)
+        self.webcam_status_text.add_css_class("usb-port-state")
+        self.webcam_status_text.add_css_class("status-red")
+        webcam_row.append(self.webcam_status_dot)
+        webcam_row.append(webcam_name)
+        webcam_row.append(self.webcam_status_text)
+        media.append(webcam_row)
+
+        mic_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+        mic_row.add_css_class("usb-row")
+        self.mic_status_dot = Gtk.Label(label="●")
+        self.mic_status_dot.add_css_class("status-red")
+        mic_name = Gtk.Label(label="MIC")
+        mic_name.set_xalign(0)
+        mic_name.set_hexpand(True)
+        mic_name.add_css_class("usb-port-name")
+        self.mic_status_text = Gtk.Label(label="NICHT ERKANNT")
+        self.mic_status_text.set_xalign(1)
+        self.mic_status_text.add_css_class("usb-port-state")
+        self.mic_status_text.add_css_class("status-red")
+        mic_row.append(self.mic_status_dot)
+        mic_row.append(mic_name)
+        mic_row.append(self.mic_status_text)
+        media.append(mic_row)
+
+        left.append(media)
 
         # =====================================================
         # EINGABEGERÄTE
@@ -7107,6 +7205,7 @@ class App(Gtk.Application):
         self.hdmi_status_detail.set_xalign(0)
         self.hdmi_status_detail.set_hexpand(True)
         self.hdmi_status_detail.add_css_class("usb-port-name")
+        self.hdmi_status_detail.add_css_class("status-orange")
 
         self.hdmi_status_text = Gtk.Label(label="HDMI NICHT GETESTET")
         self.hdmi_status_text.set_xalign(1)
@@ -7122,8 +7221,8 @@ class App(Gtk.Application):
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(False)
-        scroll.set_min_content_height(128)
-        scroll.set_size_request(-1, 128)
+        scroll.set_min_content_height(184)
+        scroll.set_size_request(-1, 184)
         self.usb_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=4
@@ -7170,15 +7269,74 @@ class App(Gtk.Application):
         self.set_status(self.sb_status, c, t); self.sb_detail.set_text(d)
         log(f"Security aktualisiert: {self.tpm_status.get_text()} | {self.sb_status.get_text()}")
 
+    def read_external_test_state(self, path):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return str(data.get("status") or "").strip().lower()
+        except Exception:
+            pass
+        return ""
+
+    def set_media_status_ui(self, kind, color, text):
+        if kind == "webcam":
+            dot = getattr(self, "webcam_status_dot", None)
+            label = getattr(self, "webcam_status_text", None)
+        else:
+            dot = getattr(self, "mic_status_dot", None)
+            label = getattr(self, "mic_status_text", None)
+
+        if dot is None or label is None:
+            return False
+
+        for widget in (dot, label):
+            for cls in ("status-green", "status-orange", "status-red", "status-blue"):
+                widget.remove_css_class(cls)
+            widget.add_css_class("status-" + color)
+
+        label.set_text(text)
+        return False
+
+    def refresh_media_status(self):
+        camera_state = self.read_external_test_state(self.camera_state_file)
+        camera_map = {
+            "missing": ("red", "NICHT ERKANNT"),
+            "detected": ("orange", "ERKANNT"),
+            "face": ("blue", "GESICHT ERKANNT"),
+            "tested": ("green", "GETESTET"),
+        }
+        color, label = camera_map.get(camera_state, ("red", "NICHT ERKANNT"))
+        self.set_media_status_ui("webcam", color, label)
+
+        audio_state = self.read_external_test_state(self.audio_state_file)
+        audio_map = {
+            "missing": ("red", "NICHT ERKANNT"),
+            "detected": ("orange", "ERKANNT"),
+            "auto": ("blue", "AUTO"),
+            "tested": ("green", "GETESTET"),
+        }
+        color, label = audio_map.get(audio_state, ("red", "NICHT ERKANNT"))
+        self.set_media_status_ui("mic", color, label)
+        return False
+
+    def poll_media_status(self):
+        if self.window is None:
+            return False
+        self.refresh_media_status()
+        return True
+
     def set_hdmi_status_ui(self, color, text, detail="HDMI"):
         if not hasattr(self, "hdmi_status_text"):
             return False
 
-        # Links bleibt die neutrale Portbezeichnung HDMI.
-        # Nur Punkt und Status rechts übernehmen die Zustandsfarbe.
+        # HDMI-Bezeichnung, Punkt und Status verwenden dieselbe Zustandsfarbe.
         self.hdmi_status_detail.set_text("HDMI")
 
-        for widget in (self.hdmi_status_dot, self.hdmi_status_text):
+        for widget in (
+            self.hdmi_status_dot,
+            self.hdmi_status_detail,
+            self.hdmi_status_text,
+        ):
             for cls in ("status-green", "status-orange", "status-red", "status-blue"):
                 widget.remove_css_class(cls)
             widget.add_css_class("status-" + color)
@@ -8776,6 +8934,11 @@ class App(Gtk.Application):
             else:
                 css_class = "status-orange"
                 state_text = "NICHT GETESTET"
+
+            # Port mit Uwuntu-Bootstick unabhängig vom normalen Zustand Blau.
+            if idx == self.usb_boot_slot:
+                css_class = "status-blue"
+
             # Einheitliche Benennung nach physischem Steckertyp:
             # USB-A Port 1 · NICHT GETESTET
             # USB-C Port 3 · GETESTET
@@ -8799,6 +8962,7 @@ class App(Gtk.Application):
             name = Gtk.Label(label=label)
             name.set_xalign(0)
             name.add_css_class("usb-port-name")
+            name.add_css_class(css_class)
 
             state = Gtk.Label(label=state_text)
             state.set_xalign(0)
@@ -8837,6 +9001,7 @@ class App(Gtk.Application):
             name.set_xalign(0)
             name.set_ellipsize(3)
             name.add_css_class("usb-port-name")
+            name.add_css_class(css_class)
 
             state = Gtk.Label(label=state_text)
             state.set_xalign(0)
