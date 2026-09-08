@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.21 + Hardware Check v4.5.16 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.21 + Hardware Check v4.5.17 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090805
+MANAGER_BUILD=2026090806
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -574,6 +574,7 @@ PATH_FILE="$HOME/.config/uwuntu-manager-path"
 DEFAULT_TARGET="$HOME/.local/bin/Ubuntu Autostart Manager.sh"
 LOG="$HOME/uwuntu_force_update.log"
 KIOSK="$HOME/.local/bin/start-kiosk-apps.sh"
+CLOSE_APPS="$HOME/.local/bin/close-diagnostic-apps.sh"
 
 status() {
     printf 'STATUS|%s\n' "$1"
@@ -676,26 +677,34 @@ status "Update erfolgreich · Anwendungen werden neu gestartet …"
 # Hardware-Check-Prozess weiter und können ihn selbst gefahrlos beenden.
 sleep 0.7
 
-pkill -TERM -f '/tmp/network-check-' 2>/dev/null || true
-pkill -TERM -f '/tmp/wipe-auto-' 2>/dev/null || true
-pkill -TERM -f '/tmp/hardware-check\.' 2>/dev/null || true
-for wrapper in \
-    '/.local/bin/uwuntu-camera-test.sh' \
-    '/.local/bin/uwuntu-touch-tester.sh' \
-    '/.local/bin/uwuntu-display-test.sh' \
-    '/.local/bin/uwuntu-audio-test.sh' \
-    '/.cache/uwuntu-audio-test/'
-do
-    while read -r pid; do
-        [ -n "$pid" ] || continue
-        pkill -TERM -P "$pid" 2>/dev/null || true
-        kill -TERM "$pid" 2>/dev/null || true
-    done < <(pgrep -f "$wrapper" 2>/dev/null || true)
-done
-# Alte Snapshot-Instanz ebenfalls schließen, falls sie noch läuft.
-pkill -TERM -x snapshot 2>/dev/null || true
+# Ab dieser Generation nicht mehr zwei verschiedene Schließlogiken pflegen:
+# Der zentrale STRG+Q-Helper kennt alle aktuellen Wrapper, Cache-Prozesse und
+# besitzt bereits TERM-Wiederholung + KILL-Fallback.
+if [ -x "$CLOSE_APPS" ]; then
+    "$CLOSE_APPS" >> "$LOG" 2>&1 || true
+else
+    # Fallback für sehr alte/teilweise Installationen.
+    pkill -TERM -f '/tmp/network-check-' 2>/dev/null || true
+    pkill -TERM -f '/tmp/wipe-auto-' 2>/dev/null || true
+    pkill -TERM -f '/tmp/hardware-check\.' 2>/dev/null || true
 
-sleep 0.7
+    for pattern in         '/.local/bin/uwuntu-camera-test.sh'         '/.cache/uwuntu-camera-test/'         'uwuntu-camera-test-python'         '/.local/bin/uwuntu-touch-tester.sh'         'uwuntu-touch-tester-python'         '/.local/bin/uwuntu-display-test.sh'         'uwuntu-display-test-python'         '/.local/bin/uwuntu-audio-test.sh'         '/.cache/uwuntu-audio-test/'         'uwuntu-audio-test-python'
+    do
+        pkill -TERM -f "$pattern" 2>/dev/null || true
+    done
+
+    pkill -TERM -x snapshot 2>/dev/null || true
+    sleep 0.35
+
+    # Kamera/Audio notfalls hart schließen, damit der anschließende Kiosk nicht
+    # parallel zu einer alten Instanz startet.
+    pkill -KILL -f '/.cache/uwuntu-camera-test/' 2>/dev/null || true
+    pkill -KILL -f 'uwuntu-camera-test-python' 2>/dev/null || true
+    pkill -KILL -f '/.cache/uwuntu-audio-test/' 2>/dev/null || true
+    pkill -KILL -f 'uwuntu-audio-test-python' 2>/dev/null || true
+fi
+
+sleep 0.35
 
 if [ -x "$KIOSK" ]; then
     nohup "$KIOSK" >> "$LOG" 2>&1 </dev/null &
@@ -5741,12 +5750,30 @@ def run_global_arrow_monitor(parent_pid):
                         ctrl_down.add(token)
                     elif value == 0:
                         ctrl_down.discard(token)
+
+                    # Auch Strg links/rechts müssen im Tastatur-Test unabhängig
+                    # vom Fensterfokus als echte Prüftasten ankommen.
+                    if value == 1:
+                        try:
+                            print(f"keycode:{code}", flush=True)
+                        except BrokenPipeError:
+                            return 0
                     continue
+
                 if value != 1:
                     continue
+
+                # Roh-Keycode immer zusätzlich melden. Außerhalb des
+                # Tastatur-Tests wird er vom Hauptprozess einfach ignoriert.
+                try:
+                    print(f"keycode:{code}", flush=True)
+                except BrokenPipeError:
+                    return 0
+
                 if code == 32 and ctrl_down:
                     # Ctrl+D gehört dem Diagnose-Kiosk, nicht dem Display-Hotkey.
                     continue
+
                 channel = key_map.get(code)
                 if channel:
                     try:
@@ -6053,20 +6080,57 @@ class App(Gtk.Application):
         self.keyboard_escape_count = 0
         self.keyboard_escape_last_at = 0.0
         self.keyboard_escape_window = 1.5
+
+        # Linux input-event Keycodes -> Alias aus keyboard_layout().
+        # Damit arbeitet der Tastatur-Test direkt mit der physischen
+        # Tastatur und ist nicht vom Fokus eines GTK-Fensters abhängig.
+        self.keyboard_linux_aliases = {
+            1: "Escape",
+            2: "1", 3: "2", 4: "3", 5: "4", 6: "5",
+            7: "6", 8: "7", 9: "8", 10: "9", 11: "0",
+            12: "ssharp", 13: "dead_acute", 14: "BackSpace",
+            15: "Tab",
+            16: "q", 17: "w", 18: "e", 19: "r", 20: "t",
+            21: "z", 22: "u", 23: "i", 24: "o", 25: "p",
+            26: "udiaeresis", 27: "plus", 28: "Return",
+            29: "Control_L",
+            30: "a", 31: "s", 32: "d", 33: "f", 34: "g",
+            35: "h", 36: "j", 37: "k", 38: "l",
+            39: "odiaeresis", 40: "adiaeresis",
+            41: "dead_circumflex", 42: "Shift_L",
+            43: "numbersign",
+            44: "y", 45: "x", 46: "c", 47: "v", 48: "b",
+            49: "n", 50: "m", 51: "comma", 52: "period",
+            53: "minus", 54: "Shift_R", 56: "Alt_L", 57: "space",
+            58: "Caps_Lock",
+            59: "F1", 60: "F2", 61: "F3", 62: "F4",
+            63: "F5", 64: "F6", 65: "F7", 66: "F8",
+            67: "F9", 68: "F10", 70: "Scroll_Lock",
+            86: "less", 87: "F11", 88: "F12",
+            97: "Control_R", 99: "Print",
+            100: "ISO_Level3_Shift",
+            102: "Home", 103: "Up", 104: "Page_Up",
+            105: "Left", 106: "Right", 107: "End",
+            108: "Down", 109: "Page_Down", 110: "Insert",
+            111: "Delete", 119: "Pause",
+            125: "Super_L", 126: "Super_R", 127: "Menu",
+        }
+
+        self.keyboard_focus_widget = None
     def do_activate(self):
         if self.window:
             self.window.present()
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.16")
+        self.window.set_title("Hardware Check v4.5.17")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.16")
+        title_label = Gtk.Label(label="Hardware Check v4.5.17")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -6897,12 +6961,15 @@ class App(Gtk.Application):
                         )
                         continue
 
-                    if token in {
-                        "escape", "benchmark", "keyboard", "ram",
-                        "info", "update", "warranty",
-                        "hotkeys", "touch", "display",
-                        "audio-left", "audio-both", "audio-right", "audio-auto",
-                    }:
+                    if (
+                        token.startswith("keycode:")
+                        or token in {
+                            "escape", "benchmark", "keyboard", "ram",
+                            "info", "update", "warranty",
+                            "hotkeys", "touch", "display",
+                            "audio-left", "audio-both", "audio-right", "audio-auto",
+                        }
+                    ):
                         GLib.idle_add(self.handle_global_hotkey, token)
         finally:
             self.global_input_active = False
@@ -7494,11 +7561,25 @@ class App(Gtk.Application):
     def handle_global_hotkey(self, action):
 
 
-        # Im Tastatur-Test sind ESC, B, K, R, I, U, G, T, D, F1 und die Pfeiltasten
-        # ausschließlich normale Prüftasten.
-        # Globale Diagnose-Hotkeys dürfen die Seite nicht verlassen.
-        if self.stack.get_visible_child_name() == "keyboard":
+        visible = self.stack.get_visible_child_name()
+
+        # Rohe Tastendrücke werden im Tastatur-Test immer verarbeitet,
+        # unabhängig davon, welches Desktop-Fenster gerade den Fokus hat.
+        if action.startswith("keycode:"):
+            if visible == "keyboard":
+                try:
+                    code = int(action.split(":", 1)[1])
+                except (TypeError, ValueError):
+                    return False
+                return self.handle_keyboard_linux_keycode(code)
             return False
+
+        # Im Tastatur-Test sind die normalen Diagnose-Hotkeys gesperrt.
+        # Die Tasten selbst wurden bereits über keycode:<n> als Prüftasten
+        # verarbeitet. So lösen B/K/U/F1/Pfeile dort keine Aktionen aus.
+        if visible == "keyboard":
+            return False
+
         if self.display_test_active:
             return False
 
@@ -7514,18 +7595,12 @@ class App(Gtk.Application):
             self.send_audio_action(action)
             return False
 
-        visible = self.stack.get_visible_child_name()
-
         if action == "escape":
             if visible == "benchmarks":
                 if self.test_proc is not None and self.test_proc.poll() is None:
                     self.cancel_test()
                 self.show_overview()
                 log("Globaler Hotkey ESC: Benchmark/RAM abgebrochen bzw. Übersicht geöffnet")
-                return False
-
-            if visible == "keyboard":
-                self.handle_keyboard_escape_sequence()
                 return False
 
             return False
@@ -8241,6 +8316,8 @@ class App(Gtk.Application):
 
     def build_keyboard(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        root.set_focusable(True)
+        self.keyboard_focus_widget = root
         root.append(
             self.header(
                 "TASTATUR TEST",
@@ -8565,6 +8642,27 @@ class App(Gtk.Application):
             self.super_block_active = False
             log("Tastatur-Test: SUPER-Taste wieder normal aktiviert")
 
+    def focus_keyboard_window(self):
+        if self.stack.get_visible_child_name() != "keyboard":
+            return False
+
+        try:
+            self.window.present()
+        except Exception:
+            pass
+
+        if self.keyboard_focus_widget is not None:
+            try:
+                self.window.set_focus(self.keyboard_focus_widget)
+            except Exception:
+                pass
+            try:
+                self.keyboard_focus_widget.grab_focus()
+            except Exception:
+                pass
+
+        return False
+
     def show_keyboard(self, *_):
         self.keyboard_escape_count = 0
         self.keyboard_escape_last_at = 0.0
@@ -8572,12 +8670,12 @@ class App(Gtk.Application):
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
 
-        # Bei globalem K kann gerade NC+WA, Kamera oder Audio den Fokus haben.
-        # Das vorhandene Hardware-Check-Fenster deshalb aktiv nach vorn holen.
-        try:
-            self.window.present()
-        except Exception:
-            pass
+        # Hardware Check zusätzlich nach vorn holen/fokussieren. Der eigentliche
+        # Tastatur-Test bleibt dank /dev/input trotzdem unabhängig vom Fokus.
+        self.focus_keyboard_window()
+        GLib.idle_add(self.focus_keyboard_window)
+        GLib.timeout_add(120, self.focus_keyboard_window)
+        GLib.timeout_add(350, self.focus_keyboard_window)
 
     def handle_keyboard_escape_sequence(self):
         now = time.monotonic()
@@ -8628,6 +8726,50 @@ class App(Gtk.Application):
 
         self.update_keyboard()
         log("Keyboard-Test zurückgesetzt")
+    def mark_keyboard_alias(self, alias):
+        if not alias:
+            return False
+
+        lookup = alias.lower() if len(alias) == 1 and alias.isalpha() else alias
+        key_id = self.key_aliases.get(lookup)
+        if not key_id:
+            return False
+
+        widget = self.key_widgets[key_id]
+
+        if key_id not in self.key_tested:
+            self.key_tested.add(key_id)
+            self.key_phase[key_id] = 0
+        else:
+            self.key_phase[key_id] = 1 - self.key_phase.get(key_id, 0)
+
+        widget.remove_css_class("key-tested")
+        widget.remove_css_class("key-tested-blue")
+        if self.key_phase.get(key_id, 0) == 0:
+            widget.add_css_class("key-tested")
+        else:
+            widget.add_css_class("key-tested-blue")
+
+        self.update_keyboard()
+        return True
+
+    def handle_keyboard_linux_keycode(self, code):
+        if self.stack.get_visible_child_name() != "keyboard":
+            return False
+
+        alias = self.keyboard_linux_aliases.get(code)
+        if alias:
+            self.mark_keyboard_alias(alias)
+
+        # "3x ESC hintereinander": jede andere Taste setzt die Folge zurück.
+        if code == 1:
+            self.handle_keyboard_escape_sequence()
+        else:
+            self.keyboard_escape_count = 0
+            self.keyboard_escape_last_at = 0.0
+
+        return False
+
     def update_keyboard(self):
         total, tested = len(self.key_widgets), len(self.key_tested)
         if hasattr(self, "keyboard_progress"):
@@ -8705,14 +8847,18 @@ class App(Gtk.Application):
             self.show_overview()
             return True
 
-        # Im Tastatur-Test bleibt ESC eine normale Prüftaste. Erst drei
-        # aufeinanderfolgende ESC-Tastendrücke beenden den Test. Wenn der
-        # globale /dev/input-Monitor aktiv ist, übernimmt dieser das Zählen,
-        # damit ein Tastendruck nicht doppelt gewertet wird.
+        # Im Tastatur-Test übernimmt bei aktivem /dev/input-Monitor dieser
+        # ALLE Prüftasten. Das verhindert doppelte Markierungen, wenn Hardware
+        # Check selbst den Fokus hat.
+        if visible == "keyboard" and self.global_input_active:
+            return True
+
+        # GTK-Fallback ohne globalen Monitor: ESC ebenfalls markieren und
+        # anschließend für die 3er-Folge zählen.
         if name == "Escape" and visible == "keyboard":
-            if not self.global_input_active:
-                self.handle_keyboard_escape_sequence()
-            return False
+            self.mark_keyboard_alias(name)
+            self.handle_keyboard_escape_sequence()
+            return True
 
         # Fallback für Systeme, auf denen der globale /dev/input-Monitor
         # nicht verfügbar ist: Hat Hardware Check selbst den Fokus, werden die
@@ -8772,28 +8918,12 @@ class App(Gtk.Application):
         if self.stack.get_visible_child_name() != "keyboard":
             return False
 
-        lookup = name.lower() if len(name) == 1 and name.isalpha() else name
-        key_id = self.key_aliases.get(lookup)
+        if name != "Escape":
+            # Jede andere Taste unterbricht eine angefangene ESC-x3-Folge.
+            self.keyboard_escape_count = 0
+            self.keyboard_escape_last_at = 0.0
 
-        if key_id:
-            widget = self.key_widgets[key_id]
-            if key_id not in self.key_tested:
-                # Erster Anschlag = grün.
-                self.key_tested.add(key_id)
-                self.key_phase[key_id] = 0
-            else:
-                # Jeder weitere Anschlag wechselt grün <-> blau.
-                self.key_phase[key_id] = 1 - self.key_phase.get(key_id, 0)
-
-            widget.remove_css_class("key-tested")
-            widget.remove_css_class("key-tested-blue")
-            if self.key_phase.get(key_id, 0) == 0:
-                widget.add_css_class("key-tested")
-            else:
-                widget.add_css_class("key-tested-blue")
-
-            self.update_keyboard()
-
+        if self.mark_keyboard_alias(name):
             # Verhindert insbesondere, dass SPACE oder ENTER zusätzlich
             # irgendeine GTK-Button-Aktion auslösen.
             return True
