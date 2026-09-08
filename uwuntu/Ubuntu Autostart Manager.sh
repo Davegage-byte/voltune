@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.50 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.51 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090845
+MANAGER_BUILD=2026090846
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -7318,14 +7318,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.50")
+        self.window.set_title("Hardware Check v4.5.51")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.50")
+        title_label = Gtk.Label(label="Hardware Check v4.5.51")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7636,8 +7636,10 @@ class App(Gtk.Application):
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(False)
-        scroll.set_min_content_height(184)
-        scroll.set_size_request(-1, 184)
+        # Kompakter halten, damit SENSOREN + DISPLAY im HC-Fenster
+        # vollständig sichtbar bleiben. Bei vielen Ports bleibt Scrollen aktiv.
+        scroll.set_min_content_height(120)
+        scroll.set_size_request(-1, 120)
         self.usb_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=4
