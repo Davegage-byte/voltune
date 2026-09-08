@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.37 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.38 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090832
+MANAGER_BUILD=2026090833
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -2981,7 +2981,7 @@ class WipeAutoApp(Gtk.Application):
         bhead.append(btitle)
         self.battery_card.append(bhead)
 
-        # Links ein kompakteres SoH-Feld, rechts mehr Platz für
+        # Links ein leicht verbreitertes SoH-Feld, rechts Platz für
         # Status + Restzeit + Lade-/Entladeleistung.
         battery_metrics = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL,
@@ -2993,7 +2993,7 @@ class WipeAutoApp(Gtk.Application):
             spacing=2
         )
         self.health_metric.add_css_class("metric")
-        self.health_metric.set_size_request(220, -1)
+        self.health_metric.set_size_request(240, -1)
         self.health_metric.set_hexpand(False)
 
         self.battery_value = Gtk.Label(label="--")
@@ -5303,6 +5303,7 @@ button.benchmark-choice {
 }
 .usb-port-name { font-size: 11px; font-weight: 800; }
 .usb-port-state { font-size: 11px; font-weight: 600; }
+.input-status-strong { font-size: 11px; font-weight: 800; }
 .key {
     background: #292930;
     color: #e8e8ea;
@@ -6865,14 +6866,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.37")
+        self.window.set_title("Hardware Check v4.5.38")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.37")
+        title_label = Gtk.Label(label="Hardware Check v4.5.38")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7074,6 +7075,7 @@ class App(Gtk.Application):
         self.touch_status_text.set_xalign(0)
         self.touch_status_text.set_hexpand(True)
         self.touch_status_text.add_css_class("usb-port-state")
+        self.touch_status_text.add_css_class("input-status-strong")
         self.touch_status_text.add_css_class("status-orange")
 
         touch_row.append(self.touch_status_dot)
@@ -7084,19 +7086,19 @@ class App(Gtk.Application):
         kb_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         kb_row.add_css_class("usb-row")
 
-        self.keyboard_summary = Gtk.Label(label="0 von 88 getestet")
-        self.keyboard_summary.set_xalign(0)
-        self.keyboard_summary.set_hexpand(True)
-        self.keyboard_summary.add_css_class("usb-port-state")
-        self.keyboard_summary.add_css_class("status-orange")
-
         kb_btn = Gtk.Button(label="Keyboard (K)")
         kb_btn.add_css_class("tiny-button")
         kb_btn.set_valign(Gtk.Align.CENTER)
         kb_btn.connect("clicked", self.show_keyboard)
 
-        kb_row.append(self.keyboard_summary)
+        self.keyboard_summary = Gtk.Label(label="0 von 88 getestet")
+        self.keyboard_summary.set_xalign(1)
+        self.keyboard_summary.set_hexpand(True)
+        self.keyboard_summary.add_css_class("usb-port-state")
+        self.keyboard_summary.add_css_class("status-orange")
+
         kb_row.append(kb_btn)
+        kb_row.append(self.keyboard_summary)
         input_devices.append(kb_row)
 
         left.append(input_devices)
