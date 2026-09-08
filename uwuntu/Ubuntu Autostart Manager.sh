@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.51 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.52 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090846
+MANAGER_BUILD=2026090847
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -7318,14 +7318,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.51")
+        self.window.set_title("Hardware Check v4.5.52")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.51")
+        title_label = Gtk.Label(label="Hardware Check v4.5.52")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7513,6 +7513,43 @@ class App(Gtk.Application):
         left.append(media)
 
         # =====================================================
+        # DISPLAY
+        # Touchscreen bleibt als Eingabegerät links.
+        # =====================================================
+        display = self.card("DISPLAY")
+        display.set_hexpand(True)
+
+        display_row = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=7,
+        )
+        display_row.add_css_class("usb-row")
+
+        self.display_status_dot = Gtk.Label(label="●")
+        self.display_status_dot.add_css_class("status-orange")
+
+        self.display_status_name = Gtk.Label(
+            label="DISPLAY TEST (D)"
+        )
+        self.display_status_name.set_xalign(0)
+        self.display_status_name.set_hexpand(True)
+        self.display_status_name.add_css_class("usb-port-name")
+        self.display_status_name.add_css_class("status-orange")
+
+        self.display_status_text = Gtk.Label(
+            label="NICHT GETESTET"
+        )
+        self.display_status_text.set_xalign(1)
+        self.display_status_text.add_css_class("usb-port-state")
+        self.display_status_text.add_css_class("status-orange")
+
+        display_row.append(self.display_status_dot)
+        display_row.append(self.display_status_name)
+        display_row.append(self.display_status_text)
+        display.append(display_row)
+        left.append(display)
+
+        # =====================================================
         # EINGABEGERÄTE
         # Touchpad + Keyboard + Touchscreen in einer gemeinsamen Karte.
         # Die bestehende Testlogik/Statusobjekte bleiben unverändert.
@@ -7600,7 +7637,7 @@ class App(Gtk.Application):
         left.append(benchmark_btn)
         # =====================================================
         # RECHTE SPALTE
-        # PORTS -> SENSOREN -> DISPLAY
+        # PORTS -> SENSOREN
         # =====================================================
         right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         right.set_hexpand(True)
@@ -7636,7 +7673,7 @@ class App(Gtk.Application):
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(False)
-        # Kompakter halten, damit SENSOREN + DISPLAY im HC-Fenster
+        # Kompakter halten, damit SENSOREN im HC-Fenster
         # vollständig sichtbar bleiben. Bei vielen Ports bleibt Scrollen aktiv.
         scroll.set_min_content_height(120)
         scroll.set_size_request(-1, 120)
@@ -7689,43 +7726,6 @@ class App(Gtk.Application):
             self.sensor_rows[key] = (dot, name, state)
 
         right.append(sensors)
-
-        # =====================================================
-        # DISPLAY
-        # Touchscreen bleibt als Eingabegerät links.
-        # =====================================================
-        display = self.card("DISPLAY")
-        display.set_hexpand(True)
-
-        display_row = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            spacing=7,
-        )
-        display_row.add_css_class("usb-row")
-
-        self.display_status_dot = Gtk.Label(label="●")
-        self.display_status_dot.add_css_class("status-orange")
-
-        self.display_status_name = Gtk.Label(
-            label="DISPLAY TEST (D)"
-        )
-        self.display_status_name.set_xalign(0)
-        self.display_status_name.set_hexpand(True)
-        self.display_status_name.add_css_class("usb-port-name")
-        self.display_status_name.add_css_class("status-orange")
-
-        self.display_status_text = Gtk.Label(
-            label="NICHT GETESTET"
-        )
-        self.display_status_text.set_xalign(1)
-        self.display_status_text.add_css_class("usb-port-state")
-        self.display_status_text.add_css_class("status-orange")
-
-        display_row.append(self.display_status_dot)
-        display_row.append(self.display_status_name)
-        display_row.append(self.display_status_text)
-        display.append(display_row)
-        right.append(display)
 
         content.append(left)
         content.append(right)
