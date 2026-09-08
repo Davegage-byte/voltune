@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.47 + Wipe Auto v3.23 + Audio Test v1.17
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.48 + Wipe Auto v3.23 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090842
+MANAGER_BUILD=2026090843
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3741,7 +3741,7 @@ set -u
 
 APP_NAME="Uwuntu Audio Test"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-audio-test"
-PY_FILE="$CACHE_DIR/audio_test_v1_17.py"
+PY_FILE="$CACHE_DIR/audio_test_v1_18.py"
 STATE_FILE="$HOME/.local/state/uwuntu/audio_test_status.json"
 
 mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
@@ -3822,7 +3822,7 @@ gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Gio
 
 
-VERSION = "v1.17"
+VERSION = "v1.18"
 
 STATE_DIR = Path.home() / ".local/state/uwuntu"
 STATE_FILE = STATE_DIR / "audio_test_status.json"
@@ -4696,9 +4696,10 @@ class MainWindow(Gtk.ApplicationWindow):
             "auto": 0.0,
         }
 
-        # Nach dem einmaligen AUTO-Test werden Links/Rechts zum schnellen
-        # Spaß-Abspielen freigegeben. Die erfolgreichen Testergebnisse bleiben
-        # dabei sichtbar; erneuter AUTO/REFRESH führt wieder eine echte Messung aus.
+        # Nach dem AUTO-Test bleiben erfolgreiche Einzelkanäle bestehen.
+        # Grüne Kanäle dürfen weiter schnell abgespielt werden; ein roter Kanal
+        # startet beim erneuten Drücken dagegen einen echten Messlauf.
+        # Sobald dadurch alle drei Kanäle Grün sind, wird AUTO ebenfalls Grün.
         self.quick_play_enabled = False
 
         # Sichtzustände merken, damit ein schneller Links/Rechts-Spaßton
@@ -4920,7 +4921,9 @@ class MainWindow(Gtk.ApplicationWindow):
         # Links/Rechts dürfen schnell hintereinander und parallel abgespielt
         # werden, sodass sich die Dreiklänge leicht überlappen.
         debounce = 0.045 if (
-            self.quick_play_enabled and action in ("left", "right")
+            self.quick_play_enabled
+            and action in ("left", "right")
+            and self.result_states.get(action) == "green"
         ) else 0.12
 
         if now - self.last_trigger_at[action] < debounce:
@@ -4935,25 +4938,36 @@ class MainWindow(Gtk.ApplicationWindow):
             self.speaker_tester.auto_test()
             return True
 
-        if self.quick_play_enabled and action in ("left", "right"):
-            previous_state = self.result_states.get(action, "green")
-            self.quick_visual_generation[action] += 1
-            generation = self.quick_visual_generation[action]
+        if self.quick_play_enabled and action in ("left", "both", "right"):
+            result_state = self.result_states.get(action, "orange")
 
-            self.set_button_state(action, "blue")
-            self.speaker_tester.quick_play(action)
+            # Nach einem fehlgeschlagenen AUTO-Test muss nur der rote Kanal
+            # erneut geprüft werden. Der Ton wird abgespielt UND erneut über
+            # das Mikrofon gemessen; bereits grüne Kanäle bleiben erhalten.
+            if result_state == "red":
+                self.speaker_tester.manual_test(action)
+                return True
 
-            # Gesamtdauer des Dreiklangs liegt bei rund 0,71 s.
-            # Danach Testergebnis wieder sichtbar machen. Bei mehreren
-            # schnellen Klicks darf nur der jeweils letzte Timer zurückfärben.
-            GLib.timeout_add(
-                760,
-                self.restore_quick_button_state,
-                action,
-                generation,
-                previous_state,
-            )
-            return True
+            # Erfolgreiche Links/Rechts-Kanäle behalten den schnellen
+            # Überlappungsmodus ohne neuen Messlauf.
+            if action in ("left", "right") and result_state == "green":
+                previous_state = result_state
+                self.quick_visual_generation[action] += 1
+                generation = self.quick_visual_generation[action]
+
+                self.set_button_state(action, "blue")
+                self.speaker_tester.quick_play(action)
+
+                # Gesamtdauer des Dreiklangs liegt bei rund 0,71 s.
+                # Danach Testergebnis wieder sichtbar machen.
+                GLib.timeout_add(
+                    760,
+                    self.restore_quick_button_state,
+                    action,
+                    generation,
+                    previous_state,
+                )
+                return True
 
         self.speaker_tester.manual_test(action)
         return True
@@ -4962,6 +4976,27 @@ class MainWindow(Gtk.ApplicationWindow):
         if self.quick_visual_generation.get(action) != generation:
             return False
         self.set_button_state(action, previous_state)
+        return False
+
+    def update_auto_from_individual_results(self):
+        """AUTO nach Einzel-Nachtests aus den drei gespeicherten Resultaten ableiten."""
+        if all(
+            self.result_states.get(side) == "green"
+            for side in ("left", "both", "right")
+        ):
+            self.set_button_state("auto", "green")
+            self.quick_play_enabled = True
+            write_mic_state("tested" if self.analyzer.running else "missing")
+            return True
+
+        # Ein noch roter Einzeltest bedeutet: Gesamttest noch nicht bestanden.
+        if any(
+            self.result_states.get(side) == "red"
+            for side in ("left", "both", "right")
+        ):
+            self.set_button_state("auto", "red")
+            write_mic_state("detected" if self.analyzer.running else "missing")
+
         return False
 
     def on_refresh_clicked(self, _button):
@@ -5067,12 +5102,19 @@ class MainWindow(Gtk.ApplicationWindow):
             if side in ("left", "both", "right"):
                 self.result_states[side] = "green"
                 self.set_button_state(side, "green")
+
+                # Nach einem AUTO-Fehler kann ein einzelner erfolgreicher
+                # Nachtest den Gesamtstatus vervollständigen.
+                if self.quick_play_enabled:
+                    self.update_auto_from_individual_results()
             return False
 
         if event in ("fail", "weak", "error"):
             if side in ("left", "both", "right"):
                 self.result_states[side] = "red"
                 self.set_button_state(side, "red")
+                if self.quick_play_enabled:
+                    self.update_auto_from_individual_results()
             return False
 
         # ----------------------------------------------------
@@ -5087,8 +5129,9 @@ class MainWindow(Gtk.ApplicationWindow):
         if event in ("auto_fail", "auto_weak"):
             self.set_button_state("auto", "red")
             write_mic_state("detected" if self.analyzer.running else "missing")
-            # Auch nach einem fehlgeschlagenen AUTO-Test soll der Techniker
-            # Links/Rechts schnell akustisch vergleichen können.
+
+            # Bereits grüne Ergebnisse bleiben gültig. Rote Einzelkanäle
+            # können jetzt einzeln erneut abgespielt UND gemessen werden.
             self.quick_play_enabled = True
             return False
 
@@ -5212,7 +5255,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Uwuntu Audio Test v1.17 installiert/aktualisiert."
+    echo "OK: Uwuntu Audio Test v1.18 installiert/aktualisiert."
     echo "Programm: $AUDIO_TEST_SCRIPT"
     echo "Desktop-Slot: $AUDIO_TEST_APP_DESKTOP"
     return 0
@@ -6997,14 +7040,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.47")
+        self.window.set_title("Hardware Check v4.5.48")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.47")
+        title_label = Gtk.Label(label="Hardware Check v4.5.48")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7289,7 +7332,7 @@ class App(Gtk.Application):
         self.hdmi_status_detail.add_css_class("usb-port-name")
         self.hdmi_status_detail.add_css_class("status-orange")
 
-        self.hdmi_status_text = Gtk.Label(label="HDMI NICHT GETESTET")
+        self.hdmi_status_text = Gtk.Label(label="NICHT GETESTET")
         self.hdmi_status_text.set_xalign(1)
         self.hdmi_status_text.add_css_class("usb-port-state")
         self.hdmi_status_text.add_css_class("status-orange")
@@ -7432,13 +7475,13 @@ class App(Gtk.Application):
         state, detail = detect_hdmi()
         if state == "connected":
             self.hdmi_ever_connected = True
-            self.set_hdmi_status_ui("blue", "HDMI VERBUNDEN", "HDMI")
+            self.set_hdmi_status_ui("blue", "VERBUNDEN", "HDMI")
         elif state == "error":
-            self.set_hdmi_status_ui("red", "HDMI FEHLERHAFT", "HDMI")
+            self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")
         elif self.hdmi_ever_connected:
-            self.set_hdmi_status_ui("green", "HDMI GETESTET", "HDMI")
+            self.set_hdmi_status_ui("green", "GETESTET", "HDMI")
         else:
-            self.set_hdmi_status_ui("orange", "HDMI NICHT GETESTET", "HDMI")
+            self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")
         return False
 
     def poll_hdmi_status(self):
@@ -7681,7 +7724,7 @@ class App(Gtk.Application):
         # die aktuell erkannte Hardware immer Vorrang vor einem alten Ergebnis
         # von einem zuvor getesteten Notebook.
         if not present:
-            self.set_touch_status_ui("red", "NICHT GEFUNDEN")
+            self.set_touch_status_ui("orange", "NICHT GEFUNDEN")
         elif result == "success":
             self.set_touch_status_ui("green", "GETESTET")
         elif result == "running":
@@ -7706,7 +7749,7 @@ class App(Gtk.Application):
 
     def start_touch_test(self, *_):
         if not self.touchscreen_present(force=True):
-            self.set_touch_status_ui("red", "NICHT GEFUNDEN")
+            self.set_touch_status_ui("orange", "NICHT GEFUNDEN")
             log("Touch-Test per T ignoriert: kein Touchscreen erkannt")
             return False
 
@@ -9011,13 +9054,12 @@ class App(Gtk.Application):
             if idx == self.usb_boot_slot:
                 css_class = "status-blue"
 
-            # Einheitliche Benennung nach physischem Steckertyp:
-            # USB-A Port 1 · NICHT GETESTET
-            # USB-C Port 3 · GETESTET
+            # Einheitliche zweispaltige Darstellung:
+            # links  USB-A Port 1
+            # rechts NICHT GETESTET / BELEGT / GETESTET
             label = f"{slot['type']} Port {idx + 1}"
             if idx == self.usb_boot_slot:
-                label += " · Uwuntu Stick"
-            label += " · "
+                label += " (Uwuntu Stick)"
 
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
             row.add_css_class("usb-row")
@@ -9025,27 +9067,20 @@ class App(Gtk.Application):
             dot = Gtk.Label(label="●")
             dot.add_css_class(css_class)
 
-            inline = Gtk.Box(
-                orientation=Gtk.Orientation.HORIZONTAL,
-                spacing=0,
-            )
-            inline.set_hexpand(True)
-
             name = Gtk.Label(label=label)
             name.set_xalign(0)
+            name.set_hexpand(True)
             name.add_css_class("usb-port-name")
             name.add_css_class(css_class)
 
             state = Gtk.Label(label=state_text)
-            state.set_xalign(0)
+            state.set_xalign(1)
             state.add_css_class(css_class)
             state.add_css_class("usb-port-state")
 
-            inline.append(name)
-            inline.append(state)
-
             row.append(dot)
-            row.append(inline)
+            row.append(name)
+            row.append(state)
             self.usb_box.append(row)
         # Backup: nur neue/geänderte Geräte, die keiner bekannten
         # physischen Buchse sicher zugeordnet werden konnten.
@@ -9063,28 +9098,21 @@ class App(Gtk.Application):
 
             title = info.get("title") or "USB-Gerät"
 
-            inline = Gtk.Box(
-                orientation=Gtk.Orientation.HORIZONTAL,
-                spacing=0,
-            )
-            inline.set_hexpand(True)
-
-            name = Gtk.Label(label=f"Backup · {title} · Pfad {dev_name} · ")
+            name = Gtk.Label(label=f"Backup {title} ({dev_name})")
             name.set_xalign(0)
+            name.set_hexpand(True)
             name.set_ellipsize(3)
             name.add_css_class("usb-port-name")
             name.add_css_class(css_class)
 
             state = Gtk.Label(label=state_text)
-            state.set_xalign(0)
+            state.set_xalign(1)
             state.add_css_class(css_class)
             state.add_css_class("usb-port-state")
 
-            inline.append(name)
-            inline.append(state)
-
             row.append(dot)
-            row.append(inline)
+            row.append(name)
+            row.append(state)
             self.usb_box.append(row)
         if not self.usb_slots and not self.usb_fallback:
             empty = Gtk.Label(label="Keine USB-Ports erkannt")
