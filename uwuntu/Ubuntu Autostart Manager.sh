@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.38 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.39 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090833
+MANAGER_BUILD=2026090834
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6866,14 +6866,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.38")
+        self.window.set_title("Hardware Check v4.5.39")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.38")
+        title_label = Gtk.Label(label="Hardware Check v4.5.39")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7013,28 +7013,6 @@ class App(Gtk.Application):
         security.append(sb_row)
         left.append(security)
 
-        # HDMI – Verhalten wie im separaten Uwuntu HDMI Test:
-        # orange = nicht getestet, blau = verbunden, grün = nach Abziehen getestet, rot = Fehler.
-        hdmi = self.card("HDMI TEST")
-        hdmi_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-        hdmi_row.add_css_class("usb-row")
-        self.hdmi_status_dot = Gtk.Label(label="●")
-        self.hdmi_status_dot.add_css_class("status-orange")
-        self.hdmi_status_text = Gtk.Label(label="HDMI NICHT GETESTET")
-        self.hdmi_status_text.set_xalign(0)
-        self.hdmi_status_text.set_hexpand(True)
-        self.hdmi_status_text.add_css_class("usb-port-name")
-        self.hdmi_status_text.add_css_class("status-orange")
-        self.hdmi_status_detail = Gtk.Label(label="HDMI")
-        self.hdmi_status_detail.set_xalign(1)
-        self.hdmi_status_detail.add_css_class("usb-port-state")
-        self.hdmi_status_detail.add_css_class("status-orange")
-        hdmi_row.append(self.hdmi_status_dot)
-        hdmi_row.append(self.hdmi_status_text)
-        hdmi_row.append(self.hdmi_status_detail)
-        hdmi.append(hdmi_row)
-        left.append(hdmi)
-
         # =====================================================
         # EINGABEGERÄTE
         # Touchpad + Keyboard + Touchscreen in einer gemeinsamen Karte.
@@ -7109,14 +7087,35 @@ class App(Gtk.Application):
         left.append(benchmark_btn)
         # =====================================================
         # RECHTE SPALTE
-        # USB kompakter, darunter der Bildschirmtest.
+        # PORTS mit HDMI + USB, darunter der Bildschirmtest.
         # =====================================================
         right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         right.set_hexpand(True)
 
-        usb = self.card("USB-PORTS")
-        usb.set_hexpand(True)
-        usb.set_vexpand(False)
+        ports = self.card("PORTS")
+        ports.set_hexpand(True)
+        ports.set_vexpand(False)
+
+        # HDMI gehört jetzt gemeinsam mit den physischen USB-Anschlüssen
+        # in die Kategorie PORTS. Testlogik/Statusobjekte bleiben unverändert.
+        hdmi_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+        hdmi_row.add_css_class("usb-row")
+        self.hdmi_status_dot = Gtk.Label(label="●")
+        self.hdmi_status_dot.add_css_class("status-orange")
+        self.hdmi_status_text = Gtk.Label(label="HDMI NICHT GETESTET")
+        self.hdmi_status_text.set_xalign(0)
+        self.hdmi_status_text.set_hexpand(True)
+        self.hdmi_status_text.add_css_class("usb-port-name")
+        self.hdmi_status_text.add_css_class("status-orange")
+        self.hdmi_status_detail = Gtk.Label(label="HDMI")
+        self.hdmi_status_detail.set_xalign(1)
+        self.hdmi_status_detail.add_css_class("usb-port-state")
+        self.hdmi_status_detail.add_css_class("status-orange")
+        hdmi_row.append(self.hdmi_status_dot)
+        hdmi_row.append(self.hdmi_status_text)
+        hdmi_row.append(self.hdmi_status_detail)
+
+        ports.append(hdmi_row)
 
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -7128,8 +7127,8 @@ class App(Gtk.Application):
             spacing=4
         )
         scroll.set_child(self.usb_box)
-        usb.append(scroll)
-        right.append(usb)
+        ports.append(scroll)
+        right.append(ports)
 
         display = self.card("BILDSCHIRMTEST (D)")
         display.set_hexpand(True)
