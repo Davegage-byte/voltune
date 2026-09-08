@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.28 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.29 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090823
+MANAGER_BUILD=2026090824
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3658,7 +3658,7 @@ set -u
 
 APP_NAME="Uwuntu Audio Test"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-audio-test"
-PY_FILE="$CACHE_DIR/audio_test_v1_15.py"
+PY_FILE="$CACHE_DIR/audio_test_v1_16.py"
 
 mkdir -p "$CACHE_DIR"
 
@@ -3735,7 +3735,7 @@ gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Gio
 
 
-VERSION = "v1.15"
+VERSION = "v1.16"
 
 SAMPLE_RATE = 48000
 INPUT_BLOCK = 512
@@ -3857,6 +3857,11 @@ class AudioAnalyzer:
         self.waveform = np.zeros(DISPLAY_SAMPLES, dtype=np.float32)
         self._display_roll = np.zeros(DISPLAY_SAMPLES, dtype=np.float32)
 
+        # Nur die VISUELLE Darstellung beruhigen. Die Audioanalyse selbst
+        # arbeitet weiterhin mit den unveränderten Roh-/Filterdaten.
+        # UI_REFRESH_MS bleibt bei 16 ms (~60 FPS).
+        self._visual_scale = 1.0
+
         # Mehrere Sekunden gefilterte Rohdaten für den automatischen
         # Lautsprechervergleich behalten.
         self._history = deque()
@@ -3977,21 +3982,49 @@ class AudioAnalyzer:
 
         return (np.sign(samples) * cleaned_mag).astype(np.float32)
 
-    @staticmethod
-    def normalize_for_display(samples):
+    def normalize_for_display(self, samples):
+        """Waveform ruhig, aber weiterhin flüssig darstellen.
+
+        Die bisherige sofortige Auto-Skalierung ließ die komplette Kurve bei
+        kleinen Pegeländerungen sichtbar "pumpen"/flackern. Jetzt wird nur der
+        Darstellungsfaktor weich nachgeführt und die gezeichnete Linie ganz
+        leicht räumlich geglättet. Messung, Pegelerkennung und Speaker-Test
+        bleiben unverändert.
+        """
         peak_abs = float(np.max(np.abs(samples))) if len(samples) else 0.0
 
         if peak_abs < 1e-7:
             return np.zeros_like(samples)
 
         if peak_abs < 0.01:
-            scale = min(10.0, 0.20 / max(peak_abs, 1e-9))
+            target_scale = min(10.0, 0.20 / max(peak_abs, 1e-9))
         elif peak_abs < 0.08:
-            scale = min(5.0, 0.55 / max(peak_abs, 1e-9))
+            target_scale = min(5.0, 0.55 / max(peak_abs, 1e-9))
         else:
-            scale = min(2.0, 0.90 / max(peak_abs, 1e-9))
+            target_scale = min(2.0, 0.90 / max(peak_abs, 1e-9))
 
-        return np.clip(samples * scale, -1.0, 1.0).astype(np.float32)
+        # Bei plötzlich lautem Signal zügig herunterregeln, damit nichts
+        # anschlägt. Beim Wieder-Hochregeln etwas weicher nachführen; dadurch
+        # bleibt die Waveform lebendig, ohne hektisch zu pulsieren.
+        alpha = 0.34 if target_scale < self._visual_scale else 0.16
+        self._visual_scale += alpha * (target_scale - self._visual_scale)
+
+        displayed = np.clip(
+            samples * self._visual_scale,
+            -1.0,
+            1.0
+        ).astype(np.float32)
+
+        # Sehr leichte 3-Punkt-Glättung nur für die gezeichnete Linie.
+        # Keine niedrigere Framerate und keine Änderung der Audioauswertung.
+        if len(displayed) >= 3:
+            displayed = np.convolve(
+                displayed,
+                np.array([0.18, 0.64, 0.18], dtype=np.float32),
+                mode="same",
+            ).astype(np.float32)
+
+        return displayed
 
     def add_history(self, timestamp, filtered):
         with self._history_lock:
@@ -5072,7 +5105,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Uwuntu Audio Test v1.15 installiert/aktualisiert."
+    echo "OK: Uwuntu Audio Test v1.16 installiert/aktualisiert."
     echo "Programm: $AUDIO_TEST_SCRIPT"
     echo "Desktop-Slot: $AUDIO_TEST_APP_DESKTOP"
     return 0
@@ -5117,6 +5150,7 @@ from pathlib import Path
 import glob
 import json
 import os
+import fcntl
 import re
 import shutil
 import signal
@@ -6056,13 +6090,37 @@ def get_touchpad_event_paths():
 def run_global_arrow_monitor(parent_pid):
     """Globale Diagnose-Hotkeys ausschließlich von echten Tastaturen lesen.
 
-    Touchpad-Klicks laufen separat über ``libinput debug-events``. Dadurch kann
-    ein gesperrtes Touchpad-Eventgerät den globalen Tastaturmonitor nicht mehr
-    blockieren und die logische Clickpad-Rechtsklick-Erkennung bleibt erhalten.
-    Kein EVIOCGRAB: Die Tasten bleiben für das aktive Fenster normal nutzbar.
+    Normalbetrieb: nur mitlesen, damit die globalen Diagnose-Hotkeys weiter
+    funktionieren.
+
+    Tastatur-Test: Auf Kommando über stdin werden alle erkannten Tastatur-
+    event-Geräte per EVIOCGRAB exklusiv übernommen. Die Prüftasten erreichen
+    weiterhin diesen Monitor, aber GNOME/XWayland/Tiling Assistant bekommen
+    sie während des Tests nicht mehr. Damit sind nicht nur Print Screen,
+    sondern auch Alt+F4, Super-Kombinationen, Alt+F2, Ctrl+Alt+T,
+    Shift+F10 usw. automatisch neutralisiert.
+
+    Beim UNGRAB, Prozessende oder Absturz werden die Geräte wieder freigegeben.
     """
     event_struct = struct.Struct("llHHI")
     ev_key = 0x01
+
+    # Linux: #define EVIOCGRAB _IOW('E', 0x90, int)
+    IOC_WRITE = 1
+    IOC_NRBITS = 8
+    IOC_TYPEBITS = 8
+    IOC_SIZEBITS = 14
+    IOC_NRSHIFT = 0
+    IOC_TYPESHIFT = IOC_NRSHIFT + IOC_NRBITS
+    IOC_SIZESHIFT = IOC_TYPESHIFT + IOC_TYPEBITS
+    IOC_DIRSHIFT = IOC_SIZESHIFT + IOC_SIZEBITS
+    EVIOCGRAB = (
+        (IOC_WRITE << IOC_DIRSHIFT)
+        | (ord("E") << IOC_TYPESHIFT)
+        | (0x90 << IOC_NRSHIFT)
+        | (struct.calcsize("i") << IOC_SIZESHIFT)
+    )
+
     key_map = {
         1: "escape",        # KEY_ESC
         48: "benchmark",    # KEY_B
@@ -6084,6 +6142,45 @@ def run_global_arrow_monitor(parent_pid):
     fds = {}
     next_scan = 0.0
     first_scan = True
+    grab_active = False
+    command_buffer = b""
+
+    try:
+        command_fd = sys.stdin.fileno()
+    except Exception:
+        command_fd = None
+
+    def emit(line):
+        try:
+            print(line, flush=True)
+            return True
+        except BrokenPipeError:
+            return False
+
+    def set_fd_grab(fd, enabled):
+        try:
+            fcntl.ioctl(fd, EVIOCGRAB, 1 if enabled else 0)
+            return True
+        except OSError:
+            return False
+
+    def apply_grab(enabled):
+        nonlocal grab_active
+        ok = 0
+        failed = 0
+
+        for fd in list(fds):
+            if set_fd_grab(fd, enabled):
+                ok += 1
+            else:
+                failed += 1
+
+        grab_active = enabled
+
+        if enabled:
+            emit(f"grabbed {ok} {failed}")
+        else:
+            emit(f"ungrabbed {ok} {failed}")
 
     while Path(f"/proc/{parent_pid}").exists():
         now = time.monotonic()
@@ -6093,6 +6190,8 @@ def run_global_arrow_monitor(parent_pid):
 
             for fd, path in list(fds.items()):
                 if path not in current_paths:
+                    if grab_active:
+                        set_fd_grab(fd, False)
                     try:
                         os.close(fd)
                     except OSError:
@@ -6107,7 +6206,13 @@ def run_global_arrow_monitor(parent_pid):
                 except OSError:
                     open_failures += 1
                     continue
+
                 fds[fd] = path
+
+                # Wird während eines laufenden Tastatur-Tests z.B. eine
+                # externe USB-Tastatur angesteckt, ebenfalls sofort greifen.
+                if grab_active and not set_fd_grab(fd, True):
+                    emit(f"grab-device-failed {path}")
 
             if first_scan:
                 if not fds or open_failures:
@@ -6117,9 +6222,8 @@ def run_global_arrow_monitor(parent_pid):
                         except OSError:
                             pass
                     return 77
-                try:
-                    print(f"ready {len(fds)}", flush=True)
-                except BrokenPipeError:
+
+                if not emit(f"ready {len(fds)}"):
                     return 0
                 first_scan = False
 
@@ -6127,17 +6231,44 @@ def run_global_arrow_monitor(parent_pid):
             time.sleep(0.25)
             continue
 
+        wait_fds = list(fds)
+        if command_fd is not None:
+            wait_fds.append(command_fd)
+
         try:
-            ready, _, _ = select.select(list(fds), [], [], 0.35)
+            ready, _, _ = select.select(wait_fds, [], [], 0.35)
         except (OSError, ValueError):
             ready = []
 
+        if command_fd is not None and command_fd in ready:
+            try:
+                chunk = os.read(command_fd, 256)
+            except OSError:
+                chunk = b""
+
+            if not chunk:
+                command_fd = None
+            else:
+                command_buffer += chunk
+                while b"\n" in command_buffer:
+                    raw_cmd, command_buffer = command_buffer.split(b"\n", 1)
+                    cmd = raw_cmd.decode("ascii", errors="ignore").strip().lower()
+                    if cmd == "grab":
+                        apply_grab(True)
+                    elif cmd == "ungrab":
+                        apply_grab(False)
+
         for fd in ready:
+            if fd == command_fd:
+                continue
+
             try:
                 data = os.read(fd, event_struct.size * 32)
             except BlockingIOError:
                 continue
             except OSError:
+                if grab_active:
+                    set_fd_grab(fd, False)
                 try:
                     os.close(fd)
                 except OSError:
@@ -6150,6 +6281,7 @@ def run_global_arrow_monitor(parent_pid):
                 _, _, event_type, code, value = event_struct.unpack_from(data, offset)
                 if event_type != ev_key:
                     continue
+
                 if code in ctrl_codes:
                     token = (fd, code)
                     if value in (1, 2):
@@ -6161,9 +6293,7 @@ def run_global_arrow_monitor(parent_pid):
                     # vom Fensterfokus als echte Prüftasten ankommen.
                     if value in (0, 1):
                         state = "down" if value == 1 else "up"
-                        try:
-                            print(f"keycode:{state}:{code}", flush=True)
-                        except BrokenPipeError:
+                        if not emit(f"keycode:{state}:{code}"):
                             return 0
                     continue
 
@@ -6171,9 +6301,7 @@ def run_global_arrow_monitor(parent_pid):
                 # gedrückt/gehalten = blau, losgelassen = grün.
                 if value in (0, 1):
                     state = "down" if value == 1 else "up"
-                    try:
-                        print(f"keycode:{state}:{code}", flush=True)
-                    except BrokenPipeError:
+                    if not emit(f"keycode:{state}:{code}"):
                         return 0
 
                 if value != 1:
@@ -6184,13 +6312,14 @@ def run_global_arrow_monitor(parent_pid):
                     continue
 
                 channel = key_map.get(code)
-                if channel:
-                    try:
-                        print(channel, flush=True)
-                    except BrokenPipeError:
-                        return 0
+                if channel and not emit(channel):
+                    return 0
 
+    # Sauber freigeben; beim Schließen der FDs würde der Kernel den Grab
+    # ebenfalls lösen, explizit ist es aber leichter nachvollziehbar.
     for fd in list(fds):
+        if grab_active:
+            set_fd_grab(fd, False)
         try:
             os.close(fd)
         except OSError:
@@ -6445,6 +6574,8 @@ class App(Gtk.Application):
         self.global_input_thread = None
         self.global_input_proc = None
         self.global_input_active = False
+        self.global_input_command_lock = threading.Lock()
+        self.keyboard_input_grab_desired = False
         self.last_global_hotkey_at = {
             "escape": 0.0,
             "benchmark": 0.0,
@@ -6547,14 +6678,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.28")
+        self.window.set_title("Hardware Check v4.5.29")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.28")
+        title_label = Gtk.Label(label="Hardware Check v4.5.29")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7252,9 +7383,11 @@ class App(Gtk.Application):
     def start_global_input_listener(self):
         """Hardware-Hotkeys und Touchpad-Klicks auch ohne Fokus erkennen.
 
-        Der Monitor liest nur mit und greift kein Eingabegerät exklusiv.
-        Zuerst wird er als normaler Benutzer probiert; falls Ubuntu den Zugriff
-        auf /dev/input/event* verweigert, folgt automatisch ``sudo -n``.
+        Im Normalbetrieb liest der Monitor nur mit. Erst während des
+        Tastatur-Tests werden die echten Tastaturgeräte per EVIOCGRAB exklusiv
+        übernommen und danach sofort wieder freigegeben.
+        Zuerst wird direkter Zugriff probiert; falls Ubuntu /dev/input sperrt,
+        folgt automatisch ``sudo -n``.
         """
         if self.global_input_thread and self.global_input_thread.is_alive():
             return
@@ -7284,7 +7417,7 @@ class App(Gtk.Application):
         try:
             return subprocess.Popen(
                 cmd,
-                stdin=subprocess.DEVNULL,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 bufsize=0,
@@ -7295,6 +7428,40 @@ class App(Gtk.Application):
                 f"{exc}"
             )
             return None
+
+    def send_global_input_command(self, command, proc=None):
+        """Kommando an den /dev/input-Helfer senden."""
+        target = proc if proc is not None else self.global_input_proc
+        if target is None or target.poll() is not None or target.stdin is None:
+            return False
+
+        try:
+            with self.global_input_command_lock:
+                target.stdin.write((command.strip() + "\n").encode("ascii"))
+                target.stdin.flush()
+            return True
+        except Exception as exc:
+            log(f"Globaler Eingabe-Monitor Kommando '{command}' fehlgeschlagen: {exc}")
+            return False
+
+    def set_keyboard_input_grab(self, enabled):
+        """Exklusive Tastaturübernahme für den Tastatur-Test schalten."""
+        self.keyboard_input_grab_desired = bool(enabled)
+
+        command = "grab" if enabled else "ungrab"
+        if self.send_global_input_command(command):
+            log(
+                "Tastatur-Test: exklusiver /dev/input-Grab "
+                + ("angefordert" if enabled else "Freigabe angefordert")
+            )
+            return True
+
+        if enabled:
+            log(
+                "Tastatur-Test: exklusiver Grab noch nicht verfügbar; "
+                "wird beim nächsten Monitor-READY automatisch angefordert"
+            )
+        return False
 
     def sudo_input_monitor_available(self):
         sudo = shutil.which("sudo")
@@ -7384,6 +7551,27 @@ class App(Gtk.Application):
                             + token.split(" ", 1)[1]
                             + " Tastaturgerät(e)"
                         )
+                        if self.keyboard_input_grab_desired:
+                            self.send_global_input_command("grab", proc=proc)
+                        continue
+
+                    if token.startswith("grabbed "):
+                        try:
+                            _, ok, failed = token.split()
+                        except ValueError:
+                            ok, failed = "?", "?"
+                        log(
+                            "Tastatur-Test: exklusiver Input-Grab aktiv "
+                            f"({ok} Gerät(e), {failed} Fehler)"
+                        )
+                        continue
+
+                    if token.startswith("ungrabbed "):
+                        log("Tastatur-Test: exklusiver Input-Grab freigegeben")
+                        continue
+
+                    if token.startswith("grab-device-failed "):
+                        log("Tastatur-Test: Grab fehlgeschlagen: " + token.split(" ", 1)[1])
                         continue
 
                     if (
@@ -8100,6 +8288,7 @@ class App(Gtk.Application):
         return False
 
     def reset_all(self, *_):
+        self.set_keyboard_input_grab(False)
         self.restore_super_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
         self.restore_super_arrows_after_keyboard_test()
@@ -9398,11 +9587,14 @@ class App(Gtk.Application):
     def show_keyboard(self, *_):
         self.keyboard_escape_count = 0
         self.keyboard_escape_last_at = 0.0
-        self.block_super_for_keyboard_test()
-        self.block_alt_space_for_keyboard_test()
-        self.block_super_arrows_for_keyboard_test()
+
+        # Oberfläche sofort anzeigen. Anschließend übernimmt der bereits
+        # laufende /dev/input-Helfer die Tastatur exklusiv. Dadurch reagiert K
+        # ohne GSettings-Wartezeit und Desktop-Shortcuts (inkl. Print Screen)
+        # erreichen GNOME während des Tests nicht mehr.
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
+        self.set_keyboard_input_grab(True)
 
         # Hardware Check zusätzlich nach vorn holen/fokussieren. Der eigentliche
         # Tastatur-Test bleibt dank /dev/input trotzdem unabhängig vom Fokus.
@@ -9438,6 +9630,10 @@ class App(Gtk.Application):
         return False
 
     def show_overview(self, *_):
+        self.set_keyboard_input_grab(False)
+        # Alte GSettings-Sicherungen nur noch vorsorglich restaurieren.
+        # HC4.5.29 blockiert Desktop-Shortcuts über EVIOCGRAB statt sie
+        # während des Tests einzeln umzuschreiben.
         self.restore_super_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
         self.restore_super_arrows_after_keyboard_test()
@@ -9547,6 +9743,7 @@ class App(Gtk.Application):
         self.mark_keyboard_alias(name, pressed=False)
 
     def do_shutdown(self):
+        self.set_keyboard_input_grab(False)
         self.restore_super_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
         self.restore_super_arrows_after_keyboard_test()
