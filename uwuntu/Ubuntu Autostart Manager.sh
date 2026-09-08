@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.35 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.36 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090830
+MANAGER_BUILD=2026090831
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6865,14 +6865,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.35")
+        self.window.set_title("Hardware Check v4.5.36")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.35")
+        title_label = Gtk.Label(label="Hardware Check v4.5.36")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -6980,7 +6980,7 @@ class App(Gtk.Application):
         content.set_margin_bottom(4)
         # =====================================================
         # LINKE SPALTE
-        # Security kompakt -> HDMI -> Touchpad -> Tastatur
+        # Security kompakt -> HDMI -> Eingabegeräte
         # =====================================================
         left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         left.set_size_request(285, -1)
@@ -7034,8 +7034,14 @@ class App(Gtk.Application):
         hdmi.append(hdmi_row)
         left.append(hdmi)
 
+        # =====================================================
+        # EINGABEGERÄTE
+        # Touchpad + Keyboard + Touchscreen in einer gemeinsamen Karte.
+        # Die bestehende Testlogik/Statusobjekte bleiben unverändert.
+        # =====================================================
+        input_devices = self.card("EINGABEGERÄTE")
+
         # Touchpad-Klicktest: beim Gedrückthalten blau, nach Loslassen grün.
-        touchpad = self.card("TOUCHPAD TEST")
         self.touchpad_rows = {}
         for side, label in (("left", "Touchpad links"), ("right", "Touchpad rechts")):
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
@@ -7053,28 +7059,62 @@ class App(Gtk.Application):
             row.append(dot)
             row.append(name)
             row.append(state)
-            touchpad.append(row)
+            input_devices.append(row)
             self.touchpad_rows[side] = (dot, name, state)
-        left.append(touchpad)
 
-        # Tastatur – Status ebenfalls in derselben Kapsel-Optik wie
-        # HDMI / Touchpad / TPM / Secure Boot.
-        kb = self.card("TASTATUR")
+        # Keyboard – bestehender K-Test, nur im gemeinsamen Bereich.
         kb_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         kb_row.add_css_class("usb-row")
+
+        kb_name = Gtk.Label(label="Keyboard")
+        kb_name.set_xalign(0)
+        kb_name.add_css_class("usb-port-name")
+
         self.keyboard_summary = Gtk.Label(label="● Noch nicht getestet")
         self.keyboard_summary.set_xalign(0)
         self.keyboard_summary.set_hexpand(True)
-        self.keyboard_summary.add_css_class("usb-port-name")
+        self.keyboard_summary.add_css_class("usb-port-state")
         self.keyboard_summary.add_css_class("status-orange")
+
         kb_btn = Gtk.Button(label="TEST (K) →")
         kb_btn.add_css_class("tiny-button")
         kb_btn.set_valign(Gtk.Align.CENTER)
         kb_btn.connect("clicked", self.show_keyboard)
+
+        kb_row.append(kb_name)
         kb_row.append(self.keyboard_summary)
         kb_row.append(kb_btn)
-        kb.append(kb_row)
-        left.append(kb)
+        input_devices.append(kb_row)
+
+        # Touchscreen – bisheriger TOUCH-TEST-(T)-Status in dieselbe Karte.
+        touch_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+        touch_row.add_css_class("usb-row")
+
+        self.touch_status_dot = Gtk.Label(label="●")
+        self.touch_status_dot.add_css_class("status-orange")
+
+        touch_name = Gtk.Label(label="Touchscreen")
+        touch_name.set_xalign(0)
+        touch_name.set_hexpand(True)
+        touch_name.add_css_class("usb-port-name")
+
+        self.touch_status_text = Gtk.Label(label="NICHT GETESTET")
+        self.touch_status_text.set_xalign(1)
+        self.touch_status_text.add_css_class("usb-port-state")
+        self.touch_status_text.add_css_class("status-orange")
+
+        self.touch_status_detail = Gtk.Label(label="T")
+        self.touch_status_detail.set_xalign(1)
+        self.touch_status_detail.add_css_class("usb-port-state")
+        self.touch_status_detail.add_css_class("status-orange")
+
+        touch_row.append(self.touch_status_dot)
+        touch_row.append(touch_name)
+        touch_row.append(self.touch_status_text)
+        touch_row.append(self.touch_status_detail)
+        input_devices.append(touch_row)
+
+        left.append(input_devices)
 
         benchmark_btn = Gtk.Button(label="Benchmark (B)")
         benchmark_btn.add_css_class("benchmark-open")
@@ -7082,7 +7122,7 @@ class App(Gtk.Application):
         left.append(benchmark_btn)
         # =====================================================
         # RECHTE SPALTE
-        # USB kompakter, darunter der Touch-Test-Status.
+        # USB kompakter, darunter der Bildschirmtest.
         # =====================================================
         right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         right.set_hexpand(True)
@@ -7103,29 +7143,6 @@ class App(Gtk.Application):
         scroll.set_child(self.usb_box)
         usb.append(scroll)
         right.append(usb)
-
-        touch = self.card("TOUCH-TEST (T)")
-        touch.set_hexpand(True)
-        touch_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-        touch_row.add_css_class("usb-row")
-
-        self.touch_status_dot = Gtk.Label(label="●")
-        self.touch_status_dot.add_css_class("status-orange")
-        self.touch_status_text = Gtk.Label(label="NICHT GETESTET")
-        self.touch_status_text.set_xalign(0)
-        self.touch_status_text.set_hexpand(True)
-        self.touch_status_text.add_css_class("usb-port-name")
-        self.touch_status_text.add_css_class("status-orange")
-        self.touch_status_detail = Gtk.Label(label="T")
-        self.touch_status_detail.set_xalign(1)
-        self.touch_status_detail.add_css_class("usb-port-state")
-        self.touch_status_detail.add_css_class("status-orange")
-
-        touch_row.append(self.touch_status_dot)
-        touch_row.append(self.touch_status_text)
-        touch_row.append(self.touch_status_detail)
-        touch.append(touch_row)
-        right.append(touch)
 
         display = self.card("BILDSCHIRMTEST (D)")
         display.set_hexpand(True)
@@ -8242,12 +8259,12 @@ class App(Gtk.Application):
             ("→", "Audio Test: rechten Lautsprecher testen"),
             ("↓", "Audio Test: kompletten Auto-Test starten"),
             ("B", "Benchmark-Seite öffnen / CPU-Benchmark starten"),
-            ("K", "Tastatur-Test global öffnen"),
+            ("K", "Keyboard-Test global öffnen"),
             ("R", "RAM-Test auf der Benchmark-Seite starten"),
             ("I", "Systeminformationen anzeigen"),
             ("U", "Uwuntu-Update suchen und installieren"),
             ("G", "Dell-Support für erkannte Seriennummer öffnen"),
-            ("T", "Touch-Tester manuell öffnen"),
+            ("T", "Touchscreen-Test manuell öffnen"),
             ("D", "Display-Test starten"),
             ("ENTER", "Wipe Auto: WIPE SSD / danach YES bestätigen"),
             ("STRG+W", "Aktuelles Diagnosefenster schließen"),
@@ -10262,7 +10279,7 @@ HARDWARE_CHECK_EOF
 [Desktop Entry]
 Type=Application
 Name=Hardware Check
-Comment=TPM Secure Boot HDMI Touchpad USB Tastatur Touch Display und Benchmark testen
+Comment=TPM Secure Boot HDMI Eingabegeräte USB Display und Benchmark testen
 Exec=$HARDWARE_CHECK_SCRIPT
 Icon=utilities-system-monitor-symbolic
 Terminal=false
