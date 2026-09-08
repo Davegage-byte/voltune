@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.45 + Wipe Auto v3.22 + Audio Test v1.17
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.46 + Wipe Auto v3.22 + Audio Test v1.17
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090840
+MANAGER_BUILD=2026090841
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6997,14 +6997,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.45")
+        self.window.set_title("Hardware Check v4.5.46")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.45")
+        title_label = Gtk.Label(label="Hardware Check v4.5.46")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -10278,6 +10278,18 @@ class App(Gtk.Application):
         )
         return False
 
+    def restore_keyboard_shortcuts_async(self):
+        """Desktop-Keybindings nach sichtbarem Wechsel im Hintergrund restaurieren."""
+        def worker():
+            try:
+                self.restore_super_after_keyboard_test()
+                self.restore_desktop_shortcuts_after_keyboard_test()
+            except Exception as exc:
+                log(f"Keyboard-Test: asynchrones Shortcut-Restore fehlgeschlagen: {exc}")
+
+        threading.Thread(target=worker, daemon=True).start()
+        return False
+
     def restore_desktop_shortcuts_after_keyboard_test(self):
         if not self.desktop_shortcut_block_active:
             return
@@ -10426,10 +10438,13 @@ class App(Gtk.Application):
         return False
 
     def show_overview(self, *_):
-        # HC4.5.45: Kein Input-Grab vorhanden. Es müssen ausschließlich die
-        # temporär deaktivierten GNOME-Keybindings restauriert werden.
-        self.restore_super_after_keyboard_test()
-        self.restore_desktop_shortcuts_after_keyboard_test()
+        # HC4.5.46: Beim Verlassen des Keyboard-Tests zuerst SOFORT zurück
+        # zur Übersicht wechseln. Die langsameren gsettings-Restores laufen
+        # anschließend im Hintergrund.
+        leaving_keyboard = (
+            self.stack is not None
+            and self.stack.get_visible_child_name() == "keyboard"
+        )
 
         if (
             self.stack.get_visible_child_name() == "benchmarks"
@@ -10440,6 +10455,14 @@ class App(Gtk.Application):
 
         self.stack.set_visible_child_name("overview")
         self.window.set_default_size(860, 360)
+
+        if leaving_keyboard:
+            # Oberfläche ist bereits zurück. Restore läuft ohne sichtbare
+            # Verzögerung im Hintergrund weiter.
+            self.restore_keyboard_shortcuts_async()
+        else:
+            self.restore_super_after_keyboard_test()
+            self.restore_desktop_shortcuts_after_keyboard_test()
 
     def reset_keyboard(self, *_):
         self.key_tested.clear()
