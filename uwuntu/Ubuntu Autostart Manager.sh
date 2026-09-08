@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.36 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.37 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090831
+MANAGER_BUILD=2026090832
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6865,14 +6865,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.36")
+        self.window.set_title("Hardware Check v4.5.37")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.36")
+        title_label = Gtk.Label(label="Hardware Check v4.5.37")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7062,57 +7062,42 @@ class App(Gtk.Application):
             input_devices.append(row)
             self.touchpad_rows[side] = (dot, name, state)
 
-        # Keyboard – bestehender K-Test, nur im gemeinsamen Bereich.
-        kb_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        kb_row.add_css_class("usb-row")
-
-        kb_name = Gtk.Label(label="Keyboard")
-        kb_name.set_xalign(0)
-        kb_name.add_css_class("usb-port-name")
-
-        self.keyboard_summary = Gtk.Label(label="● Noch nicht getestet")
-        self.keyboard_summary.set_xalign(0)
-        self.keyboard_summary.set_hexpand(True)
-        self.keyboard_summary.add_css_class("usb-port-state")
-        self.keyboard_summary.add_css_class("status-orange")
-
-        kb_btn = Gtk.Button(label="TEST (K) →")
-        kb_btn.add_css_class("tiny-button")
-        kb_btn.set_valign(Gtk.Align.CENTER)
-        kb_btn.connect("clicked", self.show_keyboard)
-
-        kb_row.append(kb_name)
-        kb_row.append(self.keyboard_summary)
-        kb_row.append(kb_btn)
-        input_devices.append(kb_row)
-
-        # Touchscreen – bisheriger TOUCH-TEST-(T)-Status in dieselbe Karte.
+        # Touchscreen-Ergebnis – direkt über Keyboard, ohne zusätzliche
+        # Bezeichnung. Der Hotkey-Hinweis (T) steckt direkt im Status.
         touch_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
         touch_row.add_css_class("usb-row")
 
         self.touch_status_dot = Gtk.Label(label="●")
         self.touch_status_dot.add_css_class("status-orange")
 
-        touch_name = Gtk.Label(label="Touchscreen")
-        touch_name.set_xalign(0)
-        touch_name.set_hexpand(True)
-        touch_name.add_css_class("usb-port-name")
-
-        self.touch_status_text = Gtk.Label(label="NICHT GETESTET")
-        self.touch_status_text.set_xalign(1)
+        self.touch_status_text = Gtk.Label(label="NICHT GETESTET (T)")
+        self.touch_status_text.set_xalign(0)
+        self.touch_status_text.set_hexpand(True)
         self.touch_status_text.add_css_class("usb-port-state")
         self.touch_status_text.add_css_class("status-orange")
 
-        self.touch_status_detail = Gtk.Label(label="T")
-        self.touch_status_detail.set_xalign(1)
-        self.touch_status_detail.add_css_class("usb-port-state")
-        self.touch_status_detail.add_css_class("status-orange")
-
         touch_row.append(self.touch_status_dot)
-        touch_row.append(touch_name)
         touch_row.append(self.touch_status_text)
-        touch_row.append(self.touch_status_detail)
         input_devices.append(touch_row)
+
+        # Keyboard – nur Fortschrittstext + eindeutiger Button.
+        kb_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        kb_row.add_css_class("usb-row")
+
+        self.keyboard_summary = Gtk.Label(label="0 von 88 getestet")
+        self.keyboard_summary.set_xalign(0)
+        self.keyboard_summary.set_hexpand(True)
+        self.keyboard_summary.add_css_class("usb-port-state")
+        self.keyboard_summary.add_css_class("status-orange")
+
+        kb_btn = Gtk.Button(label="Keyboard (K)")
+        kb_btn.add_css_class("tiny-button")
+        kb_btn.set_valign(Gtk.Align.CENTER)
+        kb_btn.connect("clicked", self.show_keyboard)
+
+        kb_row.append(self.keyboard_summary)
+        kb_row.append(kb_btn)
+        input_devices.append(kb_row)
 
         left.append(input_devices)
 
@@ -7415,15 +7400,24 @@ class App(Gtk.Application):
         self.touch_present_checked_at = now
         return present
 
-    def set_touch_status_ui(self, color, text, detail="T"):
+    def set_touch_status_ui(self, color, text, detail=None):
         if not hasattr(self, "touch_status_text"):
             return False
-        for widget in (self.touch_status_dot, self.touch_status_text, self.touch_status_detail):
+
+        for widget in (self.touch_status_dot, self.touch_status_text):
             for cls in ("status-green", "status-orange", "status-red"):
                 widget.remove_css_class(cls)
             widget.add_css_class("status-" + color)
-        self.touch_status_text.set_text(text)
-        self.touch_status_detail.set_text(detail)
+
+        # Kein Hotkey-Hinweis, wenn physisch gar kein Touchscreen vorhanden ist.
+        # Bei jedem anderen Zustand zeigt (T), dass der Touchscreen-Test über T
+        # gestartet werden kann.
+        if text == "KEIN TOUCHSCREEN ERKANNT":
+            display_text = text
+        else:
+            display_text = text if text.endswith(" (T)") else f"{text} (T)"
+
+        self.touch_status_text.set_text(display_text)
         return False
 
     def refresh_touch_status(self):
@@ -7435,27 +7429,25 @@ class App(Gtk.Application):
             log(f"Touch-Status nicht lesbar: {exc}")
 
         result = (data or {}).get("result")
-        completed = int((data or {}).get("completed_fields") or 0)
-        total = int((data or {}).get("total_fields") or 5)
         present = self.touchscreen_present()
 
         # Statusdatei liegt auf dem persistenten Uwuntu-System. Deshalb hat
         # die aktuell erkannte Hardware immer Vorrang vor einem alten Ergebnis
         # von einem zuvor getesteten Notebook.
         if not present:
-            self.set_touch_status_ui("orange", "KEIN TOUCHSCREEN ERKANNT", "--")
+            self.set_touch_status_ui("orange", "KEIN TOUCHSCREEN ERKANNT")
         elif result == "success":
-            self.set_touch_status_ui("green", "GETESTET", f"{total}/{total}")
+            self.set_touch_status_ui("green", "GETESTET")
         elif result == "running":
-            self.set_touch_status_ui("orange", "TEST LÄUFT", f"{completed}/{total}")
+            self.set_touch_status_ui("orange", "TEST LÄUFT")
         elif result in {"error", "failed"}:
-            self.set_touch_status_ui("red", "NICHT BESTANDEN", f"{completed}/{total}")
+            self.set_touch_status_ui("red", "NICHT BESTANDEN")
         elif result == "aborted":
-            self.set_touch_status_ui("orange", "NICHT SICHER / ABGEBROCHEN", f"{completed}/{total}")
+            self.set_touch_status_ui("orange", "NICHT SICHER / ABGEBROCHEN")
         elif result == "no_touchscreen":
-            self.set_touch_status_ui("orange", "NICHT GETESTET", "T")
+            self.set_touch_status_ui("orange", "NICHT GETESTET")
         else:
-            self.set_touch_status_ui("orange", "NICHT GETESTET", "T")
+            self.set_touch_status_ui("orange", "NICHT GETESTET")
 
         self.touch_status_cache = result
         return False
@@ -7468,12 +7460,12 @@ class App(Gtk.Application):
 
     def start_touch_test(self, *_):
         if not self.touchscreen_present(force=True):
-            self.set_touch_status_ui("orange", "KEIN TOUCHSCREEN ERKANNT", "--")
+            self.set_touch_status_ui("orange", "KEIN TOUCHSCREEN ERKANNT")
             log("Touch-Test per T ignoriert: kein Touchscreen erkannt")
             return False
 
         if not self.touch_script.exists():
-            self.set_touch_status_ui("red", "TOUCH-TESTER FEHLT", "T")
+            self.set_touch_status_ui("red", "TOUCH-TESTER FEHLT")
             log("Touch-Test per T fehlgeschlagen: Script fehlt")
             return False
 
@@ -7500,10 +7492,10 @@ class App(Gtk.Application):
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,
             )
-            self.set_touch_status_ui("orange", "TEST WIRD GESTARTET", "T")
+            self.set_touch_status_ui("orange", "TEST WIRD GESTARTET")
             log("Touch-Test per T gestartet")
         except Exception as exc:
-            self.set_touch_status_ui("red", "TOUCH-TEST STARTFEHLER", "T")
+            self.set_touch_status_ui("red", "TOUCH-TEST STARTFEHLER")
             log(f"Touch-Test per T Startfehler: {exc}")
         return False
 
