@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.46 + Wipe Auto v3.22 + Audio Test v1.17
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.47 + Wipe Auto v3.23 + Audio Test v1.17
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090841
+MANAGER_BUILD=2026090842
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3491,7 +3491,7 @@ class WipeAutoApp(Gtk.Application):
             )
 
             self.disk_value.set_text(self.last_disk_display)
-            self.set_class(self.disk_value, "neutral")
+            self.set_class(self.disk_value, "warn")
             self.disk_note.set_text("Bereit zum Löschen.")
             self.wipe_button.set_sensitive(True)
     def clear_action_area(self):
@@ -6997,14 +6997,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.46")
+        self.window.set_title("Hardware Check v4.5.47")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.46")
+        title_label = Gtk.Label(label="Hardware Check v4.5.47")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7155,16 +7155,17 @@ class App(Gtk.Application):
         webcam_row.add_css_class("usb-row")
         self.webcam_status_dot = Gtk.Label(label="●")
         self.webcam_status_dot.add_css_class("status-red")
-        webcam_name = Gtk.Label(label="WEBCAM")
-        webcam_name.set_xalign(0)
-        webcam_name.set_hexpand(True)
-        webcam_name.add_css_class("usb-port-name")
+        self.webcam_status_name = Gtk.Label(label="WEBCAM")
+        self.webcam_status_name.set_xalign(0)
+        self.webcam_status_name.set_hexpand(True)
+        self.webcam_status_name.add_css_class("usb-port-name")
+        self.webcam_status_name.add_css_class("status-red")
         self.webcam_status_text = Gtk.Label(label="NICHT ERKANNT")
         self.webcam_status_text.set_xalign(1)
         self.webcam_status_text.add_css_class("usb-port-state")
         self.webcam_status_text.add_css_class("status-red")
         webcam_row.append(self.webcam_status_dot)
-        webcam_row.append(webcam_name)
+        webcam_row.append(self.webcam_status_name)
         webcam_row.append(self.webcam_status_text)
         media.append(webcam_row)
 
@@ -7172,16 +7173,17 @@ class App(Gtk.Application):
         mic_row.add_css_class("usb-row")
         self.mic_status_dot = Gtk.Label(label="●")
         self.mic_status_dot.add_css_class("status-red")
-        mic_name = Gtk.Label(label="MIC")
-        mic_name.set_xalign(0)
-        mic_name.set_hexpand(True)
-        mic_name.add_css_class("usb-port-name")
+        self.mic_status_name = Gtk.Label(label="MIC")
+        self.mic_status_name.set_xalign(0)
+        self.mic_status_name.set_hexpand(True)
+        self.mic_status_name.add_css_class("usb-port-name")
+        self.mic_status_name.add_css_class("status-red")
         self.mic_status_text = Gtk.Label(label="NICHT ERKANNT")
         self.mic_status_text.set_xalign(1)
         self.mic_status_text.add_css_class("usb-port-state")
         self.mic_status_text.add_css_class("status-red")
         mic_row.append(self.mic_status_dot)
-        mic_row.append(mic_name)
+        mic_row.append(self.mic_status_name)
         mic_row.append(self.mic_status_text)
         media.append(mic_row)
 
@@ -7196,7 +7198,7 @@ class App(Gtk.Application):
 
         # Touchpad-Klicktest: beim Gedrückthalten blau, nach Loslassen grün.
         self.touchpad_rows = {}
-        for side, label in (("left", "Touchpad links"), ("right", "Touchpad rechts")):
+        for side, label in (("left", "TOUCHPAD LINKS"), ("right", "TOUCHPAD RECHTS")):
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
             row.add_css_class("usb-row")
             dot = Gtk.Label(label="●")
@@ -7361,15 +7363,17 @@ class App(Gtk.Application):
     def set_media_status_ui(self, kind, color, text):
         if kind == "webcam":
             dot = getattr(self, "webcam_status_dot", None)
+            name = getattr(self, "webcam_status_name", None)
             label = getattr(self, "webcam_status_text", None)
         else:
             dot = getattr(self, "mic_status_dot", None)
+            name = getattr(self, "mic_status_name", None)
             label = getattr(self, "mic_status_text", None)
 
-        if dot is None or label is None:
+        if dot is None or name is None or label is None:
             return False
 
-        for widget in (dot, label):
+        for widget in (dot, name, label):
             for cls in ("status-green", "status-orange", "status-red", "status-blue"):
                 widget.remove_css_class(cls)
             widget.add_css_class("status-" + color)
@@ -11587,7 +11591,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.22 und Wipe Auto v3.22
+Comment=Network Check v2.22 und Wipe Auto v3.23
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -11615,7 +11619,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.22 + Wipe Auto v3.22 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.22 + Wipe Auto v3.23 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -12034,7 +12038,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.22"
+WIPE_VERSION = "3.23"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -12569,6 +12573,13 @@ class WipeCompactPanel:
         self.wiping = False
         self.disk_badge.set_text("ERROR")
         self.set_class(self.disk_badge, "bad")
+        if self.last_disk_display:
+            self.disk_value.set_text(
+                self.last_disk_display + " • Löschen fehlgeschlagen"
+            )
+        else:
+            self.disk_value.set_text("Löschen fehlgeschlagen")
+        self.set_class(self.disk_value, "bad")
         self.disk_note.set_text(str(message))
         self.restore_wipe_button()
         return False
@@ -12651,14 +12662,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.22 + Wipe Auto v3.22")
+        self.window.set_title("Network Check v2.22 + Wipe Auto v3.23")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.22 + Wipe Auto v3.22")
+        title_label = Gtk.Label(label="Network Check v2.22 + Wipe Auto v3.23")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -12935,11 +12946,12 @@ class NetworkCheckApp(Gtk.Application):
         }
 
         .disk-result {
-            background: transparent;
-            border-radius: 0;
-            padding: 2px 0px;
-            font-size: 11px;
-            font-weight: 600;
+            background: #111318;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 4px 6px;
+            font-size: 17px;
+            font-weight: 800;
         }
 
         button.danger-action {
