@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.48 + Wipe Auto v3.23 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.49 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090843
+MANAGER_BUILD=2026090844
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5954,6 +5954,53 @@ def usb_device_snapshot():
 
     return result
 
+
+def usb_fallback_ignore_reason(device_name):
+    """Interne USB-Komponenten aus dem unsicheren Backup-Fallback fernhalten.
+
+    Die reguläre Port-Topologie bleibt unangetastet. Diese Prüfung gilt nur,
+    wenn ein neu aufgetauchtes USB-Gerät keiner bekannten physischen Buchse
+    sicher zugeordnet werden konnte.
+
+    Besonders wichtig bei integrierten Webcams mit Wackelkontakt:
+    Ab-/Anmelden darf niemals einen scheinbaren zusätzlichen USB-Port erzeugen.
+    """
+    if not device_name or not SYS_USB.exists():
+        return ""
+
+    dev = SYS_USB / device_name
+    if not dev.exists():
+        return ""
+
+    # Linux kennzeichnet fest eingebaute USB-Komponenten häufig direkt.
+    removable = read_text(dev / "removable").strip().lower()
+    if removable == "fixed":
+        return "fest eingebaut (removable=fixed)"
+
+    # USB Video Class = 0x0e. Manche Kameras setzen die Klasse am Gerät,
+    # andere nur auf einem oder mehreren Interfaces.
+    device_class = read_text(dev / "bDeviceClass").strip().lower()
+    try:
+        if device_class and int(device_class, 16) == 0x0E:
+            return "USB-Video-Gerät (bDeviceClass=0x0e)"
+    except ValueError:
+        pass
+
+    for interface in SYS_USB.glob(device_name + ":*"):
+        interface_class = read_text(
+            interface / "bInterfaceClass"
+        ).strip().lower()
+        try:
+            if interface_class and int(interface_class, 16) == 0x0E:
+                return (
+                    "USB-Video-Interface "
+                    f"({interface.name}, bInterfaceClass=0x0e)"
+                )
+        except ValueError:
+            continue
+
+    return ""
+
 def group_contains_device(group, device_name):
     if not device_name:
         return False
@@ -7040,14 +7087,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.48")
+        self.window.set_title("Hardware Check v4.5.49")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.48")
+        title_label = Gtk.Label(label="Hardware Check v4.5.49")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -9198,6 +9245,18 @@ class App(Gtk.Application):
             if self.usb_slot_for_device(dev_name) is not None:
                 continue
 
+            # Der Uwuntu-Bootstick darf auch bei ungewöhnlicher Firmware-
+            # Kennzeichnung niemals durch den internen Gerätefilter fallen.
+            if dev_name != self.usb_boot_device:
+                ignore_reason = usb_fallback_ignore_reason(dev_name)
+                if ignore_reason:
+                    self.usb_fallback.pop(dev_name, None)
+                    log(
+                        f"USB Backup ignoriert: {dev_name} | "
+                        f"{current_devices[dev_name]} | {ignore_reason}"
+                    )
+                    continue
+
             info = self.usb_fallback.setdefault(dev_name, {})
             info["title"] = current_devices[dev_name]
             info["connected"] = True
@@ -9214,11 +9273,25 @@ class App(Gtk.Application):
             log(f"USB Backup entfernt: {dev_name}")
             changed = True
         for dev_name in current_names:
-            if dev_name in self.usb_fallback:
-                if not self.usb_fallback[dev_name].get("connected"):
+            if dev_name not in self.usb_fallback:
+                continue
+
+            if dev_name != self.usb_boot_device:
+                ignore_reason = usb_fallback_ignore_reason(dev_name)
+                if ignore_reason:
+                    title = current_devices.get(dev_name, "USB-Gerät")
+                    self.usb_fallback.pop(dev_name, None)
+                    log(
+                        f"USB Backup nachträglich entfernt: {dev_name} | "
+                        f"{title} | {ignore_reason}"
+                    )
                     changed = True
-                self.usb_fallback[dev_name]["connected"] = True
-                self.usb_fallback[dev_name]["title"] = current_devices[dev_name]
+                    continue
+
+            if not self.usb_fallback[dev_name].get("connected"):
+                changed = True
+            self.usb_fallback[dev_name]["connected"] = True
+            self.usb_fallback[dev_name]["title"] = current_devices[dev_name]
 
         self.usb_last_devices = current_devices
 
@@ -11619,7 +11692,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.22 und Wipe Auto v3.23
+Comment=Network Check v2.22 und Wipe Auto v3.24
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -11647,7 +11720,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.22 + Wipe Auto v3.23 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.22 + Wipe Auto v3.24 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -12066,7 +12139,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.23"
+WIPE_VERSION = "3.24"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -12480,7 +12553,11 @@ class WipeCompactPanel:
             self.set_class(self.disk_badge, "neutral")
             self.last_disk_display = f"{details['size']} • {details['model']}"
             self.disk_value.set_text(self.last_disk_display)
-            self.set_class(self.disk_value, "neutral")
+
+            # SSD erkannt, aber noch nicht gelöscht: orange Hinweisstatus.
+            # WIPING bleibt Blau, erfolgreicher Abschluss Grün, Fehler Rot.
+            self.set_class(self.disk_value, "warn")
+
             self.disk_note.set_text("Bereit zum Löschen.")
             self.wipe_button.set_sensitive(True)
 
@@ -12690,14 +12767,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.22 + Wipe Auto v3.23")
+        self.window.set_title("Network Check v2.22 + Wipe Auto v3.24")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.22 + Wipe Auto v3.23")
+        title_label = Gtk.Label(label="Network Check v2.22 + Wipe Auto v3.24")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
