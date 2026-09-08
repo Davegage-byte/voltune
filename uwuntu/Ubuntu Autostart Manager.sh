@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090819
+MANAGER_BUILD=2026090820
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -968,6 +968,7 @@ install_all_dependencies() {
         python3-sounddevice
         python3-pil
         python3-opencv
+        opencv-data
         libportaudio2
         pulseaudio-utils
         alsa-utils
@@ -1072,8 +1073,15 @@ install_camera_test_app() {
 set -u
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_10.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_11.py"
+LOG_FILE="$CACHE_DIR/camera_test.log"
 mkdir -p "$CACHE_DIR"
+
+{
+    echo
+    echo "============================================================"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.11 Start"
+} >> "$LOG_FILE" 2>/dev/null || true
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
 # der echten Gtk.Application-ID kann GNOME/Tiling Assistant das Fenster so
@@ -1089,7 +1097,6 @@ REQUIRED_PKGS=(
   gstreamer1.0-plugins-base
   gstreamer1.0-plugins-good
   gstreamer1.0-gtk3
-  python3-opencv
 )
 
 missing=()
@@ -1124,41 +1131,10 @@ if ((${#missing[@]})); then
     fi
 fi
 
-# Haar-Cascade ist klein und wird nur nachinstalliert, falls python3-opencv
-# auf der jeweiligen Ubuntu-Version das Modell nicht bereits mitbringt.
-if ! python3 - <<'PY_FACE_MODEL_CHECK' >/dev/null 2>&1
-import os
-import cv2
-
-candidates = []
-try:
-    candidates.append(os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml"))
-except Exception:
-    pass
-
-candidates += [
-    "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml",
-    "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
-]
-
-raise SystemExit(0 if any(os.path.isfile(p) for p in candidates) else 1)
-PY_FACE_MODEL_CHECK
-then
-    if ! dpkg -s opencv-data >/dev/null 2>&1; then
-        repair_camera_dpkg || exit 1
-
-        if sudo -n true >/dev/null 2>&1; then
-            sudo -n env DEBIAN_FRONTEND=noninteractive \
-                apt-get install -y opencv-data || exit 1
-        elif command -v pkexec >/dev/null 2>&1; then
-            pkexec env DEBIAN_FRONTEND=noninteractive \
-                apt-get install -y opencv-data || exit 1
-        else
-            sudo env DEBIAN_FRONTEND=noninteractive \
-                apt-get install -y opencv-data || exit 1
-        fi
-    fi
-fi
+# OpenCV/opencv-data werden über Punkt 1 bzw. das U-Update installiert.
+# Der Kamera-Start selbst führt bewusst KEINE privilegierte Paketinstallation
+# mehr aus. Fehlt die optionale Gesichtserkennung trotzdem, startet die Kamera
+# normal weiter und deaktiviert nur den Face-Status.
 
 cat > "$PY_FILE" <<'PY'
 import glob
@@ -1166,8 +1142,14 @@ import os
 import subprocess
 import time
 import gi
-import cv2
-import numpy as np
+
+try:
+    import cv2
+    import numpy as np
+except Exception as exc:
+    cv2 = None
+    np = None
+    print(f"Optionale Gesichtserkennung nicht verfügbar: {exc}", flush=True)
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
@@ -1178,7 +1160,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.10"
+VERSION = "1.11"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 Gst.init(None)
@@ -1243,6 +1225,9 @@ MODES = [
 
 def find_face_cascade():
     """Finde das kleine klassische OpenCV-Haar-Modell ohne Zusatzframework."""
+    if cv2 is None:
+        return None
+
     candidates = []
     try:
         candidates.append(
@@ -1322,7 +1307,7 @@ class CameraWindow(Gtk.ApplicationWindow):
         self.face_cascade_path = find_face_cascade()
         self.face_cascade = None
 
-        if self.face_cascade_path:
+        if self.face_cascade_path and cv2 is not None:
             try:
                 cascade = cv2.CascadeClassifier(self.face_cascade_path)
                 if cascade is not None and not cascade.empty():
@@ -1488,9 +1473,18 @@ window { background: #000; }
                 'videoconvert ! '
             )
 
-        # Ein gemeinsamer Kamera-Stream, danach zwei Zweige:
-        # 1) unverändert zum sichtbaren gtksink
-        # 2) nur 320x180 / 2 FPS / GRAY8 zur Gesichtserkennung
+        # Ohne verfügbare Gesichtserkennung exakt den bewährten einfachen
+        # Kamera-Pfad verwenden. So kann die optionale Funktion niemals den
+        # normalen Kamera-Test verhindern.
+        if self.face_cascade is None:
+            return (
+                source
+                + 'identity name=probe signal-handoffs=true ! '
+                  'gtksink name=sink sync=false'
+            )
+
+        # Nur wenn das Modell wirklich verfügbar ist, kommt der kleine
+        # 320x180 / 2-FPS-Zweig hinzu.
         return (
             source
             + 'identity name=probe signal-handoffs=true ! tee name=t '
@@ -1544,8 +1538,10 @@ window { background: #000; }
             sink = self.pipeline.get_by_name("sink")
             probe = self.pipeline.get_by_name("probe")
             facesink = self.pipeline.get_by_name("facesink")
-            if sink is None or probe is None or facesink is None:
+            if sink is None or probe is None:
                 raise RuntimeError("GStreamer-Element fehlt")
+            if self.face_cascade is not None and facesink is None:
+                raise RuntimeError("Face-Appsink fehlt")
 
             widget = sink.get_property("widget")
             widget.set_hexpand(True)
@@ -1557,7 +1553,7 @@ window { background: #000; }
 
             # Face-Erkennung läuft nur, wenn Cascade erfolgreich geladen wurde.
             # Der kleine Appsink-Zweig bleibt ansonsten praktisch kostenlos.
-            if self.face_cascade is not None:
+            if self.face_cascade is not None and facesink is not None:
                 facesink.connect("new-sample", self.on_face_sample, current_serial)
 
             bus = self.pipeline.get_bus()
@@ -1755,7 +1751,7 @@ raise SystemExit(app.run(None))
 PY
 
 chmod +x "$PY_FILE"
-exec -a uwuntu-camera-test-python python3 "$PY_FILE"
+exec -a uwuntu-camera-test-python python3 "$PY_FILE" >>"$LOG_FILE" 2>&1
 CAMERA_TEST_EOF
     chmod +x "$CAMERA_TEST_SCRIPT"
 
@@ -1763,7 +1759,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.10
+Comment=Cleaner Uwuntu Kamera-Test v1.11
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -1786,7 +1782,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.10 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.11 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
