@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.52 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.53 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090847
+MANAGER_BUILD=2026090848
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6304,9 +6304,15 @@ def read_ssd_temperature():
     return values[0][1]
 
 
-def read_fan_rpm():
-    """Bei mehreren FAN-Sensoren wird die höchste aktuelle RPM angezeigt."""
-    values = []
+def read_fan_status():
+    """Höchste aktuelle FAN-RPM plus optional zugehörige PWM-Leistung.
+
+    Linux hwmon liefert fanN_input als RPM. Falls im selben hwmon-Gerät
+    zusätzlich pwmN vorhanden ist, wird dessen standardisierter Bereich
+    0..255 in Prozent umgerechnet. Fehlt pwmN, wird kein Prozentwert
+    erfunden oder geschätzt.
+    """
+    readings = []
     found_sensor = False
 
     try:
@@ -6314,23 +6320,64 @@ def read_fan_rpm():
             for fan_file in hwmon.glob("fan*_input"):
                 found_sensor = True
 
+                match = re.fullmatch(
+                    r"fan(\d+)_input",
+                    fan_file.name,
+                )
+                if not match:
+                    continue
+
+                index = match.group(1)
+
                 try:
-                    rpm = float(fan_file.read_text().strip())
+                    rpm = float(
+                        fan_file.read_text().strip()
+                    )
                 except Exception:
                     continue
 
-                if 0.0 <= rpm <= 100000.0:
-                    values.append(rpm)
-    except Exception:
-        return None
+                if not (0.0 <= rpm <= 100000.0):
+                    continue
 
-    if values:
-        return max(values)
+                percent = None
+                pwm_file = hwmon / f"pwm{index}"
+
+                if pwm_file.exists():
+                    try:
+                        pwm = float(
+                            pwm_file.read_text().strip()
+                        )
+                    except Exception:
+                        pwm = None
+
+                    if pwm is not None and 0.0 <= pwm <= 255.0:
+                        percent = max(
+                            0,
+                            min(
+                                100,
+                                int(round(pwm / 255.0 * 100.0)),
+                            ),
+                        )
+
+                readings.append(
+                    (rpm, percent)
+                )
+    except Exception:
+        return None, None
+
+    if readings:
+        # Bei mehreren Lüftern weiter wie bisher die höchste aktuelle
+        # Drehzahl anzeigen; Prozentwert stammt exakt von diesem Sensor.
+        readings.sort(
+            key=lambda item: item[0],
+            reverse=True,
+        )
+        return readings[0]
 
     if found_sensor:
-        return 0.0
+        return 0.0, None
 
-    return None
+    return None, None
 
 CPU_BENCH_WORKER = r"""
 import hashlib
@@ -7318,14 +7365,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.52")
+        self.window.set_title("Hardware Check v4.5.53")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.52")
+        title_label = Gtk.Label(label="Hardware Check v4.5.53")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7631,10 +7678,6 @@ class App(Gtk.Application):
 
         left.append(input_devices)
 
-        benchmark_btn = Gtk.Button(label="Benchmark (B)")
-        benchmark_btn.add_css_class("benchmark-open")
-        benchmark_btn.connect("clicked", self.show_benchmarks)
-        left.append(benchmark_btn)
         # =====================================================
         # RECHTE SPALTE
         # PORTS -> SENSOREN
@@ -7726,6 +7769,12 @@ class App(Gtk.Application):
             self.sensor_rows[key] = (dot, name, state)
 
         right.append(sensors)
+
+        benchmark_btn = Gtk.Button(label="Benchmark (B)")
+        benchmark_btn.add_css_class("benchmark-open")
+        benchmark_btn.set_hexpand(True)
+        benchmark_btn.connect("clicked", self.show_benchmarks)
+        right.append(benchmark_btn)
 
         content.append(left)
         content.append(right)
@@ -7938,7 +7987,7 @@ class App(Gtk.Application):
             )
 
         # FAN
-        fan_rpm = read_fan_rpm()
+        fan_rpm, fan_percent = read_fan_status()
         if fan_rpm is None:
             self.set_sensor_status_ui(
                 "fan",
@@ -7951,6 +8000,10 @@ class App(Gtk.Application):
                 .replace(",", ".")
                 + " RPM"
             )
+
+            if fan_percent is not None:
+                rpm_text += f" · {fan_percent}%"
+
             self.set_sensor_status_ui(
                 "fan",
                 "blue",
