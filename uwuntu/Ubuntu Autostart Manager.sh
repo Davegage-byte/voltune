@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.21 + Hardware Check v4.5.14 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.21 + Hardware Check v4.5.16 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090803
+MANAGER_BUILD=2026090805
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5649,6 +5649,7 @@ def run_global_arrow_monitor(parent_pid):
     event_struct = struct.Struct("llHHI")
     ev_key = 0x01
     key_map = {
+        1: "escape",        # KEY_ESC
         48: "benchmark",    # KEY_B
         37: "keyboard",     # KEY_K
         19: "ram",          # KEY_R
@@ -6009,6 +6010,7 @@ class App(Gtk.Application):
         self.global_input_proc = None
         self.global_input_active = False
         self.last_global_hotkey_at = {
+            "escape": 0.0,
             "benchmark": 0.0,
             "keyboard": 0.0,
             "ram": 0.0,
@@ -6045,20 +6047,26 @@ class App(Gtk.Application):
         self.super_overlay_original = None
         self.super_block_active = False
         self.super_restore_helper = None
+
+        # Tastatur-Test wird nur durch drei schnelle ESC-Tastendrücke beendet.
+        # So bleibt ESC weiterhin als normale Prüftaste testbar.
+        self.keyboard_escape_count = 0
+        self.keyboard_escape_last_at = 0.0
+        self.keyboard_escape_window = 1.5
     def do_activate(self):
         if self.window:
             self.window.present()
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.14")
+        self.window.set_title("Hardware Check v4.5.16")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.14")
+        title_label = Gtk.Label(label="Hardware Check v4.5.16")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -6104,7 +6112,14 @@ class App(Gtk.Application):
 
         log("Hardware Check gestartet")
         self.window.present()
-    def header(self, title, back=False, refresh=False, version=None):
+    def header(
+        self,
+        title,
+        back=False,
+        refresh=False,
+        version=None,
+        back_label="← ÜBERSICHT",
+    ):
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         row.set_margin_start(10)
         row.set_margin_end(10)
@@ -6112,7 +6127,7 @@ class App(Gtk.Application):
         row.set_margin_bottom(3)
 
         if back:
-            b = Gtk.Button(label="← ÜBERSICHT")
+            b = Gtk.Button(label=back_label)
             b.add_css_class("secondary")
             b.connect("clicked", self.show_overview)
             row.append(b)
@@ -6883,7 +6898,8 @@ class App(Gtk.Application):
                         continue
 
                     if token in {
-                        "benchmark", "ram", "info", "update", "warranty",
+                        "escape", "benchmark", "keyboard", "ram",
+                        "info", "update", "warranty",
                         "hotkeys", "touch", "display",
                         "audio-left", "audio-both", "audio-right", "audio-auto",
                     }:
@@ -7239,7 +7255,7 @@ class App(Gtk.Application):
             ("→", "Audio Test: rechten Lautsprecher testen"),
             ("↓", "Audio Test: kompletten Auto-Test starten"),
             ("B", "Benchmark-Seite öffnen / CPU-Benchmark starten"),
-            ("K", "Tastatur-Test öffnen"),
+            ("K", "Tastatur-Test global öffnen"),
             ("R", "RAM-Test auf der Benchmark-Seite starten"),
             ("I", "Systeminformationen anzeigen"),
             ("U", "Uwuntu-Update suchen und installieren"),
@@ -7249,7 +7265,7 @@ class App(Gtk.Application):
             ("ENTER", "Wipe Auto: WIPE SSD / danach YES bestätigen"),
             ("STRG+W", "Aktuelles Diagnosefenster schließen"),
             ("STRG+Q", "Alle Uwuntu-Diagnosefenster schließen"),
-            ("ESC", "Info-, Update- oder Hotkey-Fenster schließen"),
+            ("ESC", "Benchmark/RAM abbrechen · Tastatur-Test mit ESC x3 beenden"),
         ]
 
         for row, (key_text, desc_text) in enumerate(shortcuts):
@@ -7273,7 +7289,8 @@ class App(Gtk.Application):
         note = Gtk.Label(
             label=(
                 "Hinweis: Im TASTATUR TEST sind F1, B, K, R, I, U, G, T, D, "
-                "SUPER und alle Pfeiltasten ausschließlich normale Prüftasten. "
+                "SUPER und alle Pfeiltasten normale Prüftasten. ESC zählt ebenfalls "
+                "als Prüftaste; erst ESC x3 beendet den Tastatur-Test. "
                 "Die einzelne SUPER-Taste öffnet dort nicht die GNOME-Übersicht."
             )
         )
@@ -7477,7 +7494,7 @@ class App(Gtk.Application):
     def handle_global_hotkey(self, action):
 
 
-        # Im Tastatur-Test sind B, K, R, I, U, G, T, D, F1 und die Pfeiltasten
+        # Im Tastatur-Test sind ESC, B, K, R, I, U, G, T, D, F1 und die Pfeiltasten
         # ausschließlich normale Prüftasten.
         # Globale Diagnose-Hotkeys dürfen die Seite nicht verlassen.
         if self.stack.get_visible_child_name() == "keyboard":
@@ -7498,6 +7515,20 @@ class App(Gtk.Application):
             return False
 
         visible = self.stack.get_visible_child_name()
+
+        if action == "escape":
+            if visible == "benchmarks":
+                if self.test_proc is not None and self.test_proc.poll() is None:
+                    self.cancel_test()
+                self.show_overview()
+                log("Globaler Hotkey ESC: Benchmark/RAM abgebrochen bzw. Übersicht geöffnet")
+                return False
+
+            if visible == "keyboard":
+                self.handle_keyboard_escape_sequence()
+                return False
+
+            return False
 
         if action == "info":
             self.show_system_info()
@@ -7853,7 +7884,13 @@ class App(Gtk.Application):
 
     def build_benchmarks(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("BENCHMARKS", back=True))
+        root.append(
+            self.header(
+                "BENCHMARKS",
+                back=True,
+                back_label="← ÜBERSICHT (ESC)",
+            )
+        )
 
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
         body.set_margin_start(10)
@@ -8204,7 +8241,13 @@ class App(Gtk.Application):
 
     def build_keyboard(self):
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        root.append(self.header("TASTATUR TEST", back=True))
+        root.append(
+            self.header(
+                "TASTATUR TEST",
+                back=True,
+                back_label="← ÜBERSICHT (ESC x3)",
+            )
+        )
 
         tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         tools.set_margin_start(8)
@@ -8523,9 +8566,44 @@ class App(Gtk.Application):
             log("Tastatur-Test: SUPER-Taste wieder normal aktiviert")
 
     def show_keyboard(self, *_):
+        self.keyboard_escape_count = 0
+        self.keyboard_escape_last_at = 0.0
         self.block_super_for_keyboard_test()
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
+
+        # Bei globalem K kann gerade NC+WA, Kamera oder Audio den Fokus haben.
+        # Das vorhandene Hardware-Check-Fenster deshalb aktiv nach vorn holen.
+        try:
+            self.window.present()
+        except Exception:
+            pass
+
+    def handle_keyboard_escape_sequence(self):
+        now = time.monotonic()
+
+        if (
+            self.keyboard_escape_last_at <= 0.0
+            or now - self.keyboard_escape_last_at > self.keyboard_escape_window
+        ):
+            self.keyboard_escape_count = 1
+        else:
+            self.keyboard_escape_count += 1
+
+        self.keyboard_escape_last_at = now
+
+        if self.keyboard_escape_count >= 3:
+            self.keyboard_escape_count = 0
+            self.keyboard_escape_last_at = 0.0
+            log("Tastatur-Test: mit ESC x3 beendet")
+            self.show_overview()
+            return True
+
+        log(
+            f"Tastatur-Test: ESC {self.keyboard_escape_count}/3 "
+            f"(Fenster {self.keyboard_escape_window:.1f}s)"
+        )
+        return False
 
     def show_overview(self, *_):
         self.restore_super_after_keyboard_test()
@@ -8535,10 +8613,8 @@ class App(Gtk.Application):
             and self.test_proc is not None
             and self.test_proc.poll() is None
         ):
-            self.benchmark_status.set_text(
-                "Test läuft noch · zuerst abbrechen oder warten"
-            )
-            return
+            self.cancel_test()
+
         self.stack.set_visible_child_name("overview")
         self.window.set_default_size(860, 360)
 
@@ -8619,10 +8695,28 @@ class App(Gtk.Application):
                     log(f"Strg+Q Fehler: {exc}")
                 return True
 
+        visible = self.stack.get_visible_child_name()
+
+        # ESC auf der Benchmark-Seite bricht einen laufenden CPU-/RAM-Test ab
+        # und geht danach zurück zur Übersicht.
+        if name == "Escape" and visible == "benchmarks":
+            if self.test_proc is not None and self.test_proc.poll() is None:
+                self.cancel_test()
+            self.show_overview()
+            return True
+
+        # Im Tastatur-Test bleibt ESC eine normale Prüftaste. Erst drei
+        # aufeinanderfolgende ESC-Tastendrücke beenden den Test. Wenn der
+        # globale /dev/input-Monitor aktiv ist, übernimmt dieser das Zählen,
+        # damit ein Tastendruck nicht doppelt gewertet wird.
+        if name == "Escape" and visible == "keyboard":
+            if not self.global_input_active:
+                self.handle_keyboard_escape_sequence()
+            return False
+
         # Fallback für Systeme, auf denen der globale /dev/input-Monitor
         # nicht verfügbar ist: Hat Hardware Check selbst den Fokus, werden die
         # vier Audio-Pfeiltasten trotzdem an den separaten Audio Test gereicht.
-        visible = self.stack.get_visible_child_name()
         if not self.global_input_active and visible != "keyboard":
             audio_shortcuts = {
                 "Left": "audio-left",
