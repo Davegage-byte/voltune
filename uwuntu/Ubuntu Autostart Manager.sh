@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.31 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.32 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090826
+MANAGER_BUILD=2026090827
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -996,6 +996,7 @@ install_all_dependencies() {
         dmidecode
         procps
         xdg-utils
+        wl-clipboard
         libglib2.0-bin
         desktop-file-utils
         brightnessctl
@@ -1067,7 +1068,7 @@ from gi.repository import Gtk, GdkPixbuf
 PY_GTK4_CHECK
 
     local cmd
-    for cmd in curl nmcli ip iw upower lsblk wipefs partprobe ydotool libinput udevadm mokutil dmidecode pgrep pkill gsettings gapplication xdg-open; do
+    for cmd in curl nmcli ip iw upower lsblk wipefs partprobe ydotool libinput udevadm mokutil dmidecode pgrep pkill gsettings gapplication xdg-open wl-copy; do
         command -v "$cmd" >/dev/null 2>&1 || {
             echo "FEHLER: $cmd fehlt trotz Paketinstallation."
             return 1
@@ -5119,7 +5120,7 @@ install_hardware_check_app() {
     install_force_update_helper
 
     local hw_missing=()
-    for pkg in python3-gi gir1.2-gtk-4.0 libinput-tools udev mokutil dmidecode; do
+    for pkg in python3-gi gir1.2-gtk-4.0 libinput-tools udev mokutil dmidecode wl-clipboard; do
         dpkg -s "$pkg" >/dev/null 2>&1 || hw_missing+=("$pkg")
     done
     if [ "${#hw_missing[@]}" -gt 0 ]; then
@@ -6680,14 +6681,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.31")
+        self.window.set_title("Hardware Check v4.5.32")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.31")
+        title_label = Gtk.Label(label="Hardware Check v4.5.32")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7714,9 +7715,9 @@ class App(Gtk.Application):
     def copy_serial_to_clipboard(self, serial):
         """Erkannte Seriennummer für anschließendes Strg+V kopieren.
 
-        GTK4: Die Zwischenablage gehört zum Gdk.Display, nicht zum Fenster.
-        Primär wird daher direkt die native GDK-Zwischenablage gesetzt.
-        Vorhandene wl-copy/xclip-Werkzeuge dienen nur als zusätzlicher Fallback.
+        Unter Wayland wird bewusst wl-copy als primärer Weg verwendet.
+        Das hält die Zwischenablage unabhängig von GTK/GDK zuverlässig im
+        Wayland-Compositor. GTK bleibt nur noch als Fallback.
         """
         if not serial:
             return False
@@ -7725,7 +7726,37 @@ class App(Gtk.Application):
         if not serial:
             return False
 
-        # Native GTK4/GDK-Zwischenablage unter Wayland und X11.
+        session_type = os.environ.get("XDG_SESSION_TYPE", "").strip().lower()
+
+        # Wayland: wl-copy ist der zuverlässigste systemweite Clipboard-Weg.
+        # Das Paket wl-clipboard wird vom Manager automatisch installiert.
+        if session_type == "wayland":
+            wl_copy = shutil.which("wl-copy")
+            if wl_copy:
+                try:
+                    proc = subprocess.run(
+                        [wl_copy],
+                        input=serial,
+                        text=True,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=3.0,
+                        check=False,
+                    )
+                    if proc.returncode == 0:
+                        self.serial_clipboard_text = serial
+                        log(f"Seriennummer per wl-copy kopiert: {serial}")
+                        return True
+                    log(
+                        "wl-copy konnte Seriennummer nicht kopieren "
+                        f"(Exit {proc.returncode})"
+                    )
+                except Exception as exc:
+                    log(f"wl-copy fehlgeschlagen: {exc}")
+            else:
+                log("Wayland aktiv, aber wl-copy nicht gefunden")
+
+        # GTK4/GDK als Fallback.
         try:
             display = Gdk.Display.get_default()
             if display is None:
@@ -7736,57 +7767,38 @@ class App(Gtk.Application):
                 raise RuntimeError("Keine GDK-Zwischenablage verfügbar")
 
             clipboard.set_text(serial)
-
-            # Referenzen halten, solange Hardware Check läuft.
             self.serial_clipboard = clipboard
             self.serial_clipboard_text = serial
 
-            # Ausstehende Display-Anfragen direkt an den Display-Server senden.
             try:
                 display.flush()
             except Exception:
                 pass
 
-            log(f"Seriennummer in GTK4-Zwischenablage kopiert: {serial}")
+            log(f"Seriennummer per GTK4-Fallback kopiert: {serial}")
             return True
         except Exception as exc:
             log(f"GTK4-Zwischenablage fehlgeschlagen: {exc}")
 
-        # Optionaler Fallback ohne zusätzliche Abhängigkeiten.
-        fallbacks = []
-
-        wl_copy = shutil.which("wl-copy")
-        if wl_copy:
-            fallbacks.append([wl_copy])
-
+        # X11-Fallback, falls xclip bereits vorhanden ist.
         xclip = shutil.which("xclip")
         if xclip:
-            fallbacks.append([xclip, "-selection", "clipboard"])
-
-        for cmd in fallbacks:
             try:
-                # input= setzt stdin intern bereits auf PIPE.
                 proc = subprocess.run(
-                    cmd,
+                    [xclip, "-selection", "clipboard"],
                     input=serial,
                     text=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    timeout=2.0,
+                    timeout=3.0,
                     check=False,
                 )
                 if proc.returncode == 0:
-                    log(
-                        "Seriennummer per Clipboard-Fallback kopiert: "
-                        + Path(cmd[0]).name
-                    )
+                    self.serial_clipboard_text = serial
+                    log(f"Seriennummer per xclip kopiert: {serial}")
                     return True
             except Exception as exc:
-                log(
-                    "Clipboard-Fallback fehlgeschlagen "
-                    + Path(cmd[0]).name
-                    + f": {exc}"
-                )
+                log(f"xclip fehlgeschlagen: {exc}")
 
         log("Seriennummer konnte nicht in die Zwischenablage kopiert werden")
         return False
