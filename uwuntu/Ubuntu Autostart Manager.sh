@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.33 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.34 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090828
+MANAGER_BUILD=2026090829
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5378,6 +5378,13 @@ button.info-serial-link:focus {
     font-size: 12px;
     font-weight: 800;
 }
+
+/* Update-Statusfarben bewusst spezifischer als .update-status.
+   Dadurch kann dessen allgemeines Weiß die Zustandsfarbe nicht überschreiben. */
+.update-status.status-orange { color: #f5a623; }
+.update-status.status-blue   { color: #5aa2ff; }
+.update-status.status-green  { color: #48d17a; }
+.update-status.status-red    { color: #ff5c5c; }
 """
 def log(msg):
     try:
@@ -6734,14 +6741,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.33")
+        self.window.set_title("Hardware Check v4.5.34")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.33")
+        title_label = Gtk.Label(label="Hardware Check v4.5.34")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
