@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.23 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.24 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090812
+MANAGER_BUILD=2026090813
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6158,14 +6158,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.23")
+        self.window.set_title("Hardware Check v4.5.24")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.23")
+        title_label = Gtk.Label(label="Hardware Check v4.5.24")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7333,6 +7333,16 @@ class App(Gtk.Application):
         window.set_title("Shortcuts / Hotkeys")
         window.set_default_size(560, 470)
         window.set_resizable(False)
+
+        # Als echtes Zusatzfenster an Hardware Check binden. Dadurch behandelt
+        # GNOME/Tiling Assistant die Hotkey-Übersicht nicht wie ein zweites
+        # Hauptfenster derselben Anwendung.
+        try:
+            window.set_transient_for(self.window)
+            window.set_modal(False)
+        except Exception:
+            pass
+
         window.connect("close-request", self.close_hotkeys_window)
 
         key_controller = Gtk.EventControllerKey.new()
@@ -7353,6 +7363,8 @@ class App(Gtk.Application):
         grid = Gtk.Grid()
         grid.set_row_spacing(8)
         grid.set_column_spacing(14)
+        grid.set_hexpand(False)
+        grid.set_halign(Gtk.Align.START)
         grid.add_css_class("hotkey-grid")
 
         shortcuts = [
@@ -7385,11 +7397,11 @@ class App(Gtk.Application):
 
             desc = Gtk.Label(label=desc_text)
             desc.set_xalign(0)
-            desc.set_hexpand(True)
+            desc.set_halign(Gtk.Align.START)
+            desc.set_hexpand(False)
             desc.set_wrap(True)
             desc.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-            desc.set_width_chars(40)
-            desc.set_max_width_chars(40)
+            desc.set_max_width_chars(38)
             desc.add_css_class("hotkey-desc")
 
             grid.attach(key, 0, row, 1, 1)
@@ -7407,9 +7419,9 @@ class App(Gtk.Application):
             )
         )
         note.set_xalign(0)
+        note.set_halign(Gtk.Align.START)
         note.set_wrap(True)
         note.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-        note.set_width_chars(58)
         note.set_max_width_chars(58)
         note.set_focusable(False)
         note.add_css_class("hotkey-note")
@@ -8956,7 +8968,7 @@ class App(Gtk.Application):
 
     def update_keyboard(self):
         total, tested = len(self.key_widgets), len(self.key_tested)
-        keyboard_passed = tested >= 80
+        keyboard_passed = tested >= 75
 
         if hasattr(self, "keyboard_progress"):
             # Im Tastatur-Test bleibt nur der neutrale Zähler stehen.
@@ -8967,7 +8979,7 @@ class App(Gtk.Application):
 
         if hasattr(self, "keyboard_summary"):
             # Auf der HC-Übersicht wird NUR dieser Text eingefärbt:
-            # unter 80 orange, ab 80 grün.
+            # unter 75 orange, ab 75 grün.
             self.keyboard_summary.remove_css_class("status-green")
             self.keyboard_summary.remove_css_class("status-orange")
             self.keyboard_summary.set_text(f"{tested} von {total} getestet")
