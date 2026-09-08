@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.21 + Hardware Check v4.5.17 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.19 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090806
+MANAGER_BUILD=2026090808
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5753,22 +5753,25 @@ def run_global_arrow_monitor(parent_pid):
 
                     # Auch Strg links/rechts müssen im Tastatur-Test unabhängig
                     # vom Fensterfokus als echte Prüftasten ankommen.
-                    if value == 1:
+                    if value in (0, 1):
+                        state = "down" if value == 1 else "up"
                         try:
-                            print(f"keycode:{code}", flush=True)
+                            print(f"keycode:{state}:{code}", flush=True)
                         except BrokenPipeError:
                             return 0
                     continue
 
+                # Roh-Keycode als PRESS und RELEASE melden:
+                # gedrückt/gehalten = blau, losgelassen = grün.
+                if value in (0, 1):
+                    state = "down" if value == 1 else "up"
+                    try:
+                        print(f"keycode:{state}:{code}", flush=True)
+                    except BrokenPipeError:
+                        return 0
+
                 if value != 1:
                     continue
-
-                # Roh-Keycode immer zusätzlich melden. Außerhalb des
-                # Tastatur-Tests wird er vom Hauptprozess einfach ignoriert.
-                try:
-                    print(f"keycode:{code}", flush=True)
-                except BrokenPipeError:
-                    return 0
 
                 if code == 32 and ctrl_down:
                     # Ctrl+D gehört dem Diagnose-Kiosk, nicht dem Display-Hotkey.
@@ -6123,14 +6126,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.17")
+        self.window.set_title("Hardware Check v4.5.19")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.17")
+        title_label = Gtk.Label(label="Hardware Check v4.5.19")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -6147,6 +6150,7 @@ class App(Gtk.Application):
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         controller = Gtk.EventControllerKey.new()
         controller.connect("key-pressed", self.on_key)
+        controller.connect("key-released", self.on_key_released)
         self.window.add_controller(controller)
 
         self.stack = Gtk.Stack()
@@ -7568,10 +7572,15 @@ class App(Gtk.Application):
         if action.startswith("keycode:"):
             if visible == "keyboard":
                 try:
-                    code = int(action.split(":", 1)[1])
+                    _, key_state, raw_code = action.split(":", 2)
+                    code = int(raw_code)
                 except (TypeError, ValueError):
                     return False
-                return self.handle_keyboard_linux_keycode(code)
+
+                if key_state not in ("down", "up"):
+                    return False
+
+                return self.handle_keyboard_linux_keycode(code, key_state)
             return False
 
         # Im Tastatur-Test sind die normalen Diagnose-Hotkeys gesperrt.
@@ -8330,7 +8339,7 @@ class App(Gtk.Application):
         tools.set_margin_start(8)
         tools.set_margin_end(8)
         tools.set_margin_bottom(4)
-        self.keyboard_progress = Gtk.Label(label="0 / 0 getestet")
+        self.keyboard_progress = Gtk.Label(label="0 von 0 getestet")
         self.keyboard_progress.set_xalign(0)
         self.keyboard_progress.set_hexpand(True)
         self.keyboard_progress.add_css_class("progress-label")
@@ -8726,7 +8735,7 @@ class App(Gtk.Application):
 
         self.update_keyboard()
         log("Keyboard-Test zurückgesetzt")
-    def mark_keyboard_alias(self, alias):
+    def mark_keyboard_alias(self, alias, pressed=True):
         if not alias:
             return False
 
@@ -8737,52 +8746,78 @@ class App(Gtk.Application):
 
         widget = self.key_widgets[key_id]
 
-        if key_id not in self.key_tested:
+        # Ab dem ersten Druck zählt die Taste dauerhaft als getestet.
+        if pressed:
             self.key_tested.add(key_id)
-            self.key_phase[key_id] = 0
-        else:
-            self.key_phase[key_id] = 1 - self.key_phase.get(key_id, 0)
 
         widget.remove_css_class("key-tested")
         widget.remove_css_class("key-tested-blue")
-        if self.key_phase.get(key_id, 0) == 0:
-            widget.add_css_class("key-tested")
-        else:
+
+        # Live-Farbe:
+        # gedrückt/gehalten = blau
+        # losgelassen = grün
+        if pressed:
             widget.add_css_class("key-tested-blue")
+        elif key_id in self.key_tested:
+            widget.add_css_class("key-tested")
 
         self.update_keyboard()
         return True
 
-    def handle_keyboard_linux_keycode(self, code):
+    def handle_keyboard_linux_keycode(self, code, state):
         if self.stack.get_visible_child_name() != "keyboard":
             return False
 
         alias = self.keyboard_linux_aliases.get(code)
-        if alias:
-            self.mark_keyboard_alias(alias)
+        pressed = state == "down"
 
-        # "3x ESC hintereinander": jede andere Taste setzt die Folge zurück.
-        if code == 1:
-            self.handle_keyboard_escape_sequence()
-        else:
-            self.keyboard_escape_count = 0
-            self.keyboard_escape_last_at = 0.0
+        if alias:
+            self.mark_keyboard_alias(alias, pressed=pressed)
+
+        # ESC-x3 zählt nur die echten Tastendrücke. Das Loslassen zählt
+        # nicht als weiterer ESC-Anschlag.
+        if pressed:
+            if code == 1:
+                self.handle_keyboard_escape_sequence()
+            else:
+                # "3x hintereinander": jede andere gedrückte Taste setzt zurück.
+                self.keyboard_escape_count = 0
+                self.keyboard_escape_last_at = 0.0
 
         return False
 
     def update_keyboard(self):
         total, tested = len(self.key_widgets), len(self.key_tested)
+        keyboard_passed = tested >= 80
+
         if hasattr(self, "keyboard_progress"):
-            self.keyboard_progress.set_text(f"{tested} / {total} getestet")
+            # Im Tastatur-Test bleibt nur der neutrale Zähler stehen.
+            # Die Tasten selbst zeigen den Live-Zustand blau/grün.
+            self.keyboard_progress.set_text(f"{tested} von {total} getestet")
+            self.keyboard_progress.remove_css_class("status-green")
+            self.keyboard_progress.remove_css_class("status-orange")
+
         if hasattr(self, "keyboard_summary"):
+            # Auf der HC-Übersicht wird NUR dieser Text eingefärbt:
+            # unter 80 orange, ab 80 grün.
             self.keyboard_summary.remove_css_class("status-green")
             self.keyboard_summary.remove_css_class("status-orange")
-            if total and tested >= total:
-                self.keyboard_summary.set_text("● Alle angezeigten Tasten getestet"); self.keyboard_summary.add_css_class("status-green")
-            elif tested:
-                self.keyboard_summary.set_text(f"● {tested} / {total} Tasten"); self.keyboard_summary.add_css_class("status-orange")
-            else:
-                self.keyboard_summary.set_text("● Noch nicht getestet"); self.keyboard_summary.add_css_class("status-orange")
+            self.keyboard_summary.set_text(f"{tested} von {total} getestet")
+            self.keyboard_summary.add_css_class(
+                "status-green" if keyboard_passed else "status-orange"
+            )
+
+    def on_key_released(self, controller, keyval, keycode, state):
+        if self.stack.get_visible_child_name() != "keyboard":
+            return
+
+        # Bei aktivem /dev/input-Monitor kommt das Release bereits über den
+        # globalen Pfad. GTK ist nur der Fallback, damit nichts doppelt läuft.
+        if self.global_input_active:
+            return
+
+        name = Gdk.keyval_name(keyval) or ""
+        self.mark_keyboard_alias(name, pressed=False)
 
     def do_shutdown(self):
         self.restore_super_after_keyboard_test()
@@ -8856,7 +8891,7 @@ class App(Gtk.Application):
         # GTK-Fallback ohne globalen Monitor: ESC ebenfalls markieren und
         # anschließend für die 3er-Folge zählen.
         if name == "Escape" and visible == "keyboard":
-            self.mark_keyboard_alias(name)
+            self.mark_keyboard_alias(name, pressed=True)
             self.handle_keyboard_escape_sequence()
             return True
 
@@ -8923,7 +8958,7 @@ class App(Gtk.Application):
             self.keyboard_escape_count = 0
             self.keyboard_escape_last_at = 0.0
 
-        if self.mark_keyboard_alias(name):
+        if self.mark_keyboard_alias(name, pressed=True):
             # Verhindert insbesondere, dass SPACE oder ENTER zusätzlich
             # irgendeine GTK-Button-Aktion auslösen.
             return True
@@ -9810,7 +9845,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.21 und Wipe Auto v3.22
+Comment=Network Check v2.22 und Wipe Auto v3.22
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -9838,7 +9873,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.21 + Wipe Auto v3.22 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.22 + Wipe Auto v3.22 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -10874,14 +10909,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.21 + Wipe Auto v3.22")
+        self.window.set_title("Network Check v2.22 + Wipe Auto v3.22")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.21 + Wipe Auto v3.22")
+        title_label = Gtk.Label(label="Network Check v2.22 + Wipe Auto v3.22")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -11264,10 +11299,13 @@ class NetworkCheckApp(Gtk.Application):
                 if kind:
                     self.enqueue_test(iface, kind, "interface connected")
 
-            if default_iface != self.last_default and default_iface in current_connected:
-                kind = iface_to_kind.get(default_iface)
-                if kind:
-                    self.enqueue_test(default_iface, kind, "active connection changed")
+            # Ein reiner Wechsel der Default-Route startet KEINEN neuen
+            # Speedtest mehr. Beispiel: LAN wird nach abgeschlossenem LAN/WLAN-
+            # Test abgezogen und WLAN wird dadurch Default. Das bestehende
+            # WLAN-Ergebnis muss erhalten bleiben. Neue Tests werden nur durch
+            # echte Neuverbindungen (oben) oder relevante Link-Änderungen
+            # desselben Adapters ausgelöst.
+
             # LAN-Link-Speed-Wechsel ist wichtig:
             # z.B. 1000 -> 100 Mbps bei Stecker/Kontaktproblem.
             for dev in devices["ethernet"]:
