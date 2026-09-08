@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.21 + Hardware Check v4.5.12 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.21 + Hardware Check v4.5.14 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090801
+MANAGER_BUILD=2026090803
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5650,6 +5650,7 @@ def run_global_arrow_monitor(parent_pid):
     ev_key = 0x01
     key_map = {
         48: "benchmark",    # KEY_B
+        37: "keyboard",     # KEY_K
         19: "ram",          # KEY_R
         23: "info",         # KEY_I
         22: "update",       # KEY_U
@@ -6009,6 +6010,7 @@ class App(Gtk.Application):
         self.global_input_active = False
         self.last_global_hotkey_at = {
             "benchmark": 0.0,
+            "keyboard": 0.0,
             "ram": 0.0,
             "info": 0.0,
             "update": 0.0,
@@ -6036,20 +6038,27 @@ class App(Gtk.Application):
         self.display_state_file = Path.home() / ".local/state/uwuntu/display_test_status.json"
         self.display_script = Path.home() / ".local/bin/uwuntu-display-test.sh"
         self.display_test_active = False
+
+        # Während des Tastatur-Tests wird nur Mutters Overlay-Key (einzelne
+        # SUPER-Taste) temporär deaktiviert. Der Originalwert wird beim
+        # Verlassen zuverlässig wiederhergestellt.
+        self.super_overlay_original = None
+        self.super_block_active = False
+        self.super_restore_helper = None
     def do_activate(self):
         if self.window:
             self.window.present()
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.12")
+        self.window.set_title("Hardware Check v4.5.14")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.12")
+        title_label = Gtk.Label(label="Hardware Check v4.5.14")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -6236,7 +6245,7 @@ class App(Gtk.Application):
         self.keyboard_summary.set_hexpand(True)
         self.keyboard_summary.add_css_class("usb-port-name")
         self.keyboard_summary.add_css_class("status-orange")
-        kb_btn = Gtk.Button(label="TEST →")
+        kb_btn = Gtk.Button(label="TEST (K) →")
         kb_btn.add_css_class("tiny-button")
         kb_btn.set_valign(Gtk.Align.CENTER)
         kb_btn.connect("clicked", self.show_keyboard)
@@ -7230,6 +7239,7 @@ class App(Gtk.Application):
             ("→", "Audio Test: rechten Lautsprecher testen"),
             ("↓", "Audio Test: kompletten Auto-Test starten"),
             ("B", "Benchmark-Seite öffnen / CPU-Benchmark starten"),
+            ("K", "Tastatur-Test öffnen"),
             ("R", "RAM-Test auf der Benchmark-Seite starten"),
             ("I", "Systeminformationen anzeigen"),
             ("U", "Uwuntu-Update suchen und installieren"),
@@ -7262,8 +7272,9 @@ class App(Gtk.Application):
 
         note = Gtk.Label(
             label=(
-                "Hinweis: Im TASTATUR TEST sind F1, B, R, I, U, G, T, D und "
-                "alle Pfeiltasten ausschließlich normale Prüftasten."
+                "Hinweis: Im TASTATUR TEST sind F1, B, K, R, I, U, G, T, D, "
+                "SUPER und alle Pfeiltasten ausschließlich normale Prüftasten. "
+                "Die einzelne SUPER-Taste öffnet dort nicht die GNOME-Übersicht."
             )
         )
         note.set_xalign(0)
@@ -7466,7 +7477,7 @@ class App(Gtk.Application):
     def handle_global_hotkey(self, action):
 
 
-        # Im Tastatur-Test sind B, R, I, U, G, T, D, F1 und die Pfeiltasten
+        # Im Tastatur-Test sind B, K, R, I, U, G, T, D, F1 und die Pfeiltasten
         # ausschließlich normale Prüftasten.
         # Globale Diagnose-Hotkeys dürfen die Seite nicht verlassen.
         if self.stack.get_visible_child_name() == "keyboard":
@@ -7521,6 +7532,11 @@ class App(Gtk.Application):
                 log("Globaler Hotkey B: Benchmark-Seite geöffnet")
             return False
 
+        if action == "keyboard":
+            self.show_keyboard()
+            log("Globaler Hotkey K: Tastatur-Test geöffnet")
+            return False
+
         if action == "ram" and visible == "benchmarks":
             self.start_test(None, "ram-short", 30.0)
             log("Globaler Hotkey R: RAM Test gestartet")
@@ -7529,6 +7545,7 @@ class App(Gtk.Application):
         return False
 
     def reset_all(self, *_):
+        self.restore_super_after_keyboard_test()
         # REFRESH setzt den kompletten Hardware-Test auf Anfang.
         # Aktuell belegte Ports werden direkt wieder blau erkannt.
         self.refresh_security()
@@ -8280,34 +8297,38 @@ class App(Gtk.Application):
 
     def keyboard_layout(self):
         K = lambda l, a=None, w=32: (l, tuple(a or (l,)), w)
+
+        # Deutsches ISO-QWERTZ-Layout.
+        # Die Aliase entsprechen den GDK-Keyval-Namen eines deutschen
+        # XKB-Layouts, damit Umlaute/Sondertasten korrekt erkannt werden.
         return [
             [
                 K("Esc", ("Escape",), 34),
                 K("F1"), K("F2"), K("F3"), K("F4"),
                 K("F5"), K("F6"), K("F7"), K("F8"),
                 K("F9"), K("F10"), K("F11"), K("F12"),
-                K("PrtSc", ("Print",), 40),
-                K("ScrLk", ("Scroll_Lock",), 40),
+                K("Druck", ("Print",), 40),
+                K("Rollen", ("Scroll_Lock",), 42),
                 K("Pause", ("Pause",), 40),
             ],
             [
-                K("`", ("grave", "asciitilde")),
+                K("^", ("dead_circumflex", "degree")),
                 K("1", ("1", "exclam")),
-                K("2", ("2", "at")),
-                K("3", ("3", "numbersign")),
+                K("2", ("2", "quotedbl")),
+                K("3", ("3", "section")),
                 K("4", ("4", "dollar")),
                 K("5", ("5", "percent")),
-                K("6", ("6", "asciicircum")),
-                K("7", ("7", "ampersand")),
-                K("8", ("8", "asterisk")),
-                K("9", ("9", "parenleft")),
-                K("0", ("0", "parenright")),
-                K("-", ("minus", "underscore")),
-                K("=", ("equal", "plus")),
+                K("6", ("6", "ampersand")),
+                K("7", ("7", "slash")),
+                K("8", ("8", "parenleft")),
+                K("9", ("9", "parenright")),
+                K("0", ("0", "equal")),
+                K("ß", ("ssharp", "question")),
+                K("´", ("dead_acute", "dead_grave")),
                 K("Backspace", ("BackSpace",), 62),
-                K("Ins", ("Insert",), 36),
-                K("Home", ("Home",), 40),
-                K("PgUp", ("Page_Up",), 40),
+                K("Einfg", ("Insert",), 38),
+                K("Pos1", ("Home",), 40),
+                K("Bild↑", ("Page_Up",), 40),
             ],
             [
                 K("Tab", ("Tab", "ISO_Left_Tab"), 50),
@@ -8316,17 +8337,16 @@ class App(Gtk.Application):
                 K("E", ("e",)),
                 K("R", ("r",)),
                 K("T", ("t",)),
-                K("Y", ("y",)),
+                K("Z", ("z",)),
                 K("U", ("u",)),
                 K("I", ("i",)),
                 K("O", ("o",)),
                 K("P", ("p",)),
-                K("[", ("bracketleft", "braceleft")),
-                K("]", ("bracketright", "braceright")),
-                K("\\", ("backslash", "bar"), 44),
-                K("Del", ("Delete",), 36),
-                K("End", ("End",), 40),
-                K("PgDn", ("Page_Down",), 40),
+                K("Ü", ("udiaeresis", "Udiaeresis")),
+                K("+", ("plus", "asterisk", "asciitilde")),
+                K("Entf", ("Delete",), 38),
+                K("Ende", ("End",), 40),
+                K("Bild↓", ("Page_Down",), 40),
             ],
             [
                 K("Caps", ("Caps_Lock",), 58),
@@ -8339,40 +8359,177 @@ class App(Gtk.Application):
                 K("J", ("j",)),
                 K("K", ("k",)),
                 K("L", ("l",)),
-                K(";", ("semicolon", "colon")),
-                K("'", ("apostrophe", "quotedbl")),
+                K("Ö", ("odiaeresis", "Odiaeresis")),
+                K("Ä", ("adiaeresis", "Adiaeresis")),
+                K("#", ("numbersign", "apostrophe")),
                 K("Enter", ("Return",), 70),
             ],
             [
-                K("Shift L", ("Shift_L",), 76),
-                K("Z", ("z",)),
+                K("Shift L", ("Shift_L",), 70),
+                K("<", ("less", "greater", "bar")),
+                K("Y", ("y",)),
                 K("X", ("x",)),
                 K("C", ("c",)),
                 K("V", ("v",)),
                 K("B", ("b",)),
                 K("N", ("n",)),
                 K("M", ("m",)),
-                K(",", ("comma", "less")),
-                K(".", ("period", "greater")),
-                K("/", ("slash", "question")),
-                K("Shift R", ("Shift_R",), 84),
+                K(",", ("comma", "semicolon")),
+                K(".", ("period", "colon")),
+                K("-", ("minus", "underscore")),
+                K("Shift R", ("Shift_R",), 78),
             ],
             [
-                K("Ctrl L", ("Control_L",), 48),
+                K("Strg L", ("Control_L",), 48),
                 K("Super L", ("Super_L", "Meta_L"), 52),
                 K("Alt L", ("Alt_L",), 44),
                 K("Space", ("space",), 180),
                 K("AltGr", ("ISO_Level3_Shift", "Alt_R"), 48),
                 K("Super R", ("Super_R", "Meta_R"), 52),
                 K("Menu", ("Menu",), 44),
-                K("Ctrl R", ("Control_R",), 48),
+                K("Strg R", ("Control_R",), 48),
             ],
         ]
+
+    def block_super_for_keyboard_test(self):
+        """Einzelne SUPER-Taste während des Tastatur-Tests blockieren.
+
+        GNOME/Mutter verwendet ``org.gnome.mutter overlay-key`` für das
+        Öffnen der Übersicht durch einen einzelnen Super-Tastendruck.
+        Der bisherige Wert wird gespeichert und nach dem Test exakt
+        wiederhergestellt. Ein kleiner externer Wächter stellt den Wert
+        zusätzlich wieder her, falls Hardware Check unerwartet beendet wird.
+        """
+        if self.super_block_active:
+            return
+
+        gsettings = shutil.which("gsettings")
+        if not gsettings:
+            log("SUPER-Blockierung: gsettings nicht gefunden")
+            return
+
+        try:
+            get_proc = subprocess.run(
+                [
+                    gsettings,
+                    "get",
+                    "org.gnome.mutter",
+                    "overlay-key",
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1.5,
+                check=False,
+            )
+            original = get_proc.stdout.strip()
+            if get_proc.returncode != 0 or not original:
+                log("SUPER-Blockierung: overlay-key konnte nicht gelesen werden")
+                return
+
+            set_proc = subprocess.run(
+                [
+                    gsettings,
+                    "set",
+                    "org.gnome.mutter",
+                    "overlay-key",
+                    "",
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5,
+                check=False,
+            )
+            if set_proc.returncode != 0:
+                log("SUPER-Blockierung: overlay-key konnte nicht deaktiviert werden")
+                return
+
+            self.super_overlay_original = original
+            self.super_block_active = True
+
+            # Wächter: Falls Hardware Check hart beendet wird, stellt ein
+            # unabhängiger Prozess den ursprünglichen GNOME-Wert wieder her.
+            helper_code = (
+                "import os,subprocess,sys,time;"
+                "pid=int(sys.argv[1]);original=sys.argv[2];"
+                "path=f'/proc/{pid}';"
+                "\nwhile os.path.exists(path): time.sleep(0.25)"
+                "\nsubprocess.run(['gsettings','set','org.gnome.mutter',"
+                "'overlay-key',original],stdin=subprocess.DEVNULL,"
+                "stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,"
+                "check=False)"
+            )
+            try:
+                self.super_restore_helper = subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-c",
+                        helper_code,
+                        str(os.getpid()),
+                        original,
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+            except Exception:
+                self.super_restore_helper = None
+
+            log("Tastatur-Test: einzelne SUPER-Taste für GNOME blockiert")
+        except Exception as exc:
+            log(f"SUPER-Blockierung Fehler: {exc}")
+
+    def restore_super_after_keyboard_test(self):
+        if not self.super_block_active:
+            return
+
+        gsettings = shutil.which("gsettings")
+        restored = False
+
+        if gsettings and self.super_overlay_original:
+            try:
+                p = subprocess.run(
+                    [
+                        gsettings,
+                        "set",
+                        "org.gnome.mutter",
+                        "overlay-key",
+                        self.super_overlay_original,
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=1.5,
+                    check=False,
+                )
+                restored = p.returncode == 0
+            except Exception:
+                restored = False
+
+        if restored:
+            helper = self.super_restore_helper
+            self.super_restore_helper = None
+            if helper is not None:
+                try:
+                    helper.terminate()
+                except Exception:
+                    pass
+
+            self.super_overlay_original = None
+            self.super_block_active = False
+            log("Tastatur-Test: SUPER-Taste wieder normal aktiviert")
+
     def show_keyboard(self, *_):
+        self.block_super_for_keyboard_test()
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
 
     def show_overview(self, *_):
+        self.restore_super_after_keyboard_test()
+
         if (
             self.stack.get_visible_child_name() == "benchmarks"
             and self.test_proc is not None
@@ -8410,6 +8567,7 @@ class App(Gtk.Application):
                 self.keyboard_summary.set_text("● Noch nicht getestet"); self.keyboard_summary.add_css_class("status-orange")
 
     def do_shutdown(self):
+        self.restore_super_after_keyboard_test()
         if self.info_window is not None:
             try:
                 self.info_window.destroy()
@@ -8477,11 +8635,16 @@ class App(Gtk.Application):
                 self.handle_global_hotkey(action)
                 return True
 
-        # B/R/I/U/G/F1 auch über GTK behandeln, wenn Hardware Check den Fokus hat.
+        # B/K/R/I/U/G/F1 auch über GTK behandeln, wenn Hardware Check den Fokus hat.
+        # B = Benchmark, K = Tastatur-Test. Innerhalb des Tastatur-Tests
+        # bleiben beide selbstverständlich normale Prüftasten.
         # Der Hotkey-Handler entprellt das parallele /dev/input-Ereignis.
         lower_name = name.lower()
         if lower_name == "b" and visible != "keyboard":
             self.handle_global_hotkey("benchmark")
+            return True
+        if lower_name == "k" and visible != "keyboard":
+            self.handle_global_hotkey("keyboard")
             return True
         if lower_name == "r" and visible == "benchmarks":
             self.handle_global_hotkey("ram")
