@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.24 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.25 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090813
+MANAGER_BUILD=2026090814
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6110,6 +6110,14 @@ class App(Gtk.Application):
         self.alt_space_block_active = False
         self.alt_space_restore_helper = None
 
+        # Während des Tastatur-Tests dürfen SUPER+Pfeiltasten keine GNOME-
+        # oder Tiling-Assistant-Fensteraktion auslösen. Die aktuell wirksamen
+        # Bindings werden dynamisch gesichert, deaktiviert und danach exakt
+        # wiederhergestellt.
+        self.super_arrow_bindings_original = []
+        self.super_arrow_block_active = False
+        self.super_arrow_restore_helper = None
+
         # Tastatur-Test wird nur durch drei schnelle ESC-Tastendrücke beendet.
         # So bleibt ESC weiterhin als normale Prüftaste testbar.
         self.keyboard_escape_count = 0
@@ -6158,14 +6166,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.24")
+        self.window.set_title("Hardware Check v4.5.25")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.24")
+        title_label = Gtk.Label(label="Hardware Check v4.5.25")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7334,9 +7342,9 @@ class App(Gtk.Application):
         window.set_default_size(560, 470)
         window.set_resizable(False)
 
-        # Als echtes Zusatzfenster an Hardware Check binden. Dadurch behandelt
-        # GNOME/Tiling Assistant die Hotkey-Übersicht nicht wie ein zweites
-        # Hauptfenster derselben Anwendung.
+        # Als echtes Zusatzfenster an Hardware Check binden. Die eigentliche
+        # Breitenbegrenzung entsteht zusätzlich durch kurze feste Zeilen im
+        # Hinweistext, damit kein Label eine riesige Natural Width anfordert.
         try:
             window.set_transient_for(self.window)
             window.set_modal(False)
@@ -7411,18 +7419,16 @@ class App(Gtk.Application):
 
         note = Gtk.Label(
             label=(
-                "Hinweis: Im TASTATUR TEST sind F1, B, K, R, I, U, G, T, D, "
-                "SUPER und alle Pfeiltasten normale Prüftasten. ESC zählt ebenfalls "
-                "als Prüftaste; erst ESC x3 beendet den Tastatur-Test. "
-                "Die einzelne SUPER-Taste öffnet dort nicht die GNOME-Übersicht und "
-                "ALT+SPACE öffnet während des Tests kein GNOME-Fenstermenü."
+                "Hinweis: Im TASTATUR TEST sind F1, B, K, R, I, U, G, T, D,\n"
+                "SUPER und alle Pfeiltasten normale Prüftasten. ESC zählt ebenfalls\n"
+                "als Prüftaste; erst ESC x3 beendet den Tastatur-Test. SUPER allein,\n"
+                "SUPER+Pfeile und ALT+SPACE lösen während des Tests keine\n"
+                "GNOME-/Fensteraktion aus."
             )
         )
         note.set_xalign(0)
         note.set_halign(Gtk.Align.START)
-        note.set_wrap(True)
-        note.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-        note.set_max_width_chars(58)
+        note.set_wrap(False)
         note.set_focusable(False)
         note.add_css_class("hotkey-note")
         outer.append(note)
@@ -7718,6 +7724,7 @@ class App(Gtk.Application):
     def reset_all(self, *_):
         self.restore_super_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
+        self.restore_super_arrows_after_keyboard_test()
         # REFRESH setzt den kompletten Hardware-Test auf Anfang.
         # Aktuell belegte Ports werden direkt wieder blau erkannt.
         self.refresh_security()
@@ -8829,6 +8836,179 @@ class App(Gtk.Application):
             self.alt_space_block_active = False
             log("Tastatur-Test: GNOME ALT+SPACE wieder normal aktiviert")
 
+    def block_super_arrows_for_keyboard_test(self):
+        """SUPER+Pfeiltasten während des Tastatur-Tests neutralisieren.
+
+        Gesucht werden nur tatsächlich belegte Shortcuts mit <Super> und
+        Left/Right/Up/Down in den relevanten GNOME-/Tiling-Schemas. Damit
+        bleibt die aktuelle Benutzerkonfiguration erhalten und wird nach dem
+        Test exakt zurückgeschrieben.
+        """
+        if self.super_arrow_block_active:
+            return
+
+        gsettings = shutil.which("gsettings")
+        if not gsettings:
+            log("SUPER+Pfeile-Blockierung: gsettings nicht gefunden")
+            return
+
+        schemas = (
+            "org.gnome.shell.extensions.tiling-assistant",
+            "org.gnome.mutter.keybindings",
+            "org.gnome.desktop.wm.keybindings",
+        )
+        directions = ("Left", "Right", "Up", "Down")
+        saved = []
+
+        for schema in schemas:
+            try:
+                keys_proc = subprocess.run(
+                    [gsettings, "list-keys", schema],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    timeout=2.0,
+                    check=False,
+                )
+            except Exception:
+                continue
+
+            if keys_proc.returncode != 0:
+                continue
+
+            for key in (keys_proc.stdout or "").splitlines():
+                key = key.strip()
+                if not key:
+                    continue
+
+                try:
+                    get_proc = subprocess.run(
+                        [gsettings, "get", schema, key],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        text=True,
+                        timeout=1.0,
+                        check=False,
+                    )
+                except Exception:
+                    continue
+
+                original = (get_proc.stdout or "").strip()
+                if get_proc.returncode != 0 or not original:
+                    continue
+
+                # Nur Array-Keybindings anfassen, die tatsächlich SUPER plus
+                # eine Pfeilrichtung enthalten.
+                if not original.startswith("["):
+                    continue
+                if "<Super>" not in original:
+                    continue
+                if not any(direction in original for direction in directions):
+                    continue
+
+                try:
+                    set_proc = subprocess.run(
+                        [gsettings, "set", schema, key, "[]"],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=1.0,
+                        check=False,
+                    )
+                except Exception:
+                    continue
+
+                if set_proc.returncode == 0:
+                    saved.append((schema, key, original))
+                    log(
+                        "Tastatur-Test: SUPER+Pfeil-Binding blockiert: "
+                        f"{schema} {key} = {original}"
+                    )
+
+        if not saved:
+            log("SUPER+Pfeile-Blockierung: keine aktiven passenden Bindings gefunden")
+            return
+
+        self.super_arrow_bindings_original = saved
+        self.super_arrow_block_active = True
+
+        # Unabhängiger Restore-Wächter für einen unerwarteten HC-Abbruch.
+        helper_code = (
+            "import json,os,subprocess,sys,time;"
+            "pid=int(sys.argv[1]);items=json.loads(sys.argv[2]);"
+            "path=f'/proc/{pid}';"
+            "\nwhile os.path.exists(path): time.sleep(0.25)"
+            "\nfor schema,key,value in items:"
+            "\n subprocess.run(['gsettings','set',schema,key,value],"
+            "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,"
+            "stderr=subprocess.DEVNULL,check=False)"
+        )
+        try:
+            self.super_arrow_restore_helper = subprocess.Popen(
+                [
+                    sys.executable,
+                    "-c",
+                    helper_code,
+                    str(os.getpid()),
+                    json.dumps(saved),
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except Exception:
+            self.super_arrow_restore_helper = None
+
+        log(
+            f"Tastatur-Test: {len(saved)} SUPER+Pfeil-Binding(s) "
+            "temporär deaktiviert"
+        )
+
+    def restore_super_arrows_after_keyboard_test(self):
+        if not self.super_arrow_block_active:
+            return
+
+        gsettings = shutil.which("gsettings")
+        all_restored = True
+
+        if not gsettings:
+            all_restored = False
+        else:
+            for schema, key, original in self.super_arrow_bindings_original:
+                try:
+                    proc = subprocess.run(
+                        [gsettings, "set", schema, key, original],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=1.0,
+                        check=False,
+                    )
+                    if proc.returncode != 0:
+                        all_restored = False
+                except Exception:
+                    all_restored = False
+
+        if all_restored:
+            helper = self.super_arrow_restore_helper
+            self.super_arrow_restore_helper = None
+            if helper is not None:
+                try:
+                    helper.terminate()
+                except Exception:
+                    pass
+
+            count = len(self.super_arrow_bindings_original)
+            self.super_arrow_bindings_original = []
+            self.super_arrow_block_active = False
+            log(
+                f"Tastatur-Test: {count} SUPER+Pfeil-Binding(s) "
+                "wiederhergestellt"
+            )
+
     def focus_keyboard_window(self):
         if self.stack.get_visible_child_name() != "keyboard":
             return False
@@ -8855,6 +9035,7 @@ class App(Gtk.Application):
         self.keyboard_escape_last_at = 0.0
         self.block_super_for_keyboard_test()
         self.block_alt_space_for_keyboard_test()
+        self.block_super_arrows_for_keyboard_test()
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
 
@@ -8894,6 +9075,7 @@ class App(Gtk.Application):
     def show_overview(self, *_):
         self.restore_super_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
+        self.restore_super_arrows_after_keyboard_test()
 
         if (
             self.stack.get_visible_child_name() == "benchmarks"
@@ -9002,6 +9184,7 @@ class App(Gtk.Application):
     def do_shutdown(self):
         self.restore_super_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
+        self.restore_super_arrows_after_keyboard_test()
         if self.info_window is not None:
             try:
                 self.info_window.destroy()
