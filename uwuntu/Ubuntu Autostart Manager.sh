@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090816
+MANAGER_BUILD=2026090817
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -936,6 +936,7 @@ install_all_dependencies() {
         python3-numpy
         python3-sounddevice
         python3-pil
+        python3-opencv
         libportaudio2
         pulseaudio-utils
         alsa-utils
@@ -987,6 +988,7 @@ install_all_dependencies() {
     python3 - <<'PY_DEPS_CHECK' >/dev/null 2>&1 || return 1
 import numpy
 import sounddevice
+import cv2
 from PIL import Image
 import pyatspi
 import gi
@@ -1023,7 +1025,7 @@ install_camera_test_app() {
 set -u
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_9.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_10.py"
 mkdir -p "$CACHE_DIR"
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
@@ -1040,6 +1042,7 @@ REQUIRED_PKGS=(
   gstreamer1.0-plugins-base
   gstreamer1.0-plugins-good
   gstreamer1.0-gtk3
+  python3-opencv
 )
 
 missing=()
@@ -1055,11 +1058,43 @@ if ((${#missing[@]})); then
     fi
 fi
 
+# Haar-Cascade ist klein und wird nur nachinstalliert, falls python3-opencv
+# auf der jeweiligen Ubuntu-Version das Modell nicht bereits mitbringt.
+if ! python3 - <<'PY_FACE_MODEL_CHECK' >/dev/null 2>&1
+import os
+import cv2
+
+candidates = []
+try:
+    candidates.append(os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml"))
+except Exception:
+    pass
+
+candidates += [
+    "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml",
+    "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
+]
+
+raise SystemExit(0 if any(os.path.isfile(p) for p in candidates) else 1)
+PY_FACE_MODEL_CHECK
+then
+    if ! dpkg -s opencv-data >/dev/null 2>&1; then
+        if command -v pkexec >/dev/null 2>&1; then
+            pkexec env DEBIAN_FRONTEND=noninteractive apt-get install -y opencv-data || exit 1
+        else
+            sudo apt-get install -y opencv-data || exit 1
+        fi
+    fi
+fi
+
 cat > "$PY_FILE" <<'PY'
 import glob
 import os
 import subprocess
+import time
 import gi
+import cv2
+import numpy as np
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
@@ -1070,7 +1105,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.9"
+VERSION = "1.10"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 Gst.init(None)
@@ -1133,6 +1168,32 @@ MODES = [
 ]
 
 
+def find_face_cascade():
+    """Finde das kleine klassische OpenCV-Haar-Modell ohne Zusatzframework."""
+    candidates = []
+    try:
+        candidates.append(
+            os.path.join(
+                cv2.data.haarcascades,
+                "haarcascade_frontalface_default.xml",
+            )
+        )
+    except Exception:
+        pass
+
+    candidates.extend(
+        [
+            "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml",
+            "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
+        ]
+    )
+
+    for path in candidates:
+        if path and os.path.isfile(path):
+            return path
+    return None
+
+
 class CameraWindow(Gtk.ApplicationWindow):
     def __init__(self, application):
         super().__init__(application=application)
@@ -1147,6 +1208,16 @@ class CameraWindow(Gtk.ApplicationWindow):
             self.header_bar.set_has_subtitle(False)
         except Exception:
             pass
+
+        # Kleiner Statuspunkt wie bei USB/HDMI:
+        # Orange = Kamera aktiv, Gesicht noch nie erkannt
+        # Rot    = Kamera nicht nutzbar
+        # Blau   = Gesicht aktuell erkannt
+        # Grün   = Gesicht bereits erkannt, aktuell nicht sichtbar
+        self.status_dot = Gtk.Label(label="●")
+        self.status_dot.get_style_context().add_class("camera-status-dot")
+        self.header_bar.pack_end(self.status_dot)
+
         self.set_titlebar(self.header_bar)
 
         self.set_resizable(True)
@@ -1169,6 +1240,33 @@ class CameraWindow(Gtk.ApplicationWindow):
         self.device_index = 0
         self.mode_index = 0
 
+        # Ressourcenschonende Gesichtserkennung:
+        # nur 2 kleine 320x180-Graubilder pro Sekunde.
+        self.face_ever_seen = False
+        self.face_currently_visible = False
+        self.face_miss_count = 0
+        self.face_last_sample_at = 0.0
+        self.face_cascade_path = find_face_cascade()
+        self.face_cascade = None
+
+        if self.face_cascade_path:
+            try:
+                cascade = cv2.CascadeClassifier(self.face_cascade_path)
+                if cascade is not None and not cascade.empty():
+                    self.face_cascade = cascade
+                    print(
+                        f"Gesichtserkennung aktiv: {self.face_cascade_path}",
+                        flush=True,
+                    )
+            except Exception as exc:
+                print(f"Gesichtserkennung konnte nicht geladen werden: {exc}", flush=True)
+
+        if self.face_cascade is None:
+            print(
+                "Gesichtserkennung nicht verfügbar; Kamera-Test läuft ohne Face-Status.",
+                flush=True,
+            )
+
         css = Gtk.CssProvider()
         css.load_from_data(b'''
 headerbar {
@@ -1188,6 +1286,16 @@ headerbar button.titlebutton {
     padding: 0px;
     margin: 0px 1px;
 }
+
+.camera-status-dot {
+    font-size: 15px;
+    font-weight: 900;
+    padding: 0px 5px 1px 3px;
+}
+.camera-status-orange { color: #ff9f0a; }
+.camera-status-red    { color: #ff3b30; }
+.camera-status-blue   { color: #3b9cff; }
+.camera-status-green  { color: #32d74b; }
 
 window { background: #000; }
 #camera_error {
@@ -1229,7 +1337,54 @@ window { background: #000; }
 
         self.show_all()
         self.error_label.hide()
+        self.set_status_color("orange")
         GLib.idle_add(self.try_current)
+
+    def set_status_color(self, color):
+        if not hasattr(self, "status_dot"):
+            return False
+
+        ctx = self.status_dot.get_style_context()
+        for cls in (
+            "camera-status-orange",
+            "camera-status-red",
+            "camera-status-blue",
+            "camera-status-green",
+        ):
+            ctx.remove_class(cls)
+
+        ctx.add_class(f"camera-status-{color}")
+        return False
+
+    def update_face_status(self, face_visible):
+        if face_visible:
+            self.face_ever_seen = True
+            self.face_currently_visible = True
+            self.face_miss_count = 0
+            self.set_status_color("blue")
+            return False
+
+        if not self.face_ever_seen:
+            self.face_currently_visible = False
+            self.set_status_color("orange")
+            return False
+
+        # Haar-Erkennung kann einzelne Frames kurz verpassen.
+        # Erst nach zwei aufeinanderfolgenden Fehl-Treffern (~1 s bei 2 FPS)
+        # von Blau auf Grün wechseln.
+        self.face_miss_count += 1
+        if self.face_miss_count >= 2:
+            self.face_currently_visible = False
+            self.set_status_color("green")
+
+        return False
+
+    def reset_face_state(self):
+        self.face_ever_seen = False
+        self.face_currently_visible = False
+        self.face_miss_count = 0
+        self.face_last_sample_at = 0.0
+        self.set_status_color("orange")
 
     def stop_pipeline(self):
         if self.pipeline:
@@ -1249,18 +1404,29 @@ window { background: #000; }
 
     def build_pipeline(self, device, caps):
         if caps is None:
-            return (
+            source = (
                 f'v4l2src device="{device}" ! '
                 'videoconvert ! '
-                'identity name=probe signal-handoffs=true ! '
-                'gtksink name=sink sync=false'
             )
+        else:
+            source = (
+                f'v4l2src device="{device}" ! '
+                f'{caps} ! '
+                'videoconvert ! '
+            )
+
+        # Ein gemeinsamer Kamera-Stream, danach zwei Zweige:
+        # 1) unverändert zum sichtbaren gtksink
+        # 2) nur 320x180 / 2 FPS / GRAY8 zur Gesichtserkennung
         return (
-            f'v4l2src device="{device}" ! '
-            f'{caps} ! '
-            'videoconvert ! '
-            'identity name=probe signal-handoffs=true ! '
-            'gtksink name=sink sync=false'
+            source
+            + 'identity name=probe signal-handoffs=true ! tee name=t '
+              't. ! queue ! gtksink name=sink sync=false '
+              't. ! queue leaky=downstream max-size-buffers=1 ! '
+              'videoscale ! videorate ! '
+              'video/x-raw,format=GRAY8,width=320,height=180,framerate=2/1 ! '
+              'appsink name=facesink emit-signals=true drop=true '
+              'max-buffers=1 sync=false'
         )
 
     def current_device(self):
@@ -1278,6 +1444,7 @@ window { background: #000; }
         self.error_label.hide()
 
         if not self.devices:
+            self.set_status_color("red")
             self.error_label.show()
             return False
 
@@ -1286,6 +1453,7 @@ window { background: #000; }
             self.mode_index = 0
             if self.device_index >= len(self.devices):
                 self.device_index = 0
+                self.set_status_color("red")
                 self.error_label.show()
                 print("Keine funktionierende Kamera-Konfiguration gefunden.", flush=True)
                 return False
@@ -1302,7 +1470,8 @@ window { background: #000; }
             self.pipeline = Gst.parse_launch(self.build_pipeline(device, caps))
             sink = self.pipeline.get_by_name("sink")
             probe = self.pipeline.get_by_name("probe")
-            if sink is None or probe is None:
+            facesink = self.pipeline.get_by_name("facesink")
+            if sink is None or probe is None or facesink is None:
                 raise RuntimeError("GStreamer-Element fehlt")
 
             widget = sink.get_property("widget")
@@ -1312,6 +1481,12 @@ window { background: #000; }
             widget.show()
 
             probe.connect("handoff", self.on_frame, current_serial)
+
+            # Face-Erkennung läuft nur, wenn Cascade erfolgreich geladen wurde.
+            # Der kleine Appsink-Zweig bleibt ansonsten praktisch kostenlos.
+            if self.face_cascade is not None:
+                facesink.connect("new-sample", self.on_face_sample, current_serial)
+
             bus = self.pipeline.get_bus()
             bus.add_signal_watch()
             bus.connect("message::error", self.on_error, current_serial)
@@ -1337,6 +1512,66 @@ window { background: #000; }
             label, _ = MODES[self.mode_index]
             print(f"Kamera aktiv: {device} | {label}", flush=True)
             GLib.idle_add(self.error_label.hide)
+            if not self.face_ever_seen:
+                GLib.idle_add(self.set_status_color, "orange")
+
+    def on_face_sample(self, sink, current_serial):
+        if current_serial != self.serial or self.face_cascade is None:
+            return Gst.FlowReturn.OK
+
+        # Zusätzliche Zeitbremse als Schutz, obwohl der GStreamer-Zweig bereits
+        # auf 2 FPS begrenzt ist.
+        now = time.monotonic()
+        if now - self.face_last_sample_at < 0.35:
+            try:
+                sink.emit("pull-sample")
+            except Exception:
+                pass
+            return Gst.FlowReturn.OK
+        self.face_last_sample_at = now
+
+        sample = sink.emit("pull-sample")
+        if sample is None:
+            return Gst.FlowReturn.OK
+
+        buffer = sample.get_buffer()
+        caps = sample.get_caps()
+        if buffer is None or caps is None:
+            return Gst.FlowReturn.OK
+
+        try:
+            structure = caps.get_structure(0)
+            width = int(structure.get_value("width"))
+            height = int(structure.get_value("height"))
+        except Exception:
+            return Gst.FlowReturn.OK
+
+        ok, mapinfo = buffer.map(Gst.MapFlags.READ)
+        if not ok:
+            return Gst.FlowReturn.OK
+
+        face_visible = False
+        try:
+            frame = np.frombuffer(mapinfo.data, dtype=np.uint8)
+            expected = width * height
+            if frame.size >= expected:
+                gray = frame[:expected].reshape((height, width))
+
+                faces = self.face_cascade.detectMultiScale(
+                    gray,
+                    scaleFactor=1.15,
+                    minNeighbors=4,
+                    minSize=(34, 34),
+                    flags=cv2.CASCADE_SCALE_IMAGE,
+                )
+                face_visible = len(faces) > 0
+        except Exception as exc:
+            print(f"Gesichtserkennung Frame-Fehler: {exc}", flush=True)
+        finally:
+            buffer.unmap(mapinfo)
+
+        GLib.idle_add(self.update_face_status, face_visible)
+        return Gst.FlowReturn.OK
 
     def check_timeout(self, current_serial):
         if current_serial == self.serial and not self.frame_seen:
@@ -1382,6 +1617,7 @@ window { background: #000; }
 
         self.device_index = (pos + 1) % len(self.devices)
         self.mode_index = 0
+        self.reset_face_state()
         self.error_label.hide()
         print(
             f"Klick: wechsle zur nächsten Kamera {self.current_device()}",
@@ -1454,7 +1690,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.9
+Comment=Cleaner Uwuntu Kamera-Test v1.10
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -1477,7 +1713,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.9 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.10 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
