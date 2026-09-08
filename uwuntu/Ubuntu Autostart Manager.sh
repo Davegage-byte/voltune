@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090821
+MANAGER_BUILD=2026090822
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1079,14 +1079,14 @@ install_camera_test_app() {
 set -u
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_11.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_12.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
 mkdir -p "$CACHE_DIR"
 
 {
     echo
     echo "============================================================"
-    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.11 Start"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.12 Start"
 } >> "$LOG_FILE" 2>/dev/null || true
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
@@ -1169,7 +1169,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.11"
+VERSION = "1.12"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 Gst.init(None)
@@ -1334,6 +1334,11 @@ class CameraWindow(Gtk.ApplicationWindow):
                 flush=True,
             )
 
+        # Wird pro Kamera/Auflösung zunächst aktiviert, falls das Modell da ist.
+        # Scheitert ausschließlich der Face-Zweig, wird dieselbe Konfiguration
+        # sofort noch einmal mit dem bewährten einfachen Kamera-Pfad getestet.
+        self.face_pipeline_enabled = self.face_cascade is not None
+
         css = Gtk.CssProvider()
         css.load_from_data(b'''
 headerbar {
@@ -1471,35 +1476,34 @@ window { background: #000; }
 
     def build_pipeline(self, device, caps):
         if caps is None:
-            source = (
-                f'v4l2src device="{device}" ! '
-                'videoconvert ! '
-            )
+            source = f'v4l2src device="{device}" ! '
         else:
             source = (
                 f'v4l2src device="{device}" ! '
                 f'{caps} ! '
-                'videoconvert ! '
             )
 
-        # Ohne verfügbare Gesichtserkennung exakt den bewährten einfachen
-        # Kamera-Pfad verwenden. So kann die optionale Funktion niemals den
-        # normalen Kamera-Test verhindern.
-        if self.face_cascade is None:
+        # Bewährter einfacher Kamera-Pfad.
+        if not self.face_pipeline_enabled:
             return (
                 source
-                + 'identity name=probe signal-handoffs=true ! '
+                + 'videoconvert ! '
+                  'identity name=probe signal-handoffs=true ! '
                   'gtksink name=sink sync=false'
             )
 
-        # Nur wenn das Modell wirklich verfügbar ist, kommt der kleine
-        # 320x180 / 2-FPS-Zweig hinzu.
+        # Wichtig: Beide tee-Zweige bekommen ihren EIGENEN videoconvert.
+        # So muss der gemeinsame Upstream nicht gleichzeitig ein Format für
+        # gtksink und GRAY8/Face-Erkennung aushandeln.
         return (
             source
-            + 'identity name=probe signal-handoffs=true ! tee name=t '
-              't. ! queue ! gtksink name=sink sync=false '
+            + 'tee name=t '
+              't. ! queue ! '
+              'videoconvert ! '
+              'identity name=probe signal-handoffs=true ! '
+              'gtksink name=sink sync=false '
               't. ! queue leaky=downstream max-size-buffers=1 ! '
-              'videoscale ! videorate ! '
+              'videoconvert ! videoscale ! videorate ! '
               'video/x-raw,format=GRAY8,width=320,height=180,framerate=2/1 ! '
               'appsink name=facesink emit-signals=true drop=true '
               'max-buffers=1 sync=false'
@@ -1527,6 +1531,7 @@ window { background: #000; }
         if self.mode_index >= len(MODES):
             self.device_index += 1
             self.mode_index = 0
+            self.face_pipeline_enabled = self.face_cascade is not None
             if self.device_index >= len(self.devices):
                 self.device_index = 0
                 self.set_status_color("red")
@@ -1549,7 +1554,7 @@ window { background: #000; }
             facesink = self.pipeline.get_by_name("facesink")
             if sink is None or probe is None:
                 raise RuntimeError("GStreamer-Element fehlt")
-            if self.face_cascade is not None and facesink is None:
+            if self.face_pipeline_enabled and facesink is None:
                 raise RuntimeError("Face-Appsink fehlt")
 
             widget = sink.get_property("widget")
@@ -1562,7 +1567,7 @@ window { background: #000; }
 
             # Face-Erkennung läuft nur, wenn Cascade erfolgreich geladen wurde.
             # Der kleine Appsink-Zweig bleibt ansonsten praktisch kostenlos.
-            if self.face_cascade is not None and facesink is not None:
+            if self.face_pipeline_enabled and facesink is not None:
                 facesink.connect("new-sample", self.on_face_sample, current_serial)
 
             bus = self.pipeline.get_bus()
@@ -1659,7 +1664,24 @@ window { background: #000; }
     def fail_current(self, current_serial):
         if current_serial != self.serial or self.frame_seen:
             return False
+
+        # Falls gerade der Face-Zweig aktiv war, dieselbe Kamera/Auflösung
+        # zuerst ohne Face-Zweig testen. Damit kann eine optionale Funktion
+        # niemals den normalen Kamera-Test komplett blockieren.
+        if self.face_pipeline_enabled and self.face_cascade is not None:
+            print(
+                "Face-Pipeline lieferte kein Bild · "
+                "teste dieselbe Kamera/Auflösung ohne Face-Zweig.",
+                flush=True,
+            )
+            self.face_pipeline_enabled = False
+            GLib.idle_add(self.try_current)
+            return False
+
+        # Auch der einfache Pfad hat kein Bild geliefert: nächste Auflösung.
+        # Dort Face-Erkennung erneut versuchen.
         self.mode_index += 1
+        self.face_pipeline_enabled = self.face_cascade is not None
         GLib.idle_add(self.try_current)
         return False
 
@@ -1695,6 +1717,7 @@ window { background: #000; }
 
         self.device_index = (pos + 1) % len(self.devices)
         self.mode_index = 0
+        self.face_pipeline_enabled = self.face_cascade is not None
         self.reset_face_state()
         self.error_label.hide()
         print(
@@ -1768,7 +1791,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.11
+Comment=Cleaner Uwuntu Kamera-Test v1.12
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -1791,7 +1814,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.11 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.12 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
