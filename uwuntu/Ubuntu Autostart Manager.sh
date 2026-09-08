@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.29 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.30 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090824
+MANAGER_BUILD=2026090825
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6593,6 +6593,8 @@ class App(Gtk.Application):
         self.update_window = None
         self.update_status_label = None
         self.update_proc = None
+        self.serial_clipboard = None
+        self.serial_clipboard_text = None
         self.test_proc = None
         self.test_kind = None
         self.test_duration = 0.0
@@ -6678,14 +6680,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.29")
+        self.window.set_title("Hardware Check v4.5.30")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.29")
+        title_label = Gtk.Label(label="Hardware Check v4.5.30")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7710,26 +7712,79 @@ class App(Gtk.Application):
             GLib.timeout_add(500, self.restore_center_new_windows, previous)
 
     def copy_serial_to_clipboard(self, serial):
-        """Service-Tag für anschließendes Strg+V in die Zwischenablage legen.
+        """Erkannte Seriennummer für anschließendes Strg+V kopieren.
 
-        GTK/GDK funktioniert dabei nativ unter Wayland und X11. Ein Fehler beim
-        Kopieren darf das Öffnen der Dell-Seite nicht verhindern.
+        Primär wird die native GTK/GDK-Zwischenablage verwendet. Die Referenz
+        bleibt am App-Objekt erhalten, solange Hardware Check läuft. Falls die
+        GTK-Zwischenablage ausnahmsweise nicht gesetzt werden kann, werden
+        bereits vorhandene Systemwerkzeuge (wl-copy/xclip) als Fallback
+        verwendet. Dafür werden bewusst keine neuen Pakete installiert und
+        keine Desktop-Benachrichtigungen erzeugt.
         """
         if not serial:
             return False
 
+        serial = str(serial).strip()
+        if not serial:
+            return False
+
+        # Native GTK4-Zwischenablage: funktioniert unter Wayland und X11.
         try:
+            display = Gdk.Display.get_default()
             clipboard = (
                 self.window.get_clipboard()
                 if self.window is not None
-                else Gdk.Display.get_default().get_clipboard()
+                else display.get_clipboard()
             )
             clipboard.set_text(serial)
-            log(f"Dell Service-Tag in Zwischenablage kopiert: {serial}")
+
+            # Referenzen absichtlich halten. So bleibt eindeutig, dass der
+            # Clipboard-Owner die laufende Hardware-Check-App ist.
+            self.serial_clipboard = clipboard
+            self.serial_clipboard_text = serial
+
+            log(f"Seriennummer in Zwischenablage kopiert: {serial}")
             return True
         except Exception as exc:
-            log(f"Service-Tag konnte nicht in Zwischenablage kopiert werden: {exc}")
-            return False
+            log(f"GTK-Zwischenablage fehlgeschlagen: {exc}")
+
+        # Optionaler Fallback ohne zusätzliche Abhängigkeiten.
+        fallbacks = []
+        wl_copy = shutil.which("wl-copy")
+        if wl_copy:
+            fallbacks.append([wl_copy])
+
+        xclip = shutil.which("xclip")
+        if xclip:
+            fallbacks.append([xclip, "-selection", "clipboard"])
+
+        for cmd in fallbacks:
+            try:
+                proc = subprocess.run(
+                    cmd,
+                    input=serial,
+                    text=True,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=2.0,
+                    check=False,
+                )
+                if proc.returncode == 0:
+                    log(
+                        "Seriennummer per Clipboard-Fallback kopiert: "
+                        + Path(cmd[0]).name
+                    )
+                    return True
+            except Exception as exc:
+                log(
+                    "Clipboard-Fallback fehlgeschlagen "
+                    + Path(cmd[0]).name
+                    + f": {exc}"
+                )
+
+        log("Seriennummer konnte nicht in die Zwischenablage kopiert werden")
+        return False
 
     def open_dell_support(self, *_):
         target = dell_support_target()
@@ -9919,7 +9974,8 @@ Comment=TPM Secure Boot HDMI Touchpad USB Tastatur Touch Display und Benchmark t
 Exec=$HARDWARE_CHECK_SCRIPT
 Icon=utilities-system-monitor-symbolic
 Terminal=false
-StartupNotify=true
+StartupNotify=false
+X-GNOME-UsesNotifications=false
 StartupWMClass=com.david.HardwareCheck
 Categories=Utility;System;
 NoDisplay=false
