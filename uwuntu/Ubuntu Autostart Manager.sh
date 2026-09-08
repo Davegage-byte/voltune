@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.53 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.54 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090848
+MANAGER_BUILD=2026090849
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5367,10 +5367,10 @@ button.tiny-button {
     font-weight: 800;
 }
 button.benchmark-open {
-    min-height: 26px;
-    padding: 1px 8px;
-    border-radius: 8px;
-    font-size: 12px;
+    min-height: 20px;
+    padding: 0px 8px;
+    border-radius: 7px;
+    font-size: 11px;
     font-weight: 800;
 }
 
@@ -6304,19 +6304,24 @@ def read_ssd_temperature():
     return values[0][1]
 
 
-def read_fan_status():
-    """Höchste aktuelle FAN-RPM plus optional zugehörige PWM-Leistung.
+def read_fan_status(preferred_key=None):
+    """Stabilen FAN-Sensor lesen: key, RPM, optional PWM-Prozent.
 
-    Linux hwmon liefert fanN_input als RPM. Falls im selben hwmon-Gerät
-    zusätzlich pwmN vorhanden ist, wird dessen standardisierter Bereich
-    0..255 in Prozent umgerechnet. Fehlt pwmN, wird kein Prozentwert
-    erfunden oder geschätzt.
+    Beim ersten Aufruf wird bevorzugt ein Sensor gewählt, der sowohl
+    fanN_input als auch pwmN bereitstellt. Danach kann der Aufrufer denselben
+    Sensor über preferred_key festhalten. Nur wenn dieser Sensor wirklich
+    verschwindet, wird neu gewählt.
     """
     readings = []
     found_sensor = False
 
     try:
         for hwmon in Path("/sys/class/hwmon").glob("hwmon*"):
+            try:
+                hwmon_real = str(hwmon.resolve())
+            except Exception:
+                hwmon_real = str(hwmon)
+
             for fan_file in hwmon.glob("fan*_input"):
                 found_sensor = True
 
@@ -6328,6 +6333,7 @@ def read_fan_status():
                     continue
 
                 index = match.group(1)
+                sensor_key = f"{hwmon_real}|fan{index}"
 
                 try:
                     rpm = float(
@@ -6360,24 +6366,46 @@ def read_fan_status():
                         )
 
                 readings.append(
-                    (rpm, percent)
+                    {
+                        "key": sensor_key,
+                        "rpm": rpm,
+                        "percent": percent,
+                    }
                 )
     except Exception:
-        return None, None
+        return None, None, None
 
     if readings:
-        # Bei mehreren Lüftern weiter wie bisher die höchste aktuelle
-        # Drehzahl anzeigen; Prozentwert stammt exakt von diesem Sensor.
+        # Bestehenden Sensor unbedingt beibehalten, solange er existiert.
+        if preferred_key:
+            for item in readings:
+                if item["key"] == preferred_key:
+                    return (
+                        item["key"],
+                        item["rpm"],
+                        item["percent"],
+                    )
+
+        # Erstwahl: PWM-fähigen Sensor bevorzugen. Bei mehreren davon
+        # die höhere aktuelle RPM nehmen.
         readings.sort(
-            key=lambda item: item[0],
-            reverse=True,
+            key=lambda item: (
+                item["percent"] is None,
+                -item["rpm"],
+                item["key"],
+            )
         )
-        return readings[0]
+        selected = readings[0]
+        return (
+            selected["key"],
+            selected["rpm"],
+            selected["percent"],
+        )
 
     if found_sensor:
-        return 0.0, None
+        return preferred_key, 0.0, None
 
-    return None, None
+    return None, None, None
 
 CPU_BENCH_WORKER = r"""
 import hashlib
@@ -7237,6 +7265,7 @@ class App(Gtk.Application):
 
         # Live-Sensoren
         self.cpu_usage_prev = read_cpu_times()
+        self.fan_sensor_key = None
 
         self.touchpad_tested = {"left": False, "right": False}
         self.touchpad_pressed = {"left": False, "right": False}
@@ -7365,14 +7394,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.53")
+        self.window.set_title("Hardware Check v4.5.54")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.53")
+        title_label = Gtk.Label(label="Hardware Check v4.5.54")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7987,7 +8016,17 @@ class App(Gtk.Application):
             )
 
         # FAN
-        fan_rpm, fan_percent = read_fan_status()
+        fan_key, fan_rpm, fan_percent = read_fan_status(
+            self.fan_sensor_key
+        )
+
+        # Solange der gewählte Sensor vorhanden ist, bleibt HC exakt bei
+        # diesem FAN. Nur bei echtem Verschwinden wird neu ausgewählt.
+        if fan_key is not None:
+            self.fan_sensor_key = fan_key
+        else:
+            self.fan_sensor_key = None
+
         if fan_rpm is None:
             self.set_sensor_status_ui(
                 "fan",
@@ -9514,6 +9553,7 @@ class App(Gtk.Application):
         self.reset_keyboard()
 
         self.cpu_usage_prev = read_cpu_times()
+        self.fan_sensor_key = None
         self.refresh_sensors()
 
         self.stack.set_visible_child_name("overview")
