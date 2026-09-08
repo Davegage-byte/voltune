@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.27 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.28 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090822
+MANAGER_BUILD=2026090823
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -627,21 +627,29 @@ fi
 printf '%s\n' "$TARGET" > "$PATH_FILE" 2>/dev/null || true
 command -v curl >/dev/null 2>&1 || fail "curl ist nicht installiert." 13
 
-status "Suche nach Update …"
+status "Suche frisch auf GitHub nach Update …"
 
 TMP="$(mktemp /tmp/uwuntu-manager-update.XXXXXX.sh)" || fail "Temporäre Datei konnte nicht erstellt werden." 14
 BACKUP="${TARGET}.update-backup"
 trap 'rm -f "$TMP" "${TARGET}.new" 2>/dev/null || true' EXIT
+
+# Jeder Druck auf U muss GitHub wirklich neu abfragen. RAW/CDN-Caches
+# werden deshalb sowohl per Header als auch per eindeutiger Query umgangen.
+CACHE_BUST="$(date +%s%N)-$$"
 
 if ! curl \
     --fail \
     --location \
     --silent \
     --show-error \
+    --retry 2 \
+    --retry-delay 1 \
     --connect-timeout 8 \
     --max-time 45 \
+    --header 'Cache-Control: no-cache, no-store, max-age=0' \
+    --header 'Pragma: no-cache' \
     --output "$TMP" \
-    "$RAW_URL"
+    "${RAW_URL}?uwuntu_cache_bust=${CACHE_BUST}"
 then
     fail "GitHub ist nicht erreichbar oder der Download ist fehlgeschlagen." 20
 fi
@@ -6539,14 +6547,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.27")
+        self.window.set_title("Hardware Check v4.5.28")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.27")
+        title_label = Gtk.Label(label="Hardware Check v4.5.28")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7712,7 +7720,7 @@ class App(Gtk.Application):
 
         window = Gtk.ApplicationWindow(application=self)
         window.set_title("Shortcuts / Hotkeys")
-        window.set_default_size(470, 470)
+        window.set_default_size(560, 470)
         window.set_resizable(False)
 
         # Bewusst NICHT transient an Hardware Check binden:
@@ -7859,7 +7867,7 @@ class App(Gtk.Application):
         return False
 
     def force_update_worker(self, helper):
-        last_status = "Suche nach Update …"
+        last_status = "Suche frisch auf GitHub nach Update …"
         try:
             proc = subprocess.Popen(
                 [str(helper)],
@@ -7915,7 +7923,7 @@ class App(Gtk.Application):
 
         window = Gtk.ApplicationWindow(application=self)
         window.set_title("Uwuntu Update")
-        window.set_default_size(440, 145)
+        window.set_default_size(560, 145)
         window.set_resizable(False)
         window.connect("close-request", self.close_update_window)
 
@@ -7934,7 +7942,7 @@ class App(Gtk.Application):
         title.add_css_class("info-title")
         outer.append(title)
 
-        status = Gtk.Label(label="Suche nach Update …")
+        status = Gtk.Label(label="Suche frisch auf GitHub nach Update …")
         status.set_xalign(0)
         status.set_wrap(True)
         status.set_focusable(False)
@@ -9209,10 +9217,9 @@ class App(Gtk.Application):
     def block_super_arrows_for_keyboard_test(self):
         """SUPER+Pfeiltasten während des Tastatur-Tests neutralisieren.
 
-        Gesucht werden nur tatsächlich belegte Shortcuts mit <Super> und
-        Left/Right/Up/Down in den relevanten GNOME-/Tiling-Schemas. Damit
-        bleibt die aktuelle Benutzerkonfiguration erhalten und wird nach dem
-        Test exakt zurückgeschrieben.
+        Ressourcenschonend/schnell: Pro relevantem Schema nur EIN
+        ``gsettings list-recursively`` statt früher je Key einen eigenen
+        ``gsettings get``-Prozess. Dadurch reagiert K deutlich schneller.
         """
         if self.super_arrow_block_active:
             return
@@ -9232,8 +9239,8 @@ class App(Gtk.Application):
 
         for schema in schemas:
             try:
-                keys_proc = subprocess.run(
-                    [gsettings, "list-keys", schema],
+                proc = subprocess.run(
+                    [gsettings, "list-recursively", schema],
                     stdin=subprocess.DEVNULL,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.DEVNULL,
@@ -9244,30 +9251,18 @@ class App(Gtk.Application):
             except Exception:
                 continue
 
-            if keys_proc.returncode != 0:
+            if proc.returncode != 0:
                 continue
 
-            for key in (keys_proc.stdout or "").splitlines():
-                key = key.strip()
-                if not key:
+            for raw_line in (proc.stdout or "").splitlines():
+                # Format:
+                # org.example.schema key ['<Super>Left']
+                parts = raw_line.strip().split(None, 2)
+                if len(parts) != 3:
                     continue
 
-                try:
-                    get_proc = subprocess.run(
-                        [gsettings, "get", schema, key],
-                        stdin=subprocess.DEVNULL,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.DEVNULL,
-                        text=True,
-                        timeout=1.0,
-                        check=False,
-                    )
-                except Exception:
-                    continue
-
-                original = (get_proc.stdout or "").strip()
-                if get_proc.returncode != 0 or not original:
-                    continue
+                _, key, original = parts
+                original = original.strip()
 
                 # Nur Array-Keybindings anfassen, die tatsächlich SUPER plus
                 # eine Pfeilrichtung enthalten.
