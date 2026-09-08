@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.21 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.23 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090810
+MANAGER_BUILD=2026090812
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -450,6 +450,16 @@ sleep 0.08
 LOG="$HOME/uwuntu_close_apps.log"
 SELF_PID="$$"
 
+# Optionaler Prozess, der beim Schließen absichtlich am Leben bleiben muss.
+# Der U-Updater setzt dies auf seine eigene PID, damit er nach dem Schließen
+# der Diagnosefenster noch den neuen Kiosk starten kann.
+KEEP_PID="${UWUNTU_KEEP_PID:-}"
+
+keep_process() {
+    local pid="$1"
+    [ -n "$KEEP_PID" ] && [ "$pid" = "$KEEP_PID" ]
+}
+
 log_close() {
     printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S.%3N')" "$1" >> "$LOG" 2>/dev/null || true
 }
@@ -471,11 +481,13 @@ signal_pattern() {
     while read -r root; do
         [ -n "$root" ] || continue
         [ "$root" = "$SELF_PID" ] && continue
+        keep_process "$root" && continue
 
         # Kinder zuerst, dann Elternprozess.
         while read -r pid; do
             [ -n "$pid" ] || continue
             [ "$pid" = "$SELF_PID" ] && continue
+            keep_process "$pid" && continue
             kill "-$signal_name" "$pid" 2>/dev/null || true
         done < <(descendants_postorder "$root")
     done < <(pgrep -f -- "$pattern" 2>/dev/null || true)
@@ -513,7 +525,11 @@ close_pass() {
     pkill "-$sig" -x snapshot 2>/dev/null || true
 }
 
-log_close "STRG+Q: Shutdown gestartet"
+if [ -n "$KEEP_PID" ]; then
+    log_close "Shutdown gestartet · geschützte PID: $KEEP_PID"
+else
+    log_close "STRG+Q: Shutdown gestartet"
+fi
 
 close_pass TERM
 sleep 0.22
@@ -527,7 +543,11 @@ sleep 0.28
 # Diagnosefenster mehr übrig bleiben.
 close_pass KILL
 
-log_close "STRG+Q: Shutdown abgeschlossen"
+if [ -n "$KEEP_PID" ]; then
+    log_close "Shutdown abgeschlossen · geschützte PID blieb aktiv: $KEEP_PID"
+else
+    log_close "STRG+Q: Shutdown abgeschlossen"
+fi
 exit 0
 EOF
 
@@ -681,7 +701,10 @@ sleep 0.7
 # Der zentrale STRG+Q-Helper kennt alle aktuellen Wrapper, Cache-Prozesse und
 # besitzt bereits TERM-Wiederholung + KILL-Fallback.
 if [ -x "$CLOSE_APPS" ]; then
-    "$CLOSE_APPS" >> "$LOG" 2>&1 || true
+    # Der Force-Updater ist ein Kind des Hardware-Check-Prozesses.
+    # Ohne Schutz würde der zentrale Close-Helper ihn zusammen mit HC beenden
+    # und die anschließenden Restart-Zeilen nie erreichen.
+    UWUNTU_KEEP_PID="$$" "$CLOSE_APPS" >> "$LOG" 2>&1 || true
 else
     # Fallback für sehr alte/teilweise Installationen.
     pkill -TERM -f '/tmp/network-check-' 2>/dev/null || true
@@ -707,7 +730,9 @@ fi
 sleep 0.35
 
 if [ -x "$KIOSK" ]; then
+    status "Starte Diagnose-Kiosk neu …"
     nohup "$KIOSK" >> "$LOG" 2>&1 </dev/null &
+    status "Diagnose-Kiosk wurde neu gestartet"
 else
     # Fallback, falls nur die Einzelprogramme installiert sind.
     [ -x "$HOME/.local/bin/network-check.sh" ] \
@@ -4706,7 +4731,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, Pango
 from pathlib import Path
 import glob
 import json
@@ -6133,14 +6158,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.21")
+        self.window.set_title("Hardware Check v4.5.23")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.21")
+        title_label = Gtk.Label(label="Hardware Check v4.5.23")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7190,7 +7215,7 @@ class App(Gtk.Application):
 
         info = Gtk.ApplicationWindow(application=self)
         info.set_title("Systeminformationen")
-        info.set_default_size(560, 330)
+        info.set_default_size(560, 300)
         info.set_resizable(False)
         info.connect("close-request", self.close_system_info)
 
@@ -7198,9 +7223,9 @@ class App(Gtk.Application):
         key_controller.connect("key-pressed", self.on_info_key)
         info.add_controller(key_controller)
 
-        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        outer.set_margin_top(14)
-        outer.set_margin_bottom(14)
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        outer.set_margin_top(10)
+        outer.set_margin_bottom(10)
         outer.set_margin_start(16)
         outer.set_margin_end(16)
 
@@ -7306,7 +7331,7 @@ class App(Gtk.Application):
 
         window = Gtk.ApplicationWindow(application=self)
         window.set_title("Shortcuts / Hotkeys")
-        window.set_default_size(560, 485)
+        window.set_default_size(560, 470)
         window.set_resizable(False)
         window.connect("close-request", self.close_hotkeys_window)
 
@@ -7362,6 +7387,9 @@ class App(Gtk.Application):
             desc.set_xalign(0)
             desc.set_hexpand(True)
             desc.set_wrap(True)
+            desc.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            desc.set_width_chars(40)
+            desc.set_max_width_chars(40)
             desc.add_css_class("hotkey-desc")
 
             grid.attach(key, 0, row, 1, 1)
@@ -7380,6 +7408,9 @@ class App(Gtk.Application):
         )
         note.set_xalign(0)
         note.set_wrap(True)
+        note.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        note.set_width_chars(58)
+        note.set_max_width_chars(58)
         note.set_focusable(False)
         note.add_css_class("hotkey-note")
         outer.append(note)
