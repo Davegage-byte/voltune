@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.39 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.41 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090834
+MANAGER_BUILD=2026090836
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6866,14 +6866,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.39")
+        self.window.set_title("Hardware Check v4.5.41")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.39")
+        title_label = Gtk.Label(label="Hardware Check v4.5.41")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7102,18 +7102,20 @@ class App(Gtk.Application):
         hdmi_row.add_css_class("usb-row")
         self.hdmi_status_dot = Gtk.Label(label="●")
         self.hdmi_status_dot.add_css_class("status-orange")
-        self.hdmi_status_text = Gtk.Label(label="HDMI NICHT GETESTET")
-        self.hdmi_status_text.set_xalign(0)
-        self.hdmi_status_text.set_hexpand(True)
-        self.hdmi_status_text.add_css_class("usb-port-name")
-        self.hdmi_status_text.add_css_class("status-orange")
+
         self.hdmi_status_detail = Gtk.Label(label="HDMI")
-        self.hdmi_status_detail.set_xalign(1)
-        self.hdmi_status_detail.add_css_class("usb-port-state")
-        self.hdmi_status_detail.add_css_class("status-orange")
+        self.hdmi_status_detail.set_xalign(0)
+        self.hdmi_status_detail.set_hexpand(True)
+        self.hdmi_status_detail.add_css_class("usb-port-name")
+
+        self.hdmi_status_text = Gtk.Label(label="HDMI NICHT GETESTET")
+        self.hdmi_status_text.set_xalign(1)
+        self.hdmi_status_text.add_css_class("usb-port-state")
+        self.hdmi_status_text.add_css_class("status-orange")
+
         hdmi_row.append(self.hdmi_status_dot)
-        hdmi_row.append(self.hdmi_status_text)
         hdmi_row.append(self.hdmi_status_detail)
+        hdmi_row.append(self.hdmi_status_text)
 
         ports.append(hdmi_row)
 
@@ -7171,12 +7173,17 @@ class App(Gtk.Application):
     def set_hdmi_status_ui(self, color, text, detail="HDMI"):
         if not hasattr(self, "hdmi_status_text"):
             return False
-        for widget in (self.hdmi_status_dot, self.hdmi_status_text, self.hdmi_status_detail):
+
+        # Links bleibt die neutrale Portbezeichnung HDMI.
+        # Nur Punkt und Status rechts übernehmen die Zustandsfarbe.
+        self.hdmi_status_detail.set_text("HDMI")
+
+        for widget in (self.hdmi_status_dot, self.hdmi_status_text):
             for cls in ("status-green", "status-orange", "status-red", "status-blue"):
                 widget.remove_css_class(cls)
             widget.add_css_class("status-" + color)
+
         self.hdmi_status_text.set_text(text)
-        self.hdmi_status_detail.set_text(detail)
         return False
 
     def refresh_hdmi_status(self):
@@ -8769,29 +8776,40 @@ class App(Gtk.Application):
             else:
                 css_class = "status-orange"
                 state_text = "NICHT GETESTET"
-            label = f"USB-Port {idx + 1} · {slot['type']}"
+            # Einheitliche Benennung nach physischem Steckertyp:
+            # USB-A Port 1 · NICHT GETESTET
+            # USB-C Port 3 · GETESTET
+            label = f"{slot['type']} Port {idx + 1}"
             if idx == self.usb_boot_slot:
                 label += " · Uwuntu Stick"
+            label += " · "
 
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
             row.add_css_class("usb-row")
 
             dot = Gtk.Label(label="●")
             dot.add_css_class(css_class)
+
+            inline = Gtk.Box(
+                orientation=Gtk.Orientation.HORIZONTAL,
+                spacing=0,
+            )
+            inline.set_hexpand(True)
+
             name = Gtk.Label(label=label)
             name.set_xalign(0)
-            name.set_hexpand(True)
-            name.set_ellipsize(3)
             name.add_css_class("usb-port-name")
 
             state = Gtk.Label(label=state_text)
-            state.set_xalign(1)
+            state.set_xalign(0)
             state.add_css_class(css_class)
             state.add_css_class("usb-port-state")
 
+            inline.append(name)
+            inline.append(state)
+
             row.append(dot)
-            row.append(name)
-            row.append(state)
+            row.append(inline)
             self.usb_box.append(row)
         # Backup: nur neue/geänderte Geräte, die keiner bekannten
         # physischen Buchse sicher zugeordnet werden konnten.
@@ -8808,19 +8826,28 @@ class App(Gtk.Application):
             dot.add_css_class(css_class)
 
             title = info.get("title") or "USB-Gerät"
-            name = Gtk.Label(label=f"Backup · {title} · Pfad {dev_name}")
+
+            inline = Gtk.Box(
+                orientation=Gtk.Orientation.HORIZONTAL,
+                spacing=0,
+            )
+            inline.set_hexpand(True)
+
+            name = Gtk.Label(label=f"Backup · {title} · Pfad {dev_name} · ")
             name.set_xalign(0)
-            name.set_hexpand(True)
             name.set_ellipsize(3)
             name.add_css_class("usb-port-name")
+
             state = Gtk.Label(label=state_text)
-            state.set_xalign(1)
+            state.set_xalign(0)
             state.add_css_class(css_class)
             state.add_css_class("usb-port-state")
 
+            inline.append(name)
+            inline.append(state)
+
             row.append(dot)
-            row.append(name)
-            row.append(state)
+            row.append(inline)
             self.usb_box.append(row)
         if not self.usb_slots and not self.usb_fallback:
             empty = Gtk.Label(label="Keine USB-Ports erkannt")
@@ -8855,13 +8882,13 @@ class App(Gtk.Application):
         )
         for idx, slot in enumerate(self.usb_slots):
             log(
-                f"USB-Port {idx + 1}: type={slot['type']} | "
+                f"{slot['type']} Port {idx + 1}: "
                 f"groups={' || '.join(sorted(slot['groups']))}"
             )
         if self.usb_boot_device:
             if self.usb_boot_slot is not None:
                 log(
-                    f"Uwuntu Stick: USB-Port {self.usb_boot_slot + 1} "
+                    f"Uwuntu Stick: {self.usb_slots[self.usb_boot_slot]['type']} Port {self.usb_boot_slot + 1} "
                     f"({self.usb_boot_device})"
                 )
             else:
