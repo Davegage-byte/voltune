@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090818
+MANAGER_BUILD=2026090819
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -920,8 +920,39 @@ setup_pyatspi() {
 }
 
 
+repair_dpkg_if_needed() {
+    echo "Prüfe dpkg-Paketstatus ..."
+
+    # dpkg --configure -a is safe to run even if there is nothing pending.
+    # If an earlier apt/dpkg process was interrupted, this completes the
+    # outstanding package configuration automatically.
+    if sudo -n true >/dev/null 2>&1; then
+        echo "dpkg-Reparatur: sudo -n"
+        sudo -n dpkg --configure -a || return 1
+
+    elif command -v pkexec >/dev/null 2>&1; then
+        echo "dpkg-Reparatur: grafische Authentifizierung via pkexec"
+        pkexec dpkg --configure -a || return 1
+
+    else
+        echo "dpkg-Reparatur: sudo-Fallback"
+        sudo dpkg --configure -a || return 1
+    fi
+
+    echo "OK: dpkg-Paketstatus ist konsistent."
+    return 0
+}
+
+
 install_all_dependencies() {
     echo "--- Uwuntu Basis-Abhängigkeiten prüfen ---"
+
+    # A previously interrupted package operation otherwise makes every new
+    # apt install fail with "dpkg was interrupted".
+    repair_dpkg_if_needed || {
+        echo "FEHLER: Der dpkg-Paketstatus konnte nicht repariert werden."
+        return 1
+    }
 
     local packages=(
         python3
@@ -1066,7 +1097,18 @@ for pkg in "${REQUIRED_PKGS[@]}"; do
     dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
 done
 
+repair_camera_dpkg() {
+    if sudo -n true >/dev/null 2>&1; then
+        sudo -n dpkg --configure -a
+    elif command -v pkexec >/dev/null 2>&1; then
+        pkexec dpkg --configure -a
+    else
+        sudo dpkg --configure -a
+    fi
+}
+
 if ((${#missing[@]})); then
+    repair_camera_dpkg || exit 1
     if sudo -n true >/dev/null 2>&1; then
         sudo -n apt-get update || exit 1
         sudo -n env DEBIAN_FRONTEND=noninteractive \
@@ -1103,6 +1145,8 @@ raise SystemExit(0 if any(os.path.isfile(p) for p in candidates) else 1)
 PY_FACE_MODEL_CHECK
 then
     if ! dpkg -s opencv-data >/dev/null 2>&1; then
+        repair_camera_dpkg || exit 1
+
         if sudo -n true >/dev/null 2>&1; then
             sudo -n env DEBIAN_FRONTEND=noninteractive \
                 apt-get install -y opencv-data || exit 1
