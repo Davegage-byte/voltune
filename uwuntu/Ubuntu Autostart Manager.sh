@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.32 + Wipe Auto v3.22 + Audio Test v1.16
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.33 + Wipe Auto v3.22 + Audio Test v1.16
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090827
+MANAGER_BUILD=2026090828
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -590,6 +590,9 @@ install_force_update_helper() {
 set -u
 
 RAW_URL="https://raw.githubusercontent.com/Davegage-byte/voltune/refs/heads/main/uwuntu/Ubuntu%20Autostart%20Manager.sh"
+REF_API_URL="https://api.github.com/repos/Davegage-byte/voltune/git/ref/heads/main"
+RAW_COMMIT_BASE="https://raw.githubusercontent.com/Davegage-byte/voltune"
+RAW_MANAGER_PATH="uwuntu/Ubuntu%20Autostart%20Manager.sh"
 PATH_FILE="$HOME/.config/uwuntu-manager-path"
 DEFAULT_TARGET="$HOME/.local/bin/Ubuntu Autostart Manager.sh"
 LOG="$HOME/uwuntu_force_update.log"
@@ -630,12 +633,62 @@ command -v curl >/dev/null 2>&1 || fail "curl ist nicht installiert." 13
 status "Suche frisch auf GitHub nach Update …"
 
 TMP="$(mktemp /tmp/uwuntu-manager-update.XXXXXX.sh)" || fail "Temporäre Datei konnte nicht erstellt werden." 14
+REF_TMP="$(mktemp /tmp/uwuntu-manager-ref.XXXXXX.json)" || fail "Temporäre GitHub-Ref-Datei konnte nicht erstellt werden." 15
 BACKUP="${TARGET}.update-backup"
-trap 'rm -f "$TMP" "${TARGET}.new" 2>/dev/null || true' EXIT
+trap 'rm -f "$TMP" "$REF_TMP" "${TARGET}.new" 2>/dev/null || true' EXIT
 
-# Jeder Druck auf U muss GitHub wirklich neu abfragen. RAW/CDN-Caches
-# werden deshalb sowohl per Header als auch per eindeutiger Query umgangen.
+# Jeder Druck auf U muss GitHub wirklich neu abfragen.
+# Zuerst wird der aktuelle Commit-SHA von main über die GitHub-API ermittelt.
+# Anschließend laden wir die Manager-Datei an GENAU diesem Commit. Damit
+# umgehen wir zusätzlich eine mögliche kurze Verzögerung bei der beweglichen
+# main-RAW-Weitergabe. Wenn die API einmal nicht verfügbar/rate-limited ist,
+# bleibt der bisherige main-RAW-Weg als Fallback erhalten.
 CACHE_BUST="$(date +%s%N)-$$"
+DOWNLOAD_URL="$RAW_URL"
+
+if curl \
+    --fail \
+    --location \
+    --silent \
+    --show-error \
+    --retry 1 \
+    --retry-delay 1 \
+    --connect-timeout 6 \
+    --max-time 15 \
+    --header 'Accept: application/vnd.github+json' \
+    --header 'Cache-Control: no-cache, no-store, max-age=0' \
+    --header 'Pragma: no-cache' \
+    --output "$REF_TMP" \
+    "${REF_API_URL}?uwuntu_cache_bust=${CACHE_BUST}"
+then
+    latest_sha="$(
+        python3 - "$REF_TMP" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    value = str(data.get("object", {}).get("sha", "")).strip()
+    if len(value) == 40 and all(ch in "0123456789abcdefABCDEF" for ch in value):
+        print(value)
+except Exception:
+    pass
+PY
+    )"
+
+    if [ -n "$latest_sha" ]; then
+        DOWNLOAD_URL="${RAW_COMMIT_BASE}/${latest_sha}/${RAW_MANAGER_PATH}"
+        printf '%s  GitHub main Commit: %s\n' \
+            "$(date '+%Y-%m-%d %H:%M:%S')" "$latest_sha" >> "$LOG" 2>/dev/null || true
+    else
+        printf '%s  GitHub-Ref konnte nicht ausgewertet werden · RAW-main-Fallback\n' \
+            "$(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG" 2>/dev/null || true
+    fi
+else
+    printf '%s  GitHub-Ref-API nicht verfügbar · RAW-main-Fallback\n' \
+        "$(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG" 2>/dev/null || true
+fi
 
 if ! curl \
     --fail \
@@ -649,7 +702,7 @@ if ! curl \
     --header 'Cache-Control: no-cache, no-store, max-age=0' \
     --header 'Pragma: no-cache' \
     --output "$TMP" \
-    "${RAW_URL}?uwuntu_cache_bust=${CACHE_BUST}"
+    "${DOWNLOAD_URL}?uwuntu_cache_bust=${CACHE_BUST}"
 then
     fail "GitHub ist nicht erreichbar oder der Download ist fehlgeschlagen." 20
 fi
@@ -6681,14 +6734,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.32")
+        self.window.set_title("Hardware Check v4.5.33")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.32")
+        title_label = Gtk.Label(label="Hardware Check v4.5.33")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -8100,8 +8153,45 @@ class App(Gtk.Application):
         return False
 
     def set_update_status(self, text):
-        if self.update_status_label is not None:
-            self.update_status_label.set_text(text)
+        """Nur die Statusmeldung passend zum Update-Zustand einfärben."""
+        label = self.update_status_label
+        if label is None:
+            return False
+
+        label.set_text(text)
+
+        for css_class in (
+            "status-orange",
+            "status-blue",
+            "status-green",
+            "status-red",
+        ):
+            label.remove_css_class(css_class)
+
+        normalized = (text or "").strip()
+
+        if normalized.startswith("FEHLER:"):
+            color = "red"
+        elif normalized.startswith("Suche") or normalized.startswith("Prüfe"):
+            color = "orange"
+        elif normalized in {
+            "Bereits aktuell",
+            "GitHub-Version ist älter · kein Update",
+        }:
+            color = "green"
+        elif normalized.startswith("Update erfolgreich"):
+            color = "green"
+        elif (
+            normalized.startswith("Update gefunden")
+            or normalized.startswith("Installiere")
+            or "wird installiert" in normalized
+        ):
+            color = "blue"
+        else:
+            # Unbekannte Zwischenmeldung neutral lassen.
+            return False
+
+        label.add_css_class("status-" + color)
         return False
 
     def auto_close_update_window(self):
@@ -8207,6 +8297,7 @@ class App(Gtk.Application):
         status.set_wrap(True)
         status.set_focusable(False)
         status.add_css_class("update-status")
+        status.add_css_class("status-orange")
         outer.append(status)
 
         window.set_child(outer)
