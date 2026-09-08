@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.44 + Wipe Auto v3.22 + Audio Test v1.17
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.45 + Wipe Auto v3.22 + Audio Test v1.17
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090839
+MANAGER_BUILD=2026090840
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6942,6 +6942,13 @@ class App(Gtk.Application):
         self.super_arrow_block_active = False
         self.super_arrow_restore_helper = None
 
+        # HC4.5.45: Kein EVIOCGRAB mehr. Stattdessen werden während des
+        # Keyboard-Tests die normalen GNOME-/Mutter-Keybindings temporär
+        # deaktiviert und danach exakt wiederhergestellt.
+        self.desktop_shortcut_bindings_original = []
+        self.desktop_shortcut_block_active = False
+        self.desktop_shortcut_restore_helper = None
+
         # Tastatur-Test wird nur durch drei schnelle ESC-Tastendrücke beendet.
         # So bleibt ESC weiterhin als normale Prüftaste testbar.
         self.keyboard_escape_count = 0
@@ -6990,14 +6997,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.44")
+        self.window.set_title("Hardware Check v4.5.45")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.44")
+        title_label = Gtk.Label(label="Hardware Check v4.5.45")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7814,9 +7821,9 @@ class App(Gtk.Application):
     def start_global_input_listener(self):
         """Hardware-Hotkeys und Touchpad-Klicks auch ohne Fokus erkennen.
 
-        Im Normalbetrieb liest der Monitor nur mit. Erst während des
-        Tastatur-Tests werden die echten Tastaturgeräte per EVIOCGRAB exklusiv
-        übernommen und danach sofort wieder freigegeben.
+        Der Monitor liest /dev/input ausschließlich mit und greift niemals
+        ein Eingabegerät exklusiv. Dadurch kann der Keyboard-Test keine Maus-
+        oder Touchpadbewegung blockieren.
         Zuerst wird direkter Zugriff probiert; falls Ubuntu /dev/input sperrt,
         folgt automatisch ``sudo -n``.
         """
@@ -7877,47 +7884,15 @@ class App(Gtk.Application):
             return False
 
     def set_keyboard_input_grab(self, enabled):
-        """Exklusive Tastaturübernahme für den Tastatur-Test schalten.
+        """HC4.5.45: Exklusive /dev/input-Grabs sind bewusst deaktiviert.
 
-        Beim Freigeben gilt Sicherheit vor Komfort: Kann das UNGRAB-Kommando
-        nicht an einen noch laufenden Helfer gesendet werden, wird der Helfer
-        beendet. Der Linux-Kernel löst EVIOCGRAB beim Schließen der FDs
-        garantiert auf. Der selbstheilende Listener startet danach ohne Grab
-        neu, weil ``keyboard_input_grab_desired`` bereits False ist.
+        Einige Laptop-HID-Geräte melden Keyboard- und Pointer-Funktionen über
+        gekoppelte Event-Interfaces. Ein EVIOCGRAB kann dort die Mausbewegung
+        blockieren. Der globale Monitor bleibt deshalb ausschließlich
+        read-only. Desktop-Shortcuts werden über GSettings neutralisiert.
         """
-        enabled = bool(enabled)
-        self.keyboard_input_grab_desired = enabled
-
-        if not enabled:
-            # GUI-seitig sofort als freigegeben behandeln; die Bestätigung
-            # vom Helfer dient danach nur noch der Diagnose.
-            self.keyboard_input_grab_active = False
-
-        command = "grab" if enabled else "ungrab"
-        if self.send_global_input_command(command):
-            log(
-                "Tastatur-Test: exklusiver /dev/input-Grab "
-                + ("angefordert" if enabled else "Freigabe angefordert")
-            )
-            return True
-
-        if enabled:
-            log(
-                "Tastatur-Test: exklusiver Grab noch nicht verfügbar; "
-                "wird beim nächsten Monitor-READY automatisch angefordert"
-            )
-            return False
-
-        # UNGRAB konnte nicht zugestellt werden. Falls der alte Helfer noch
-        # existiert, durch Prozessende den Kernel-Grab zwangsweise lösen.
-        proc = self.global_input_proc
-        if proc is not None and proc.poll() is None:
-            log(
-                "Tastatur-Test: UNGRAB nicht zustellbar · "
-                "Input-Helfer wird zur sicheren Freigabe beendet"
-            )
-            self.stop_input_monitor_process(proc)
-
+        self.keyboard_input_grab_desired = False
+        self.keyboard_input_grab_active = False
         return False
 
 
@@ -8888,8 +8863,8 @@ class App(Gtk.Application):
         return False
 
     def reset_all(self, *_):
-        self.set_keyboard_input_grab(False)
         self.restore_super_after_keyboard_test()
+        self.restore_desktop_shortcuts_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
         self.restore_super_arrows_after_keyboard_test()
         # REFRESH setzt den kompletten Hardware-Test auf Anfang.
@@ -10190,6 +10165,159 @@ class App(Gtk.Application):
                 "wiederhergestellt"
             )
 
+    def block_desktop_shortcuts_for_keyboard_test(self):
+        """GNOME-Desktop-Shortcuts temporär deaktivieren, ohne Input-Grab.
+
+        Nur GSettings-Werte im Array-Format werden verändert. Das deckt u. a.
+        Print Screen/Screenshot, Alt+F4, Super-Kombinationen, Workspace- und
+        Tiling-Keybindings ab. Bereits leere Bindings bleiben unberührt.
+        """
+        if self.desktop_shortcut_block_active:
+            return False
+        if self.stack.get_visible_child_name() != "keyboard":
+            return False
+
+        gsettings = shutil.which("gsettings")
+        if not gsettings:
+            log("Keyboard-Test: gsettings nicht gefunden")
+            return False
+
+        schemas = (
+            "org.gnome.shell.keybindings",
+            "org.gnome.desktop.wm.keybindings",
+            "org.gnome.mutter.keybindings",
+            "org.gnome.settings-daemon.plugins.media-keys",
+            "org.gnome.shell.extensions.tiling-assistant",
+        )
+
+        saved = []
+
+        for schema in schemas:
+            # Testet gleichzeitig, ob das Schema auf diesem Ubuntu existiert.
+            try:
+                proc = subprocess.run(
+                    [gsettings, "list-recursively", schema],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    timeout=2.0,
+                    check=False,
+                )
+            except Exception:
+                continue
+
+            if proc.returncode != 0:
+                continue
+
+            for raw_line in (proc.stdout or "").splitlines():
+                parts = raw_line.strip().split(None, 2)
+                if len(parts) != 3:
+                    continue
+
+                _, key, original = parts
+                original = original.strip()
+
+                # Nur echte Keybinding-Arrays anfassen.
+                if not original.startswith("[") or not original.endswith("]"):
+                    continue
+                if original == "[]":
+                    continue
+
+                try:
+                    set_proc = subprocess.run(
+                        [gsettings, "set", schema, key, "[]"],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=1.0,
+                        check=False,
+                    )
+                except Exception:
+                    continue
+
+                if set_proc.returncode == 0:
+                    saved.append((schema, key, original))
+
+        # Einzelne SUPER-Taste ist kein Array-Keybinding und wird weiterhin
+        # über die bestehende overlay-key-Funktion neutralisiert.
+        self.desktop_shortcut_bindings_original = saved
+        self.desktop_shortcut_block_active = bool(saved)
+
+        if saved:
+            helper_code = (
+                "import json,os,subprocess,sys,time;"
+                "pid=int(sys.argv[1]);items=json.loads(sys.argv[2]);"
+                "path=f'/proc/{pid}';"
+                "\nwhile os.path.exists(path): time.sleep(0.25)"
+                "\nfor schema,key,value in items:"
+                "\n subprocess.run(['gsettings','set',schema,key,value],"
+                "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,"
+                "stderr=subprocess.DEVNULL,check=False)"
+            )
+            try:
+                self.desktop_shortcut_restore_helper = subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-c",
+                        helper_code,
+                        str(os.getpid()),
+                        json.dumps(saved),
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+            except Exception:
+                self.desktop_shortcut_restore_helper = None
+
+        log(
+            f"Keyboard-Test: {len(saved)} Desktop-Keybinding(s) "
+            "temporär deaktiviert · Input bleibt read-only"
+        )
+        return False
+
+    def restore_desktop_shortcuts_after_keyboard_test(self):
+        if not self.desktop_shortcut_block_active:
+            return
+
+        gsettings = shutil.which("gsettings")
+        all_restored = bool(gsettings)
+
+        if gsettings:
+            for schema, key, original in self.desktop_shortcut_bindings_original:
+                try:
+                    proc = subprocess.run(
+                        [gsettings, "set", schema, key, original],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=1.0,
+                        check=False,
+                    )
+                    if proc.returncode != 0:
+                        all_restored = False
+                except Exception:
+                    all_restored = False
+
+        if all_restored:
+            helper = self.desktop_shortcut_restore_helper
+            self.desktop_shortcut_restore_helper = None
+            if helper is not None:
+                try:
+                    helper.terminate()
+                except Exception:
+                    pass
+
+            count = len(self.desktop_shortcut_bindings_original)
+            self.desktop_shortcut_bindings_original = []
+            self.desktop_shortcut_block_active = False
+            log(
+                f"Keyboard-Test: {count} Desktop-Keybinding(s) "
+                "wiederhergestellt"
+            )
+
     def focus_keyboard_window(self):
         if self.stack.get_visible_child_name() != "keyboard":
             return False
@@ -10242,28 +10370,34 @@ class App(Gtk.Application):
         return False
 
     def show_keyboard(self, *_):
-        # Stale/duplizierte K-Ereignisse dürfen einen bereits laufenden
-        # Tastatur-Test weder neu initialisieren noch erneut grabben.
         if self.stack.get_visible_child_name() == "keyboard":
             return False
 
         self.keyboard_escape_count = 0
         self.keyboard_escape_last_at = 0.0
 
-        # Oberfläche sofort anzeigen. Anschließend übernimmt der bereits
-        # laufende /dev/input-Helfer die Tastatur exklusiv. Dadurch reagiert K
-        # ohne GSettings-Wartezeit und Desktop-Shortcuts (inkl. Print Screen)
-        # erreichen GNOME während des Tests nicht mehr.
+        # Sofort anzeigen. /dev/input bleibt vollständig read-only:
+        # Es wird unter keinen Umständen ein EVIOCGRAB ausgelöst.
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
-        self.set_keyboard_input_grab(True)
 
-        # Hardware Check zusätzlich nach vorn holen/fokussieren. Der eigentliche
-        # Tastatur-Test bleibt dank /dev/input trotzdem unabhängig vom Fokus.
+        # Einzelne Super-Taste sowie die normalen Desktop-Keybindings werden
+        # unabhängig vom GTK-Thread deaktiviert. Dadurch bleibt K schnell.
+        threading.Thread(
+            target=self.block_super_for_keyboard_test,
+            daemon=True,
+        ).start()
+        threading.Thread(
+            target=self.block_desktop_shortcuts_for_keyboard_test,
+            daemon=True,
+        ).start()
+
         self.focus_keyboard_window()
         GLib.idle_add(self.focus_keyboard_window)
         GLib.timeout_add(120, self.focus_keyboard_window)
         GLib.timeout_add(350, self.focus_keyboard_window)
+        return False
+
 
     def handle_keyboard_escape_sequence(self):
         now = time.monotonic()
@@ -10292,27 +10426,10 @@ class App(Gtk.Application):
         return False
 
     def show_overview(self, *_):
-        leaving_keyboard = (
-            self.stack is not None
-            and self.stack.get_visible_child_name() == "keyboard"
-        )
-
-        self.set_keyboard_input_grab(False)
-
-        if leaving_keyboard:
-            # UNGRAB zuerst normal zustellen; kurz danach den kompletten
-            # Helfer neu starten. Das garantiert geschlossene /dev/input-FDs.
-            GLib.timeout_add(
-                180,
-                self.restart_input_monitor_after_keyboard_test,
-            )
-
-        # Alte GSettings-Sicherungen nur noch vorsorglich restaurieren.
-        # HC4.5.29 blockiert Desktop-Shortcuts über EVIOCGRAB statt sie
-        # während des Tests einzeln umzuschreiben.
+        # HC4.5.45: Kein Input-Grab vorhanden. Es müssen ausschließlich die
+        # temporär deaktivierten GNOME-Keybindings restauriert werden.
         self.restore_super_after_keyboard_test()
-        self.restore_alt_space_after_keyboard_test()
-        self.restore_super_arrows_after_keyboard_test()
+        self.restore_desktop_shortcuts_after_keyboard_test()
 
         if (
             self.stack.get_visible_child_name() == "benchmarks"
@@ -10373,13 +10490,11 @@ class App(Gtk.Application):
         if alias:
             self.mark_keyboard_alias(alias, pressed=pressed)
 
-        # Bei aktivem EVIOCGRAB zählt der Input-Helfer ESC x3 selbst und
-        # gibt die Tastatur beim dritten ESC SOFORT frei. Die GUI zählt nur
-        # als Fallback, wenn kein exklusiver Grab bestätigt ist.
+        # HC4.5.45: Der Input-Monitor ist ausschließlich read-only.
+        # ESC x3 wird deshalb immer hier ausgewertet.
         if pressed:
             if code == 1:
-                if not self.keyboard_input_grab_active:
-                    self.handle_keyboard_escape_sequence()
+                self.handle_keyboard_escape_sequence()
             else:
                 self.keyboard_escape_count = 0
                 self.keyboard_escape_last_at = 0.0
@@ -10420,8 +10535,8 @@ class App(Gtk.Application):
         self.mark_keyboard_alias(name, pressed=False)
 
     def do_shutdown(self):
-        self.set_keyboard_input_grab(False)
         self.restore_super_after_keyboard_test()
+        self.restore_desktop_shortcuts_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
         self.restore_super_arrows_after_keyboard_test()
         if self.info_window is not None:
