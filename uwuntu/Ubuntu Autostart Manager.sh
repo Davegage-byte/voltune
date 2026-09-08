@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.19 + Wipe Auto v3.22 + Audio Test v1.15
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.21 + Wipe Auto v3.22 + Audio Test v1.15
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090808
+MANAGER_BUILD=2026090810
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6078,6 +6078,13 @@ class App(Gtk.Application):
         self.super_block_active = False
         self.super_restore_helper = None
 
+        # GNOME öffnet mit ALT+SPACE normalerweise das Fenster-Menü.
+        # Während des Tastatur-Tests wird diese WM-Tastenkombination temporär
+        # deaktiviert und danach exakt wiederhergestellt.
+        self.alt_space_original = None
+        self.alt_space_block_active = False
+        self.alt_space_restore_helper = None
+
         # Tastatur-Test wird nur durch drei schnelle ESC-Tastendrücke beendet.
         # So bleibt ESC weiterhin als normale Prüftaste testbar.
         self.keyboard_escape_count = 0
@@ -6126,14 +6133,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.19")
+        self.window.set_title("Hardware Check v4.5.21")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.19")
+        title_label = Gtk.Label(label="Hardware Check v4.5.21")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7273,7 +7280,14 @@ class App(Gtk.Application):
 
     def on_hotkeys_key(self, controller, keyval, keycode, state):
         name = Gdk.keyval_name(keyval) or ""
-        if name in {"Escape", "F1"} or (
+
+        # F1 öffnet die Übersicht ausschließlich. Solange sie bereits offen
+        # ist, hat F1 bewusst keine weitere Funktion. Geschlossen wird nur
+        # über ESC, STRG+W oder den normalen Fenster-Schließen-Button.
+        if name == "F1":
+            return True
+
+        if name == "Escape" or (
             state & Gdk.ModifierType.CONTROL_MASK and name.lower() == "w"
         ):
             self.close_hotkeys_window()
@@ -7286,15 +7300,13 @@ class App(Gtk.Application):
             return False
 
         if self.hotkeys_window is not None:
-            try:
-                self.hotkeys_window.present()
-                return False
-            except Exception:
-                self.hotkeys_window = None
+            # Bereits offen: weitere F1-Tastendrücke vollständig ignorieren.
+            # Nicht erneut präsentieren, nicht toggeln und nicht schließen.
+            return False
 
         window = Gtk.ApplicationWindow(application=self)
         window.set_title("Shortcuts / Hotkeys")
-        window.set_default_size(650, 485)
+        window.set_default_size(560, 485)
         window.set_resizable(False)
         window.connect("close-request", self.close_hotkeys_window)
 
@@ -7305,8 +7317,8 @@ class App(Gtk.Application):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         outer.set_margin_top(14)
         outer.set_margin_bottom(14)
-        outer.set_margin_start(16)
-        outer.set_margin_end(16)
+        outer.set_margin_start(14)
+        outer.set_margin_end(14)
 
         title = Gtk.Label(label="SHORTCUTS / HOTKEYS")
         title.set_xalign(0)
@@ -7315,11 +7327,11 @@ class App(Gtk.Application):
 
         grid = Gtk.Grid()
         grid.set_row_spacing(8)
-        grid.set_column_spacing(22)
+        grid.set_column_spacing(14)
         grid.add_css_class("hotkey-grid")
 
         shortcuts = [
-            ("F1", "Diese Übersicht öffnen / schließen"),
+            ("F1", "Diese Übersicht öffnen"),
             ("STRG+D", "4-Felder-Diagnose-Layout starten"),
             ("←", "Audio Test: linken Lautsprecher testen"),
             ("↑", "Audio Test: beide Lautsprecher testen"),
@@ -7343,7 +7355,7 @@ class App(Gtk.Application):
             key = Gtk.Label(label=key_text)
             key.set_xalign(0)
             key.set_valign(Gtk.Align.START)
-            key.set_size_request(105, -1)
+            key.set_size_request(88, -1)
             key.add_css_class("hotkey-key")
 
             desc = Gtk.Label(label=desc_text)
@@ -7362,7 +7374,8 @@ class App(Gtk.Application):
                 "Hinweis: Im TASTATUR TEST sind F1, B, K, R, I, U, G, T, D, "
                 "SUPER und alle Pfeiltasten normale Prüftasten. ESC zählt ebenfalls "
                 "als Prüftaste; erst ESC x3 beendet den Tastatur-Test. "
-                "Die einzelne SUPER-Taste öffnet dort nicht die GNOME-Übersicht."
+                "Die einzelne SUPER-Taste öffnet dort nicht die GNOME-Übersicht und "
+                "ALT+SPACE öffnet während des Tests kein GNOME-Fenstermenü."
             )
         )
         note.set_xalign(0)
@@ -7661,6 +7674,7 @@ class App(Gtk.Application):
 
     def reset_all(self, *_):
         self.restore_super_after_keyboard_test()
+        self.restore_alt_space_after_keyboard_test()
         # REFRESH setzt den kompletten Hardware-Test auf Anfang.
         # Aktuell belegte Ports werden direkt wieder blau erkannt.
         self.refresh_security()
@@ -8651,6 +8665,127 @@ class App(Gtk.Application):
             self.super_block_active = False
             log("Tastatur-Test: SUPER-Taste wieder normal aktiviert")
 
+    def block_alt_space_for_keyboard_test(self):
+        """GNOME-Fenstermenü auf ALT+SPACE während des Tastatur-Tests blockieren.
+
+        Die eigentlichen Tastendrücke werden weiterhin direkt über /dev/input
+        erkannt und können deshalb ganz normal als ALT L + Space geprüft werden.
+        """
+        if self.alt_space_block_active:
+            return
+
+        gsettings = shutil.which("gsettings")
+        if not gsettings:
+            log("ALT+SPACE-Blockierung: gsettings nicht gefunden")
+            return
+
+        schema = "org.gnome.desktop.wm.keybindings"
+        key = "activate-window-menu"
+
+        try:
+            get_proc = subprocess.run(
+                [gsettings, "get", schema, key],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1.5,
+                check=False,
+            )
+            original = get_proc.stdout.strip()
+            if get_proc.returncode != 0 or not original:
+                log("ALT+SPACE-Blockierung: ursprüngliche Belegung konnte nicht gelesen werden")
+                return
+
+            set_proc = subprocess.run(
+                [gsettings, "set", schema, key, "[]"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5,
+                check=False,
+            )
+            if set_proc.returncode != 0:
+                log("ALT+SPACE-Blockierung: activate-window-menu konnte nicht deaktiviert werden")
+                return
+
+            self.alt_space_original = original
+            self.alt_space_block_active = True
+
+            # Externer Wächter stellt die ursprüngliche Belegung auch dann
+            # wieder her, wenn Hardware Check unerwartet beendet wird.
+            helper_code = (
+                "import os,subprocess,sys,time;"
+                "pid=int(sys.argv[1]);original=sys.argv[2];"
+                "path=f'/proc/{pid}';"
+                "\nwhile os.path.exists(path): time.sleep(0.25)"
+                "\nsubprocess.run(['gsettings','set',"
+                "'org.gnome.desktop.wm.keybindings','activate-window-menu',"
+                "original],stdin=subprocess.DEVNULL,"
+                "stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,"
+                "check=False)"
+            )
+            try:
+                self.alt_space_restore_helper = subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-c",
+                        helper_code,
+                        str(os.getpid()),
+                        original,
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+            except Exception:
+                self.alt_space_restore_helper = None
+
+            log("Tastatur-Test: GNOME ALT+SPACE-Fenstermenü blockiert")
+        except Exception as exc:
+            log(f"ALT+SPACE-Blockierung Fehler: {exc}")
+
+    def restore_alt_space_after_keyboard_test(self):
+        if not self.alt_space_block_active:
+            return
+
+        gsettings = shutil.which("gsettings")
+        restored = False
+
+        if gsettings and self.alt_space_original:
+            try:
+                p = subprocess.run(
+                    [
+                        gsettings,
+                        "set",
+                        "org.gnome.desktop.wm.keybindings",
+                        "activate-window-menu",
+                        self.alt_space_original,
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=1.5,
+                    check=False,
+                )
+                restored = p.returncode == 0
+            except Exception:
+                restored = False
+
+        if restored:
+            helper = self.alt_space_restore_helper
+            self.alt_space_restore_helper = None
+            if helper is not None:
+                try:
+                    helper.terminate()
+                except Exception:
+                    pass
+
+            self.alt_space_original = None
+            self.alt_space_block_active = False
+            log("Tastatur-Test: GNOME ALT+SPACE wieder normal aktiviert")
+
     def focus_keyboard_window(self):
         if self.stack.get_visible_child_name() != "keyboard":
             return False
@@ -8676,6 +8811,7 @@ class App(Gtk.Application):
         self.keyboard_escape_count = 0
         self.keyboard_escape_last_at = 0.0
         self.block_super_for_keyboard_test()
+        self.block_alt_space_for_keyboard_test()
         self.stack.set_visible_child_name("keyboard")
         self.window.set_default_size(860, 360)
 
@@ -8714,6 +8850,7 @@ class App(Gtk.Application):
 
     def show_overview(self, *_):
         self.restore_super_after_keyboard_test()
+        self.restore_alt_space_after_keyboard_test()
 
         if (
             self.stack.get_visible_child_name() == "benchmarks"
@@ -8821,6 +8958,7 @@ class App(Gtk.Application):
 
     def do_shutdown(self):
         self.restore_super_after_keyboard_test()
+        self.restore_alt_space_after_keyboard_test()
         if self.info_window is not None:
             try:
                 self.info_window.destroy()
