@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 APP_NAME="Uwuntu Image Manager"
-APP_VERSION="1.2"
+APP_VERSION="1.4"
 
 ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"
 SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"
@@ -79,7 +79,7 @@ import threading
 import time
 from pathlib import Path
 
-APP_VERSION = "1.2"
+APP_VERSION = "1.4"
 FORMAT_VERSION = "uwuntu-image-v1"
 
 MIB = 1024 * 1024
@@ -1688,7 +1688,7 @@ from gi.repository import Gtk, Gdk, GLib, Gio
 
 APP_ID = "com.uwuntu.ImageManager"
 APP_NAME = "Uwuntu Image Manager"
-VERSION = "1.2"
+VERSION = "1.4"
 
 HOME = Path.home()
 IMAGE_DIR = HOME / "Uwuntu-Images"
@@ -2064,12 +2064,12 @@ headerbar {
     color: #f4f4f5;
 }
 .main-title {
-    font-size: 25px;
+    font-size: 30px;
     font-weight: 900;
 }
 .subtitle {
     color: #9d9da7;
-    font-size: 12px;
+    font-size: 14px;
 }
 .card {
     background: #232329;
@@ -2078,17 +2078,17 @@ headerbar {
     padding: 14px;
 }
 .card-title {
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 900;
 }
 .card-text {
     color: #b6b6bf;
-    font-size: 11px;
+    font-size: 13px;
 }
 button.primary {
-    min-height: 44px;
+    min-height: 52px;
     border-radius: 9px;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 900;
     color: #f4f4f5;
     background: #303037;
@@ -2098,37 +2098,38 @@ button.primary:hover {
     background: #393944;
 }
 button.secondary {
-    min-height: 34px;
+    min-height: 40px;
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 800;
 }
 .details {
     background: #1d1d22;
     border: 1px solid #34343c;
     border-radius: 8px;
-    padding: 10px;
+    padding: 12px;
     color: #d0d0d6;
-    font-size: 11px;
+    font-size: 13px;
 }
 .warning {
     color: #f5a623;
+    font-size: 13px;
     font-weight: 800;
 }
 .progress-title {
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 900;
 }
 .progress-info {
     color: #b6b6bf;
-    font-size: 12px;
+    font-size: 14px;
 }
 progressbar trough {
-    min-height: 18px;
+    min-height: 22px;
     border-radius: 9px;
 }
 progressbar progress {
-    min-height: 18px;
+    min-height: 22px;
     border-radius: 9px;
 }
 """
@@ -2155,7 +2156,7 @@ class ProgressWindow(Gtk.Window):
     def __init__(self, parent, title):
         super().__init__(title=title, transient_for=parent, modal=True)
 
-        self.set_default_size(570, 270)
+        self.set_default_size(720, 430)
         self.set_deletable(False)
 
         box = Gtk.Box(
@@ -2177,9 +2178,25 @@ class ProgressWindow(Gtk.Window):
         self.phase.add_css_class("subtitle")
         box.append(self.phase)
 
+        current_label = make_label(
+            "AKTUELLE PHASE",
+            "progress-info",
+        )
+        box.append(current_label)
+
         self.bar = Gtk.ProgressBar()
         self.bar.set_show_text(True)
         box.append(self.bar)
+
+        overall_label = make_label(
+            "GESAMTFORTSCHRITT",
+            "progress-info",
+        )
+        box.append(overall_label)
+
+        self.overall_bar = Gtk.ProgressBar()
+        self.overall_bar.set_show_text(True)
+        box.append(self.overall_bar)
 
         self.rate = make_label("Aktuelle Rate: –", "progress-info")
         box.append(self.rate)
@@ -2200,11 +2217,31 @@ class ProgressWindow(Gtk.Window):
 
         if typ == "stage":
             self.stage.set_text(data.get("stage", ""))
-            idx = data.get("stage_index", "")
-            count = data.get("stage_count", "")
+
+            try:
+                idx = int(data.get("stage_index") or 1)
+            except Exception:
+                idx = 1
+
+            try:
+                count = max(1, int(data.get("stage_count") or 1))
+            except Exception:
+                count = 1
+
             self.phase.set_text(f"Phase {idx} von {count}")
+
             self.bar.set_fraction(0)
             self.bar.set_text("0 %")
+
+            overall_fraction = max(
+                0.0,
+                min(1.0, (idx - 1) / count),
+            )
+            self.overall_bar.set_fraction(overall_fraction)
+            self.overall_bar.set_text(
+                f"{overall_fraction * 100:.0f} %"
+            )
+
             self.rate.set_text("Aktuelle Rate: –")
             self.eta.set_text("Restzeit: berechne …")
 
@@ -2216,6 +2253,29 @@ class ProgressWindow(Gtk.Window):
 
             self.bar.set_fraction(fraction)
             self.bar.set_text(f"{fraction * 100:.0f} %")
+
+            try:
+                idx = int(data.get("stage_index") or 1)
+            except Exception:
+                idx = 1
+
+            try:
+                count = max(1, int(data.get("stage_count") or 1))
+            except Exception:
+                count = 1
+
+            overall_fraction = (
+                (idx - 1) + fraction
+            ) / count
+            overall_fraction = max(
+                0.0,
+                min(1.0, overall_fraction),
+            )
+
+            self.overall_bar.set_fraction(overall_fraction)
+            self.overall_bar.set_text(
+                f"{overall_fraction * 100:.0f} %"
+            )
 
             direction = data.get("direction") or "ÜBERTRAGEN"
             self.rate.set_text(
@@ -2232,7 +2292,7 @@ class ProgressWindow(Gtk.Window):
 class ActionWindow(Gtk.Window):
     def __init__(self, parent, title):
         super().__init__(title=title, transient_for=parent, modal=True)
-        self.set_default_size(720, 470)
+        self.set_default_size(920, 620)
 
         self.root = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -2252,7 +2312,7 @@ class MainWindow(Gtk.ApplicationWindow):
         super().__init__(application=app)
 
         self.set_title(f"{APP_NAME} v{VERSION}")
-        self.set_default_size(760, 620)
+        self.set_default_size(900, 760)
 
         provider = Gtk.CssProvider()
         provider.load_from_data(CSS)
@@ -2267,10 +2327,10 @@ class MainWindow(Gtk.ApplicationWindow):
             spacing=12,
         )
 
-        root.set_margin_top(18)
-        root.set_margin_bottom(18)
-        root.set_margin_start(18)
-        root.set_margin_end(18)
+        root.set_margin_top(24)
+        root.set_margin_bottom(24)
+        root.set_margin_start(24)
+        root.set_margin_end(24)
 
         self.set_child(root)
 
