@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090865
+MANAGER_BUILD=2026090866
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1024,7 +1024,6 @@ install_all_dependencies() {
         gir1.2-gstreamer-1.0
         gstreamer1.0-plugins-base
         gstreamer1.0-plugins-good
-        gstreamer1.0-gl
         gstreamer1.0-gtk3
         python3-numpy
         python3-sounddevice
@@ -1207,7 +1206,7 @@ uwuntu_set_dock_autohide() {
 uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_18.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_19.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
 STATE_FILE="$HOME/.local/state/uwuntu/camera_test_status.json"
 mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
@@ -1216,7 +1215,7 @@ rm -f "$STATE_FILE" 2>/dev/null || true
 {
     echo
     echo "============================================================"
-    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.18 Start"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.19 Start"
 } >> "$LOG_FILE" 2>/dev/null || true
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
@@ -1232,7 +1231,6 @@ REQUIRED_PKGS=(
   gir1.2-gstreamer-1.0
   gstreamer1.0-plugins-base
   gstreamer1.0-plugins-good
-  gstreamer1.0-gl
   gstreamer1.0-gtk3
 )
 
@@ -1302,7 +1300,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.18"
+VERSION = "1.19"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 STATE_DIR = Path.home() / ".local/state/uwuntu"
@@ -1378,84 +1376,43 @@ def camera_devices():
 MODES = [
     (
         "MJPEG 1920x1080 @ 30 FPS",
-        "image/jpeg,width=1920,height=1080,framerate=30/1",
+        "image/jpeg,width=1920,height=1080,framerate=30/1 ! jpegdec",
     ),
     (
         "MJPEG 1280x720 @ 30 FPS",
-        "image/jpeg,width=1280,height=720,framerate=30/1",
+        "image/jpeg,width=1280,height=720,framerate=30/1 ! jpegdec",
     ),
     ("AUTO", None),
 ]
 
 
-def gst_has_element(name):
+def find_face_cascade():
+    """Finde das kleine klassische OpenCV-Haar-Modell ohne Zusatzframework."""
+    if cv2 is None:
+        return None
+
+    candidates = []
     try:
-        return Gst.ElementFactory.find(name) is not None
+        candidates.append(
+            os.path.join(
+                cv2.data.haarcascades,
+                "haarcascade_frontalface_default.xml",
+            )
+        )
     except Exception:
-        return False
+        pass
 
-
-def build_preview_profiles():
-    """Flüssigen bewährten GTK-Pfad bevorzugen, Beschleunigung nur als Fallback.
-
-    Die große CPU-Ersparnis bleibt trotzdem erhalten, weil der Face-Zweig
-    weiterhin vor dem Preview-Decode abgezweigt und nur 1x/s dekodiert wird.
-    """
-    profiles = [
-        {
-            "name": "jpegdec + GTK",
-            "decoder": "jpegdec",
-            "renderer": "gtk",
-        }
-    ]
-
-    gl_ok = all(
-        gst_has_element(name)
-        for name in ("glupload", "glcolorconvert", "gtkglsink")
+    candidates.extend(
+        [
+            "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml",
+            "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
+        ]
     )
 
-    hardware_decoders = []
-    for name in (
-        "vajpegdec",
-        "vaapijpegdec",
-        "nvjpegdec",
-        "v4l2jpegdec",
-    ):
-        if gst_has_element(name):
-            hardware_decoders.append(name)
-
-    # Wenn der Referenzpfad wider Erwarten nicht funktioniert:
-    # zunächst Hardwaredecoder mit normalem GTK-Sink probieren.
-    for decoder in hardware_decoders:
-        profiles.append(
-            {
-                "name": f"{decoder} + GTK",
-                "decoder": decoder,
-                "renderer": "gtk",
-            }
-        )
-
-    # OpenGL unter dem von uns bewusst erzwungenen X11/XWayland-Backend kann
-    # auf manchen Geräten stark ruckeln. Deshalb erst sehr spät probieren.
-    if gl_ok:
-        profiles.append(
-            {
-                "name": "jpegdec + GPU",
-                "decoder": "jpegdec",
-                "renderer": "gl",
-            }
-        )
-
-        for decoder in hardware_decoders:
-            profiles.append(
-                {
-                    "name": f"{decoder} + GPU",
-                    "decoder": decoder,
-                    "renderer": "gl",
-                }
-            )
-
-    return profiles
+    for path in candidates:
+        if path and os.path.isfile(path):
+            return path
+    return None
 
 
 class CameraWindow(Gtk.ApplicationWindow):
@@ -1503,10 +1460,6 @@ class CameraWindow(Gtk.ApplicationWindow):
         self.devices = camera_devices()
         self.device_index = 0
         self.mode_index = 0
-
-        self.preview_profiles = build_preview_profiles()
-        self.preview_profile_index = 0
-        self.face_sink = None
 
         # Ressourcenschonende Gesichtserkennung:
         # maximal 1 kleines 320x180-Graubild pro Sekunde.
@@ -1615,8 +1568,6 @@ window { background: #000; }
         self.set_status_color("orange")
         GLib.idle_add(self.try_current)
         GLib.timeout_add(250, self.poll_hardware_refresh)
-        # Nur ein Face-Sample pro Sekunde aus dem Appsink ziehen.
-        GLib.timeout_add(1000, self.poll_face_sample)
 
     def poll_hardware_refresh(self):
         stamp = hardware_refresh_stamp()
@@ -1700,91 +1651,43 @@ window { background: #000; }
             except Exception:
                 pass
             self.pipeline = None
-        self.face_sink = None
 
     def clear_video(self):
         for child in self.video_box.get_children():
             self.video_box.remove(child)
 
-    def current_preview_profile(self):
-        if not self.preview_profiles:
-            return {
-                "name": "jpegdec + GTK",
-                "decoder": "jpegdec",
-                "renderer": "gtk",
-            }
-
-        self.preview_profile_index %= len(self.preview_profiles)
-        return self.preview_profiles[self.preview_profile_index]
-
-    def preview_sink_chain(self, profile):
-        if profile["renderer"] == "gl":
-            return (
-                "glupload ! glcolorconvert ! "
-                "identity name=probe signal-handoffs=true ! "
-                "gtkglsink name=sink sync=false"
-            )
-
-        return (
-            "videoconvert ! "
-            "identity name=probe signal-handoffs=true ! "
-            "gtksink name=sink sync=false"
-        )
-
     def build_pipeline(self, device, caps):
-        # AUTO bleibt auf dem maximal kompatiblen bisherigen Rohvideo-Pfad.
         if caps is None:
             source = f'v4l2src device="{device}" ! '
-
-            if not self.face_pipeline_enabled:
-                return (
-                    source
-                    + 'videoconvert ! '
-                      'identity name=probe signal-handoffs=true ! '
-                      'gtksink name=sink sync=false'
-                )
-
-            return (
-                source
-                + 'tee name=t '
-                  't. ! queue ! '
-                  'videoconvert ! '
-                  'identity name=probe signal-handoffs=true ! '
-                  'gtksink name=sink sync=false '
-                  't. ! queue leaky=downstream max-size-buffers=1 ! '
-                  'videoconvert ! videoscale ! videorate ! '
-                  'video/x-raw,format=GRAY8,width=320,height=180,framerate=1/1 ! '
-                  'appsink name=facesink emit-signals=false drop=true '
-                  'max-buffers=1 sync=false'
+        else:
+            source = (
+                f'v4l2src device="{device}" ! '
+                f'{caps} ! '
             )
 
-        # MJPEG wird VOR dem Decode aufgeteilt.
-        #
-        # Vorschau: 30 FPS -> bevorzugt bewährtes jpegdec + gtksink.
-        # Face: komprimiertes JPEG bleibt im Appsink; OpenCV dekodiert davon
-        # nur genau ein Bild pro Sekunde.
-        profile = self.current_preview_profile()
-        preview = (
-            'queue max-size-buffers=2 leaky=downstream ! '
-            'jpegparse ! '
-            f'{profile["decoder"]} ! '
-            + self.preview_sink_chain(profile)
-        )
-
-        source = (
-            f'v4l2src device="{device}" ! '
-            f'{caps} ! '
-        )
-
+        # Bewährter einfacher Kamera-Pfad.
         if not self.face_pipeline_enabled:
-            return source + preview
+            return (
+                source
+                + 'videoconvert ! '
+                  'identity name=probe signal-handoffs=true ! '
+                  'gtksink name=sink sync=false'
+            )
 
+        # Wichtig: Beide tee-Zweige bekommen ihren EIGENEN videoconvert.
+        # So muss der gemeinsame Upstream nicht gleichzeitig ein Format für
+        # gtksink und GRAY8/Face-Erkennung aushandeln.
         return (
             source
             + 'tee name=t '
-              't. ! ' + preview + ' '
+              't. ! queue ! '
+              'videoconvert ! '
+              'identity name=probe signal-handoffs=true ! '
+              'gtksink name=sink sync=false '
               't. ! queue leaky=downstream max-size-buffers=1 ! '
-              'appsink name=facesink emit-signals=false drop=true '
+              'videoconvert ! videoscale ! videorate ! '
+              'video/x-raw,format=GRAY8,width=320,height=180,framerate=1/1 ! '
+              'appsink name=facesink emit-signals=true drop=true '
               'max-buffers=1 sync=false'
         )
 
@@ -1810,7 +1713,6 @@ window { background: #000; }
         if self.mode_index >= len(MODES):
             self.device_index += 1
             self.mode_index = 0
-            self.preview_profile_index = 0
             self.face_pipeline_enabled = self.face_cascade is not None
             if self.device_index >= len(self.devices):
                 self.device_index = 0
@@ -1821,16 +1723,8 @@ window { background: #000; }
 
         device = self.current_device()
         label, caps = MODES[self.mode_index]
-
-        profile_name = (
-            self.current_preview_profile()["name"]
-            if caps is not None
-            else "AUTO / GTK"
-        )
-
         print(
             f"Kamera v{VERSION} · teste {device}: {label} · "
-            f"Preview={profile_name} · "
             f"Backend={os.environ.get('GDK_BACKEND', 'auto')}",
             flush=True,
         )
@@ -1853,13 +1747,10 @@ window { background: #000; }
 
             probe.connect("handoff", self.on_frame, current_serial)
 
-            # Kein new-sample-Signal: Der Appsink hält nur das aktuellste
-            # Sample. Ein 1-Sekunden-Timer zieht es gezielt ab.
-            self.face_sink = (
-                facesink
-                if self.face_pipeline_enabled and facesink is not None
-                else None
-            )
+            # Face-Erkennung läuft nur, wenn Cascade erfolgreich geladen wurde.
+            # Der kleine Appsink-Zweig bleibt ansonsten praktisch kostenlos.
+            if self.face_pipeline_enabled and facesink is not None:
+                facesink.connect("new-sample", self.on_face_sample, current_serial)
 
             bus = self.pipeline.get_bus()
             bus.add_signal_watch()
@@ -1889,120 +1780,63 @@ window { background: #000; }
             if not self.face_ever_seen:
                 GLib.idle_add(self.set_status_color, "orange")
 
-    def poll_face_sample(self):
-        if (
-            self.face_cascade is None
-            or self.face_sink is None
-            or not self.face_pipeline_enabled
-        ):
-            return True
+    def on_face_sample(self, sink, current_serial):
+        if current_serial != self.serial or self.face_cascade is None:
+            return Gst.FlowReturn.OK
 
-        try:
-            sample = self.face_sink.emit("try-pull-sample", 0)
-        except Exception:
-            sample = None
-
-        if sample is not None:
-            self.process_face_sample(
-                sample,
-                self.serial,
-            )
-
-        return True
-
-    def process_face_sample(self, sample, current_serial):
-        if (
-            current_serial != self.serial
-            or self.face_cascade is None
-            or sample is None
-        ):
-            return
-
+        # Zusätzliche Zeitbremse als Schutz, obwohl der GStreamer-Zweig bereits
+        # auf 1 FPS begrenzt ist.
         now = time.monotonic()
         if now - self.face_last_sample_at < 0.80:
-            return
+            try:
+                sink.emit("pull-sample")
+            except Exception:
+                pass
+            return Gst.FlowReturn.OK
         self.face_last_sample_at = now
+
+        sample = sink.emit("pull-sample")
+        if sample is None:
+            return Gst.FlowReturn.OK
 
         buffer = sample.get_buffer()
         caps = sample.get_caps()
         if buffer is None or caps is None:
-            return
-
-        ok, mapinfo = buffer.map(Gst.MapFlags.READ)
-        if not ok:
-            return
-
-        face_visible = False
+            return Gst.FlowReturn.OK
 
         try:
             structure = caps.get_structure(0)
-            media_type = structure.get_name()
+            width = int(structure.get_value("width"))
+            height = int(structure.get_value("height"))
+        except Exception:
+            return Gst.FlowReturn.OK
 
-            if media_type == "image/jpeg":
-                # MJPEG-Zweig: nur dieses eine komprimierte Bild pro Sekunde
-                # auf der CPU dekodieren.
-                encoded = np.frombuffer(
-                    mapinfo.data,
-                    dtype=np.uint8,
-                )
-                gray = cv2.imdecode(
-                    encoded,
-                    cv2.IMREAD_GRAYSCALE,
-                )
-                if gray is None:
-                    return
+        ok, mapinfo = buffer.map(Gst.MapFlags.READ)
+        if not ok:
+            return Gst.FlowReturn.OK
 
-                gray = cv2.resize(
+        face_visible = False
+        try:
+            frame = np.frombuffer(mapinfo.data, dtype=np.uint8)
+            expected = width * height
+            if frame.size >= expected:
+                gray = frame[:expected].reshape((height, width))
+
+                faces = self.face_cascade.detectMultiScale(
                     gray,
-                    (320, 180),
-                    interpolation=cv2.INTER_AREA,
+                    scaleFactor=1.15,
+                    minNeighbors=4,
+                    minSize=(34, 34),
+                    flags=cv2.CASCADE_SCALE_IMAGE,
                 )
-
-            else:
-                # AUTO/raw-Fallback.
-                try:
-                    width = int(
-                        structure.get_value("width")
-                    )
-                    height = int(
-                        structure.get_value("height")
-                    )
-                except Exception:
-                    return
-
-                frame = np.frombuffer(
-                    mapinfo.data,
-                    dtype=np.uint8,
-                )
-                expected = width * height
-                if frame.size < expected:
-                    return
-
-                gray = frame[:expected].reshape(
-                    (height, width)
-                )
-
-            faces = self.face_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.15,
-                minNeighbors=4,
-                minSize=(34, 34),
-                flags=cv2.CASCADE_SCALE_IMAGE,
-            )
-            face_visible = len(faces) > 0
-
+                face_visible = len(faces) > 0
         except Exception as exc:
-            print(
-                f"Gesichtserkennung Frame-Fehler: {exc}",
-                flush=True,
-            )
+            print(f"Gesichtserkennung Frame-Fehler: {exc}", flush=True)
         finally:
             buffer.unmap(mapinfo)
 
-        GLib.idle_add(
-            self.update_face_status,
-            face_visible,
-        )
+        GLib.idle_add(self.update_face_status, face_visible)
+        return Gst.FlowReturn.OK
 
     def check_timeout(self, current_serial):
         if current_serial == self.serial and not self.frame_seen:
@@ -2013,25 +1847,9 @@ window { background: #000; }
         if current_serial != self.serial or self.frame_seen:
             return False
 
-        label, caps = MODES[self.mode_index]
-
-        # MJPEG: zuerst den bewährten flüssigen SW+GTK-Pfad verwenden.
-        # Nur wenn dieser scheitert, weitere HW/GPU-Fallbacks derselben
-        # Kamera und Auflösung durchprobieren.
-        if (
-            caps is not None
-            and self.preview_profile_index + 1 < len(self.preview_profiles)
-        ):
-            self.preview_profile_index += 1
-            profile = self.current_preview_profile()
-            print(
-                f"Preview-Fallback: {profile['name']} · {label}",
-                flush=True,
-            )
-            GLib.idle_add(self.try_current)
-            return False
-
-        # Danach dieselbe Konfiguration ohne optionalen Face-Zweig testen.
+        # Falls gerade der Face-Zweig aktiv war, dieselbe Kamera/Auflösung
+        # zuerst ohne Face-Zweig testen. Damit kann eine optionale Funktion
+        # niemals den normalen Kamera-Test komplett blockieren.
         if self.face_pipeline_enabled and self.face_cascade is not None:
             print(
                 "Face-Pipeline lieferte kein Bild · "
@@ -2039,13 +1857,12 @@ window { background: #000; }
                 flush=True,
             )
             self.face_pipeline_enabled = False
-            self.preview_profile_index = 0
             GLib.idle_add(self.try_current)
             return False
 
-        # Auch ohne Face kein Bild: nächste Auflösung.
+        # Auch der einfache Pfad hat kein Bild geliefert: nächste Auflösung.
+        # Dort Face-Erkennung erneut versuchen.
         self.mode_index += 1
-        self.preview_profile_index = 0
         self.face_pipeline_enabled = self.face_cascade is not None
         GLib.idle_add(self.try_current)
         return False
@@ -2082,7 +1899,6 @@ window { background: #000; }
 
         self.device_index = (pos + 1) % len(self.devices)
         self.mode_index = 0
-        self.preview_profile_index = 0
         self.face_pipeline_enabled = self.face_cascade is not None
         self.reset_face_state()
         self.error_label.hide()
@@ -2157,7 +1973,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.18
+Comment=Cleaner Uwuntu Kamera-Test v1.19
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -2180,7 +1996,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.18 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.19 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
