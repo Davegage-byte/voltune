@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 APP_NAME="Uwuntu Image Manager"
-APP_VERSION="1.4"
+APP_VERSION="1.5"
 
 ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"
 SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"
@@ -10,7 +10,9 @@ SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"
 # ------------------------------------------------------------
 # Benutzer ermitteln
 # ------------------------------------------------------------
-if [[ "${1:-}" == "--root-install" ]]; then
+INSTALL_MODE="${1:-}"
+
+if [[ "$INSTALL_MODE" == "--root-install" || "$INSTALL_MODE" == "--root-update" ]]; then
     REAL_USER="${2:-}"
     REAL_HOME="${3:-}"
 
@@ -37,23 +39,33 @@ fi
 if [[ "$ROOT_MODE" -eq 1 ]]; then
     export DEBIAN_FRONTEND=noninteractive
 
-    apt-get update
-    apt-get install -y \
-        python3 \
-        python3-gi \
-        gir1.2-gtk-4.0 \
-        partclone \
-        zstd \
-        dosfstools \
-        e2fsprogs \
-        parted \
-        util-linux \
-        udisks2 \
-        xdg-utils \
-        xdg-user-dirs \
-        desktop-file-utils \
-        tar \
+    REQUIRED_PACKAGES=(
+        python3
+        python3-gi
+        gir1.2-gtk-4.0
+        partclone
+        zstd
+        dosfstools
+        e2fsprogs
+        parted
+        util-linux
+        udisks2
+        xdg-utils
+        xdg-user-dirs
+        desktop-file-utils
+        tar
         coreutils
+    )
+
+    if [[ "$INSTALL_MODE" == "--root-install" ]]; then
+        apt-get update
+        apt-get install -y "${REQUIRED_PACKAGES[@]}"
+    else
+        if ! apt-get install -y "${REQUIRED_PACKAGES[@]}"; then
+            apt-get update
+            apt-get install -y "${REQUIRED_PACKAGES[@]}"
+        fi
+    fi
 
     mkdir -p /usr/local/libexec
 
@@ -77,10 +89,19 @@ import tarfile
 import tempfile
 import threading
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
-APP_VERSION = "1.4"
+APP_VERSION = "1.5"
 FORMAT_VERSION = "uwuntu-image-v1"
+
+UPDATE_RAW_URL = (
+    "https://raw.githubusercontent.com/"
+    "Davegage-byte/voltune/main/uwuntu/"
+    "Uwuntu%20Image%20Manager.sh"
+)
+MAX_UPDATE_BYTES = 4 * 1024 * 1024
 
 MIB = 1024 * 1024
 RESTORE_TOTAL_MIB = 29 * 1024
@@ -1595,6 +1616,272 @@ def ventoy_update(args):
 
 
 # ============================================================
+# Online-Update
+# ============================================================
+
+def version_key(value):
+    parts = re.findall(r"\d+", str(value or ""))
+    return tuple(int(part) for part in parts) if parts else (0,)
+
+
+def parse_installer_version(script_text):
+    match = re.search(
+        r'^APP_VERSION="([0-9]+(?:\.[0-9]+)*)"$',
+        script_text,
+        flags=re.MULTILINE,
+    )
+    if not match:
+        raise RuntimeError(
+            "Die heruntergeladene Datei enthält keine gültige "
+            "Uwuntu-Image-Manager-Versionsnummer."
+        )
+    return match.group(1)
+
+
+def validate_update_script(script_text):
+    required_markers = (
+        '#!/usr/bin/env bash',
+        'APP_NAME="Uwuntu Image Manager"',
+        'ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"',
+        'SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"',
+        'Uwuntu-Images',
+        'persistence/Uwuntu.dat',
+    )
+
+    missing = [
+        marker for marker in required_markers
+        if marker not in script_text
+    ]
+
+    if missing:
+        raise RuntimeError(
+            "Die GitHub-Datei sieht nicht wie ein gültiger "
+            "Uwuntu Image Manager aus."
+        )
+
+
+def download_update_script():
+    request = urllib.request.Request(
+        UPDATE_RAW_URL,
+        headers={
+            "User-Agent": f"Uwuntu-Image-Manager/{APP_VERSION}",
+            "Cache-Control": "no-cache",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=25) as response:
+            length = response.headers.get("Content-Length")
+            if length:
+                try:
+                    if int(length) > MAX_UPDATE_BYTES:
+                        raise RuntimeError(
+                            "Die Update-Datei ist unerwartet groß."
+                        )
+                except ValueError:
+                    pass
+
+            data = response.read(MAX_UPDATE_BYTES + 1)
+
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(
+            f"GitHub antwortet mit HTTP {exc.code}."
+        ) from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(
+            f"GitHub ist nicht erreichbar: {exc.reason}"
+        ) from exc
+
+    if len(data) > MAX_UPDATE_BYTES:
+        raise RuntimeError(
+            "Die Update-Datei ist unerwartet groß."
+        )
+
+    try:
+        script_text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RuntimeError(
+            "Die GitHub-Datei ist nicht als UTF-8 lesbar."
+        ) from exc
+
+    validate_update_script(script_text)
+    remote_version = parse_installer_version(script_text)
+    return script_text, remote_version
+
+
+def self_update(args):
+    emit(
+        "stage",
+        stage="Update von GitHub herunterladen",
+        stage_index=1,
+        stage_count=3,
+        direction="DOWNLOAD",
+    )
+
+    try:
+        script_text, remote_version = download_update_script()
+    except Exception as exc:
+        fail(f"Update konnte nicht heruntergeladen werden:\n{exc}")
+
+    emit(
+        "progress",
+        stage="Update von GitHub herunterladen",
+        stage_index=1,
+        stage_count=3,
+        fraction=1.0,
+        done=1,
+        total=1,
+        rate_bps=0,
+        eta_seconds=0,
+        direction="DOWNLOAD",
+    )
+
+    emit(
+        "stage",
+        stage="Update prüfen",
+        stage_index=2,
+        stage_count=3,
+        direction="PRÜFEN",
+    )
+
+    expected = str(args.expected_version or "").strip()
+
+    if expected and remote_version != expected:
+        fail(
+            "Die GitHub-Version hat sich seit der Prüfung geändert.\n"
+            f"Erwartet: v{expected}\n"
+            f"Gefunden: v{remote_version}\n\n"
+            "Bitte UPDATE PRÜFEN erneut verwenden."
+        )
+
+    if version_key(remote_version) <= version_key(APP_VERSION):
+        emit(
+            "progress",
+            stage="Update prüfen",
+            stage_index=2,
+            stage_count=3,
+            fraction=1.0,
+            done=1,
+            total=1,
+            rate_bps=0,
+            eta_seconds=0,
+            direction="PRÜFEN",
+        )
+        emit(
+            "success",
+            message=(
+                f"Kein neueres Update vorhanden. "
+                f"Installiert: v{APP_VERSION}, GitHub: v{remote_version}"
+            ),
+            version=APP_VERSION,
+            restart=False,
+        )
+        return
+
+    emit(
+        "progress",
+        stage="Update prüfen",
+        stage_index=2,
+        stage_count=3,
+        fraction=1.0,
+        done=1,
+        total=1,
+        rate_bps=0,
+        eta_seconds=0,
+        direction="PRÜFEN",
+    )
+
+    emit(
+        "stage",
+        stage=f"Version {remote_version} installieren",
+        stage_index=3,
+        stage_count=3,
+        direction="INSTALLIEREN",
+    )
+
+    temp_path = None
+
+    try:
+        fd, temp_name = tempfile.mkstemp(
+            prefix="uwuntu-image-manager-update-",
+            suffix=".sh",
+            dir="/tmp",
+        )
+        temp_path = Path(temp_name)
+
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(script_text)
+
+        os.chmod(temp_path, 0o700)
+
+        log(
+            f"ONLINE-UPDATE: v{APP_VERSION} -> v{remote_version} "
+            f"von {UPDATE_RAW_URL}"
+        )
+
+        result = subprocess.run(
+            [
+                "bash",
+                str(temp_path),
+                "--root-update",
+                USER,
+                str(HOME),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=600,
+        )
+
+        if result.stdout:
+            log("UPDATE-INSTALLER:\n" + result.stdout[-12000:])
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                "Der heruntergeladene Installer wurde mit "
+                f"Fehlercode {result.returncode} beendet."
+            )
+
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            "Die Update-Installation hat zu lange gedauert."
+        ) from exc
+    except Exception as exc:
+        fail(f"Update-Installation fehlgeschlagen:\n{exc}")
+    finally:
+        if temp_path:
+            try:
+                temp_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    emit(
+        "progress",
+        stage=f"Version {remote_version} installieren",
+        stage_index=3,
+        stage_count=3,
+        fraction=1.0,
+        done=1,
+        total=1,
+        rate_bps=0,
+        eta_seconds=0,
+        direction="INSTALLIEREN",
+    )
+
+    log(f"ONLINE-UPDATE ERFOLGREICH: v{remote_version}")
+
+    emit(
+        "success",
+        message=(
+            f"Uwuntu Image Manager v{remote_version} wurde "
+            "erfolgreich installiert."
+        ),
+        version=remote_version,
+        restart=True,
+    )
+
+
+# ============================================================
 # Main
 # ============================================================
 
@@ -1614,6 +1901,9 @@ def main():
     p.add_argument("--image", required=True)
     p.add_argument("--ventoy-root", required=True)
 
+    p = sub.add_parser("self-update")
+    p.add_argument("--expected-version", default="")
+
     args = parser.parse_args()
 
     log("=" * 70)
@@ -1625,6 +1915,8 @@ def main():
         restore(args)
     elif args.action == "ventoy-update":
         ventoy_update(args)
+    elif args.action == "self-update":
+        self_update(args)
 
 
 if __name__ == "__main__":
@@ -1679,6 +1971,8 @@ import subprocess
 import sys
 import tarfile
 import threading
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import gi
@@ -1688,13 +1982,24 @@ from gi.repository import Gtk, Gdk, GLib, Gio
 
 APP_ID = "com.uwuntu.ImageManager"
 APP_NAME = "Uwuntu Image Manager"
-VERSION = "1.4"
+VERSION = "1.5"
 
 HOME = Path.home()
 IMAGE_DIR = HOME / "Uwuntu-Images"
 STATE_DIR = HOME / ".local/state/uwuntu-image-manager"
 LOG_FILE = STATE_DIR / "manager.log"
 ROOT_HELPER = "/usr/local/libexec/uwuntu-image-manager-root"
+
+UPDATE_PAGE_URL = (
+    "https://github.com/Davegage-byte/voltune/blob/main/"
+    "uwuntu/Uwuntu%20Image%20Manager.sh"
+)
+UPDATE_RAW_URL = (
+    "https://raw.githubusercontent.com/"
+    "Davegage-byte/voltune/main/uwuntu/"
+    "Uwuntu%20Image%20Manager.sh"
+)
+MAX_UPDATE_BYTES = 4 * 1024 * 1024
 
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -1758,6 +2063,88 @@ def parse_created(value):
         return when.astimezone().strftime("%d.%m.%Y %H:%M")
     except Exception:
         return value or "unbekannt"
+
+
+# ============================================================
+# Online-Update
+# ============================================================
+
+def version_key(value):
+    parts = re.findall(r"\d+", str(value or ""))
+    return tuple(int(part) for part in parts) if parts else (0,)
+
+
+def parse_remote_version(script_text):
+    match = re.search(
+        r'^APP_VERSION="([0-9]+(?:\.[0-9]+)*)"$',
+        script_text,
+        flags=re.MULTILINE,
+    )
+
+    if not match:
+        raise RuntimeError(
+            "Auf GitHub wurde keine gültige Versionsnummer gefunden."
+        )
+
+    return match.group(1)
+
+
+def fetch_remote_version():
+    request = urllib.request.Request(
+        UPDATE_RAW_URL,
+        headers={
+            "User-Agent": f"Uwuntu-Image-Manager/{VERSION}",
+            "Cache-Control": "no-cache",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            length = response.headers.get("Content-Length")
+            if length:
+                try:
+                    if int(length) > MAX_UPDATE_BYTES:
+                        raise RuntimeError(
+                            "Die GitHub-Datei ist unerwartet groß."
+                        )
+                except ValueError:
+                    pass
+
+            data = response.read(MAX_UPDATE_BYTES + 1)
+
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(
+            f"GitHub antwortet mit HTTP {exc.code}."
+        ) from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(
+            f"GitHub ist nicht erreichbar: {exc.reason}"
+        ) from exc
+
+    if len(data) > MAX_UPDATE_BYTES:
+        raise RuntimeError(
+            "Die GitHub-Datei ist unerwartet groß."
+        )
+
+    try:
+        script_text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RuntimeError(
+            "Die GitHub-Datei ist nicht als UTF-8 lesbar."
+        ) from exc
+
+    required = (
+        '#!/usr/bin/env bash',
+        'APP_NAME="Uwuntu Image Manager"',
+        'ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"',
+    )
+
+    if not all(marker in script_text for marker in required):
+        raise RuntimeError(
+            "Die GitHub-Datei sieht nicht wie der Uwuntu Image Manager aus."
+        )
+
+    return parse_remote_version(script_text)
 
 
 # ============================================================
@@ -2389,6 +2776,12 @@ class MainWindow(Gtk.ApplicationWindow):
         open_images.connect("clicked", self.open_image_folder)
         bottom.append(open_images)
 
+        self.update_button = Gtk.Button(label="UPDATE PRÜFEN")
+        self.update_button.add_css_class("secondary")
+        self.update_button.set_hexpand(True)
+        self.update_button.connect("clicked", self.check_for_update)
+        bottom.append(self.update_button)
+
         open_log = Gtk.Button(label="LOG ÖFFNEN")
         open_log.add_css_class("secondary")
         open_log.set_hexpand(True)
@@ -2461,6 +2854,67 @@ class MainWindow(Gtk.ApplicationWindow):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+
+    # --------------------------------------------------------
+    # Online-Update
+    # --------------------------------------------------------
+    def check_for_update(self, *_):
+        self.update_button.set_sensitive(False)
+        self.update_button.set_label("PRÜFE GITHUB …")
+
+        def worker():
+            remote_version = None
+            error = None
+
+            try:
+                remote_version = fetch_remote_version()
+            except Exception as exc:
+                error = str(exc)
+
+            def finish():
+                self.update_button.set_sensitive(True)
+                self.update_button.set_label("UPDATE PRÜFEN")
+
+                if error:
+                    self.error(
+                        "Update-Prüfung fehlgeschlagen.\n\n" + error
+                    )
+                    return False
+
+                if version_key(remote_version) <= version_key(VERSION):
+                    self.info(
+                        "KEIN NEUERES UPDATE",
+                        f"Installiert: v{VERSION}\n"
+                        f"GitHub: v{remote_version}\n\n"
+                        "Du verwendest bereits dieselbe oder eine "
+                        "neuere Version.",
+                    )
+                    return False
+
+                self.confirm(
+                    f"UPDATE v{remote_version} VERFÜGBAR",
+                    f"Installiert: v{VERSION}\n"
+                    f"Neu auf GitHub: v{remote_version}\n\n"
+                    "Das Update wird automatisch heruntergeladen, "
+                    "geprüft und installiert.\n\n"
+                    "Danach startet der Uwuntu Image Manager "
+                    "automatisch neu.",
+                    lambda: self.run_backend(
+                        "UWUNTU IMAGE MANAGER UPDATE",
+                        [
+                            "self-update",
+                            "--expected-version",
+                            remote_version,
+                        ],
+                        restart_on_success=True,
+                    ),
+                )
+
+                return False
+
+            GLib.idle_add(finish)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     # --------------------------------------------------------
     # Backup
@@ -2786,7 +3240,12 @@ class MainWindow(Gtk.ApplicationWindow):
     # --------------------------------------------------------
     # Backend
     # --------------------------------------------------------
-    def run_backend(self, title, args):
+    def run_backend(
+        self,
+        title,
+        args,
+        restart_on_success=False,
+    ):
         progress = ProgressWindow(self, title)
 
         command = [
@@ -2799,6 +3258,7 @@ class MainWindow(Gtk.ApplicationWindow):
         def worker():
             final_success = None
             final_error = None
+            backend_restart = False
 
             try:
                 proc = subprocess.Popen(
@@ -2822,6 +3282,9 @@ class MainWindow(Gtk.ApplicationWindow):
 
                     if event.get("type") == "success":
                         final_success = event.get("message", "Fertig.")
+                        backend_restart = bool(
+                            event.get("restart", False)
+                        )
                     elif event.get("type") == "error":
                         final_error = event.get("message", "Unbekannter Fehler.")
 
@@ -2843,6 +3306,32 @@ class MainWindow(Gtk.ApplicationWindow):
 
                 if final_error:
                     self.error(final_error)
+                elif restart_on_success and backend_restart:
+                    launcher = (
+                        HOME
+                        / ".local/bin/uwuntu-image-manager"
+                    )
+
+                    try:
+                        subprocess.Popen(
+                            [str(launcher)],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            start_new_session=True,
+                        )
+                    except Exception as exc:
+                        self.error(
+                            "Update wurde installiert, aber der "
+                            "automatische Neustart ist fehlgeschlagen.\n\n"
+                            f"{exc}\n\n"
+                            "Bitte den Uwuntu Image Manager einmal "
+                            "manuell neu öffnen."
+                        )
+                        return False
+
+                    app = self.get_application()
+                    if app:
+                        app.quit()
                 else:
                     self.info(
                         final_success or "Vorgang abgeschlossen.",
