@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.67 + Wipe Auto v3.26 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.68 + Wipe Auto v3.27 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090875
+MANAGER_BUILD=2026090876
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3052,7 +3052,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.26"
+VERSION = "3.27"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -7963,14 +7963,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.67")
+        self.window.set_title("Hardware Check v4.5.68")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.67")
+        title_label = Gtk.Label(label="Hardware Check v4.5.68")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -9996,7 +9996,7 @@ class App(Gtk.Application):
             ("G", "Garantieprüfung Dell / Lenovo"),
             ("T", "Touchscreen-Test manuell öffnen"),
             ("D", "Display-Test starten"),
-            ("ENTER", "Wipe Auto: WIPE SSD / danach YES bestätigen"),
+            ("ENTER", "Wipe Auto: LÖSCHEN / danach JA bestätigen"),
             ("STRG+W", "Aktuelles Diagnosefenster schließen"),
             ("STRG+Q", "Alle Uwuntu-Diagnosefenster schließen"),
             ("ESC", "Benchmark/RAM abbrechen · Tastatur-Test mit ESC x3 beenden"),
@@ -12959,7 +12959,7 @@ fi
 
 # Keine separate 90-Sekunden-App-Erkennung mehr.
 # Die anschließende AT-SPI-Fokusprüfung wartet selbst darauf,
-# dass Wipe Auto und der Button WIPE SSD wirklich vorhanden sind.
+# dass Wipe Auto und der Button LÖSCHEN wirklich vorhanden sind.
 # Dadurch gibt es beim Boot keinen unnötigen 90s-Timeout mehr.
 # Wipe Auto sitzt jetzt im gemeinsamen Network-Check-Fenster oben links.
 # Deshalb gezielt dieses Fenster aktivieren und danach den eingebetteten
@@ -12972,10 +12972,10 @@ fi
 # Mutter/Tiling Assistant kurz Zeit geben, das gemeinsame Fenster wirklich
 # zum aktiven Vordergrundfenster zu machen. Nach dem Dock-/Workarea-Wechsel
 # etwas großzügiger warten. Danach fokussiert zusätzlich die App selbst
-# WIPE SSD; AT-SPI bleibt als zweite Absicherung erhalten.
+# LÖSCHEN; AT-SPI bleibt als zweite Absicherung erhalten.
 sleep 0.45
 
-echo "Fokussiere WIPE SSD im gemeinsamen Network/Wipe-Fenster ..."
+echo "Fokussiere LÖSCHEN im gemeinsamen Network/Wipe-Fenster ..."
 FOCUS_OK=0
 
 if python3 - <<'PY'
@@ -13056,7 +13056,7 @@ def find_targets():
         if network_window is None:
             continue
 
-        # Nur innerhalb dieses Fensters nach SSD-Label und WIPE SSD suchen.
+        # Nur innerhalb dieses Fensters nach SSD-Label und LÖSCHEN suchen.
         for item in walk(network_window):
             try:
                 name = (item.name or "").strip()
@@ -13064,7 +13064,7 @@ def find_targets():
             except Exception:
                 continue
 
-            if name == "WIPE SSD" and role in ("push button", "button"):
+            if name == "LÖSCHEN" and role in ("push button", "button"):
                 wipe_button = item
 
             if name == "SSD" and role in ("label", "text"):
@@ -13198,7 +13198,7 @@ while time.monotonic() < deadline:
                 time.sleep(0.18)
 
                 # Durch die echte Fensteraktivierung feuert zusätzlich
-                # notify::is-active in der GTK-App und fokussiert WIPE SSD.
+                # notify::is-active in der GTK-App und fokussiert LÖSCHEN.
                 # Zweimal kurz nachfassen, weil Mutter unter Wayland das
                 # Aktivierungsereignis leicht verzögert zustellen kann.
                 atspi_focus(window, button)
@@ -13215,16 +13215,16 @@ raise SystemExit(1)
 PY
 then
     FOCUS_OK=1
-    echo "OK: WIPE SSD hat bestätigten Tastaturfokus."
+    echo "OK: LÖSCHEN hat bestätigten Tastaturfokus."
 else
-    echo "WARNUNG: WIPE SSD konnte nicht sicher fokussiert werden."
+    echo "WARNUNG: LÖSCHEN konnte nicht sicher fokussiert werden."
 fi
 restore_accessibility
 # ------------------------------------------------------------
 # Begrüßungs-/Bereitschaftssound
 # ------------------------------------------------------------
 # Der Sound kommt ganz am Ende. Damit ist er gleichzeitig das Signal:
-# Wipe Auto ist bereit und WIPE SSD sollte den Tastaturfokus haben.
+# Wipe Auto ist bereit und LÖSCHEN sollte den Tastaturfokus haben.
 LOGIN_SOUND="/usr/share/sounds/Yaru/stereo/desktop-login.oga"
 if [ "$FOCUS_OK" -eq 1 ]; then
     if command -v paplay >/dev/null 2>&1 && [ -f "$LOGIN_SOUND" ]; then
@@ -13234,7 +13234,7 @@ if [ "$FOCUS_OK" -eq 1 ]; then
         echo "Hinweis: Bereitschaftssound nicht verfügbar."
     fi
 else
-    echo "Kein Bereitschaftssound: WIPE SSD hat keinen bestätigten Fokus."
+    echo "Kein Bereitschaftssound: LÖSCHEN hat keinen bestätigten Fokus."
 fi
 
 echo "Kiosk fertig: $(date)"
@@ -13275,18 +13275,18 @@ EOF
     echo "Firefox wird vom Kiosk nicht mehr gestartet."
     echo
     echo "Startfokus:"
-    echo "  Wipe Auto wird nach dem Start aktiviert und WIPE SSD"
+    echo "  Wipe Auto wird nach dem Start aktiviert und LÖSCHEN"
     echo "  bekommt über AT-SPI gezielt den Tastaturfokus."
     echo "  Es gibt keine zusätzliche 90s-App-Wartezeit mehr."
     echo "  Kamera-Test und Hardware Check müssen zuerst stabil erschienen sein."
     echo "  Danach wird das gemeinsame Network/Wipe-Fenster direkt aktiviert."
-    echo "  AT-SPI fokussiert dort gezielt WIPE SSD; keine Maus/Alt+Tab nötig."
+    echo "  AT-SPI fokussiert dort gezielt LÖSCHEN; keine Maus/Alt+Tab nötig."
     echo "  Ein fokussierter WIPE-SSD-Button wird deutlich BLAU."
     echo "  Sobald der Fokus einmal bestätigt ist, beendet sich die"
-    echo "  Fokus-Automatik sofort - Enter/YES kann direkt bedient werden."
+    echo "  Fokus-Automatik sofort - Enter/JA kann direkt bedient werden."
     echo "  Der Bereitschaftssound kommt direkt nach bestätigtem Fokus."
-    echo "  ENTER 1 = WIPE SSD"
-    echo "  ENTER 2 = YES / Löschen bestätigen"
+    echo "  ENTER 1 = LÖSCHEN"
+    echo "  ENTER 2 = JA / Löschen bestätigen"
     echo
     echo "Bereitschaftssound:"
     echo "  /usr/share/sounds/Yaru/stereo/desktop-login.oga"
@@ -13360,7 +13360,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.28 und Wipe Auto v3.26
+Comment=Network Check v2.28 und Wipe Auto v3.27
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13388,7 +13388,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.28 + Wipe Auto v3.26 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.28 + Wipe Auto v3.27 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -13901,7 +13901,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.26"
+WIPE_VERSION = "3.27"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -14179,7 +14179,7 @@ class WipeCompactPanel:
         )
         self.action_area.set_halign(Gtk.Align.END)
 
-        self.wipe_button = Gtk.Button(label="WIPE SSD")
+        self.wipe_button = Gtk.Button(label="LÖSCHEN")
         self.wipe_button.add_css_class("danger-action")
         self.wipe_button.connect("clicked", self.on_wipe_clicked)
         self.wipe_button.connect(
@@ -14350,9 +14350,9 @@ class WipeCompactPanel:
         warning.set_hexpand(False)
         warning.add_css_class("confirm-warning")
 
-        cancel = Gtk.Button(label="CANCEL")
+        cancel = Gtk.Button(label="ABBRECHEN")
         cancel.connect("clicked", self.on_cancel)
-        yes = Gtk.Button(label="YES")
+        yes = Gtk.Button(label="JA")
         yes.add_css_class("confirm")
         yes.connect("clicked", self.on_confirm)
         yes.connect(
@@ -14533,14 +14533,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.28 + Wipe Auto v3.26")
+        self.window.set_title("Network Check v2.28 + Wipe Auto v3.27")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.26")
+        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.27")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -14859,7 +14859,7 @@ class NetworkCheckApp(Gtk.Application):
 
         button.confirm.keyboard-focus,
         button.confirm:focus {
-            background: #232329;
+            background: #5aa2ff;
             color: #f4f4f5;
             border-color: #5aa2ff;
             outline: 3px solid #5aa2ff;
