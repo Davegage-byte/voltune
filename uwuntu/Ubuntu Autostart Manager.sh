@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.70 + Wipe Auto v3.30 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.71 + Wipe Auto v3.31 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090902
+MANAGER_BUILD=2026090903
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3052,7 +3052,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.30"
+VERSION = "3.31"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -3187,11 +3187,12 @@ def format_battery_power(power_w, state):
 
     state_l = (state or "").strip().lower()
 
-    # Laden positiv, Entladen negativ.
+    # Laden positiv, Entladen mit getrenntem Minuszeichen.
+    # Beispiel: "- 35.5W" statt "-35.5 W".
     if state_l == "discharging":
-        power_w = -power_w
+        return f"- {power_w:.1f}W"
 
-    return f"{power_w:.1f} W"
+    return f"{power_w:.1f}W"
 
 
 def battery_info():
@@ -3402,7 +3403,7 @@ class WipeAutoApp(Gtk.Application):
             spacing=2
         )
         self.health_metric.add_css_class("metric")
-        self.health_metric.set_size_request(240, -1)
+        self.health_metric.set_size_request(400, -1)
         self.health_metric.set_hexpand(False)
 
         self.battery_value = Gtk.Label(label="--")
@@ -7955,11 +7956,12 @@ class App(Gtk.Application):
         self.touch_proc = None
         self.touch_launch_guard_until = 0.0
 
-        # Kurzer Cache für die AT-SPI-Erkennung des GNOME-Power-Dialogs.
-        # Die Prüfung läuft nur bei Audio-Pfeiltasten und soll dabei nicht
-        # mehrfach innerhalb weniger Millisekunden den Desktopbaum scannen.
+        # Cache für die AT-SPI-Erkennung des GNOME-Power-Dialogs.
+        # Die eigentliche Prüfung läuft vollständig asynchron im Hintergrund.
+        # Audio-Pfeiltasten dürfen dadurch niemals auf AT-SPI warten.
         self.power_dialog_cache_at = 0.0
         self.power_dialog_cache_value = False
+        self.power_dialog_probe_running = False
         self.display_state_file = Path.home() / ".local/state/uwuntu/display_test_status.json"
         self.display_script = Path.home() / ".local/bin/uwuntu-display-test.sh"
         self.display_test_active = False
@@ -8046,14 +8048,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.70")
+        self.window.set_title("Hardware Check v4.5.71")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.70")
+        title_label = Gtk.Label(label="Hardware Check v4.5.71")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -8100,6 +8102,9 @@ class App(Gtk.Application):
         GLib.timeout_add(500, self.poll_display_status)
         GLib.timeout_add(400, self.poll_media_status)
         GLib.timeout_add(1000, self.poll_sensors)
+        # GNOME-Powerdialog im Hintergrund beobachten. Dieser Timer blockiert
+        # niemals die Pfeiltasten; der eigentliche AT-SPI-Scan läuft im Thread.
+        GLib.timeout_add(250, self.poll_power_dialog_status)
         self.start_global_input_listener()
 
         log("Hardware Check gestartet")
@@ -10319,23 +10324,8 @@ class App(Gtk.Application):
         ).start()
         return False
 
-    def system_power_dialog_open(self):
-        """GNOME-Ausschalt-/Power-Dialog crash-sicher erkennen.
-
-        Frühere Versionen liefen hier direkt mit pyatspi durch den kompletten
-        Accessibility-Baum des GNOME-Desktops. Genau dieser Scan wurde bei
-        jedem Audio-Pfeiltasten-Hotkey ausgeführt und konnte Hardware Check
-        auf einzelnen Systemen hart beenden. Der AT-SPI-Scan läuft deshalb
-        jetzt isoliert in einem kurzen Hilfsprozess. Ein Fehler, Timeout oder
-        sogar Absturz dieses Probes kann den Hardware-Check-Prozess nicht mehr
-        mitreißen.
-        """
-        now = time.monotonic()
-        if now - self.power_dialog_cache_at < 0.25:
-            return self.power_dialog_cache_value
-
-        self.power_dialog_cache_at = now
-
+    def _power_dialog_probe_worker(self):
+        """AT-SPI-Powerdialog-Prüfung isoliert und ohne UI-Blockierung."""
         probe_code = r"""
 import pyatspi
 
@@ -10414,7 +10404,6 @@ def main():
 
 main()
 """
-
         detected = False
         try:
             result = subprocess.run(
@@ -10428,12 +10417,37 @@ main()
             )
             detected = result.returncode == 0 and result.stdout.strip() == "1"
         except subprocess.TimeoutExpired:
-            log("Power-Dialog-Probe: Timeout · Audio-Hotkey wird nicht blockiert")
+            log("Power-Dialog-Probe: Timeout im Hintergrund")
         except Exception as exc:
             log(f"Power-Dialog-Probe Fehler: {exc}")
 
-        self.power_dialog_cache_value = detected
-        return detected
+        def finish_probe():
+            self.power_dialog_cache_value = detected
+            self.power_dialog_cache_at = time.monotonic()
+            self.power_dialog_probe_running = False
+            return False
+
+        GLib.idle_add(finish_probe)
+
+    def poll_power_dialog_status(self):
+        """Powerdialog-Cache aktualisieren, ohne GTK oder Hotkeys zu blockieren."""
+        if self.power_dialog_probe_running:
+            return True
+
+        self.power_dialog_probe_running = True
+        threading.Thread(
+            target=self._power_dialog_probe_worker,
+            name="uwuntu-power-dialog-probe",
+            daemon=True,
+        ).start()
+        return True
+
+    def system_power_dialog_open(self):
+        """Nur den bereits ermittelten Cache lesen – ohne jede Wartezeit."""
+        # Falls der periodische Timer noch nicht gelaufen ist, Prüfung nebenbei
+        # anstoßen. Der aktuelle Pfeiltastendruck wird dadurch NICHT verzögert.
+        self.poll_power_dialog_status()
+        return bool(self.power_dialog_cache_value)
 
     def send_audio_action(self, action):
         action_name = {
@@ -10508,8 +10522,9 @@ main()
 
         if action.startswith("audio-"):
             # Solange der GNOME-Power-/Ausschalt-Dialog offen ist, gehören die
-            # Pfeiltasten ausschließlich diesem Systemdialog. Audio Test darf
-            # dann keinerlei Links/Mitte/Rechts/Auto-Aktion auslösen.
+            # Pfeiltasten ausschließlich diesem Systemdialog. Die Erkennung
+            # stammt aus einem asynchron gepflegten Cache und verzögert den
+            # Audiotastendruck selbst nicht mehr.
             if self.system_power_dialog_open():
                 log(
                     "Audio-Hotkey blockiert: "
@@ -13459,7 +13474,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.28 und Wipe Auto v3.30
+Comment=Network Check v2.28 und Wipe Auto v3.31
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13487,7 +13502,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.28 + Wipe Auto v3.30 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.28 + Wipe Auto v3.31 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -14000,7 +14015,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.30"
+WIPE_VERSION = "3.31"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -14098,8 +14113,8 @@ def wipe_format_battery_power(power_w, state):
     if power_w < 0.05:
         return ""
     if (state or "").strip().lower() == "discharging":
-        power_w = -power_w
-    return f"{power_w:.1f} W"
+        return f"- {power_w:.1f}W"
+    return f"{power_w:.1f}W"
 
 
 def wipe_battery_info():
@@ -14219,7 +14234,7 @@ class WipeCompactPanel:
 
         self.battery_value = Gtk.Label(label="--")
         self.battery_value.set_xalign(0.5)
-        self.battery_value.set_size_request(145, -1)
+        self.battery_value.set_size_request(245, -1)
         self.battery_value.set_hexpand(False)
         self.battery_value.add_css_class("wipe-big")
         battery_metrics.append(self.battery_value)
@@ -14644,14 +14659,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.28 + Wipe Auto v3.30")
+        self.window.set_title("Network Check v2.28 + Wipe Auto v3.31")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.30")
+        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.31")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
