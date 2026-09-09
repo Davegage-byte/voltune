@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.71 + Wipe Auto v3.31 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.71 + Wipe Auto v3.32 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090903
+MANAGER_BUILD=2026090904
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3052,7 +3052,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.31"
+VERSION = "3.32"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -3383,7 +3383,7 @@ class WipeAutoApp(Gtk.Application):
         self.battery_card.add_css_class("card")
 
         bhead = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        btitle = Gtk.Label(label="BATTERY")
+        btitle = Gtk.Label(label="BATTERIE")
         btitle.set_xalign(0)
         btitle.set_hexpand(True)
         btitle.add_css_class("card-title")
@@ -3435,7 +3435,7 @@ class WipeAutoApp(Gtk.Application):
 
         outer.append(self.battery_card)
         # ----------------------------------------------------
-        # SSD
+        # Datenträger
         # ----------------------------------------------------
         self.disk_card = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -3444,7 +3444,7 @@ class WipeAutoApp(Gtk.Application):
         self.disk_card.add_css_class("card")
 
         dhead = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        dtitle = Gtk.Label(label="SSD")
+        dtitle = Gtk.Label(label="DATENTRÄGER")
         dtitle.set_xalign(0)
         dtitle.set_hexpand(True)
         dtitle.add_css_class("card-title")
@@ -3855,7 +3855,7 @@ class WipeAutoApp(Gtk.Application):
 
     def refresh_all(self):
         self.refresh_battery()
-        # SSD
+        # Datenträger
         details = disk_details()
         if details is None:
             self.disk_badge.set_text("NOT FOUND")
@@ -8761,7 +8761,7 @@ class App(Gtk.Application):
                 value_text,
             )
 
-        # SSD TEMP.
+        # Datenträger TEMP.
         ssd_temp = read_ssd_temperature()
         if ssd_temp is None:
             self.set_sensor_status_ui(
@@ -13474,7 +13474,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.28 und Wipe Auto v3.31
+Comment=Network Check v2.28 und Wipe Auto v3.32
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13502,7 +13502,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.28 + Wipe Auto v3.31 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.28 + Wipe Auto v3.32 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -14015,7 +14015,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.31"
+WIPE_VERSION = "3.32"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -14209,19 +14209,19 @@ class WipeCompactPanel:
         self.soh_alert_active = False
         self.soh_blink_on = False
 
-        # Battery und SSD sind jetzt zwei eigenständige volle Zeilen.
+        # Batterie und Datenträger sind jetzt zwei eigenständige volle Zeilen.
         # Zusammen mit LAN und WLAN ergibt das exakt:
-        # LAN / WLAN / BATTERY / SSD – einspaltig über die gesamte Fensterbreite.
+        # LAN / WLAN / BATTERIE / DATENTRÄGER – einspaltig über die gesamte Fensterbreite.
         self.root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         self.root.set_hexpand(True)
         self.root.set_vexpand(False)
 
-        # Battery
+        # Batterie
         battery = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         battery.set_hexpand(True)
         battery.set_vexpand(False)
         battery.add_css_class("card")
-        btitle = Gtk.Label(label="BATTERY")
+        btitle = Gtk.Label(label="BATTERIE")
         btitle.set_xalign(0)
         btitle.add_css_class("card-title")
         battery.append(btitle)
@@ -14254,13 +14254,13 @@ class WipeCompactPanel:
         battery.append(self.battery_note)
         self.root.append(battery)
 
-        # SSD
+        # Datenträger
         disk = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         disk.set_hexpand(True)
         disk.set_vexpand(False)
         disk.add_css_class("card")
         dhead = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        dtitle = Gtk.Label(label="SSD")
+        dtitle = Gtk.Label(label="DATENTRÄGER")
         dtitle.set_xalign(0)
         dtitle.set_hexpand(True)
         dtitle.add_css_class("card-title")
@@ -14442,7 +14442,7 @@ class WipeCompactPanel:
             self.last_disk_display = f"{details['size']} • {details['model']}"
             self.disk_value.set_text(self.last_disk_display)
 
-            # SSD erkannt, aber noch nicht gelöscht: orange Hinweisstatus.
+            # Datenträger erkannt, aber noch nicht gelöscht: orange Hinweisstatus.
             # WIRD GELÖSCHT bleibt Blau, erfolgreicher Abschluss Grün, Fehler Rot.
             self.set_class(self.disk_value, "warn")
 
@@ -14659,14 +14659,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.28 + Wipe Auto v3.31")
+        self.window.set_title("Network Check v2.28 + Wipe Auto v3.32")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.31")
+        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.32")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
