@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.68 + Wipe Auto v3.28 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.69 + Wipe Auto v3.29 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090877
+MANAGER_BUILD=2026090901
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3052,7 +3052,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.28"
+VERSION = "3.29"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -3942,7 +3942,7 @@ class WipeAutoApp(Gtk.Application):
 
         self.clear_action_area()
 
-        self.disk_badge.set_text("WIPING")
+        self.disk_badge.set_text("WIRD GELÖSCHT")
         self.set_class(self.disk_badge, "live")
         if self.last_disk_display:
             self.disk_value.set_text(
@@ -7963,14 +7963,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.68")
+        self.window.set_title("Hardware Check v4.5.69")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.68")
+        title_label = Gtk.Label(label="Hardware Check v4.5.69")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -10237,101 +10237,117 @@ class App(Gtk.Application):
         return False
 
     def system_power_dialog_open(self):
-        """GNOME-Ausschalt-/Power-Dialog per AT-SPI erkennen.
+        """GNOME-Ausschalt-/Power-Dialog crash-sicher erkennen.
 
-        Nur wenn in demselben Dialog sowohl eine Abbruch-Aktion als auch eine
-        Ausschalt-/Herunterfahr-Aktion vorkommt, gilt er als Power-Dialog.
-        Dadurch werden normale Fenster/Dialoge nicht unnötig beeinflusst.
+        Frühere Versionen liefen hier direkt mit pyatspi durch den kompletten
+        Accessibility-Baum des GNOME-Desktops. Genau dieser Scan wurde bei
+        jedem Audio-Pfeiltasten-Hotkey ausgeführt und konnte Hardware Check
+        auf einzelnen Systemen hart beenden. Der AT-SPI-Scan läuft deshalb
+        jetzt isoliert in einem kurzen Hilfsprozess. Ein Fehler, Timeout oder
+        sogar Absturz dieses Probes kann den Hardware-Check-Prozess nicht mehr
+        mitreißen.
         """
         now = time.monotonic()
-        if now - self.power_dialog_cache_at < 0.15:
+        if now - self.power_dialog_cache_at < 0.25:
             return self.power_dialog_cache_value
 
         self.power_dialog_cache_at = now
-        detected = False
 
-        cancel_tokens = (
-            "abbrechen",
-            "cancel",
-        )
-        power_tokens = (
-            "herunterfahren",
-            "ausschalten",
-            "abschalten",
-            "power off",
-            "poweroff",
-            "shut down",
-            "shutdown",
-        )
+        probe_code = r"""
+import pyatspi
 
-        def walk(obj, depth=0):
-            if depth > 7:
-                return
-            try:
-                count = obj.childCount
-            except Exception:
-                count = 0
-            for i in range(count):
-                try:
-                    child = obj.getChildAtIndex(i)
-                except Exception:
-                    continue
-                yield child
-                yield from walk(child, depth + 1)
+cancel_tokens = ("abbrechen", "cancel")
+power_tokens = (
+    "herunterfahren", "ausschalten", "abschalten",
+    "power off", "poweroff", "shut down", "shutdown",
+)
 
+
+def walk(obj, depth=0):
+    if depth > 7:
+        return
+    try:
+        count = obj.childCount
+    except Exception:
+        count = 0
+    for i in range(count):
         try:
-            desktop = pyatspi.Registry.getDesktop(0)
-            app_count = desktop.childCount
+            child = obj.getChildAtIndex(i)
         except Exception:
-            self.power_dialog_cache_value = False
-            return False
+            continue
+        yield child
+        yield from walk(child, depth + 1)
 
-        for app_index in range(app_count):
+
+def main():
+    try:
+        desktop = pyatspi.Registry.getDesktop(0)
+        app_count = desktop.childCount
+    except Exception:
+        print("0")
+        return
+
+    for app_index in range(app_count):
+        try:
+            app = desktop.getChildAtIndex(app_index)
+        except Exception:
+            continue
+
+        for candidate in walk(app):
             try:
-                app = desktop.getChildAtIndex(app_index)
+                role = (candidate.getRoleName() or "").lower()
             except Exception:
+                role = ""
+
+            if role not in ("dialog", "alert", "frame", "window"):
                 continue
 
-            for candidate in walk(app):
+            names = []
+            try:
+                candidate_name = (candidate.name or "").strip()
+                if candidate_name:
+                    names.append(candidate_name.lower())
+            except Exception:
+                pass
+
+            for item in walk(candidate):
                 try:
-                    role = (candidate.getRoleName() or "").lower()
+                    name = (item.name or "").strip()
                 except Exception:
-                    role = ""
+                    name = ""
+                if name:
+                    names.append(name.lower())
 
-                if role not in (
-                    "dialog",
-                    "alert",
-                    "frame",
-                    "window",
-                ):
-                    continue
+            haystack = " | ".join(names)
+            if (
+                any(token in haystack for token in cancel_tokens)
+                and any(token in haystack for token in power_tokens)
+            ):
+                print("1")
+                return
 
-                names = []
-                try:
-                    candidate_name = (candidate.name or "").strip()
-                    if candidate_name:
-                        names.append(candidate_name.lower())
-                except Exception:
-                    pass
+    print("0")
 
-                for item in walk(candidate):
-                    try:
-                        name = (item.name or "").strip()
-                    except Exception:
-                        name = ""
-                    if name:
-                        names.append(name.lower())
 
-                haystack = " | ".join(names)
-                has_cancel = any(token in haystack for token in cancel_tokens)
-                has_power = any(token in haystack for token in power_tokens)
+main()
+"""
 
-                if has_cancel and has_power:
-                    detected = True
-                    break
-
-            if detected:
-                break
+        detected = False
+        try:
+            result = subprocess.run(
+                [sys.executable, "-c", probe_code],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=0.40,
+                check=False,
+            )
+            detected = result.returncode == 0 and result.stdout.strip() == "1"
+        except subprocess.TimeoutExpired:
+            log("Power-Dialog-Probe: Timeout · Audio-Hotkey wird nicht blockiert")
+        except Exception as exc:
+            log(f"Power-Dialog-Probe Fehler: {exc}")
 
         self.power_dialog_cache_value = detected
         return detected
@@ -13360,7 +13376,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.28 und Wipe Auto v3.28
+Comment=Network Check v2.28 und Wipe Auto v3.29
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13388,7 +13404,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.28 + Wipe Auto v3.28 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.28 + Wipe Auto v3.29 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -13901,7 +13917,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.28"
+WIPE_VERSION = "3.29"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -14317,7 +14333,7 @@ class WipeCompactPanel:
             self.disk_value.set_text(self.last_disk_display)
 
             # SSD erkannt, aber noch nicht gelöscht: orange Hinweisstatus.
-            # WIPING bleibt Blau, erfolgreicher Abschluss Grün, Fehler Rot.
+            # WIRD GELÖSCHT bleibt Blau, erfolgreicher Abschluss Grün, Fehler Rot.
             self.set_class(self.disk_value, "warn")
 
             self.disk_note.set_text("Bereit zum Löschen.")
@@ -14381,7 +14397,7 @@ class WipeCompactPanel:
             return
         self.wiping = True
         self.clear_actions()
-        self.disk_badge.set_text("WIPING")
+        self.disk_badge.set_text("WIRD GELÖSCHT")
         self.set_class(self.disk_badge, "live")
         self.disk_value.set_text(
             (self.last_disk_display + " • Wird gelöscht …")
@@ -14533,14 +14549,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.28 + Wipe Auto v3.28")
+        self.window.set_title("Network Check v2.28 + Wipe Auto v3.29")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.28")
+        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.29")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
