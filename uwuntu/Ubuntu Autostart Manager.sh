@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.24 + Hardware Check v4.5.59 + Wipe Auto v3.24 + Audio Test v1.19
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.24 + Hardware Check v4.5.60 + Wipe Auto v3.24 + Audio Test v1.19
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090859
+MANAGER_BUILD=2026090860
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -7754,6 +7754,8 @@ class App(Gtk.Application):
         self.display_state_file = Path.home() / ".local/state/uwuntu/display_test_status.json"
         self.display_script = Path.home() / ".local/bin/uwuntu-display-test.sh"
         self.display_test_active = False
+        self.display_proc = None
+        self.display_launch_grace_until = 0.0
         self.camera_state_file = Path.home() / ".local/state/uwuntu/camera_test_status.json"
         self.audio_state_file = Path.home() / ".local/state/uwuntu/audio_test_status.json"
         self.hardware_refresh_file = Path.home() / ".local/state/uwuntu/hardware_refresh.json"
@@ -7835,14 +7837,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.59")
+        self.window.set_title("Hardware Check v4.5.60")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.59")
+        title_label = Gtk.Label(label="Hardware Check v4.5.60")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -8917,36 +8919,86 @@ class App(Gtk.Application):
         data = None
         try:
             if self.display_state_file.exists():
-                data = json.loads(self.display_state_file.read_text(encoding="utf-8"))
+                data = json.loads(
+                    self.display_state_file.read_text(encoding="utf-8")
+                )
         except Exception as exc:
             log(f"Display-Status nicht lesbar: {exc}")
+
         result = (data or {}).get("result")
-        current = int((data or {}).get("screen_number") or 0)
-        total = int((data or {}).get("total_screens") or 6)
+
         if result == "success":
             self.display_test_active = False
+            self.display_proc = None
+            self.display_launch_grace_until = 0.0
             self.set_display_status_ui(
                 "green",
                 "GETESTET",
             )
+
         elif result == "running":
             self.display_test_active = True
             self.set_display_status_ui(
                 "blue",
                 "LÄUFT",
             )
+
         elif result == "aborted":
             self.display_test_active = False
+            self.display_proc = None
+            self.display_launch_grace_until = 0.0
             self.set_display_status_ui(
                 "orange",
                 "ABGEBROCHEN",
             )
-        else:
+
+        elif result == "error":
             self.display_test_active = False
+            self.display_proc = None
+            self.display_launch_grace_until = 0.0
+            self.set_display_status_ui(
+                "red",
+                "FEHLER",
+            )
+
+        elif self.display_test_active:
+            # Direkt nach D kann der Poller schneller sein als der gestartete
+            # Display-Test beim Schreiben seiner ersten "running"-Statusdatei.
+            # Solange unser eigener Prozess noch lebt oder die kurze
+            # Start-Schonfrist läuft, darf HC deshalb NICHT auf
+            # NICHT GETESTET zurückspringen.
+            proc_running = False
+            try:
+                proc_running = (
+                    self.display_proc is not None
+                    and self.display_proc.poll() is None
+                )
+            except Exception:
+                proc_running = False
+
+            if (
+                proc_running
+                or time.monotonic() < self.display_launch_grace_until
+            ):
+                self.set_display_status_ui(
+                    "blue",
+                    "LÄUFT",
+                )
+            else:
+                self.display_test_active = False
+                self.display_proc = None
+                self.display_launch_grace_until = 0.0
+                self.set_display_status_ui(
+                    "orange",
+                    "NICHT GETESTET",
+                )
+
+        else:
             self.set_display_status_ui(
                 "orange",
                 "NICHT GETESTET",
             )
+
         return False
 
     def poll_display_status(self):
@@ -8960,9 +9012,28 @@ class App(Gtk.Application):
             self.set_display_status_ui("orange", "TESTER FEHLT")
             log("Display-Test per D fehlgeschlagen: Script fehlt")
             return False
+
+        # Eigener gestarteter Prozess ist die zuverlässigste Erkennung.
+        try:
+            if (
+                self.display_proc is not None
+                and self.display_proc.poll() is None
+            ):
+                self.display_test_active = True
+                self.set_display_status_ui("blue", "LÄUFT")
+                log("Display-Test per D bereits geöffnet")
+                return False
+        except Exception:
+            self.display_proc = None
+
+        # Zusätzlich alte/externe Instanz erkennen.
         try:
             running = subprocess.run(
-                ["pgrep", "-f", str(self.display_script)],
+                [
+                    "pgrep",
+                    "-f",
+                    "uwuntu-display-test-python",
+                ],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 timeout=1.0,
@@ -8970,25 +9041,45 @@ class App(Gtk.Application):
             ).returncode == 0
         except Exception:
             running = False
+
         if running:
             self.display_test_active = True
+            self.set_display_status_ui("blue", "LÄUFT")
             log("Display-Test per D bereits geöffnet")
             return False
+
+        # Ein altes SUCCESS/ABORTED darf beim Start eines neuen Tests nicht
+        # für einen Poll-Zyklus wieder angezeigt werden.
         try:
-            subprocess.Popen(
+            self.display_state_file.unlink(missing_ok=True)
+        except Exception as exc:
+            log(f"Alter Display-Status konnte nicht gelöscht werden: {exc}")
+
+        try:
+            self.display_test_active = True
+            self.display_launch_grace_until = time.monotonic() + 3.0
+            self.set_display_status_ui("blue", "LÄUFT")
+
+            self.display_proc = subprocess.Popen(
                 [str(self.display_script)],
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,
             )
-            self.display_test_active = True
-            self.set_display_status_ui("blue", "LÄUFT")
-            log("Display-Test per D gestartet")
+
+            log(
+                "Display-Test per D gestartet "
+                f"(PID {self.display_proc.pid})"
+            )
+
         except Exception as exc:
             self.display_test_active = False
+            self.display_proc = None
+            self.display_launch_grace_until = 0.0
             self.set_display_status_ui("red", "STARTFEHLER")
             log(f"Display-Test per D Startfehler: {exc}")
+
         return False
 
     def start_global_input_listener(self):
@@ -10073,6 +10164,8 @@ class App(Gtk.Application):
         self.refresh_touch_status()
 
         self.display_test_active = False
+        self.display_proc = None
+        self.display_launch_grace_until = 0.0
         self.refresh_display_status()
 
         self.refresh_media_status()
