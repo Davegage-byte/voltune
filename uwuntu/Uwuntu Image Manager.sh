@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 APP_NAME="Uwuntu Image Manager"
-APP_VERSION="1.7"
+APP_VERSION="1.8"
 
 ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"
 SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"
@@ -94,7 +94,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-APP_VERSION = "1.7"
+APP_VERSION = "1.8"
 FORMAT_VERSION = "uwuntu-image-v1"
 
 UPDATE_API_URL = (
@@ -2070,6 +2070,7 @@ import subprocess
 import sys
 import tarfile
 import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -2081,7 +2082,7 @@ from gi.repository import Gtk, Gdk, GLib, Gio
 
 APP_ID = "com.uwuntu.ImageManager"
 APP_NAME = "Uwuntu Image Manager"
-VERSION = "1.7"
+VERSION = "1.8"
 
 HOME = Path.home()
 IMAGE_DIR = HOME / "Uwuntu-Images"
@@ -2695,7 +2696,7 @@ class ProgressWindow(Gtk.Window):
     def __init__(self, parent, title):
         super().__init__(title=title, transient_for=parent, modal=True)
 
-        self.set_default_size(720, 430)
+        self.set_default_size(720, 500)
         self.set_deletable(False)
 
         box = Gtk.Box(
@@ -2710,6 +2711,9 @@ class ProgressWindow(Gtk.Window):
 
         self.set_child(box)
 
+        self.operation_started = time.monotonic()
+        self.overall_eta_smoothed = None
+
         self.stage = make_label("Vorbereitung …", "progress-title")
         box.append(self.stage)
 
@@ -2717,39 +2721,109 @@ class ProgressWindow(Gtk.Window):
         self.phase.add_css_class("subtitle")
         box.append(self.phase)
 
+        current_group = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=5,
+        )
+        current_group.set_margin_top(4)
+        box.append(current_group)
+
         current_label = make_label(
             "AKTUELLE PHASE",
             "progress-info",
         )
-        box.append(current_label)
+        current_group.append(current_label)
 
         self.bar = Gtk.ProgressBar()
         self.bar.set_show_text(True)
-        box.append(self.bar)
+        current_group.append(self.bar)
+
+        self.rate = make_label(
+            "Aktuelle Rate: –",
+            "progress-info",
+        )
+        current_group.append(self.rate)
+
+        self.phase_eta = make_label(
+            "Restzeit aktuelle Phase: berechne …",
+            "progress-info",
+        )
+        current_group.append(self.phase_eta)
+
+        overall_group = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=5,
+        )
+        overall_group.set_margin_top(20)
+        box.append(overall_group)
 
         overall_label = make_label(
             "GESAMTFORTSCHRITT",
             "progress-info",
         )
-        box.append(overall_label)
+        overall_group.append(overall_label)
 
         self.overall_bar = Gtk.ProgressBar()
         self.overall_bar.set_show_text(True)
-        box.append(self.overall_bar)
+        overall_group.append(self.overall_bar)
 
-        self.rate = make_label("Aktuelle Rate: –", "progress-info")
-        box.append(self.rate)
-
-        self.eta = make_label("Restzeit: berechne …", "progress-info")
-        box.append(self.eta)
+        self.overall_eta = make_label(
+            "Gesamte Restzeit: berechne …",
+            "progress-info",
+        )
+        overall_group.append(self.overall_eta)
 
         self.note = make_label(
             "Bitte den Datenträger während des Vorgangs nicht entfernen.",
             "subtitle",
         )
+        self.note.set_margin_top(10)
         box.append(self.note)
 
         self.present()
+
+    def update_overall_eta(self, overall_fraction):
+        overall_fraction = max(
+            0.0,
+            min(1.0, float(overall_fraction or 0)),
+        )
+
+        if overall_fraction >= 0.999:
+            self.overall_eta_smoothed = 0.0
+            self.overall_eta.set_text("Gesamte Restzeit: 0 s")
+            return
+
+        elapsed = max(
+            0.0,
+            time.monotonic() - self.operation_started,
+        )
+
+        if overall_fraction < 0.01 or elapsed < 2.0:
+            self.overall_eta.set_text(
+                "Gesamte Restzeit: berechne …"
+            )
+            return
+
+        raw_eta = (
+            elapsed
+            * (1.0 - overall_fraction)
+            / overall_fraction
+        )
+
+        if self.overall_eta_smoothed is None:
+            self.overall_eta_smoothed = raw_eta
+        else:
+            # Deutlich glätten, damit die Gesamt-ETA bei schwankender
+            # USB-Rate und Phasenwechseln nicht hektisch springt.
+            self.overall_eta_smoothed = (
+                0.82 * self.overall_eta_smoothed
+                + 0.18 * raw_eta
+            )
+
+        self.overall_eta.set_text(
+            "Gesamte Restzeit: ca. "
+            + fmt_eta(self.overall_eta_smoothed)
+        )
 
     def handle_event(self, data):
         typ = data.get("type")
@@ -2782,7 +2856,10 @@ class ProgressWindow(Gtk.Window):
             )
 
             self.rate.set_text("Aktuelle Rate: –")
-            self.eta.set_text("Restzeit: berechne …")
+            self.phase_eta.set_text(
+                "Restzeit aktuelle Phase: berechne …"
+            )
+            self.update_overall_eta(overall_fraction)
 
         elif typ == "progress":
             fraction = max(
@@ -2820,9 +2897,11 @@ class ProgressWindow(Gtk.Window):
             self.rate.set_text(
                 f"{direction}: {fmt_rate(data.get('rate_bps'))}"
             )
-            self.eta.set_text(
-                f"Restzeit: ca. {fmt_eta(data.get('eta_seconds'))}"
+            self.phase_eta.set_text(
+                "Restzeit aktuelle Phase: ca. "
+                + fmt_eta(data.get("eta_seconds"))
             )
+            self.update_overall_eta(overall_fraction)
 
         elif typ == "info":
             self.note.set_text(data.get("message", ""))
