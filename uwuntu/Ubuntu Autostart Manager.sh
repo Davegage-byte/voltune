@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090855
+MANAGER_BUILD=2026090856
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -12158,6 +12158,14 @@ fi
 # Firefox ist vollständig aus dem Kiosk entfernt.
 # ------------------------------------------------------------
 
+# Das Dock wurde bereits beim Kiosk-Start auf Auto-Hide gesetzt.
+# Nach Touch-Test/Boot kann GNOME die nutzbare Arbeitsfläche aber noch einen
+# kurzen Moment mit der alten Dock-Breite melden. Deshalb unmittelbar vor dem
+# Tiling noch einmal erzwingen und die Dock-Animation/Workarea stabilisieren.
+echo "Bereite freie Arbeitsfläche für 4-Felder-Layout vor ..."
+set_dock_autohide
+sleep 1.2
+
 echo "Starte 4-Felder-Layout mit Strg+D ..."
 
 /usr/bin/ydotool key 29:1 32:1 32:0 29:0
@@ -12355,9 +12363,10 @@ else
     gtk-launch com.david.NetworkCheck >/dev/null 2>&1 || true
 fi
 # Mutter/Tiling Assistant kurz Zeit geben, das gemeinsame Fenster wirklich
-# zum aktiven Vordergrundfenster zu machen. Danach fokussiert zusätzlich
-# die App selbst WIPE SSD; AT-SPI bleibt als zweite Absicherung erhalten.
-sleep 0.25
+# zum aktiven Vordergrundfenster zu machen. Nach dem Dock-/Workarea-Wechsel
+# etwas großzügiger warten. Danach fokussiert zusätzlich die App selbst
+# WIPE SSD; AT-SPI bleibt als zweite Absicherung erhalten.
+sleep 0.45
 
 echo "Fokussiere WIPE SSD im gemeinsamen Network/Wipe-Fenster ..."
 FOCUS_OK=0
@@ -12487,8 +12496,9 @@ def safe_activate_with_ydotool(label, window):
     können diese Label-Koordinaten kurzzeitig falsch sein. Dann konnte ein
     Klick versehentlich im oberen GNOME-Panel auf Uhr/Benachrichtigungen landen.
 
-    Deshalb wird ausschließlich die Fenstergeometrie verwendet. Ist sie nicht
-    plausibel, findet überhaupt kein Pointer-Klick statt.
+    Deshalb wird ausschließlich die Fenstergeometrie verwendet. Der Klickpunkt
+    liegt fest im oberen Inhaltsbereich und hängt nicht von der Fensterhöhe ab.
+    Ist die Geometrie nicht plausibel, findet überhaupt kein Pointer-Klick statt.
     """
     win = get_extents(window)
     if win is None:
@@ -12498,21 +12508,23 @@ def safe_activate_with_ydotool(label, window):
     if win.width < 300 or win.height < 220:
         return False
 
-    # Sicherer Punkt im linken unteren Bereich des Network/Wipe-Fensters:
-    # weit weg von Titelleiste, GNOME-Panel und WIPE-Button.
-    x = int(win.x + max(70, min(120, win.width * 0.12)))
-    y = int(win.y + max(110, win.height * 0.72))
+    # Sicherer Punkt im OBEREN Inhaltsbereich des Network/Wipe-Fensters.
+    # Wichtig: Die Y-Position hängt absichtlich NICHT von der gemeldeten
+    # Fensterhöhe ab. Falls GNOME während eines Re-Tilings vorübergehend eine
+    # zu große Höhe meldet, kann der Klick dadurch nicht in das darunter
+    # liegende Audio-Fenster abrutschen.
+    x = int(win.x + max(70, min(110, win.width * 0.10)))
+    y = int(win.y + 92)
 
-    # Niemals in den oberen GNOME-Panel-Bereich klicken. Bei ungewöhnlichen
-    # oder vorübergehend falschen Koordinaten lieber komplett abbrechen.
-    if y < 64:
+    # Niemals in den oberen GNOME-Panel-/Titelleistenbereich klicken.
+    if y < 72:
         return False
 
     # Der Zielpunkt muss eindeutig innerhalb der gemeldeten Fenstergrenzen
     # liegen; andernfalls kein synthetischer Klick.
     if not (win.x + 8 <= x <= win.x + win.width - 8):
         return False
-    if not (win.y + 48 <= y <= win.y + win.height - 8):
+    if not (win.y + 58 <= y <= win.y + win.height - 8):
         return False
 
     env = os.environ.copy()
@@ -12580,8 +12592,12 @@ while time.monotonic() < deadline:
 
                 # Durch die echte Fensteraktivierung feuert zusätzlich
                 # notify::is-active in der GTK-App und fokussiert WIPE SSD.
+                # Zweimal kurz nachfassen, weil Mutter unter Wayland das
+                # Aktivierungsereignis leicht verzögert zustellen kann.
                 atspi_focus(window, button)
-                time.sleep(0.10)
+                time.sleep(0.12)
+                atspi_focus(window, button)
+                time.sleep(0.12)
 
                 if is_focused(button):
                     raise SystemExit(0)
