@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.26 + Hardware Check v4.5.66 + Wipe Auto v3.26 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.66 + Wipe Auto v3.26 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090872
+MANAGER_BUILD=2026090874
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -13217,7 +13217,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.26 und Wipe Auto v3.26
+Comment=Network Check v2.28 und Wipe Auto v3.26
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13245,7 +13245,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.26 + Wipe Auto v3.26 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.28 + Wipe Auto v3.26 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -13391,7 +13391,7 @@ import time
 import queue
 from datetime import datetime
 from pathlib import Path
-VERSION = "2.26"
+VERSION = "2.28"
 # ============================================================
 # EINSTELLUNGEN
 # Diese Grenzwerte sind für den ersten Praxistest bewusst
@@ -14390,14 +14390,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.26 + Wipe Auto v3.26")
+        self.window.set_title("Network Check v2.28 + Wipe Auto v3.26")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.26 + Wipe Auto v3.26")
+        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.26")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -14817,7 +14817,7 @@ class NetworkCheckApp(Gtk.Application):
             card.set_title_mac(None, adapter_present=False)
             card.interface_label.set_text("Interface: --")
             if kind not in self.testing_kinds:
-                card.set_state("NOT FOUND", "warn")
+                card.set_state("NICHT GEFUNDEN", "warn")
                 card.note_label.set_text(
                     "Kein Adapter erkannt – nicht verbaut oder prüfen."
                 )
@@ -14827,12 +14827,12 @@ class NetworkCheckApp(Gtk.Application):
         mac = iface_mac(iface)
         card.set_title_mac(mac)
         is_default = iface == default_iface
-        suffix = " • ACTIVE" if is_default else ""
+        suffix = " • AKTIV" if is_default else ""
         card.interface_label.set_text(f"Interface: {iface}{suffix}")
 
         if not dev["connected"]:
             if kind not in self.testing_kinds:
-                card.set_state("NOT CONNECTED", "warn")
+                card.set_state("NICHT VERBUNDEN", "warn")
                 card.note_label.set_text(
                     "Adapter vorhanden, aktuell aber nicht verbunden."
                 )
@@ -14856,8 +14856,8 @@ class NetworkCheckApp(Gtk.Application):
             if result["tested"]:
                 self.apply_final_state(kind)
             else:
-                card.set_state("CONNECTED", "neutral")
-                card.note_label.set_text("Bereit für Speedtest.")
+                card.set_state("VERBUNDEN", "neutral")
+                card.note_label.set_text("Bereit für Messung.")
 
     # --------------------------------------------------------
     # Queue / Buttons
@@ -14965,9 +14965,9 @@ class NetworkCheckApp(Gtk.Application):
                 scheduled += 1
 
         if scheduled == 0:
-            self.global_status.set_text("No connected LAN/WLAN interface.")
+            self.global_status.set_text("Keine LAN/WLAN-Verbindung vorhanden.")
         else:
-            self.global_status.set_text("LAN/WLAN tests scheduled in parallel.")
+            self.global_status.set_text("LAN/WLAN-Tests parallel gestartet.")
 
     # --------------------------------------------------------
     # Worker
@@ -15607,7 +15607,7 @@ class NetworkCheckApp(Gtk.Application):
         card = self.cards[kind]
         card.set_state("TEST ERROR", "bad")
         card.note_label.set_text(error)
-        self.global_status.set_text(f"{kind.upper()} test failed")
+        self.global_status.set_text(f"{kind.upper()}-Test fehlgeschlagen")
         return False
 
     def apply_result_to_ui(self, kind):
@@ -15653,8 +15653,8 @@ class NetworkCheckApp(Gtk.Application):
 
         self.apply_final_state(kind)
         self.global_status.set_text(
-            f"{kind.upper()} test finished • "
-            f"Down {r['down']:.1f} / Up {r['up']:.1f} Mbps"
+            f"{kind.upper()}-Test abgeschlossen • "
+            f"Download {r['down']:.1f} / Upload {r['up']:.1f} Mbps"
         )
 
         return False
