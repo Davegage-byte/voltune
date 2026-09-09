@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 APP_NAME="Uwuntu Image Manager"
-APP_VERSION="1.8"
+APP_VERSION="1.9"
 
 ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"
 SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"
@@ -94,7 +94,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-APP_VERSION = "1.8"
+APP_VERSION = "1.9"
 FORMAT_VERSION = "uwuntu-image-v1"
 
 UPDATE_API_URL = (
@@ -2082,7 +2082,7 @@ from gi.repository import Gtk, Gdk, GLib, Gio
 
 APP_ID = "com.uwuntu.ImageManager"
 APP_NAME = "Uwuntu Image Manager"
-VERSION = "1.8"
+VERSION = "1.9"
 
 HOME = Path.home()
 IMAGE_DIR = HOME / "Uwuntu-Images"
@@ -2717,6 +2717,25 @@ class ProgressWindow(Gtk.Window):
         self.stage = make_label("Vorbereitung …", "progress-title")
         box.append(self.stage)
 
+        activity_row = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=8,
+        )
+        activity_row.set_margin_top(2)
+        activity_row.set_margin_bottom(2)
+        box.append(activity_row)
+
+        self.activity_spinner = Gtk.Spinner()
+        self.activity_spinner.set_spinning(True)
+        activity_row.append(self.activity_spinner)
+
+        self.activity_label = make_label(
+            "Vorgang läuft …",
+            "progress-info",
+            wrap=False,
+        )
+        activity_row.append(self.activity_label)
+
         self.phase = make_label("")
         self.phase.add_css_class("subtitle")
         box.append(self.phase)
@@ -2905,6 +2924,14 @@ class ProgressWindow(Gtk.Window):
 
         elif typ == "info":
             self.note.set_text(data.get("message", ""))
+
+        elif typ == "success":
+            self.activity_spinner.set_spinning(False)
+            self.activity_label.set_text("Vorgang abgeschlossen")
+
+        elif typ == "error":
+            self.activity_spinner.set_spinning(False)
+            self.activity_label.set_text("Vorgang beendet")
 
 
 class ActionWindow(Gtk.Window):
