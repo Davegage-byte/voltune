@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.55 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.56 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090850
+MANAGER_BUILD=2026090851
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5775,33 +5775,6 @@ def group_present(group):
             return True
     return False
 
-
-def usb_group_companion_signatures(group):
-    """Controller + Root-Portnummer als physische Companion-Signatur.
-
-    USB2 und SuperSpeed derselben Buchse können unter verschiedenen Root-Hubs
-    auftauchen. Fehlt die Kernel-peer-Verknüpfung, dürfen diese beiden
-    logischen Pfade trotzdem nicht als zwei physische Ports erscheinen.
-    """
-    result = set()
-
-    for item in group.get("items", []):
-        path = str(item.get("path") or "")
-        try:
-            port_no = int(item.get("port_no"))
-        except Exception:
-            continue
-
-        match = re.search(r"^(.*?)/usb\d+/", path)
-        if not match:
-            continue
-
-        controller = match.group(1)
-        result.add((controller, port_no))
-
-    return result
-
-
 def boot_usb_device_name():
     try:
         source = subprocess.check_output(
@@ -7421,14 +7394,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.55")
+        self.window.set_title("Hardware Check v4.5.56")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.55")
+        title_label = Gtk.Label(label="Hardware Check v4.5.56")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7772,9 +7745,8 @@ class App(Gtk.Application):
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(False)
-        # Kompakter halten, damit SENSOREN im HC-Fenster vollständig sichtbar
-        # bleiben. Bei Überlauf ist der vertikale Scrollbalken klassisch
-        # sichtbar und wird nicht als GTK-Overlay versteckt.
+        # Port-Erkennung bleibt auf dem bewährten Stand vor HC4.5.55.
+        # Bei Überlauf soll der vertikale Scrollbalken jedoch sichtbar sein.
         scroll.set_overlay_scrolling(False)
         scroll.set_min_content_height(120)
         scroll.set_size_request(-1, 120)
@@ -9610,62 +9582,6 @@ class App(Gtk.Application):
             )
             slot["groups"].add(raw_key)
 
-        # HC4.5.55: Doppelte USB2-/SuperSpeed-Begleitpfade derselben
-        # physischen Buchse zusammenführen. Das verhindert insbesondere beim
-        # Boot von einer USB-C-NVMe einen zusätzlichen vermeintlichen USB-A-Port.
-        changed = True
-        while changed:
-            changed = False
-            slot_keys = list(raw_slots)
-
-            for i, key_a in enumerate(slot_keys):
-                if key_a not in raw_slots:
-                    continue
-
-                slot_a = raw_slots[key_a]
-                sig_a = set()
-
-                for raw_key in slot_a["groups"]:
-                    group = groups_by_key.get(raw_key)
-                    if group:
-                        sig_a |= usb_group_companion_signatures(group)
-
-                if not sig_a:
-                    continue
-
-                for key_b in slot_keys[i + 1:]:
-                    if key_b not in raw_slots:
-                        continue
-
-                    slot_b = raw_slots[key_b]
-                    sig_b = set()
-
-                    for raw_key in slot_b["groups"]:
-                        group = groups_by_key.get(raw_key)
-                        if group:
-                            sig_b |= usb_group_companion_signatures(group)
-
-                    if not sig_b or not (sig_a & sig_b):
-                        continue
-
-                    # Gleiche physische Buchse. Sobald eine Seite als USB-C
-                    # erkannt wurde, bleibt die gemeinsame Buchse USB-C.
-                    if "USB-C" in {slot_a["type"], slot_b["type"]}:
-                        slot_a["type"] = "USB-C"
-                    elif "USB-A" in {slot_a["type"], slot_b["type"]}:
-                        slot_a["type"] = "USB-A"
-                    else:
-                        slot_a["type"] = "USB"
-
-                    slot_a["groups"] |= set(slot_b["groups"])
-                    raw_slots.pop(key_b, None)
-
-                    changed = True
-                    break
-
-                if changed:
-                    break
-
         mapped = {
             raw_key
             for slot in raw_slots.values()
@@ -9673,38 +9589,16 @@ class App(Gtk.Application):
         }
 
         expected = int(discovery.get("physical_total") or 0)
-        unmapped = [
-            group
-            for group in discovery["groups"]
-            if group["raw_key"] not in mapped
-        ]
-
-        mapped_signatures = set()
-        for slot in raw_slots.values():
-            for raw_key in slot["groups"]:
-                group = groups_by_key.get(raw_key)
-                if group:
-                    mapped_signatures |= usb_group_companion_signatures(group)
-
-        # Ein ungemappter Pfad mit bereits bekannter physischer Signatur ist
-        # nur ein weiterer logischer Companion und kein zusätzlicher Port.
-        filtered_unmapped = []
-        for group in unmapped:
-            signatures = usb_group_companion_signatures(group)
-            if signatures and signatures & mapped_signatures:
-                continue
-            filtered_unmapped.append(group)
-
-        missing = min(
-            max(0, expected - len(raw_slots)),
-            len(filtered_unmapped),
-        )
+        missing = max(0, expected - len(raw_slots))
         if missing:
-            filtered_unmapped.sort(
-                key=lambda g: (group_min_port(g), g["raw_key"])
-            )
+            unmapped = [
+                group
+                for group in discovery["groups"]
+                if group["raw_key"] not in mapped
+            ]
+            unmapped.sort(key=lambda g: (group_min_port(g), g["raw_key"]))
 
-            for idx, group in enumerate(filtered_unmapped[:missing]):
+            for idx, group in enumerate(unmapped[:missing]):
                 raw_slots[("USB", idx)] = {
                     "type": "USB",
                     "groups": {group["raw_key"]},
@@ -9889,13 +9783,6 @@ class App(Gtk.Application):
                 f"{slot['type']} Port {idx + 1}: "
                 f"groups={' || '.join(sorted(slot['groups']))}"
             )
-
-            if len(slot["groups"]) > 1:
-                log(
-                    f"USB Port {idx + 1}: "
-                    f"{len(slot['groups'])} logische Begleitpfade "
-                    "zu einer physischen Buchse zusammengeführt"
-                )
         if self.usb_boot_device:
             if self.usb_boot_slot is not None:
                 log(
