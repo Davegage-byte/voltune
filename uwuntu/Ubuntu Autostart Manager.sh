@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.25 + Hardware Check v4.5.61 + Wipe Auto v3.25 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.25 + Hardware Check v4.5.61 + Wipe Auto v3.26 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090861
+MANAGER_BUILD=2026090862
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -2954,7 +2954,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.25"
+VERSION = "3.26"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -3478,7 +3478,7 @@ class WipeAutoApp(Gtk.Application):
         }
 
         .metric.soh-alert {
-            background: #111318;
+            background: #ff4c4c;
             border-color: #ff4c4c;
         }
 
@@ -3556,7 +3556,7 @@ class WipeAutoApp(Gtk.Application):
         /* Sehr deutlich sichtbarer Tastaturfokus */
         button.danger-action.keyboard-focus,
         button.danger-action:focus {
-            background: #232329;
+            background: #5aa2ff;
             color: #f4f4f5;
             border-color: #5aa2ff;
             outline: 3px solid #5aa2ff;
@@ -13023,7 +13023,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.25 und Wipe Auto v3.25
+Comment=Network Check v2.25 und Wipe Auto v3.26
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13051,7 +13051,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.25 + Wipe Auto v3.25 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.25 + Wipe Auto v3.26 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -13564,7 +13564,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.25"
+WIPE_VERSION = "3.26"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -14196,14 +14196,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.25 + Wipe Auto v3.25")
+        self.window.set_title("Network Check v2.25 + Wipe Auto v3.26")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.25 + Wipe Auto v3.25")
+        title_label = Gtk.Label(label="Network Check v2.25 + Wipe Auto v3.26")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -14474,7 +14474,7 @@ class NetworkCheckApp(Gtk.Application):
         }
 
         .wipe-big.soh-alert {
-            background: #111318;
+            background: #ff4c4c;
             color: #f4f4f5;
             border-color: #ff4c4c;
         }
@@ -14498,7 +14498,7 @@ class NetworkCheckApp(Gtk.Application):
         /* Clear keyboard focus, matching the old standalone Wipe Auto. */
         button.danger-action.keyboard-focus,
         button.danger-action:focus {
-            background: #232329;
+            background: #5aa2ff;
             color: #f4f4f5;
             border-color: #5aa2ff;
             outline: 3px solid #5aa2ff;
