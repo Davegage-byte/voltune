@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.69 + Wipe Auto v3.29 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.70 + Wipe Auto v3.30 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090901
+MANAGER_BUILD=2026090902
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3052,7 +3052,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.29"
+VERSION = "3.30"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -3254,7 +3254,7 @@ def battery_info():
 
     remaining = None
 
-    if state == "discharging":
+    if state in {"discharging", "pending-discharge"}:
         remaining = time_to_empty
     elif state in {"charging", "pending-charge"}:
         remaining = time_to_full
@@ -3773,45 +3773,47 @@ class WipeAutoApp(Gtk.Application):
         # ----------------------------------------------------
         # RECHTS: Charging/Discharging + Restzeit + Leistung
         # ----------------------------------------------------
-        charging_states = {
-            "charging",
-            "fully-charged",
-            "pending-charge",
-        }
-
-        if state in charging_states:
-            if state == "fully-charged":
-                parts = ["Fully Charged"]
-            else:
-                parts = ["Charging"]
-                if remaining:
-                    parts.append(remaining)
-
-            if power_text:
-                parts.append(power_text)
-
-            self.charging_value.set_text(" · ".join(parts))
-            self.set_class(self.charging_value, "good")
-
-        elif state is None:
-            parts = ["--"]
-
-            if power_text:
-                parts.append(power_text)
-
-            self.charging_value.set_text(" · ".join(parts))
-            self.set_class(self.charging_value, "warn")
-        else:
-            parts = ["Discharging"]
-
+        # UPower-Zustände vollständig auf Deutsch anzeigen.
+        # Bekannte Rohwerte: unknown, charging, discharging, empty,
+        # fully-charged, pending-charge, pending-discharge.
+        if state == "fully-charged":
+            parts = ["VOLL"]
+            state_class = "good"
+        elif state == "charging":
+            parts = ["LÄDT"]
             if remaining:
                 parts.append(remaining)
+            state_class = "good"
+        elif state == "pending-charge":
+            parts = ["WARTET AUF LADUNG"]
+            if remaining:
+                parts.append(remaining)
+            state_class = "warn"
+        elif state == "discharging":
+            parts = ["ENTLÄDT"]
+            if remaining:
+                parts.append(remaining)
+            state_class = "warn"
+        elif state == "pending-discharge":
+            parts = ["WARTET AUF ENTLADUNG"]
+            if remaining:
+                parts.append(remaining)
+            state_class = "warn"
+        elif state == "empty":
+            parts = ["LEER"]
+            state_class = "warn"
+        elif state in (None, ""):
+            parts = ["--"]
+            state_class = "warn"
+        else:
+            parts = ["UNBEKANNT"]
+            state_class = "warn"
 
-            if power_text:
-                parts.append(power_text)
+        if power_text:
+            parts.append(power_text)
 
-            self.charging_value.set_text(" · ".join(parts))
-            self.set_class(self.charging_value, "warn")
+        self.charging_value.set_text(" · ".join(parts))
+        self.set_class(self.charging_value, state_class)
 
     def set_soh_alert(self, active):
         active = bool(active)
@@ -7004,8 +7006,9 @@ duration = float(sys.argv[1])
 mode = sys.argv[2]
 
 MIB = 1024 * 1024
-GIB = 1024 * MIB
 CHUNK = 1 * MIB
+ALLOC_CHUNK = 64 * MIB
+
 def mem_available():
     try:
         with open("/proc/meminfo", "r", encoding="utf-8") as f:
@@ -7016,27 +7019,98 @@ def mem_available():
         pass
     return 512 * MIB
 
-available = mem_available()
-# Genug RAM für GNOME / Live-System freilassen.
-reserve = max(768 * MIB, int(available * 0.25))
-usable = max(64 * MIB, available - reserve)
+def fill_region(region, pattern):
+    expected = bytes([pattern]) * CHUNK
+    size = len(region)
+    for offset in range(0, size, CHUNK):
+        end = min(offset + CHUNK, size)
+        region[offset:end] = expected[:end-offset]
+
+def allocate_committed(target, reserve):
+    # RAM stufenweise reservieren und jede Seite sofort anfassen.
+    # Ein einzelnes großes anonymes mmap kann unter Linux wegen Overcommit
+    # erfolgreich aussehen, obwohl noch gar kein physischer RAM belegt wurde.
+    # Deshalb wird der Extended-Test in 64-MiB-Blöcken aufgebaut. Jeder Block
+    # wird direkt beschrieben; nach jedem Block wird MemAvailable erneut geprüft.
+    # So belastet der Test wirklich fast den gesamten aktuell verfügbaren RAM,
+    # stoppt aber, bevor der Sicherheitsrest für GNOME/Live-System verbraucht ist.
+    regions = []
+    allocated = 0
+
+    while allocated < target:
+        current_available = mem_available()
+        headroom = current_available - reserve
+        if headroom < CHUNK:
+            break
+
+        block = min(ALLOC_CHUNK, target - allocated, headroom)
+        block = (int(block) // CHUNK) * CHUNK
+        if block < CHUNK:
+            break
+
+        try:
+            region = mmap.mmap(-1, block, access=mmap.ACCESS_WRITE)
+            # Physische Seiten jetzt wirklich belegen, nicht nur virtuell mappen.
+            fill_region(region, 0x00)
+            regions.append(region)
+            allocated += block
+        except Exception:
+            try:
+                region.close()
+            except Exception:
+                pass
+            break
+
+    return regions, allocated
+
+initial_available = mem_available()
 
 if mode == "short":
-    target = min(usable, 512 * MIB)
+    # Kurzer Test bleibt bewusst kompakt und schnell.
+    reserve = max(768 * MIB, int(initial_available * 0.25))
+    target_request = min(max(64 * MIB, initial_available - reserve), 512 * MIB)
+    target_request = (int(target_request) // CHUNK) * CHUNK
     patterns = [0x00, 0xFF, 0xAA, 0x55]
 else:
-    target = min(usable, int(available * 0.65), 8 * GIB)
-    patterns = [0x00, 0xFF, 0xAA, 0x55, 0x33, 0xCC, 0x0F, 0xF0]
+    # Extended = Hochlasttest: kein 8-GB-Limit mehr und keine 65-%-Grenze.
+    # Es werden bis zu rund 92 % des beim Start tatsächlich verfügbaren RAM
+    # angefordert. Mindestens 1 GiB bleibt als Sicherheitsreserve für Ubuntu.
+    reserve = max(1024 * MIB, int(initial_available * 0.08))
+    target_request = max(64 * MIB, initial_available - reserve)
+    target_request = (int(target_request) // CHUNK) * CHUNK
 
-target = max(64 * MIB, int(target))
-target = (target // CHUNK) * CHUNK
-try:
-    mem = mmap.mmap(-1, target, access=mmap.ACCESS_WRITE)
-except Exception as exc:
-    print(f"ERROR RAM Speicherreservierung fehlgeschlagen: {exc}", flush=True)
+    # Neben klassischen Wechselmustern auch Walking-Bit-Muster verwenden.
+    # Das erhöht die Chance, datenabhängige RAM-/Busfehler unter Last zu sehen.
+    patterns = [
+        0x00, 0xFF, 0xAA, 0x55, 0x33, 0xCC, 0x0F, 0xF0,
+        0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+        0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F,
+    ]
+
+overall_start = time.monotonic()
+regions, target = allocate_committed(target_request, reserve)
+
+if target < 64 * MIB or not regions:
+    for region in regions:
+        try:
+            region.close()
+        except Exception:
+            pass
+    print(
+        "ERROR RAM Nicht genug sicher nutzbarer RAM für den Test verfügbar",
+        flush=True,
+    )
     raise SystemExit(2)
 
-start = time.monotonic()
+print(
+    f"INFO RAM initial_available={initial_available} reserve={reserve} "
+    f"target={target} regions={len(regions)} mode={mode}",
+    flush=True,
+)
+
+# Die angegebene Testdauer umfasst bewusst auch die aggressive
+# RAM-Belegung, damit der 10-Minuten-Test nicht heimlich länger läuft.
+start = overall_start
 deadline = start + duration
 checked = 0
 errors = 0
@@ -7046,24 +7120,33 @@ try:
     while time.monotonic() < deadline:
         for pattern in patterns:
             expected = bytes([pattern]) * CHUNK
-            # Schreiben: alle Seiten wirklich anfassen.
-            for offset in range(0, target, CHUNK):
-                end = min(offset + CHUNK, target)
-                mem[offset:end] = expected[:end-offset]
 
-            # Lesen + vergleichen.
-            for offset in range(0, target, CHUNK):
-                end = min(offset + CHUNK, target)
-                data = mem[offset:end]
-                if data != expected[:end-offset]:
-                    errors += 1
-                checked += end - offset
+            # Erst das komplette belegte RAM-Gebiet mit dem Muster schreiben.
+            for region in regions:
+                size = len(region)
+                for offset in range(0, size, CHUNK):
+                    end = min(offset + CHUNK, size)
+                    region[offset:end] = expected[:end-offset]
+
+            # Danach denselben gesamten Bereich wieder lesen und vergleichen.
+            for region in regions:
+                size = len(region)
+                for offset in range(0, size, CHUNK):
+                    end = min(offset + CHUNK, size)
+                    data = region[offset:end]
+                    if data != expected[:end-offset]:
+                        errors += 1
+                    checked += end - offset
+
             passes += 1
-
             if time.monotonic() >= deadline:
                 break
 finally:
-    mem.close()
+    for region in regions:
+        try:
+            region.close()
+        except Exception:
+            pass
 
 elapsed = max(0.001, time.monotonic() - start)
 print(
@@ -7963,14 +8046,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.69")
+        self.window.set_title("Hardware Check v4.5.70")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.69")
+        title_label = Gtk.Label(label="Hardware Check v4.5.70")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -11055,7 +11138,7 @@ main()
                 )
             else:
                 self.benchmark_status.set_text(
-                    "RAM Test (Erweitert) läuft · Dauerprüfung"
+                    "RAM Test (Erweitert) läuft · maximale RAM-Last"
                 )
             args = [
                 sys.executable,
@@ -13376,7 +13459,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.28 und Wipe Auto v3.29
+Comment=Network Check v2.28 und Wipe Auto v3.30
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13404,7 +13487,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.28 + Wipe Auto v3.29 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.28 + Wipe Auto v3.30 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -13917,7 +14000,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.29"
+WIPE_VERSION = "3.30"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -14070,7 +14153,7 @@ def wipe_battery_info():
         power_w = wipe_battery_power_w_sysfs(battery_name)
 
     remaining = None
-    if state == "discharging":
+    if state in {"discharging", "pending-discharge"}:
         remaining = time_to_empty
     elif state in {"charging", "pending-charge"}:
         remaining = time_to_full
@@ -14252,30 +14335,42 @@ class WipeCompactPanel:
                 "Battery Health innerhalb der Prüfgrenze."
             )
 
+        # Dieselben deutschen UPower-Zustände wie im Standalone-Wipe.
         if state == "fully-charged":
-            parts = ["Fully Charged"]
-            if power_text:
-                parts.append(power_text)
+            parts = ["VOLL"]
             state_class = "good"
-        elif state in {"charging", "pending-charge"}:
-            parts = ["Charging"]
+        elif state == "charging":
+            parts = ["LÄDT"]
             if remaining:
                 parts.append(remaining)
-            if power_text:
-                parts.append(power_text)
             state_class = "good"
+        elif state == "pending-charge":
+            parts = ["WARTET AUF LADUNG"]
+            if remaining:
+                parts.append(remaining)
+            state_class = "warn"
         elif state == "discharging":
-            parts = ["Discharging"]
+            parts = ["ENTLÄDT"]
             if remaining:
                 parts.append(remaining)
-            if power_text:
-                parts.append(power_text)
+            state_class = "warn"
+        elif state == "pending-discharge":
+            parts = ["WARTET AUF ENTLADUNG"]
+            if remaining:
+                parts.append(remaining)
+            state_class = "warn"
+        elif state == "empty":
+            parts = ["LEER"]
+            state_class = "warn"
+        elif state in (None, ""):
+            parts = ["--"]
             state_class = "warn"
         else:
-            parts = [state or "--"]
-            if power_text:
-                parts.append(power_text)
+            parts = ["UNBEKANNT"]
             state_class = "warn"
+
+        if power_text:
+            parts.append(power_text)
 
         self.battery_state.set_text(" · ".join(parts))
         self.set_class(self.battery_state, state_class)
@@ -14549,14 +14644,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.28 + Wipe Auto v3.29")
+        self.window.set_title("Network Check v2.28 + Wipe Auto v3.30")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.29")
+        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.30")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
