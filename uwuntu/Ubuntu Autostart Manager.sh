@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.25 + Hardware Check v4.5.61 + Wipe Auto v3.26 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.25 + Hardware Check v4.5.62 + Wipe Auto v3.26 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090866
+MANAGER_BUILD=2026090867
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -7644,12 +7644,12 @@ def system_information():
     ]
 
 
-def dell_support_target():
-    """Dell-Supportziel nur für eindeutig nutzbare Geräteinformationen.
+def warranty_support_target():
+    """Garantie-/Supportziel für Dell und Lenovo bestimmen.
 
-    Aktuell unterstützen wir bewusst ausschließlich Dell. Hersteller anderer
-    Geräte oder unbrauchbare Seriennummern führen zu ``None`` und damit zu
-    keinerlei Browser-Aktion.
+    Dell nutzt weiterhin die direkte Service-Tag-URL.
+    Lenovo öffnet vorerst nur die allgemeine Garantieabfrage; die direkte
+    Übergabe der Seriennummer in die Lenovo-URL folgt später separat.
     """
     dmi = Path("/sys/class/dmi/id")
     manufacturer = read_first_value(
@@ -7658,21 +7658,31 @@ def dell_support_target():
     )
     serial = detect_system_serial()
 
-    if manufacturer == "--" or "dell" not in manufacturer.lower():
+    if manufacturer == "--" or serial == "--":
         return None
 
-    # Dell Service-Tags bestehen aus Buchstaben/Ziffern. Die etwas großzügige
-    # Längenprüfung lässt auch ältere/abweichende Dell-Seriennummern zu, ohne
-    # beliebigen DMI-Text in eine URL zu übernehmen.
-    if serial == "--" or not re.fullmatch(r"[A-Za-z0-9]{5,20}", serial):
-        return None
+    vendor = manufacturer.lower()
 
-    url = (
-        "https://www.dell.com/support/product-details/de-de/servicetag/"
-        + serial
-        + "/overview"
-    )
-    return manufacturer, serial, url
+    if "dell" in vendor:
+        if not re.fullmatch(r"[A-Za-z0-9]{5,20}", serial):
+            return None
+
+        url = (
+            "https://www.dell.com/support/product-details/de-de/servicetag/"
+            + serial
+            + "/overview"
+        )
+        return "Dell", manufacturer, serial, url
+
+    if "lenovo" in vendor:
+        if not re.fullmatch(r"[A-Za-z0-9-]{4,32}", serial):
+            return None
+
+        # Seriennummer absichtlich noch nicht in den Link integrieren.
+        url = "https://pcsupport.lenovo.com/de/de/warranty-lookup#/"
+        return "Lenovo", manufacturer, serial, url
+
+    return None
 
 
 def format_test_clock(seconds):
@@ -7838,14 +7848,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.61")
+        self.window.set_title("Hardware Check v4.5.62")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.61")
+        title_label = Gtk.Label(label="Hardware Check v4.5.62")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7895,7 +7905,10 @@ class App(Gtk.Application):
         self.start_global_input_listener()
 
         log("Hardware Check gestartet")
-        self.window.present()
+        # Beim ersten Start nur sichtbar mappen, ohne eine Fokus-/Aktivierungs-
+        # Anforderung an GNOME zu senden. Dadurch soll die Shell keinen
+        # "Hardware Check ... ist bereit"-Hinweis mehr erzeugen.
+        self.window.set_visible(True)
     def header(
         self,
         title,
@@ -9546,18 +9559,20 @@ class App(Gtk.Application):
         log("Seriennummer konnte nicht in die Zwischenablage kopiert werden")
         return False
 
-    def open_dell_support(self, *_):
-        target = dell_support_target()
+    def open_warranty_support(self, *_):
+        target = warranty_support_target()
         if target is None:
-            # Gewolltes No-op: aktuell wird nur Dell unterstützt.
-            log("Dell-Support per G/Klick ignoriert: kein unterstütztes Dell-Gerät oder keine nutzbare Seriennummer")
+            log(
+                "Garantie-Support per G/Klick ignoriert: "
+                "kein unterstütztes Dell-/Lenovo-Gerät oder "
+                "keine nutzbare Seriennummer"
+            )
             return False
 
-        _, serial, url = target
+        vendor, _, serial, url = target
 
-        # Vor jedem Öffnen zuerst kopieren. Falls Dell auf der direkten
-        # Supportseite nichts anzeigt, kann der Service-Tag anschließend
-        # auf einer anderen Dell-Seite sofort per Strg+V eingefügt werden.
+        # Wie bisher die Seriennummer in die Zwischenablage legen.
+        # Bei Lenovo wird sie noch nicht automatisch in die URL übernommen.
         self.copy_serial_to_clipboard(serial)
 
         opener = shutil.which("xdg-open")
@@ -9569,7 +9584,10 @@ class App(Gtk.Application):
                 cmd = [gio, "open", url]
 
         if cmd is None:
-            log("Dell-Support konnte nicht geöffnet werden: xdg-open/gio fehlt")
+            log(
+                f"{vendor}-Support konnte nicht geöffnet werden: "
+                "xdg-open/gio fehlt"
+            )
             return False
 
         try:
@@ -9580,9 +9598,14 @@ class App(Gtk.Application):
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,
             )
-            log(f"Dell-Support geöffnet: Service-Tag {serial}")
+            log(
+                f"{vendor}-Garantie/Support geöffnet: "
+                f"Seriennummer {serial}"
+            )
         except Exception as exc:
-            log(f"Dell-Support konnte nicht geöffnet werden: {exc}")
+            log(
+                f"{vendor}-Support konnte nicht geöffnet werden: {exc}"
+            )
 
         return False
 
@@ -9632,8 +9655,9 @@ class App(Gtk.Application):
         card.add_css_class("info-card")
 
         info_values = system_information()
-        support_target = dell_support_target()
-        support_serial = support_target[1] if support_target else None
+        support_target = warranty_support_target()
+        support_vendor = support_target[0] if support_target else None
+        support_serial = support_target[2] if support_target else None
         serial_button = None
 
         for row, (label_text, value_text) in enumerate(info_values):
@@ -9647,17 +9671,18 @@ class App(Gtk.Application):
                 and support_serial is not None
                 and value_text == support_serial
             ):
-                # Bei unterstützten Dell-Geräten ist die Seriennummer direkt
-                # bedienbar. Sie bekommt beim Öffnen Fokus, damit Enter oder
-                # Leertaste ohne weitere Navigation die Dell-Seite öffnet.
+                # Bei unterstützten Dell-/Lenovo-Geräten ist die
+                # Seriennummer direkt bedienbar. Enter/Leertaste oder Klick
+                # öffnen die passende Garantie-/Supportseite.
                 value = Gtk.Button(label=value_text)
                 value.set_halign(Gtk.Align.START)
                 value.set_focusable(True)
                 value.add_css_class("info-serial-link")
                 value.set_tooltip_text(
-                    "Dell Support / Garantieabfrage öffnen (Enter oder Leertaste)"
+                    f"{support_vendor} Garantie / Support öffnen "
+                    "(Enter oder Leertaste)"
                 )
-                value.connect("clicked", self.open_dell_support)
+                value.connect("clicked", self.open_warranty_support)
                 serial_button = value
             else:
                 value = Gtk.Label(label=value_text)
@@ -9767,7 +9792,7 @@ class App(Gtk.Application):
             ("R", "RAM-Test auf der Benchmark-Seite starten"),
             ("I", "Systeminformationen anzeigen"),
             ("U", "Uwuntu-Update suchen und installieren"),
-            ("G", "Dell-Support für erkannte Seriennummer öffnen"),
+            ("G", "Dell/Lenovo Garantie- und Supportseite öffnen"),
             ("T", "Touchscreen-Test manuell öffnen"),
             ("D", "Display-Test starten"),
             ("ENTER", "Wipe Auto: WIPE SSD / danach YES bestätigen"),
@@ -10104,7 +10129,7 @@ class App(Gtk.Application):
             return False
 
         if action == "warranty":
-            self.open_dell_support()
+            self.open_warranty_support()
             return False
 
         if action == "hotkeys":
