@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 APP_NAME="Uwuntu Image Manager"
-APP_VERSION="1.6"
+APP_VERSION="1.7"
 
 ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"
 SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"
@@ -74,6 +74,7 @@ if [[ "$ROOT_MODE" -eq 1 ]]; then
 # -*- coding: utf-8 -*-
 
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import json
@@ -93,9 +94,14 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-APP_VERSION = "1.6"
+APP_VERSION = "1.7"
 FORMAT_VERSION = "uwuntu-image-v1"
 
+UPDATE_API_URL = (
+    "https://api.github.com/repos/"
+    "Davegage-byte/voltune/contents/"
+    "uwuntu/Uwuntu%20Image%20Manager.sh?ref=main"
+)
 UPDATE_RAW_URL = (
     "https://raw.githubusercontent.com/"
     "Davegage-byte/voltune/main/uwuntu/"
@@ -1698,49 +1704,103 @@ def validate_update_script(script_text):
         )
 
 
-def download_update_script():
+def _github_headers():
+    return {
+        "User-Agent": f"Uwuntu-Image-Manager/{APP_VERSION}",
+        "Accept": "application/vnd.github+json",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
+
+
+def _download_via_contents_api():
     request = urllib.request.Request(
-        UPDATE_RAW_URL,
+        UPDATE_API_URL,
+        headers=_github_headers(),
+    )
+
+    with urllib.request.urlopen(request, timeout=20) as response:
+        data = response.read(MAX_UPDATE_BYTES + 1)
+
+    if len(data) > MAX_UPDATE_BYTES:
+        raise RuntimeError(
+            "Die GitHub-API-Antwort ist unerwartet groß."
+        )
+
+    payload = json.loads(data.decode("utf-8"))
+
+    if payload.get("type") != "file":
+        raise RuntimeError(
+            "Die GitHub-API liefert nicht die erwartete Datei."
+        )
+
+    encoded = payload.get("content") or ""
+    encoding = (payload.get("encoding") or "").lower()
+
+    if encoding != "base64" or not encoded:
+        raise RuntimeError(
+            "Die GitHub-API liefert keinen eingebetteten Dateiinhalt."
+        )
+
+    raw = base64.b64decode(
+        encoded.replace("\n", ""),
+        validate=False,
+    )
+
+    if len(raw) > MAX_UPDATE_BYTES:
+        raise RuntimeError(
+            "Die Update-Datei ist unerwartet groß."
+        )
+
+    return raw.decode("utf-8")
+
+
+def _download_via_raw_fallback():
+    cache_buster = int(time.time())
+    url = f"{UPDATE_RAW_URL}?cb={cache_buster}"
+
+    request = urllib.request.Request(
+        url,
         headers={
             "User-Agent": f"Uwuntu-Image-Manager/{APP_VERSION}",
             "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
         },
     )
 
-    try:
-        with urllib.request.urlopen(request, timeout=25) as response:
-            length = response.headers.get("Content-Length")
-            if length:
-                try:
-                    if int(length) > MAX_UPDATE_BYTES:
-                        raise RuntimeError(
-                            "Die Update-Datei ist unerwartet groß."
-                        )
-                except ValueError:
-                    pass
-
-            data = response.read(MAX_UPDATE_BYTES + 1)
-
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(
-            f"GitHub antwortet mit HTTP {exc.code}."
-        ) from exc
-    except urllib.error.URLError as exc:
-        raise RuntimeError(
-            f"GitHub ist nicht erreichbar: {exc.reason}"
-        ) from exc
+    with urllib.request.urlopen(request, timeout=25) as response:
+        data = response.read(MAX_UPDATE_BYTES + 1)
 
     if len(data) > MAX_UPDATE_BYTES:
         raise RuntimeError(
             "Die Update-Datei ist unerwartet groß."
         )
 
+    return data.decode("utf-8")
+
+
+def download_update_script():
+    api_error = None
+
     try:
-        script_text = data.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise RuntimeError(
-            "Die GitHub-Datei ist nicht als UTF-8 lesbar."
-        ) from exc
+        script_text = _download_via_contents_api()
+        log("UPDATE-QUELLE: GitHub Contents API")
+    except Exception as exc:
+        api_error = exc
+        log(
+            "GitHub Contents API fehlgeschlagen; "
+            f"Raw-Fallback wird verwendet: {exc}"
+        )
+
+        try:
+            script_text = _download_via_raw_fallback()
+            log("UPDATE-QUELLE: Raw GitHub mit Cache-Buster")
+        except Exception as raw_exc:
+            raise RuntimeError(
+                "GitHub-Update konnte weder über die Repository-API "
+                "noch über Raw geladen werden. "
+                f"API-Fehler: {api_error}; Raw-Fehler: {raw_exc}"
+            ) from raw_exc
 
     validate_update_script(script_text)
     remote_version = parse_installer_version(script_text)
@@ -2001,6 +2061,7 @@ EOF
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import base64
 import datetime as dt
 import json
 import os
@@ -2020,7 +2081,7 @@ from gi.repository import Gtk, Gdk, GLib, Gio
 
 APP_ID = "com.uwuntu.ImageManager"
 APP_NAME = "Uwuntu Image Manager"
-VERSION = "1.6"
+VERSION = "1.7"
 
 HOME = Path.home()
 IMAGE_DIR = HOME / "Uwuntu-Images"
@@ -2031,6 +2092,11 @@ ROOT_HELPER = "/usr/local/libexec/uwuntu-image-manager-root"
 UPDATE_PAGE_URL = (
     "https://github.com/Davegage-byte/voltune/blob/main/"
     "uwuntu/Uwuntu%20Image%20Manager.sh"
+)
+UPDATE_API_URL = (
+    "https://api.github.com/repos/"
+    "Davegage-byte/voltune/contents/"
+    "uwuntu/Uwuntu%20Image%20Manager.sh?ref=main"
 )
 UPDATE_RAW_URL = (
     "https://raw.githubusercontent.com/"
@@ -2127,49 +2193,97 @@ def parse_remote_version(script_text):
     return match.group(1)
 
 
-def fetch_remote_version():
+def _frontend_github_headers():
+    return {
+        "User-Agent": f"Uwuntu-Image-Manager/{VERSION}",
+        "Accept": "application/vnd.github+json",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
+
+
+def _frontend_fetch_via_api():
     request = urllib.request.Request(
-        UPDATE_RAW_URL,
-        headers={
-            "User-Agent": f"Uwuntu-Image-Manager/{VERSION}",
-            "Cache-Control": "no-cache",
-        },
+        UPDATE_API_URL,
+        headers=_frontend_github_headers(),
     )
 
-    try:
-        with urllib.request.urlopen(request, timeout=20) as response:
-            length = response.headers.get("Content-Length")
-            if length:
-                try:
-                    if int(length) > MAX_UPDATE_BYTES:
-                        raise RuntimeError(
-                            "Die GitHub-Datei ist unerwartet groß."
-                        )
-                except ValueError:
-                    pass
-
-            data = response.read(MAX_UPDATE_BYTES + 1)
-
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(
-            f"GitHub antwortet mit HTTP {exc.code}."
-        ) from exc
-    except urllib.error.URLError as exc:
-        raise RuntimeError(
-            f"GitHub ist nicht erreichbar: {exc.reason}"
-        ) from exc
+    with urllib.request.urlopen(request, timeout=15) as response:
+        data = response.read(MAX_UPDATE_BYTES + 1)
 
     if len(data) > MAX_UPDATE_BYTES:
         raise RuntimeError(
-            "Die GitHub-Datei ist unerwartet groß."
+            "Die GitHub-API-Antwort ist unerwartet groß."
         )
 
-    try:
-        script_text = data.decode("utf-8")
-    except UnicodeDecodeError as exc:
+    payload = json.loads(data.decode("utf-8"))
+
+    if payload.get("type") != "file":
         raise RuntimeError(
-            "Die GitHub-Datei ist nicht als UTF-8 lesbar."
-        ) from exc
+            "Die GitHub-API liefert nicht die erwartete Datei."
+        )
+
+    encoded = payload.get("content") or ""
+    encoding = (payload.get("encoding") or "").lower()
+
+    if encoding != "base64" or not encoded:
+        raise RuntimeError(
+            "Die GitHub-API liefert keinen Dateiinhalt."
+        )
+
+    raw = base64.b64decode(
+        encoded.replace("\n", ""),
+        validate=False,
+    )
+
+    if len(raw) > MAX_UPDATE_BYTES:
+        raise RuntimeError(
+            "Die Update-Datei ist unerwartet groß."
+        )
+
+    return raw.decode("utf-8")
+
+
+def _frontend_fetch_via_raw():
+    cache_buster = int(dt.datetime.now().timestamp())
+    url = f"{UPDATE_RAW_URL}?cb={cache_buster}"
+
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": f"Uwuntu-Image-Manager/{VERSION}",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+        },
+    )
+
+    with urllib.request.urlopen(request, timeout=20) as response:
+        data = response.read(MAX_UPDATE_BYTES + 1)
+
+    if len(data) > MAX_UPDATE_BYTES:
+        raise RuntimeError(
+            "Die Update-Datei ist unerwartet groß."
+        )
+
+    return data.decode("utf-8")
+
+
+def fetch_remote_version():
+    api_error = None
+
+    try:
+        script_text = _frontend_fetch_via_api()
+    except Exception as exc:
+        api_error = exc
+
+        try:
+            script_text = _frontend_fetch_via_raw()
+        except Exception as raw_exc:
+            raise RuntimeError(
+                "GitHub konnte weder über die Repository-API "
+                "noch über Raw gelesen werden. "
+                f"API-Fehler: {api_error}; Raw-Fehler: {raw_exc}"
+            ) from raw_exc
 
     required = (
         '#!/usr/bin/env bash',
