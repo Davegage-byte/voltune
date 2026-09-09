@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090854
+MANAGER_BUILD=2026090855
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -12480,22 +12480,40 @@ def atspi_focus(window, button):
         pass
 
 def safe_activate_with_ydotool(label, window):
-    """Aktiviere das Network/Wipe-Fenster mit einem echten Pointer-Event.
+    """Aktiviere Network/Wipe nur über einen sicheren Punkt IM Fenster.
 
-    Geklickt wird auf die harmlose SSD-Überschrift. Fallback ist eine sichere
-    Stelle links im Fenster, weit weg vom WIPE-Button.
+    Frühere Versionen nutzten bevorzugt die AT-SPI-Koordinaten des SSD-Labels.
+    Während GNOME gerade das Dock ein-/ausblendet oder Fenster neu tiled,
+    können diese Label-Koordinaten kurzzeitig falsch sein. Dann konnte ein
+    Klick versehentlich im oberen GNOME-Panel auf Uhr/Benachrichtigungen landen.
+
+    Deshalb wird ausschließlich die Fenstergeometrie verwendet. Ist sie nicht
+    plausibel, findet überhaupt kein Pointer-Klick statt.
     """
-    target = get_extents(label) if label is not None else None
-    if target is not None:
-        x = int(target.x + max(2, target.width // 2))
-        y = int(target.y + max(2, target.height // 2))
-    else:
-        win = get_extents(window)
-        if win is None:
-            return False
-        # Links im unteren Drittel des Fensters, nicht auf dem Action-Button.
-        x = int(win.x + 35)
-        y = int(win.y + max(40, int(win.height * 0.78)))
+    win = get_extents(window)
+    if win is None:
+        return False
+
+    # Nur auf ein plausibel großes, tatsächlich dargestelltes Fenster klicken.
+    if win.width < 300 or win.height < 220:
+        return False
+
+    # Sicherer Punkt im linken unteren Bereich des Network/Wipe-Fensters:
+    # weit weg von Titelleiste, GNOME-Panel und WIPE-Button.
+    x = int(win.x + max(70, min(120, win.width * 0.12)))
+    y = int(win.y + max(110, win.height * 0.72))
+
+    # Niemals in den oberen GNOME-Panel-Bereich klicken. Bei ungewöhnlichen
+    # oder vorübergehend falschen Koordinaten lieber komplett abbrechen.
+    if y < 64:
+        return False
+
+    # Der Zielpunkt muss eindeutig innerhalb der gemeldeten Fenstergrenzen
+    # liegen; andernfalls kein synthetischer Klick.
+    if not (win.x + 8 <= x <= win.x + win.width - 8):
+        return False
+    if not (win.y + 48 <= y <= win.y + win.height - 8):
+        return False
 
     env = os.environ.copy()
 
@@ -12552,7 +12570,7 @@ while time.monotonic() < deadline:
 
         # Wenn AT-SPI nur den internen Widget-Fokus setzt, aber das Wayland-
         # Fenster nicht wirklich aktiv wird, simulieren wir einen harmlosen
-        # echten Klick auf "SSD". Das löst keinerlei Wipe-Aktion aus.
+        # echten Klick auf einen validierten sicheren Punkt IM Fenster.
         now = time.monotonic()
         if safe_clicks < 3 and now - last_click_at >= 0.75:
             if safe_activate_with_ydotool(ssd_label, window):
