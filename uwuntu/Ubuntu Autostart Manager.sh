@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090862
+MANAGER_BUILD=2026090863
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1206,7 +1206,7 @@ uwuntu_set_dock_autohide() {
 uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_15.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_16.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
 STATE_FILE="$HOME/.local/state/uwuntu/camera_test_status.json"
 mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
@@ -1215,7 +1215,7 @@ rm -f "$STATE_FILE" 2>/dev/null || true
 {
     echo
     echo "============================================================"
-    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.15 Start"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.16 Start"
 } >> "$LOG_FILE" 2>/dev/null || true
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
@@ -1300,7 +1300,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.15"
+VERSION = "1.16"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 STATE_DIR = Path.home() / ".local/state/uwuntu"
@@ -1462,7 +1462,8 @@ class CameraWindow(Gtk.ApplicationWindow):
         self.mode_index = 0
 
         # Ressourcenschonende Gesichtserkennung:
-        # nur 2 kleine 320x180-Graubilder pro Sekunde.
+        # maximal 1 kleines 320x180-Graubild pro Sekunde.
+        # Die sichtbare Kameravorschau bleibt davon unberührt bei bis zu 30 FPS.
         self.face_ever_seen = False
         self.face_currently_visible = False
         self.face_miss_count = 0
@@ -1623,7 +1624,7 @@ window { background: #000; }
             return False
 
         # Haar-Erkennung kann einzelne Frames kurz verpassen.
-        # Erst nach zwei aufeinanderfolgenden Fehl-Treffern (~1 s bei 2 FPS)
+        # Erst nach zwei aufeinanderfolgenden Fehl-Treffern (~2 s bei 1 FPS)
         # von Blau auf Grün wechseln.
         self.face_miss_count += 1
         if self.face_miss_count >= 2:
@@ -1685,7 +1686,7 @@ window { background: #000; }
               'gtksink name=sink sync=false '
               't. ! queue leaky=downstream max-size-buffers=1 ! '
               'videoconvert ! videoscale ! videorate ! '
-              'video/x-raw,format=GRAY8,width=320,height=180,framerate=2/1 ! '
+              'video/x-raw,format=GRAY8,width=320,height=180,framerate=1/1 ! '
               'appsink name=facesink emit-signals=true drop=true '
               'max-buffers=1 sync=false'
         )
@@ -1784,9 +1785,9 @@ window { background: #000; }
             return Gst.FlowReturn.OK
 
         # Zusätzliche Zeitbremse als Schutz, obwohl der GStreamer-Zweig bereits
-        # auf 2 FPS begrenzt ist.
+        # auf 1 FPS begrenzt ist.
         now = time.monotonic()
-        if now - self.face_last_sample_at < 0.35:
+        if now - self.face_last_sample_at < 0.80:
             try:
                 sink.emit("pull-sample")
             except Exception:
@@ -1972,7 +1973,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.15
+Comment=Cleaner Uwuntu Kamera-Test v1.16
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -1995,7 +1996,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.15 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.16 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
