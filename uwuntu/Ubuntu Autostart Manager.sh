@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.26 + Hardware Check v4.5.63 + Wipe Auto v3.26 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.26 + Hardware Check v4.5.64 + Wipe Auto v3.26 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090869
+MANAGER_BUILD=2026090870
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5646,7 +5646,7 @@ install_hardware_check_app() {
     install_force_update_helper
 
     local hw_missing=()
-    for pkg in python3-gi gir1.2-gtk-4.0 libinput-tools udev mokutil dmidecode wl-clipboard; do
+    for pkg in python3-gi gir1.2-gtk-4.0 python3-pyatspi libinput-tools udev mokutil dmidecode wl-clipboard; do
         dpkg -s "$pkg" >/dev/null 2>&1 || hw_missing+=("$pkg")
     done
     if [ "${#hw_missing[@]}" -gt 0 ]; then
@@ -5737,6 +5737,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 
 from gi.repository import Gtk, Gdk, GLib, Pango
+import pyatspi
 from pathlib import Path
 import glob
 import json
@@ -7771,6 +7772,14 @@ class App(Gtk.Application):
         self.touch_status_cache = None
         self.touch_present_cache = None
         self.touch_present_checked_at = 0.0
+        self.touch_proc = None
+        self.touch_launch_guard_until = 0.0
+
+        # Kurzer Cache für die AT-SPI-Erkennung des GNOME-Power-Dialogs.
+        # Die Prüfung läuft nur bei Audio-Pfeiltasten und soll dabei nicht
+        # mehrfach innerhalb weniger Millisekunden den Desktopbaum scannen.
+        self.power_dialog_cache_at = 0.0
+        self.power_dialog_cache_value = False
         self.display_state_file = Path.home() / ".local/state/uwuntu/display_test_status.json"
         self.display_script = Path.home() / ".local/bin/uwuntu-display-test.sh"
         self.display_test_active = False
@@ -7857,14 +7866,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.63")
+        self.window.set_title("Hardware Check v4.5.64")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.63")
+        title_label = Gtk.Label(label="Hardware Check v4.5.64")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -8900,23 +8909,53 @@ class App(Gtk.Application):
             log("Touch-Test per T fehlgeschlagen: Script fehlt")
             return False
 
+        now = time.monotonic()
+
+        # Ein physischer T-Tastendruck kann nahezu gleichzeitig über GTK und
+        # den globalen /dev/input-Monitor ankommen. Vor pgrep greift deshalb
+        # eine eigene Start-Sperre, damit niemals zwei Starts durchrutschen.
+        if now < self.touch_launch_guard_until:
+            log("Touch-Test per T ignoriert: Startsperre aktiv")
+            return False
+
+        # Von HC selbst gestartete Instanz direkt verfolgen.
         try:
-            running = subprocess.run(
-                ["pgrep", "-f", str(self.touch_script)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=1.0,
-                check=False,
-            ).returncode == 0
+            if self.touch_proc is not None and self.touch_proc.poll() is None:
+                log("Touch-Test per T bereits geöffnet (eigener Prozess)")
+                return False
         except Exception:
-            running = False
+            self.touch_proc = None
+
+        # Der Shell-Launcher exec't unmittelbar zu
+        # "uwuntu-touch-tester-python". Deshalb sowohl den echten Prozessnamen
+        # als auch den Script-Pfad prüfen.
+        running = False
+        for pattern in (
+            "uwuntu-touch-tester-python",
+            str(self.touch_script),
+        ):
+            try:
+                if subprocess.run(
+                    ["pgrep", "-f", pattern],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=1.0,
+                    check=False,
+                ).returncode == 0:
+                    running = True
+                    break
+            except Exception:
+                pass
 
         if running:
             log("Touch-Test per T bereits geöffnet")
             return False
 
+        # Sperre VOR Popen setzen: genau hier lag bisher das Race-Fenster.
+        self.touch_launch_guard_until = now + 1.5
+
         try:
-            subprocess.Popen(
+            self.touch_proc = subprocess.Popen(
                 [str(self.touch_script)],
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
@@ -8924,8 +8963,13 @@ class App(Gtk.Application):
                 start_new_session=True,
             )
             self.set_touch_status_ui("blue", "TEST WIRD GESTARTET")
-            log("Touch-Test per T gestartet")
+            log(
+                "Touch-Test per T gestartet "
+                f"(PID {self.touch_proc.pid})"
+            )
         except Exception as exc:
+            self.touch_proc = None
+            self.touch_launch_guard_until = 0.0
             self.set_touch_status_ui("red", "TOUCH-TEST STARTFEHLER")
             log(f"Touch-Test per T Startfehler: {exc}")
         return False
@@ -10049,6 +10093,106 @@ class App(Gtk.Application):
         ).start()
         return False
 
+    def system_power_dialog_open(self):
+        """GNOME-Ausschalt-/Power-Dialog per AT-SPI erkennen.
+
+        Nur wenn in demselben Dialog sowohl eine Abbruch-Aktion als auch eine
+        Ausschalt-/Herunterfahr-Aktion vorkommt, gilt er als Power-Dialog.
+        Dadurch werden normale Fenster/Dialoge nicht unnötig beeinflusst.
+        """
+        now = time.monotonic()
+        if now - self.power_dialog_cache_at < 0.15:
+            return self.power_dialog_cache_value
+
+        self.power_dialog_cache_at = now
+        detected = False
+
+        cancel_tokens = (
+            "abbrechen",
+            "cancel",
+        )
+        power_tokens = (
+            "herunterfahren",
+            "ausschalten",
+            "abschalten",
+            "power off",
+            "poweroff",
+            "shut down",
+            "shutdown",
+        )
+
+        def walk(obj, depth=0):
+            if depth > 7:
+                return
+            try:
+                count = obj.childCount
+            except Exception:
+                count = 0
+            for i in range(count):
+                try:
+                    child = obj.getChildAtIndex(i)
+                except Exception:
+                    continue
+                yield child
+                yield from walk(child, depth + 1)
+
+        try:
+            desktop = pyatspi.Registry.getDesktop(0)
+            app_count = desktop.childCount
+        except Exception:
+            self.power_dialog_cache_value = False
+            return False
+
+        for app_index in range(app_count):
+            try:
+                app = desktop.getChildAtIndex(app_index)
+            except Exception:
+                continue
+
+            for candidate in walk(app):
+                try:
+                    role = (candidate.getRoleName() or "").lower()
+                except Exception:
+                    role = ""
+
+                if role not in (
+                    "dialog",
+                    "alert",
+                    "frame",
+                    "window",
+                ):
+                    continue
+
+                names = []
+                try:
+                    candidate_name = (candidate.name or "").strip()
+                    if candidate_name:
+                        names.append(candidate_name.lower())
+                except Exception:
+                    pass
+
+                for item in walk(candidate):
+                    try:
+                        name = (item.name or "").strip()
+                    except Exception:
+                        name = ""
+                    if name:
+                        names.append(name.lower())
+
+                haystack = " | ".join(names)
+                has_cancel = any(token in haystack for token in cancel_tokens)
+                has_power = any(token in haystack for token in power_tokens)
+
+                if has_cancel and has_power:
+                    detected = True
+                    break
+
+            if detected:
+                break
+
+        self.power_dialog_cache_value = detected
+        return detected
+
     def send_audio_action(self, action):
         action_name = {
             "audio-left": "left",
@@ -10121,6 +10265,16 @@ class App(Gtk.Application):
         self.last_global_hotkey_at[action] = now
 
         if action.startswith("audio-"):
+            # Solange der GNOME-Power-/Ausschalt-Dialog offen ist, gehören die
+            # Pfeiltasten ausschließlich diesem Systemdialog. Audio Test darf
+            # dann keinerlei Links/Mitte/Rechts/Auto-Aktion auslösen.
+            if self.system_power_dialog_open():
+                log(
+                    "Audio-Hotkey blockiert: "
+                    "GNOME Power-/Ausschalt-Dialog ist geöffnet"
+                )
+                return False
+
             self.send_audio_action(action)
             return False
 
