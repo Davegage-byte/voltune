@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.23 + Hardware Check v4.5.57 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.24 + Hardware Check v4.5.57 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090856
+MANAGER_BUILD=2026090857
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -12753,7 +12753,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.23 und Wipe Auto v3.24
+Comment=Network Check v2.24 und Wipe Auto v3.24
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -12781,7 +12781,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.23 + Wipe Auto v3.24 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.24 + Wipe Auto v3.24 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -12927,7 +12927,7 @@ import time
 import queue
 from datetime import datetime
 from pathlib import Path
-VERSION = "2.23"
+VERSION = "2.24"
 # ============================================================
 # EINSTELLUNGEN
 # Diese Grenzwerte sind für den ersten Praxistest bewusst
@@ -12944,6 +12944,16 @@ LAN_DOWNLOAD_MIN = 800.0    # Mbps
 LAN_UPLOAD_MIN = 800.0      # Mbps
 WIFI_DOWNLOAD_MIN = 50.0    # Mbps
 WIFI_UPLOAD_MIN = 100.0     # Mbps
+
+# Einheitliche Farbabstufung:
+# Grün = Zielwert erreicht
+# Orange = noch brauchbar, mindestens 70 % des Zielwerts
+# Rot = darunter
+NETWORK_WARN_FACTOR = 0.70
+
+# Ping-Farben
+PING_GOOD_MAX_MS = 40.0
+PING_WARN_MAX_MS = 100.0
 
 # Je Richtung maximal ungefähr 2,5 Sekunden.
 # Gesamttest pro Verbindung damit ungefähr 5 Sekunden.
@@ -13202,10 +13212,18 @@ class ConnectionCard:
 
         self.link_value = self.metric(metrics, "LINK")
         self.ping_value = self.metric(metrics, "PING")
-        # Noch nicht geprüft = Orange.
-        self.set_widget_class(self.ping_value, "warn")
         self.down_value = self.metric(metrics, "DOWNLOAD")
         self.up_value = self.metric(metrics, "UPLOAD")
+
+        # Noch nicht geprüft = überall Orange.
+        for widget in (
+            self.link_value,
+            self.ping_value,
+            self.down_value,
+            self.up_value,
+        ):
+            self.set_widget_class(widget, "warn")
+
         self.root.append(metrics)
 
         self.note_label = Gtk.Label(label="")
@@ -13908,14 +13926,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.23 + Wipe Auto v3.24")
+        self.window.set_title("Network Check v2.24 + Wipe Auto v3.24")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.23 + Wipe Auto v3.24")
+        title_label = Gtk.Label(label="Network Check v2.24 + Wipe Auto v3.24")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -14429,10 +14447,10 @@ class NetworkCheckApp(Gtk.Application):
             result["passed"] = None
 
             card = self.cards[kind]
-            card.set_metric("link", "--", "neutral")
+            card.set_metric("link", "--", "warn")
             card.set_metric("ping", "--", "warn")
-            card.set_metric("down", "--", "neutral")
-            card.set_metric("up", "--", "neutral")
+            card.set_metric("down", "--", "warn")
+            card.set_metric("up", "--", "warn")
 
             connected = any(
                 dev["connected"]
@@ -14980,29 +14998,66 @@ class NetworkCheckApp(Gtk.Application):
         ):
             return False
 
-        if kind == "lan":
-            return (
-                r["link"] >= LAN_LINK_MIN
-                and r["down"] >= LAN_DOWNLOAD_MIN
-                and r["up"] >= LAN_UPLOAD_MIN
-            )
-        return (
-            r["link"] >= WIFI_LINK_MIN
-            and r["down"] >= WIFI_DOWNLOAD_MIN
-            and r["up"] >= WIFI_UPLOAD_MIN
-        )
+        return self.result_quality(kind) == "good"
 
     def metric_class(self, kind, metric, value):
         if value is None:
             return "warn"
-        if metric == "link":
-            minimum = LAN_LINK_MIN if kind == "lan" else WIFI_LINK_MIN
-        elif metric == "down":
-            minimum = LAN_DOWNLOAD_MIN if kind == "lan" else WIFI_DOWNLOAD_MIN
-        else:
-            minimum = LAN_UPLOAD_MIN if kind == "lan" else WIFI_UPLOAD_MIN
 
-        return "good" if value >= minimum else "bad"
+        if metric == "link":
+            target = LAN_LINK_MIN if kind == "lan" else WIFI_LINK_MIN
+        elif metric == "down":
+            target = (
+                LAN_DOWNLOAD_MIN
+                if kind == "lan"
+                else WIFI_DOWNLOAD_MIN
+            )
+        else:
+            target = (
+                LAN_UPLOAD_MIN
+                if kind == "lan"
+                else WIFI_UPLOAD_MIN
+            )
+
+        if value >= target:
+            return "good"
+        if value >= target * NETWORK_WARN_FACTOR:
+            return "warn"
+        return "bad"
+
+    def ping_class(self, latency):
+        if latency is None:
+            return "bad"
+        if latency <= PING_GOOD_MAX_MS:
+            return "good"
+        if latency <= PING_WARN_MAX_MS:
+            return "warn"
+        return "bad"
+
+    def result_quality(self, kind):
+        """Gesamtqualität anhand aller vier LAN/WLAN-Werte."""
+        r = self.results[kind]
+
+        if (
+            r["link"] is None
+            or r["ping_ok"] is not True
+            or r["down"] is None
+            or r["up"] is None
+        ):
+            return "bad"
+
+        classes = [
+            self.metric_class(kind, "link", r["link"]),
+            self.ping_class(r["ping"]),
+            self.metric_class(kind, "down", r["down"]),
+            self.metric_class(kind, "up", r["up"]),
+        ]
+
+        if "bad" in classes:
+            return "bad"
+        if "warn" in classes:
+            return "warn"
+        return "good"
 
     # --------------------------------------------------------
     # UI-Updates aus Worker
@@ -15012,12 +15067,12 @@ class NetworkCheckApp(Gtk.Application):
         card.interface_label.set_text(f"Interface: {iface}")
         card.set_state(phase, "live")
         card.note_label.set_text("Speedtest läuft …")
-        # Die gerade laufende Phase ist vom ersten Moment an GELB.
-        # Bereits abgeschlossene Werte bleiben in ihrer Endfarbe sichtbar.
+        # Laufender Test = Blau. Bereits abgeschlossene Werte behalten
+        # ihre fertige Grün/Orange/Rot-Bewertung.
         if phase == "DOWNLOAD":
-            card.set_metric("down", "0.0 Mbps", "warn")
+            card.set_metric("down", "0.0 Mbps", "live")
         elif phase == "UPLOAD":
-            card.set_metric("up", "0.0 Mbps", "warn")
+            card.set_metric("up", "0.0 Mbps", "live")
 
         self.global_status.set_text(f"{kind.upper()} {iface}: {phase}")
         return False
@@ -15046,33 +15101,31 @@ class NetworkCheckApp(Gtk.Application):
 
         if latency is None:
             card.set_metric("ping", "FEHLER", "bad")
-        elif latency < 1.0:
-            card.set_metric("ping", "<1 ms", "good")
-        elif latency < 10.0:
-            card.set_metric(
-                "ping",
-                f"{latency:.1f} ms",
-                "good",
-            )
-        else:
-            card.set_metric(
-                "ping",
-                f"{latency:.0f} ms",
-                "good",
-            )
+            return False
 
+        if latency < 1.0:
+            text_value = "<1 ms"
+        elif latency < 10.0:
+            text_value = f"{latency:.1f} ms"
+        else:
+            text_value = f"{latency:.0f} ms"
+
+        card.set_metric(
+            "ping",
+            text_value,
+            self.ping_class(latency),
+        )
         return False
 
     def update_live_speed(self, kind, direction, speed):
         card = self.cards[kind]
         metric = "down" if direction == "download" else "up"
-        # Solange die Messung läuft, ist der Live-Wert bewusst GELB.
-        # So ist auf einen Blick erkennbar, dass noch gemessen wird.
-        # Erst der fertige Messwert wird wieder grün/rot bewertet.
+        # Solange die Messung läuft, bleibt der Live-Wert Blau.
+        # Erst der fertige Messwert wird Grün/Orange/Rot bewertet.
         card.set_metric(
             metric,
             format_mbps(speed, decimals=1),
-            "warn",
+            "live",
         )
         return False
 
@@ -15112,7 +15165,12 @@ class NetworkCheckApp(Gtk.Application):
                 ping_text = f"{latency:.1f} ms"
             else:
                 ping_text = f"{latency:.0f} ms"
-            card.set_metric("ping", ping_text, "good")
+
+            card.set_metric(
+                "ping",
+                ping_text,
+                self.ping_class(latency),
+            )
         elif r["ping_ok"] is False:
             card.set_metric("ping", "FEHLER", "bad")
         else:
@@ -15143,13 +15201,6 @@ class NetworkCheckApp(Gtk.Application):
 
         if not r["tested"]:
             return
-        # LAN-Linkfehler hat Priorität.
-        if kind == "lan" and r["link"] is not None and r["link"] < LAN_LINK_MIN:
-            card.set_state("LAN LINK ERROR", "bad")
-            card.note_label.set_text(
-                "LAN unter 1.000 Mbps – Stecker, Buchse oder Kontakt prüfen!"
-            )
-            return
 
         if r["ping_ok"] is False:
             card.set_state("PING ERROR", "bad")
@@ -15158,16 +15209,24 @@ class NetworkCheckApp(Gtk.Application):
             )
             return
 
-        if r["passed"]:
+        quality = self.result_quality(kind)
+
+        if quality == "good":
             card.set_state("PASS", "good")
             card.note_label.set_text(
-                "Endwerte = Durchschnitt der schnellsten stabilen Messwerte."
+                "Alle Messwerte im guten Bereich."
+            )
+        elif quality == "warn":
+            card.set_state("LANGSAM", "warn")
+            card.note_label.set_text(
+                "Mindestens ein Messwert liegt im orangenen Bereich."
             )
         else:
-            card.set_state("TOO SLOW", "bad")
+            card.set_state("ZU LANGSAM", "bad")
             card.note_label.set_text(
-                "Endwerte = schnelle stabile Messwerte; mindestens ein Wert ist zu niedrig."
+                "Mindestens ein Messwert liegt deutlich unter dem Zielbereich."
             )
+
     # --------------------------------------------------------
     # Ende
     # --------------------------------------------------------
