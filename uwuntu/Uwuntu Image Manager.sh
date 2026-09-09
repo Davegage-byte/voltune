@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 APP_NAME="Uwuntu Image Manager"
-APP_VERSION="1.5"
+APP_VERSION="1.6"
 
 ROOT_HELPER="/usr/local/libexec/uwuntu-image-manager-root"
 SUDOERS_FILE="/etc/sudoers.d/uwuntu-image-manager"
@@ -93,7 +93,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-APP_VERSION = "1.5"
+APP_VERSION = "1.6"
 FORMAT_VERSION = "uwuntu-image-v1"
 
 UPDATE_RAW_URL = (
@@ -104,8 +104,14 @@ UPDATE_RAW_URL = (
 MAX_UPDATE_BYTES = 4 * 1024 * 1024
 
 MIB = 1024 * 1024
-RESTORE_TOTAL_MIB = 29 * 1024
-RESTORE_END_MIB = RESTORE_TOTAL_MIB - 1
+
+# Maximal weiterhin 29 GiB verwenden. Kleinere handelsübliche
+# "32-GB"-Sticks dürfen aber real deutlich weniger GiB besitzen.
+# Deshalb wird beim Restore automatisch auf die echte Zielgröße
+# minus Reserve zurückgegangen.
+RESTORE_MAX_TOTAL_MIB = 29 * 1024
+RESTORE_END_RESERVE_MIB = 128
+
 CHUNK = 4 * 1024 * 1024
 
 
@@ -913,7 +919,8 @@ def backup(args):
                 "backup": "persistence.tar.zst",
                 "tar_stream_bytes": tar_stream_bytes,
             },
-            "restore_total_mib": RESTORE_TOTAL_MIB,
+            "restore_max_total_mib": RESTORE_MAX_TOTAL_MIB,
+            "restore_end_reserve_mib": RESTORE_END_RESERVE_MIB,
             "checksums": checksums,
         }
 
@@ -978,31 +985,62 @@ def backup(args):
 
 def create_restore_layout(disk, p1_size, p2_needed):
     disk_size = int(output(["blockdev", "--getsize64", disk], timeout=3))
+    disk_mib = disk_size // MIB
 
-    required_total = RESTORE_TOTAL_MIB * MIB
-
-    if disk_size < required_total:
-        fail(
-            "Der Zielstick ist zu klein.\n"
-            f"Benötigt: mindestens 29 GiB\n"
-            f"Vorhanden: {disk_size / (1024**3):.2f} GiB"
-        )
+    # Maximal 29 GiB. Ist der reale "32-GB"-Stick kleiner, wird
+    # automatisch ein passendes Layout mit 128 MiB Reserve am Ende
+    # gewählt. Dadurch funktionieren z. B. auch Sticks mit 28,64 GiB.
+    target_total_mib = min(
+        RESTORE_MAX_TOTAL_MIB,
+        disk_mib - RESTORE_END_RESERVE_MIB,
+    )
 
     p1_mib = math.ceil(p1_size / MIB)
     p1_start = 1
     p1_end = p1_start + p1_mib
     p2_start = p1_end + 1
-    p2_end = RESTORE_END_MIB
+    p2_end = target_total_mib
+
+    if target_total_mib <= p2_start:
+        fail(
+            "Der Zielstick ist zu klein für Boot- und "
+            "Persistenzpartition."
+        )
 
     p2_bytes = (p2_end - p2_start) * MIB
 
+    # Nutzdaten + 5 % + 256 MiB Reserve für ext-Metadaten und
+    # freien Spielraum.
     safety = int(p2_needed * 1.05) + 256 * MIB
 
     if p2_bytes < safety:
         fail(
-            "Die Persistenz-Daten passen nicht sicher in das "
-            "29-GiB-Ziellayout."
+            "Die Persistenz-Daten passen nicht sicher auf diesen "
+            "Zielstick.\n\n"
+            f"Zielstick: {disk_size / (1024**3):.2f} GiB\n"
+            f"Verwendbares Ziellayout: "
+            f"{target_total_mib / 1024:.2f} GiB\n"
+            f"Für Persistenz verfügbar: "
+            f"{p2_bytes / (1024**3):.2f} GiB"
         )
+
+    emit(
+        "info",
+        message=(
+            f"Ziellayout automatisch angepasst: "
+            f"{target_total_mib / 1024:.2f} GiB "
+            f"auf {disk_size / (1024**3):.2f} GiB Zielstick."
+        ),
+    )
+
+    log(
+        "RESTORE-LAYOUT: "
+        f"Disk={disk_size / (1024**3):.2f}GiB "
+        f"Layout={target_total_mib / 1024:.2f}GiB "
+        f"P1={p1_mib}MiB "
+        f"P2={(p2_end - p2_start)}MiB "
+        f"Reserve={RESTORE_END_RESERVE_MIB}MiB"
+    )
 
     unmount_disk(disk)
 
@@ -1982,7 +2020,7 @@ from gi.repository import Gtk, Gdk, GLib, Gio
 
 APP_ID = "com.uwuntu.ImageManager"
 APP_NAME = "Uwuntu Image Manager"
-VERSION = "1.5"
+VERSION = "1.6"
 
 HOME = Path.home()
 IMAGE_DIR = HOME / "Uwuntu-Images"
@@ -2746,8 +2784,9 @@ class MainWindow(Gtk.ApplicationWindow):
             self.action_card(
                 "UWUNTU WIEDERHERSTELLEN",
                 "Schreibt ein gespeichertes .uwuntu-Image auf einen anderen "
-                "Stick. Das Ziellayout wird bewusst auf 29 GiB begrenzt, "
-                "damit unterschiedlich große 32-GB-Sticks funktionieren.",
+                "Stick. Das Ziellayout wird automatisch an die reale "
+                "Kapazität des Zielsticks angepasst und bleibt maximal "
+                "29 GiB groß.",
                 self.open_restore,
             )
         )
@@ -3091,7 +3130,9 @@ class MainWindow(Gtk.ApplicationWindow):
                 "ZIELSTICK WIRKLICH LÖSCHEN?",
                 f"Image:\n{image_display(image)}\n\n"
                 f"Ziel:\n{disk_display(disk)}\n\n"
-                "Der komplette Zielstick wird neu partitioniert.",
+                "Der komplette Zielstick wird neu partitioniert. "
+                "Das Layout wird automatisch an die reale Stickgröße "
+                "angepasst.",
                 lambda: (
                     win.close(),
                     self.run_backend(
