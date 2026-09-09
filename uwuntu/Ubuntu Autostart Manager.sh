@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.68 + Wipe Auto v3.27 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.68 + Wipe Auto v3.28 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090876
+MANAGER_BUILD=2026090877
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -3052,7 +3052,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "3.27"
+VERSION = "3.28"
 DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 LOG = Path.home() / "wipe_auto.log"
@@ -13360,7 +13360,7 @@ write_network_check_desktop() {
 [Desktop Entry]
 Type=Application
 Name=Network Check + Wipe Auto
-Comment=Network Check v2.28 und Wipe Auto v3.27
+Comment=Network Check v2.28 und Wipe Auto v3.28
 Exec=$NETWORK_CHECK_SCRIPT
 Icon=network-transmit-receive-symbolic
 Terminal=false
@@ -13388,7 +13388,7 @@ install_network_check() {
     echo "Network Check installieren / aktualisieren"
     echo "------------------------------------------------------------"
     echo
-    echo "Installiere Network Check v2.28 + Wipe Auto v3.27 im gemeinsamen Fenster."
+    echo "Installiere Network Check v2.28 + Wipe Auto v3.28 im gemeinsamen Fenster."
     echo "Network Check und Wipe Auto teilen sich künftig das obere linke Fenster."
     echo
 
@@ -13901,7 +13901,7 @@ class ConnectionCard:
 # ============================================================
 # Wipe Auto – kompakt im gemeinsamen Network/Wipe-Fenster
 # ============================================================
-WIPE_VERSION = "3.27"
+WIPE_VERSION = "3.28"
 WIPE_DISK = "/dev/nvme0n1"
 BATTERY_BAD_BELOW = 75.0
 
@@ -14311,7 +14311,7 @@ class WipeCompactPanel:
             self.disk_note.set_text(f"{WIPE_DISK} nicht vorhanden.")
             self.wipe_button.set_sensitive(False)
         else:
-            self.disk_badge.set_text("READY")
+            self.disk_badge.set_text("BEREIT")
             self.set_class(self.disk_badge, "neutral")
             self.last_disk_display = f"{details['size']} • {details['model']}"
             self.disk_value.set_text(self.last_disk_display)
@@ -14366,7 +14366,7 @@ class WipeCompactPanel:
         self.window.set_default_widget(yes)
         yes.grab_focus()
 
-        self.disk_badge.set_text("CONFIRM")
+        self.disk_badge.set_text("BESTÄTIGEN")
         self.set_class(self.disk_badge, "warn")
 
     def on_cancel(self, button):
@@ -14425,7 +14425,7 @@ class WipeCompactPanel:
 
     def finish_success(self):
         self.wiping = False
-        self.disk_badge.set_text("GETESTET")
+        self.disk_badge.set_text("GELÖSCHT")
         self.set_class(self.disk_badge, "good")
         self.disk_value.set_text(
             (self.last_disk_display + " • Erfolgreich gelöscht")
@@ -14533,14 +14533,14 @@ class NetworkCheckApp(Gtk.Application):
         self.install_css()
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Network Check v2.28 + Wipe Auto v3.27")
+        self.window.set_title("Network Check v2.28 + Wipe Auto v3.28")
         self.window.set_default_size(960, 520)
 
         # Einheitliche Titelleiste: Name mittig, gemeinsamer REFRESH rechts.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.27")
+        title_label = Gtk.Label(label="Network Check v2.28 + Wipe Auto v3.28")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
