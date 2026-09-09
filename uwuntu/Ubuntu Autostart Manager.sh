@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090853
+MANAGER_BUILD=2026090854
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1172,6 +1172,39 @@ uwuntu_set_display_brightness_100() {
 
 uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
 
+# ------------------------------------------------------------
+# Uwuntu: Ubuntu-Dock/Taskleiste automatisch ausblenden
+# Position (z. B. LEFT) wird bewusst NICHT verändert.
+# ------------------------------------------------------------
+uwuntu_set_dock_autohide() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        return 0
+    fi
+
+    # Nicht dauerhaft sichtbar.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+
+    # Klassisches Auto-Hide: Dock bleibt eingeklappt und erscheint
+    # bei Bedarf am Bildschirmrand.
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+
+    # Nicht nur bei überlappenden Fenstern ausblenden, sondern generell.
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    return 0
+}
+
+uwuntu_set_dock_autohide >/dev/null 2>&1 || true
+
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
 PY_FILE="$CACHE_DIR/camera_test_v1_13.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
@@ -1982,6 +2015,39 @@ uwuntu_set_display_brightness_100() {
 
 uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
 
+# ------------------------------------------------------------
+# Uwuntu: Ubuntu-Dock/Taskleiste automatisch ausblenden
+# Position (z. B. LEFT) wird bewusst NICHT verändert.
+# ------------------------------------------------------------
+uwuntu_set_dock_autohide() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        return 0
+    fi
+
+    # Nicht dauerhaft sichtbar.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+
+    # Klassisches Auto-Hide: Dock bleibt eingeklappt und erscheint
+    # bei Bedarf am Bildschirmrand.
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+
+    # Nicht nur bei überlappenden Fenstern ausblenden, sondern generell.
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    return 0
+}
+
+uwuntu_set_dock_autohide >/dev/null 2>&1 || true
+
 # Let GTK connect to the X server provided by XWayland, even when the
 # desktop session itself is Wayland.
 export GDK_BACKEND=x11
@@ -2416,6 +2482,39 @@ uwuntu_set_display_brightness_100() {
 
 uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
 
+# ------------------------------------------------------------
+# Uwuntu: Ubuntu-Dock/Taskleiste automatisch ausblenden
+# Position (z. B. LEFT) wird bewusst NICHT verändert.
+# ------------------------------------------------------------
+uwuntu_set_dock_autohide() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        return 0
+    fi
+
+    # Nicht dauerhaft sichtbar.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+
+    # Klassisches Auto-Hide: Dock bleibt eingeklappt und erscheint
+    # bei Bedarf am Bildschirmrand.
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+
+    # Nicht nur bei überlappenden Fenstern ausblenden, sondern generell.
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    return 0
+}
+
+uwuntu_set_dock_autohide >/dev/null 2>&1 || true
+
 export GDK_BACKEND=x11
 
 if [[ -z "${DISPLAY:-}" ]]; then
@@ -2769,6 +2868,39 @@ uwuntu_set_display_brightness_100() {
 }
 
 uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
+
+# ------------------------------------------------------------
+# Uwuntu: Ubuntu-Dock/Taskleiste automatisch ausblenden
+# Position (z. B. LEFT) wird bewusst NICHT verändert.
+# ------------------------------------------------------------
+uwuntu_set_dock_autohide() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        return 0
+    fi
+
+    # Nicht dauerhaft sichtbar.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+
+    # Klassisches Auto-Hide: Dock bleibt eingeklappt und erscheint
+    # bei Bedarf am Bildschirmrand.
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+
+    # Nicht nur bei überlappenden Fenstern ausblenden, sondern generell.
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    return 0
+}
+
+uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 # ============================================================
 # Wipe Auto - GTK4
 # ============================================================
@@ -3894,6 +4026,39 @@ uwuntu_set_display_brightness_100() {
 }
 
 uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
+
+# ------------------------------------------------------------
+# Uwuntu: Ubuntu-Dock/Taskleiste automatisch ausblenden
+# Position (z. B. LEFT) wird bewusst NICHT verändert.
+# ------------------------------------------------------------
+uwuntu_set_dock_autohide() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        return 0
+    fi
+
+    # Nicht dauerhaft sichtbar.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+
+    # Klassisches Auto-Hide: Dock bleibt eingeklappt und erscheint
+    # bei Bedarf am Bildschirmrand.
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+
+    # Nicht nur bei überlappenden Fenstern ausblenden, sondern generell.
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    return 0
+}
+
+uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 
 APP_NAME="Uwuntu Audio Test"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-audio-test"
@@ -5473,6 +5638,39 @@ uwuntu_set_display_brightness_100() {
 }
 
 uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
+
+# ------------------------------------------------------------
+# Uwuntu: Ubuntu-Dock/Taskleiste automatisch ausblenden
+# Position (z. B. LEFT) wird bewusst NICHT verändert.
+# ------------------------------------------------------------
+uwuntu_set_dock_autohide() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        return 0
+    fi
+
+    # Nicht dauerhaft sichtbar.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+
+    # Klassisches Auto-Hide: Dock bleibt eingeklappt und erscheint
+    # bei Bedarf am Bildschirmrand.
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+
+    # Nicht nur bei überlappenden Fenstern ausblenden, sondern generell.
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    return 0
+}
+
+uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 
 TMP_PY="$(mktemp /tmp/hardware-check.XXXXXX.py)"
 trap 'rm -f "$TMP_PY"' EXIT
@@ -11785,6 +11983,47 @@ set_max_brightness() {
 }
 
 set_max_brightness
+
+# ------------------------------------------------------------
+# Ubuntu-Dock / Taskleiste automatisch ausblenden
+# ------------------------------------------------------------
+
+set_dock_autohide() {
+    echo "Setze Ubuntu-Dock auf Auto-Hide ..."
+
+    if ! command -v gsettings >/dev/null 2>&1; then
+        echo "Hinweis: gsettings nicht vorhanden – Dock-Einstellung übersprungen."
+        return 0
+    fi
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        echo "Hinweis: Ubuntu-Dock-Schema nicht vorhanden – übersprungen."
+        return 0
+    fi
+
+    # Die bestehende Position (beim Uwuntu-Stick links) bleibt unberührt.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    local current_position
+    current_position="$(
+        gsettings get "$schema" dock-position 2>/dev/null || echo "unbekannt"
+    )"
+
+    echo "Ubuntu-Dock: Auto-Hide aktiv, Position unverändert (${current_position})."
+    return 0
+}
+
+set_dock_autohide
+
 # ------------------------------------------------------------
 # 1) Auf Tiling Assistant warten
 # ------------------------------------------------------------
@@ -12546,6 +12785,39 @@ uwuntu_set_display_brightness_100() {
 }
 
 uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
+
+# ------------------------------------------------------------
+# Uwuntu: Ubuntu-Dock/Taskleiste automatisch ausblenden
+# Position (z. B. LEFT) wird bewusst NICHT verändert.
+# ------------------------------------------------------------
+uwuntu_set_dock_autohide() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+
+    local schema="org.gnome.shell.extensions.dash-to-dock"
+
+    if ! gsettings list-schemas 2>/dev/null \
+        | grep -Fxq "$schema"
+    then
+        return 0
+    fi
+
+    # Nicht dauerhaft sichtbar.
+    gsettings set "$schema" dock-fixed false \
+        >/dev/null 2>&1 || true
+
+    # Klassisches Auto-Hide: Dock bleibt eingeklappt und erscheint
+    # bei Bedarf am Bildschirmrand.
+    gsettings set "$schema" autohide true \
+        >/dev/null 2>&1 || true
+
+    # Nicht nur bei überlappenden Fenstern ausblenden, sondern generell.
+    gsettings set "$schema" intellihide false \
+        >/dev/null 2>&1 || true
+
+    return 0
+}
+
+uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 # ============================================================
 # Network Check - separater Test
 # ============================================================
