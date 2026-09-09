@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090864
+MANAGER_BUILD=2026090865
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1207,7 +1207,7 @@ uwuntu_set_dock_autohide() {
 uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_17.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_18.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
 STATE_FILE="$HOME/.local/state/uwuntu/camera_test_status.json"
 mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
@@ -1216,7 +1216,7 @@ rm -f "$STATE_FILE" 2>/dev/null || true
 {
     echo
     echo "============================================================"
-    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.17 Start"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.18 Start"
 } >> "$LOG_FILE" 2>/dev/null || true
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
@@ -1302,7 +1302,7 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.17"
+VERSION = "1.18"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 STATE_DIR = Path.home() / ".local/state/uwuntu"
@@ -1396,8 +1396,18 @@ def gst_has_element(name):
 
 
 def build_preview_profiles():
-    """GPU/HW bevorzugen, bewährten Softwarepfad immer als Fallback behalten."""
-    profiles = []
+    """Flüssigen bewährten GTK-Pfad bevorzugen, Beschleunigung nur als Fallback.
+
+    Die große CPU-Ersparnis bleibt trotzdem erhalten, weil der Face-Zweig
+    weiterhin vor dem Preview-Decode abgezweigt und nur 1x/s dekodiert wird.
+    """
+    profiles = [
+        {
+            "name": "jpegdec + GTK",
+            "decoder": "jpegdec",
+            "renderer": "gtk",
+        }
+    ]
 
     gl_ok = all(
         gst_has_element(name)
@@ -1414,16 +1424,9 @@ def build_preview_profiles():
         if gst_has_element(name):
             hardware_decoders.append(name)
 
+    # Wenn der Referenzpfad wider Erwarten nicht funktioniert:
+    # zunächst Hardwaredecoder mit normalem GTK-Sink probieren.
     for decoder in hardware_decoders:
-        if gl_ok:
-            profiles.append(
-                {
-                    "name": f"{decoder} + GPU",
-                    "decoder": decoder,
-                    "renderer": "gl",
-                }
-            )
-
         profiles.append(
             {
                 "name": f"{decoder} + GTK",
@@ -1432,6 +1435,8 @@ def build_preview_profiles():
             }
         )
 
+    # OpenGL unter dem von uns bewusst erzwungenen X11/XWayland-Backend kann
+    # auf manchen Geräten stark ruckeln. Deshalb erst sehr spät probieren.
     if gl_ok:
         profiles.append(
             {
@@ -1441,46 +1446,16 @@ def build_preview_profiles():
             }
         )
 
-    # Letzte Rückfallebene = exakt der bewährte Softwaredecoder + gtksink.
-    profiles.append(
-        {
-            "name": "jpegdec + GTK",
-            "decoder": "jpegdec",
-            "renderer": "gtk",
-        }
-    )
+        for decoder in hardware_decoders:
+            profiles.append(
+                {
+                    "name": f"{decoder} + GPU",
+                    "decoder": decoder,
+                    "renderer": "gl",
+                }
+            )
 
     return profiles
-
-
-
-def find_face_cascade():
-    """Finde das kleine klassische OpenCV-Haar-Modell ohne Zusatzframework."""
-    if cv2 is None:
-        return None
-
-    candidates = []
-    try:
-        candidates.append(
-            os.path.join(
-                cv2.data.haarcascades,
-                "haarcascade_frontalface_default.xml",
-            )
-        )
-    except Exception:
-        pass
-
-    candidates.extend(
-        [
-            "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml",
-            "/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml",
-        ]
-    )
-
-    for path in candidates:
-        if path and os.path.isfile(path):
-            return path
-    return None
 
 
 class CameraWindow(Gtk.ApplicationWindow):
@@ -1785,7 +1760,7 @@ window { background: #000; }
 
         # MJPEG wird VOR dem Decode aufgeteilt.
         #
-        # Vorschau: 30 FPS -> bevorzugt HW-JPEG + OpenGL/GTK.
+        # Vorschau: 30 FPS -> bevorzugt bewährtes jpegdec + gtksink.
         # Face: komprimiertes JPEG bleibt im Appsink; OpenCV dekodiert davon
         # nur genau ein Bild pro Sekunde.
         profile = self.current_preview_profile()
@@ -2040,7 +2015,8 @@ window { background: #000; }
 
         label, caps = MODES[self.mode_index]
 
-        # MJPEG: zuerst alle verfügbaren HW/GPU/SW-Vorschaupfade derselben
+        # MJPEG: zuerst den bewährten flüssigen SW+GTK-Pfad verwenden.
+        # Nur wenn dieser scheitert, weitere HW/GPU-Fallbacks derselben
         # Kamera und Auflösung durchprobieren.
         if (
             caps is not None
@@ -2181,7 +2157,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.17
+Comment=Cleaner Uwuntu Kamera-Test v1.18
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -2204,7 +2180,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.17 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.18 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
