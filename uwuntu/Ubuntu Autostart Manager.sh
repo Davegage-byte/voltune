@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.24 + Hardware Check v4.5.58 + Wipe Auto v3.24 + Audio Test v1.19
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.24 + Hardware Check v4.5.59 + Wipe Auto v3.24 + Audio Test v1.19
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090858
+MANAGER_BUILD=2026090859
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5778,7 +5778,7 @@ window { background: #17171c; color: #f4f4f5; }
 .header-title { font-size: 17px; font-weight: 800; }
 .header-version { color: #8f8f99; font-size: 10px; font-weight: 600; padding-top: 4px; }
 .card { background: #232329; border: 1px solid #34343c; border-radius: 8px; padding: 5px 6px; }
-.card-title { color: #aaaaaf; font-size: 13px; font-weight: 800; }
+.card-title { color: #f4f4f5; font-size: 13px; font-weight: 800; }
 .big-status { font-size: 12px; font-weight: 800; }
 .status-green { color: #48d17a; }
 .status-blue { color: #5aa2ff; }
@@ -7835,14 +7835,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.58")
+        self.window.set_title("Hardware Check v4.5.59")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.58")
+        title_label = Gtk.Label(label="Hardware Check v4.5.59")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
