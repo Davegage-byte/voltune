@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.26 + Hardware Check v4.5.65 + Wipe Auto v3.26 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.26 + Hardware Check v4.5.66 + Wipe Auto v3.26 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090871
+MANAGER_BUILD=2026090872
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -7780,7 +7780,6 @@ class App(Gtk.Application):
         # mehrfach innerhalb weniger Millisekunden den Desktopbaum scannen.
         self.power_dialog_cache_at = 0.0
         self.power_dialog_cache_value = False
-        self.power_dialog_right_sent = False
         self.display_state_file = Path.home() / ".local/state/uwuntu/display_test_status.json"
         self.display_script = Path.home() / ".local/bin/uwuntu-display-test.sh"
         self.display_test_active = False
@@ -7867,14 +7866,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.65")
+        self.window.set_title("Hardware Check v4.5.66")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.65")
+        title_label = Gtk.Label(label="Hardware Check v4.5.66")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -7921,7 +7920,6 @@ class App(Gtk.Application):
         GLib.timeout_add(500, self.poll_display_status)
         GLib.timeout_add(400, self.poll_media_status)
         GLib.timeout_add(1000, self.poll_sensors)
-        GLib.timeout_add(200, self.poll_power_dialog_test)
         self.start_global_input_listener()
 
         log("Hardware Check gestartet")
@@ -10194,81 +10192,6 @@ class App(Gtk.Application):
 
         self.power_dialog_cache_value = detected
         return detected
-
-    def find_ydotool_socket(self):
-        candidates = [
-            "/run/ydotool-kiosk.sock",
-            os.path.join(
-                os.environ.get(
-                    "XDG_RUNTIME_DIR",
-                    f"/run/user/{os.getuid()}",
-                ),
-                ".ydotool_socket",
-            ),
-            f"/run/user/{os.getuid()}/.ydotool_socket",
-            "/tmp/.ydotool_socket",
-        ]
-
-        for path in candidates:
-            try:
-                if os.path.exists(path):
-                    return path
-            except Exception:
-                pass
-
-        return None
-
-    def send_power_dialog_right_once(self):
-        ydotool = shutil.which("ydotool")
-        if not ydotool:
-            log("Power-Dialog Mini-Test: ydotool fehlt")
-            return False
-
-        env = os.environ.copy()
-        socket_path = self.find_ydotool_socket()
-        if socket_path:
-            env["YDOTOOL_SOCKET"] = socket_path
-
-        try:
-            proc = subprocess.run(
-                [ydotool, "key", "106:1", "106:0"],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=2.0,
-                env=env,
-                check=False,
-            )
-            if proc.returncode == 0:
-                log("Power-Dialog Mini-Test: einmal Pfeil rechts gesendet")
-                return True
-
-            log(
-                "Power-Dialog Mini-Test: Pfeil rechts konnte nicht "
-                f"gesendet werden (rc={proc.returncode})"
-            )
-        except Exception as exc:
-            log(
-                "Power-Dialog Mini-Test: ydotool-Fehler: "
-                f"{exc}"
-            )
-
-        return False
-
-    def poll_power_dialog_test(self):
-        opened = self.system_power_dialog_open()
-
-        if opened:
-            if not self.power_dialog_right_sent:
-                # Sperre VOR dem Senden setzen, damit auch ein verzögerter
-                # Poll-Zyklus niemals zweimal dieselbe Dialoginstanz bedient.
-                self.power_dialog_right_sent = True
-                self.send_power_dialog_right_once()
-        else:
-            # Nächste Dialoginstanz darf wieder genau einen Test-Pfeil erhalten.
-            self.power_dialog_right_sent = False
-
-        return True
 
     def send_audio_action(self, action):
         action_name = {
