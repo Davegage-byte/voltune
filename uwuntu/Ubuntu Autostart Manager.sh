@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.56 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.22 + Hardware Check v4.5.57 + Wipe Auto v3.24 + Audio Test v1.18
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090851
+MANAGER_BUILD=2026090852
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1140,6 +1140,37 @@ install_camera_test_app() {
 #!/usr/bin/env bash
 set -u
 
+# ------------------------------------------------------------
+# Uwuntu: interne Displayhelligkeit bei jedem App-Start auf 100 %
+# ------------------------------------------------------------
+uwuntu_set_display_brightness_100() {
+    if command -v brightnessctl >/dev/null 2>&1; then
+        brightnessctl -q set 100% >/dev/null 2>&1 && return 0
+    fi
+
+    local dev max brightness_file
+    for dev in /sys/class/backlight/*; do
+        [ -d "$dev" ] || continue
+
+        max="$(cat "$dev/max_brightness" 2>/dev/null || true)"
+        brightness_file="$dev/brightness"
+        [ -n "$max" ] || continue
+
+        if [ -w "$brightness_file" ]; then
+            printf '%s\n' "$max" > "$brightness_file" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1 \
+            && sudo -n true >/dev/null 2>&1
+        then
+            printf '%s\n' "$max" \
+                | sudo -n tee "$brightness_file" >/dev/null 2>&1 || true
+        fi
+    done
+
+    return 0
+}
+
+uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
+
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
 PY_FILE="$CACHE_DIR/camera_test_v1_13.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
@@ -1919,6 +1950,37 @@ install_touch_test_app() {
 #!/usr/bin/env bash
 set -u
 
+# ------------------------------------------------------------
+# Uwuntu: interne Displayhelligkeit bei jedem App-Start auf 100 %
+# ------------------------------------------------------------
+uwuntu_set_display_brightness_100() {
+    if command -v brightnessctl >/dev/null 2>&1; then
+        brightnessctl -q set 100% >/dev/null 2>&1 && return 0
+    fi
+
+    local dev max brightness_file
+    for dev in /sys/class/backlight/*; do
+        [ -d "$dev" ] || continue
+
+        max="$(cat "$dev/max_brightness" 2>/dev/null || true)"
+        brightness_file="$dev/brightness"
+        [ -n "$max" ] || continue
+
+        if [ -w "$brightness_file" ]; then
+            printf '%s\n' "$max" > "$brightness_file" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1 \
+            && sudo -n true >/dev/null 2>&1
+        then
+            printf '%s\n' "$max" \
+                | sudo -n tee "$brightness_file" >/dev/null 2>&1 || true
+        fi
+    done
+
+    return 0
+}
+
+uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
+
 # Let GTK connect to the X server provided by XWayland, even when the
 # desktop session itself is Wayland.
 export GDK_BACKEND=x11
@@ -2322,6 +2384,37 @@ install_display_test_app() {
 #!/usr/bin/env bash
 set -u
 
+# ------------------------------------------------------------
+# Uwuntu: interne Displayhelligkeit bei jedem App-Start auf 100 %
+# ------------------------------------------------------------
+uwuntu_set_display_brightness_100() {
+    if command -v brightnessctl >/dev/null 2>&1; then
+        brightnessctl -q set 100% >/dev/null 2>&1 && return 0
+    fi
+
+    local dev max brightness_file
+    for dev in /sys/class/backlight/*; do
+        [ -d "$dev" ] || continue
+
+        max="$(cat "$dev/max_brightness" 2>/dev/null || true)"
+        brightness_file="$dev/brightness"
+        [ -n "$max" ] || continue
+
+        if [ -w "$brightness_file" ]; then
+            printf '%s\n' "$max" > "$brightness_file" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1 \
+            && sudo -n true >/dev/null 2>&1
+        then
+            printf '%s\n' "$max" \
+                | sudo -n tee "$brightness_file" >/dev/null 2>&1 || true
+        fi
+    done
+
+    return 0
+}
+
+uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
+
 export GDK_BACKEND=x11
 
 if [[ -z "${DISPLAY:-}" ]]; then
@@ -2644,6 +2737,37 @@ install_wipe_auto_app() {
     cat > "$WIPE_AUTO_SCRIPT" <<'WIPE_AUTO_EOF'
 #!/usr/bin/env bash
 set -u
+
+# ------------------------------------------------------------
+# Uwuntu: interne Displayhelligkeit bei jedem App-Start auf 100 %
+# ------------------------------------------------------------
+uwuntu_set_display_brightness_100() {
+    if command -v brightnessctl >/dev/null 2>&1; then
+        brightnessctl -q set 100% >/dev/null 2>&1 && return 0
+    fi
+
+    local dev max brightness_file
+    for dev in /sys/class/backlight/*; do
+        [ -d "$dev" ] || continue
+
+        max="$(cat "$dev/max_brightness" 2>/dev/null || true)"
+        brightness_file="$dev/brightness"
+        [ -n "$max" ] || continue
+
+        if [ -w "$brightness_file" ]; then
+            printf '%s\n' "$max" > "$brightness_file" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1 \
+            && sudo -n true >/dev/null 2>&1
+        then
+            printf '%s\n' "$max" \
+                | sudo -n tee "$brightness_file" >/dev/null 2>&1 || true
+        fi
+    done
+
+    return 0
+}
+
+uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
 # ============================================================
 # Wipe Auto - GTK4
 # ============================================================
@@ -3738,6 +3862,37 @@ install_audio_test_app() {
     cat > "$AUDIO_TEST_SCRIPT" <<'AUDIO_TEST_WRAPPER_EOF'
 #!/usr/bin/env bash
 set -u
+
+# ------------------------------------------------------------
+# Uwuntu: interne Displayhelligkeit bei jedem App-Start auf 100 %
+# ------------------------------------------------------------
+uwuntu_set_display_brightness_100() {
+    if command -v brightnessctl >/dev/null 2>&1; then
+        brightnessctl -q set 100% >/dev/null 2>&1 && return 0
+    fi
+
+    local dev max brightness_file
+    for dev in /sys/class/backlight/*; do
+        [ -d "$dev" ] || continue
+
+        max="$(cat "$dev/max_brightness" 2>/dev/null || true)"
+        brightness_file="$dev/brightness"
+        [ -n "$max" ] || continue
+
+        if [ -w "$brightness_file" ]; then
+            printf '%s\n' "$max" > "$brightness_file" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1 \
+            && sudo -n true >/dev/null 2>&1
+        then
+            printf '%s\n' "$max" \
+                | sudo -n tee "$brightness_file" >/dev/null 2>&1 || true
+        fi
+    done
+
+    return 0
+}
+
+uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
 
 APP_NAME="Uwuntu Audio Test"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-audio-test"
@@ -5286,6 +5441,37 @@ install_hardware_check_app() {
     cat > "$HARDWARE_CHECK_SCRIPT" <<'HARDWARE_CHECK_EOF'
 #!/usr/bin/env bash
 set -u
+
+# ------------------------------------------------------------
+# Uwuntu: interne Displayhelligkeit bei jedem App-Start auf 100 %
+# ------------------------------------------------------------
+uwuntu_set_display_brightness_100() {
+    if command -v brightnessctl >/dev/null 2>&1; then
+        brightnessctl -q set 100% >/dev/null 2>&1 && return 0
+    fi
+
+    local dev max brightness_file
+    for dev in /sys/class/backlight/*; do
+        [ -d "$dev" ] || continue
+
+        max="$(cat "$dev/max_brightness" 2>/dev/null || true)"
+        brightness_file="$dev/brightness"
+        [ -n "$max" ] || continue
+
+        if [ -w "$brightness_file" ]; then
+            printf '%s\n' "$max" > "$brightness_file" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1 \
+            && sudo -n true >/dev/null 2>&1
+        then
+            printf '%s\n' "$max" \
+                | sudo -n tee "$brightness_file" >/dev/null 2>&1 || true
+        fi
+    done
+
+    return 0
+}
+
+uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
 
 TMP_PY="$(mktemp /tmp/hardware-check.XXXXXX.py)"
 trap 'rm -f "$TMP_PY"' EXIT
@@ -7394,14 +7580,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.56")
+        self.window.set_title("Hardware Check v4.5.57")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.56")
+        title_label = Gtk.Label(label="Hardware Check v4.5.57")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -8436,7 +8622,7 @@ class App(Gtk.Application):
             self.display_test_active = True
             self.set_display_status_ui(
                 "blue",
-                f"TEST LÄUFT {current}/{total}",
+                "LÄUFT",
             )
         elif result == "aborted":
             self.display_test_active = False
@@ -8486,7 +8672,7 @@ class App(Gtk.Application):
                 start_new_session=True,
             )
             self.display_test_active = True
-            self.set_display_status_ui("blue", "TEST STARTET")
+            self.set_display_status_ui("blue", "LÄUFT")
             log("Display-Test per D gestartet")
         except Exception as exc:
             self.display_test_active = False
@@ -12328,6 +12514,37 @@ install_network_check() {
     cat > "$NETWORK_CHECK_SCRIPT" <<'NETWORK_CHECK_SCRIPT_EOF'
 #!/usr/bin/env bash
 set -u
+
+# ------------------------------------------------------------
+# Uwuntu: interne Displayhelligkeit bei jedem App-Start auf 100 %
+# ------------------------------------------------------------
+uwuntu_set_display_brightness_100() {
+    if command -v brightnessctl >/dev/null 2>&1; then
+        brightnessctl -q set 100% >/dev/null 2>&1 && return 0
+    fi
+
+    local dev max brightness_file
+    for dev in /sys/class/backlight/*; do
+        [ -d "$dev" ] || continue
+
+        max="$(cat "$dev/max_brightness" 2>/dev/null || true)"
+        brightness_file="$dev/brightness"
+        [ -n "$max" ] || continue
+
+        if [ -w "$brightness_file" ]; then
+            printf '%s\n' "$max" > "$brightness_file" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1 \
+            && sudo -n true >/dev/null 2>&1
+        then
+            printf '%s\n' "$max" \
+                | sudo -n tee "$brightness_file" >/dev/null 2>&1 || true
+        fi
+    done
+
+    return 0
+}
+
+uwuntu_set_display_brightness_100 >/dev/null 2>&1 || true
 # ============================================================
 # Network Check - separater Test
 # ============================================================
