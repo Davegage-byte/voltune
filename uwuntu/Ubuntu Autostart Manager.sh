@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.24 + Hardware Check v4.5.57 + Wipe Auto v3.24 + Audio Test v1.18
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.24 + Hardware Check v4.5.58 + Wipe Auto v3.24 + Audio Test v1.19
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026090857
+MANAGER_BUILD=2026090858
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -1206,7 +1206,7 @@ uwuntu_set_dock_autohide() {
 uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-camera-test"
-PY_FILE="$CACHE_DIR/camera_test_v1_13.py"
+PY_FILE="$CACHE_DIR/camera_test_v1_14.py"
 LOG_FILE="$CACHE_DIR/camera_test.log"
 STATE_FILE="$HOME/.local/state/uwuntu/camera_test_status.json"
 mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
@@ -1215,7 +1215,7 @@ rm -f "$STATE_FILE" 2>/dev/null || true
 {
     echo
     echo "============================================================"
-    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.13 Start"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')  Uwuntu Kamera Test v1.14 Start"
 } >> "$LOG_FILE" 2>/dev/null || true
 
 # XWayland gibt dem Kamera-Fenster eine klassische WM_CLASS. Zusammen mit
@@ -1300,11 +1300,19 @@ from gi.repository import Gtk, Gdk, Gst, GLib, Gio
 
 APP_ID = "com.david.UwuntuCameraTest"
 APP_NAME = "Uwuntu Kamera Test"
-VERSION = "1.13"
+VERSION = "1.14"
 ERROR_TEXT = "KEIN KAMERABILD ERKANNT"
 
 STATE_DIR = Path.home() / ".local/state/uwuntu"
 STATE_FILE = STATE_DIR / "camera_test_status.json"
+HARDWARE_REFRESH_FILE = STATE_DIR / "hardware_refresh.json"
+
+
+def hardware_refresh_stamp():
+    try:
+        return HARDWARE_REFRESH_FILE.stat().st_mtime_ns
+    except Exception:
+        return 0
 
 
 def write_camera_state(status):
@@ -1459,6 +1467,7 @@ class CameraWindow(Gtk.ApplicationWindow):
         self.face_currently_visible = False
         self.face_miss_count = 0
         self.face_last_sample_at = 0.0
+        self.hardware_refresh_stamp = hardware_refresh_stamp()
         self.face_cascade_path = find_face_cascade()
         self.face_cascade = None
 
@@ -1557,6 +1566,22 @@ window { background: #000; }
         self.error_label.hide()
         self.set_status_color("orange")
         GLib.idle_add(self.try_current)
+        GLib.timeout_add(250, self.poll_hardware_refresh)
+
+    def poll_hardware_refresh(self):
+        stamp = hardware_refresh_stamp()
+        if not stamp or stamp == self.hardware_refresh_stamp:
+            return True
+
+        self.hardware_refresh_stamp = stamp
+
+        if self.devices:
+            self.reset_face_state()
+            print("HC REFRESH: Kamera-Teststatus zurückgesetzt", flush=True)
+        else:
+            self.set_status_color("red")
+
+        return True
 
     def set_status_color(self, color):
         if not hasattr(self, "status_dot"):
@@ -1947,7 +1972,7 @@ CAMERA_TEST_EOF
 [Desktop Entry]
 Type=Application
 Name=Uwuntu Kamera Test
-Comment=Cleaner Uwuntu Kamera-Test v1.13
+Comment=Cleaner Uwuntu Kamera-Test v1.14
 Exec=$CAMERA_TEST_SCRIPT
 Icon=camera-photo-symbolic
 Terminal=false
@@ -1970,7 +1995,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Kamera-Test v1.13 installiert/aktualisiert."
+    echo "OK: Kamera-Test v1.14 installiert/aktualisiert."
     echo "App-ID:   com.david.UwuntuCameraTest"
     echo "Programm: $CAMERA_TEST_SCRIPT"
     echo "Desktop:  $CAMERA_TEST_APP_DESKTOP"
@@ -4062,7 +4087,7 @@ uwuntu_set_dock_autohide >/dev/null 2>&1 || true
 
 APP_NAME="Uwuntu Audio Test"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/uwuntu-audio-test"
-PY_FILE="$CACHE_DIR/audio_test_v1_18.py"
+PY_FILE="$CACHE_DIR/audio_test_v1_19.py"
 STATE_FILE="$HOME/.local/state/uwuntu/audio_test_status.json"
 
 mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
@@ -4143,10 +4168,18 @@ gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Gio
 
 
-VERSION = "v1.18"
+VERSION = "v1.19"
 
 STATE_DIR = Path.home() / ".local/state/uwuntu"
 STATE_FILE = STATE_DIR / "audio_test_status.json"
+HARDWARE_REFRESH_FILE = STATE_DIR / "hardware_refresh.json"
+
+
+def hardware_refresh_stamp():
+    try:
+        return HARDWARE_REFRESH_FILE.stat().st_mtime_ns
+    except Exception:
+        return 0
 
 
 def write_mic_state(status):
@@ -5022,6 +5055,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # startet beim erneuten Drücken dagegen einen echten Messlauf.
         # Sobald dadurch alle drei Kanäle Grün sind, wird AUTO ebenfalls Grün.
         self.quick_play_enabled = False
+        self.hardware_refresh_stamp = hardware_refresh_stamp()
 
         # Sichtzustände merken, damit ein schneller Links/Rechts-Spaßton
         # während der Wiedergabe blau werden und danach wieder auf das
@@ -5221,6 +5255,7 @@ class MainWindow(Gtk.ApplicationWindow):
             UI_REFRESH_MS,
             self.refresh
         )
+        GLib.timeout_add(250, self.poll_hardware_refresh)
 
         # Beim Öffnen einmal automatisch den kompletten Audio-Test starten.
         # Kurze Wartezeit: Mikrofon-Stream und Fenster dürfen erst stabil anlaufen.
@@ -5229,6 +5264,26 @@ class MainWindow(Gtk.ApplicationWindow):
     def start_initial_auto_test(self):
         self.trigger_test("auto")
         return False
+
+    def poll_hardware_refresh(self):
+        stamp = hardware_refresh_stamp()
+
+        if not stamp or stamp == self.hardware_refresh_stamp:
+            return True
+
+        if self.speaker_tester.busy:
+            return True
+
+        self.hardware_refresh_stamp = stamp
+        self.quick_play_enabled = False
+        self.reset_side_buttons()
+        self.set_button_state("auto", "orange")
+        write_mic_state(
+            "detected"
+            if self.analyzer.running
+            else "missing"
+        )
+        return True
 
     def trigger_test(self, action):
         # Einheitlicher Einstieg für Buttons, lokale Pfeiltasten und globale
@@ -5576,7 +5631,7 @@ EOF
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
     fi
 
-    echo "OK: Uwuntu Audio Test v1.18 installiert/aktualisiert."
+    echo "OK: Uwuntu Audio Test v1.19 installiert/aktualisiert."
     echo "Programm: $AUDIO_TEST_SCRIPT"
     echo "Desktop-Slot: $AUDIO_TEST_APP_DESKTOP"
     return 0
@@ -7701,6 +7756,7 @@ class App(Gtk.Application):
         self.display_test_active = False
         self.camera_state_file = Path.home() / ".local/state/uwuntu/camera_test_status.json"
         self.audio_state_file = Path.home() / ".local/state/uwuntu/audio_test_status.json"
+        self.hardware_refresh_file = Path.home() / ".local/state/uwuntu/hardware_refresh.json"
 
         # Während des Tastatur-Tests wird nur Mutters Overlay-Key (einzelne
         # SUPER-Taste) temporär deaktiviert. Der Originalwert wird beim
@@ -7779,14 +7835,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.57")
+        self.window.set_title("Hardware Check v4.5.58")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.57")
+        title_label = Gtk.Label(label="Hardware Check v4.5.58")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -8217,6 +8273,42 @@ class App(Gtk.Application):
             pass
         return ""
 
+    def webcam_present_now(self):
+        try:
+            return any(Path("/dev").glob("video*"))
+        except Exception:
+            return False
+
+    def microphone_present_now(self):
+        try:
+            data = Path("/proc/asound/pcm").read_text(
+                encoding="utf-8",
+                errors="ignore",
+            ).lower()
+            return "capture" in data
+        except Exception:
+            return False
+
+    def write_hardware_refresh_request(self):
+        try:
+            self.hardware_refresh_file.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+            payload = {
+                "time": time.time(),
+                "pid": os.getpid(),
+            }
+            tmp = self.hardware_refresh_file.with_suffix(".tmp")
+            tmp.write_text(
+                json.dumps(payload),
+                encoding="utf-8",
+            )
+            tmp.replace(self.hardware_refresh_file)
+            log("HC REFRESH-Signal für Camera/Audio geschrieben")
+        except Exception as exc:
+            log(f"HC REFRESH-Signal konnte nicht geschrieben werden: {exc}")
+
     def set_media_status_ui(self, kind, color, text):
         if kind == "webcam":
             dot = getattr(self, "webcam_status_dot", None)
@@ -8240,23 +8332,43 @@ class App(Gtk.Application):
 
     def refresh_media_status(self):
         camera_state = self.read_external_test_state(self.camera_state_file)
+        if not camera_state:
+            camera_state = (
+                "detected"
+                if self.webcam_present_now()
+                else "missing"
+            )
+
         camera_map = {
             "missing": ("red", "NICHT ERKANNT"),
             "detected": ("orange", "ERKANNT"),
             "face": ("blue", "GESICHT ERKANNT"),
             "tested": ("green", "GETESTET"),
         }
-        color, label = camera_map.get(camera_state, ("red", "NICHT ERKANNT"))
+        color, label = camera_map.get(
+            camera_state,
+            ("red", "NICHT ERKANNT"),
+        )
         self.set_media_status_ui("webcam", color, label)
 
         audio_state = self.read_external_test_state(self.audio_state_file)
+        if not audio_state:
+            audio_state = (
+                "detected"
+                if self.microphone_present_now()
+                else "missing"
+            )
+
         audio_map = {
             "missing": ("red", "NICHT ERKANNT"),
             "detected": ("orange", "ERKANNT"),
             "auto": ("blue", "AUTO"),
             "tested": ("green", "GETESTET"),
         }
-        color, label = audio_map.get(audio_state, ("red", "NICHT ERKANNT"))
+        color, label = audio_map.get(
+            audio_state,
+            ("red", "NICHT ERKANNT"),
+        )
         self.set_media_status_ui("mic", color, label)
         return False
 
@@ -9928,16 +10040,48 @@ class App(Gtk.Application):
         self.restore_desktop_shortcuts_after_keyboard_test()
         self.restore_alt_space_after_keyboard_test()
         self.restore_super_arrows_after_keyboard_test()
-        # REFRESH setzt den kompletten Hardware-Test auf Anfang.
-        # Aktuell belegte Ports werden direkt wieder blau erkannt.
+
+        # Persistente Testergebnisse vollständig entfernen.
+        for path in (
+            self.camera_state_file,
+            self.audio_state_file,
+            self.touch_state_file,
+            self.display_state_file,
+        ):
+            try:
+                path.unlink(missing_ok=True)
+            except Exception as exc:
+                log(f"REFRESH: Statusdatei nicht löschbar {path}: {exc}")
+
+        # Camera und Audio laufen im Kiosk dauerhaft und setzen darüber
+        # zusätzlich ihre eigenen internen Testergebnisse zurück.
+        self.write_hardware_refresh_request()
+
+        # Benchmark ebenfalls wieder auf Anfang.
+        self.reset_benchmark_ui()
+
+        # Live-Hardware neu einlesen.
         self.refresh_security()
+
         self.hdmi_ever_connected = False
         self.refresh_hdmi_status()
+
         self.reset_touchpad_test()
         self.start_touchpad_click_monitors()
+
+        self.touch_status_cache = None
+        self.refresh_touch_status()
+
+        self.display_test_active = False
+        self.refresh_display_status()
+
+        self.refresh_media_status()
+
+        # Ports werden neu erkannt; aktuell belegte Ports bleiben korrekt Blau.
         self.reset_usb()
         self.reset_keyboard()
 
+        # Sensoren sind Live-Telemetrie und werden nur neu eingelesen.
         self.cpu_usage_prev = read_cpu_times()
         self.fan_sensor_key = None
         self.refresh_sensors()
@@ -9945,7 +10089,11 @@ class App(Gtk.Application):
         self.stack.set_visible_child_name("overview")
         self.window.set_default_size(860, 360)
 
-        log("REFRESH: kompletter Hardware-Test zurückgesetzt")
+        log(
+            "REFRESH: Media/Touch/Display/HDMI/USB/Keyboard/"
+            "Benchmark zurückgesetzt; Live-Hardware neu gelesen"
+        )
+
     def build_usb_slots(self):
         discovery = self.usb_discovery
         groups_by_key = {
@@ -10351,6 +10499,22 @@ class App(Gtk.Application):
             self.benchmark_result.remove_css_class(cls)
         if color:
             self.benchmark_result.add_css_class("status-" + color)
+
+    def reset_benchmark_ui(self):
+        self.stop_test_process()
+        self.test_kind = None
+        self.test_duration = 0.0
+        self.test_started = 0.0
+        self.test_cancelled = False
+
+        if hasattr(self, "benchmark_status"):
+            self.set_benchmark_status_temp_class(None)
+            self.benchmark_status.set_text("Bereit")
+            self.benchmark_progress.set_fraction(0.0)
+            self.benchmark_time.set_text("00:00 / 00:00")
+            self.benchmark_result.set_text("")
+            self.set_benchmark_result_class(None)
+            self.set_benchmark_controls(False)
 
     def set_benchmark_status_temp_class(self, temp_c):
         for cls in ("status-yellow", "status-red"):
