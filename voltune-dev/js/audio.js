@@ -476,7 +476,7 @@ async function setOverrunSound(
     // =========================
 
     base1 = createOsc("triangle");
-    base2 = createOsc("sawtooth");
+    base2 = createOsc("triangle");
     sub = createOsc("sine");
 
     baseGain1 = ctx.createGain();
@@ -494,7 +494,7 @@ async function setOverrunSound(
 
     baseFilter.type = "lowpass";
     baseFilter.frequency.value = 1050;
-    baseFilter.Q.value = 0.8;
+    baseFilter.Q.value = 0.55;
 
     base1
       .connect(baseGain1)
@@ -690,7 +690,7 @@ async function setOverrunSound(
     // =========================
 
     driveOsc =
-      createOsc("sawtooth");
+      createOsc("triangle");
 
     driveGain =
       ctx.createGain();
@@ -702,7 +702,7 @@ async function setOverrunSound(
 
     driveFilter.type = "bandpass";
     driveFilter.frequency.value = 900;
-    driveFilter.Q.value = 1.8;
+    driveFilter.Q.value = 0.72;
     
     
     // =========================
@@ -715,19 +715,19 @@ async function setOverrunSound(
       createOsc("sine");
     
     drivePulseOsc.frequency.value =
-      2.0;
+      0.70;
     
     drivePulseDepth =
       ctx.createGain();
     
     drivePulseDepth.gain.value =
-      0.10;
+      0.02;
     
     drivePulseGain =
       ctx.createGain();
     
     drivePulseGain.gain.value =
-      0.90;
+      0.98;
     
     drivePulseOsc
       .connect(drivePulseDepth)
@@ -760,7 +760,7 @@ async function setOverrunSound(
 
     regenFilter.type = "bandpass";
     regenFilter.frequency.value = 1050;
-    regenFilter.Q.value = 0.80;
+    regenFilter.Q.value = 0.58;
 
     const rg2 =
       ctx.createGain();
@@ -784,19 +784,19 @@ async function setOverrunSound(
       createOsc("sine");
     
     regenPulseOsc.frequency.value =
-      1.5;
+      0.55;
     
     regenPulseDepth =
       ctx.createGain();
     
     regenPulseDepth.gain.value =
-      0.08;
+      0.015;
     
     regenPulseGain =
       ctx.createGain();
     
     regenPulseGain.gain.value =
-      0.92;
+      0.985;
     
     regenPulseOsc
       .connect(regenPulseDepth)
@@ -3491,8 +3491,9 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     setTarget(
       base2.frequency,
-      fundamental * 1.006,
-      0.04
+      fundamental *
+        (1.495 + pos * 0.015),
+      0.055
     );
 
     const subFrequency =
@@ -3512,11 +3513,11 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     setTarget(
       baseFilter.frequency,
-      760 +
-        rpmN * 1250 +
-        speedN * 350 +
-        pos * 500,
-      0.08
+      620 +
+        rpmN * 900 +
+        Math.pow(speedN, 0.70) * 650 +
+        pos * 320,
+      0.10
     );
 
     setTarget(
@@ -3525,9 +3526,9 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
         driveMix *
         cruiseScale *
         (
-          0.09 +
-          speedN * 0.07 +
-          pos * 0.018
+          0.095 +
+          speedN * 0.055 +
+          pos * 0.028
         ),
       0.08
     );
@@ -3538,20 +3539,21 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
         driveMix *
         cruiseScale *
         (
-          0.012 +
-          speedN * 0.018
+          0.006 +
+          speedN * 0.010 +
+          pos * 0.008
         ),
       0.08
     );
 
     const subLevel =
       clamp(
-        0.045 +
-          rpmN * 0.018 +
-          pos * 0.040 -
-          speedN * 0.018,
-        0.035,
-        0.105
+        0.043 +
+          rpmN * 0.015 +
+          pos * 0.025 -
+          speedN * 0.022,
+        0.030,
+        0.090
       );
     
     setTarget(
@@ -3656,13 +3658,11 @@ const invLevel =
     // =========================
 
     const driveFreq =
-      290 +
-      fundamental * 2.25 +
-      pos * 160 +
-    
-      // Deutlich stärkerer Hochzieheffekt
-      // speziell im Beschleunigungs-Layer.
-      accelSpeedRise * 380;
+      220 +
+      fundamental * 1.55 +
+      Math.pow(speedN, 0.72) * 330 +
+      pos * 110 +
+      accelSpeedRise * 210;
 
       // =========================
       // Beschleunigungs-Pulsierung
@@ -3698,26 +3698,12 @@ const invLevel =
       // Hohes Tempo:
       // zunehmend dichter und hektischer.
     const drivePulseHz =
-      1.3 +
-    
-      // Grundanstieg mit Geschwindigkeit.
-      Math.pow(speedN, 0.75) * 5.0 +
-    
-      // Aktuelle Beschleunigung macht
-      // den Puls unmittelbar schneller.
-      Math.pow(drivePulseLoad, 0.75) * 2.0 +
-    
-      // Sportlicher Fahrstil erhöht die
-      // Frequenz zusätzlich.
-      //
-      // Bei wenig Last bleibt der Einfluss klein,
-      // damit ein zuvor aufgebauter Fahrstil
-      // nicht dauerhaft hektisch klingt.
+      0.48 +
+      Math.pow(speedN, 0.65) * 0.55 +
+      Math.pow(drivePulseLoad, 0.80) * 0.32 +
       drivePulseStyle *
-        (
-          0.5 +
-          drivePulseLoad * 2.5
-        );
+        drivePulseLoad *
+        0.18;
       
       setTarget(
         drivePulseOsc.frequency,
@@ -3735,25 +3721,14 @@ const invLevel =
       // deutliches rhythmisches Pumpen.
       const drivePulseAmount =
         clamp(
-          0.06 +
-      
-            // Hauptanteil kommt weiterhin
-            // von der aktuellen Beschleunigung.
-            drivePulseLoad * 0.27 +
-      
-            // Geschwindigkeit verstärkt den
-            // Effekt nur leicht.
-            speedN * 0.04 +
-      
-            // Bei sportlicher Fahrweise werden
-            // die einzelnen Pulse ausgeprägter.
-            // Auch dieser Anteil braucht Last.
+          0.008 +
+            drivePulseLoad * 0.035 +
+            speedN * 0.006 +
             drivePulseStyle *
               drivePulseLoad *
-              0.12,
-      
-          0.06,
-          0.48
+              0.012,
+          0.008,
+          0.060
         );
       
       // Der LFO läuft bipolar.
@@ -3781,13 +3756,14 @@ const invLevel =
     setTarget(
       driveFilter.frequency,
       clamp(
-        620 +
-          rpmN * 1450 +
-          pos * 850,
-        500,
-        3500
+        520 +
+          Math.pow(speedN, 0.70) * 1250 +
+          rpmN * 450 +
+          pos * 420,
+        420,
+        2600
       ),
-      0.055
+      0.075
     );
 
     setTarget(
@@ -3795,8 +3771,8 @@ const invLevel =
       driveAmount *
         pos *
         (
-          0.018 +
-          speedN * 0.035
+          0.024 +
+          speedN * 0.044
         ),
       0.045
     );
@@ -3807,19 +3783,12 @@ const invLevel =
     // =========================
 
     const regenFreq =
-      360 +
-    
-      // Reku folgt hauptsächlich der realen
-      // Fahrzeuggeschwindigkeit und nicht
-      // den virtuellen Gangwechseln.
+      260 +
       Math.pow(
         speedN,
-        0.72
-      ) * 1050 +
-    
-      // Stärkere Reku zieht den elektrischen
-      // Ton leicht nach oben.
-      neg * 140;
+        0.68
+      ) * 760 +
+      neg * 90;
 
     setTarget(
       regenOsc1.frequency,
@@ -3829,23 +3798,23 @@ const invLevel =
 
     setTarget(
       regenOsc2.frequency,
-      regenFreq * 2.02,
+      regenFreq * 1.62,
       0.045
     );
 
     setTarget(
       regenFilter.frequency,
       clamp(
-        650 +
+        520 +
           Math.pow(
             speedN,
-            0.70
-          ) * 1650 +
-          neg * 350,
-        650,
-        2800
+            0.68
+          ) * 1150 +
+          neg * 240,
+        450,
+        2100
       ),
-      0.08
+      0.10
     );
 
     // =========================
@@ -3876,14 +3845,12 @@ const invLevel =
     // starke Reku und sportlicher Fahrstil
     // verstärken sie zusätzlich.
     const regenPulseHz =
-      1.1 +
-      Math.pow(speedN, 0.72) * 4.2 +
-      Math.pow(regenPulseLoad, 0.80) * 1.6 +
+      0.42 +
+      Math.pow(speedN, 0.68) * 0.38 +
+      Math.pow(regenPulseLoad, 0.82) * 0.25 +
       regenPulseStyle *
-        (
-          0.3 +
-          regenPulseLoad * 1.6
-        );
+        regenPulseLoad *
+        0.12;
     
     setTarget(
       regenPulseOsc.frequency,
@@ -3899,14 +3866,14 @@ const invLevel =
     // aggressiven Hämmerns.
     const regenPulseAmount =
       clamp(
-        0.04 +
-          regenPulseLoad * 0.20 +
-          speedN * 0.03 +
+        0.006 +
+          regenPulseLoad * 0.025 +
+          speedN * 0.004 +
           regenPulseStyle *
             regenPulseLoad *
-            0.08,
-        0.04,
-        0.34
+            0.008,
+        0.006,
+        0.045
       );
     
     setTarget(
@@ -3926,8 +3893,8 @@ const invLevel =
       regenAmount *
         neg *
         (
-          0.016 +
-          speedN * 0.035
+          0.022 +
+          speedN * 0.040
         ),
       0.055
     );
@@ -3941,9 +3908,9 @@ const invLevel =
       airAmount *
       cruiseScale *
       (
-        speedN * 0.005 +
-        pos * 0.011 +
-        neg * 0.007
+        speedN * 0.004 +
+        pos * 0.016 +
+        neg * 0.012
       );
 
     setTarget(
