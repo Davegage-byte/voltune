@@ -2282,465 +2282,140 @@ function render(speedKmh, accel, state) {
 // Voltune Testfahrt
 // =========================
 //
-// Kompletter Fahrzyklus für möglichst viele
-// relevante Sound- und Getriebesituationen.
-//
-// 0–2,5 s:
-// Stillstand / Idle
-//
-// 2,5–6,5 s:
-// 0 → 8 km/h
-// langsames Anrollen / Idle-Crossfade
-//
-// 6,5–12,5 s:
-// 8 → 40 km/h
-// sanfte Beschleunigung
-//
-// 12,5–16,5 s:
-// 40 km/h konstant
-// Konstantfahrt-Dämpfung
-//
-// 16,5–21,5 s:
-// 40 → 80 km/h
-// mittlere Beschleunigung
-//
-// 21,5–25,5 s:
-// 80 km/h konstant
-// erneute Konstantfahrt
-//
-// 25,5–29,5 s:
-// 80 → 130 km/h
-// starke Beschleunigung / Kickdown
-//
-// 29,5–32 s:
-// Gas weg bei 130 km/h
-// BOV + Schubknallen
-//
-// 32–36,5 s:
-// 130 km/h konstant
-// Hochgeschwindigkeits-Konstantfahrt
-//
-// 36,5–42,5 s:
-// 130 → 170 km/h
-// Beschleunigung bei höherem Tempo
-//
-// 42,5–45 s:
-// Gas weg bei 170 km/h
-//
-// 45–50 s:
-// 170 → 140 km/h
-// leichte Reku
-//
-// 50–55 s:
-// 140 → 70 km/h
-// starke Reku / Rückschaltungen
-//
-// 55–62 s:
-// 70 → 10 km/h
-// normale Reku
-//
-// 62–66 s:
-// 10 → 0 km/h
-// sanftes Ausrollen / Idle-Übergang
-//
-// 66–69 s:
-// Stillstand
-//
-// 69–75 s:
-// 0 → 60 km/h
-// erneute kräftige Beschleunigung
-// mit aufgebautem Fahrstil
-//
-// 75–77,5 s:
-// Gas weg bei 60 km/h
-//
-// 77,5–84 s:
-// 60 → 0 km/h
-// abschließende Reku
-//
-// 84–87 s:
-// Stillstand / sauberer Übergang
-// zum nächsten Demo-Durchlauf
+// Weiche Beschleunigungskurven mit integrierter Geschwindigkeit.
+// Keine harten Sprünge mehr zwischen Beschleunigen, Konstantfahrt,
+// Lupfen und Reku. Vollast- und Lastwechsel bleiben stark genug,
+// um BOV, Schubknallen, DSG-Furz und Rückschaltungen zu testen.
+
+const DEMO_DURATION = 97;
+const DEMO_STEP = 0.02;
+
+const DEMO_ACCEL_KEYFRAMES = [
+  [0.0,0.00],[2.5,0.00],[3.3,0.65],[5.7,0.65],[6.5,0.40],
+  [7.5,1.30],[13.0,1.30],[14.5,0.00],[18.0,0.00],
+  [19.0,1.71],[24.5,1.71],[25.5,0.00],[28.0,0.00],
+  [28.7,2.60],[33.3,2.60],[34.0,0.00],[34.4,-0.12],[35.5,0.00],
+  [39.0,0.00],[40.0,1.71],[45.5,1.71],[46.5,0.00],
+  [46.9,-0.12],[48.0,-0.55],[49.0,-1.55],[52.2,-1.55],
+  [53.0,-2.40],[54.0,-3.40],[58.0,-3.40],[59.0,-2.40],
+  [60.0,-2.50],[65.0,-2.50],[66.0,-1.20],[67.0,-0.80],
+  [70.0,-0.80],[71.5,0.00],[74.0,0.00],
+  [74.9,1.60],[75.9,2.50],[81.0,2.50],[82.0,0.00],
+  [82.4,-0.12],[83.0,0.00],[83.8,-1.50],[88.5,-2.70],
+  [90.5,-1.50],[92.5,-0.70],[94.0,0.00],[97.0,0.00]
+];
+
+const DEMO_STATE_PHASES = [
+  [2.5,"Demo · Idle"],
+  [6.5,"Demo · Anrollen"],
+  [14.5,"Demo · Sanft beschleunigen"],
+  [18.0,"Demo · Konstant 40"],
+  [25.5,"Demo · Mittel beschleunigen"],
+  [28.0,"Demo · Konstant 80"],
+  [34.0,"Demo · Voll beschleunigen"],
+  [35.5,"Demo · Lupfen 130"],
+  [39.0,"Demo · Konstant 130"],
+  [46.5,"Demo · Beschleunigen Highspeed"],
+  [48.0,"Demo · Lupfen 170"],
+  [53.0,"Demo · Leichte Reku"],
+  [59.0,"Demo · Starke Reku"],
+  [66.0,"Demo · Reku"],
+  [71.5,"Demo · Ausrollen"],
+  [74.0,"Demo · Idle"],
+  [82.0,"Demo · Erneut beschleunigen"],
+  [83.0,"Demo · Lupfen 60"],
+  [94.0,"Demo · Reku bis Stillstand"],
+  [97.0,"Demo · Idle"]
+];
+
+function demoSmoothstep(value) {
+  const p = clamp(value, 0, 1);
+  return p * p * (3 - 2 * p);
+}
+
+function demoAccelerationAt(seconds) {
+  for (let i = 0; i < DEMO_ACCEL_KEYFRAMES.length - 1; i++) {
+    const [startTime, startAccel] = DEMO_ACCEL_KEYFRAMES[i];
+    const [endTime, endAccel] = DEMO_ACCEL_KEYFRAMES[i + 1];
+
+    if (seconds <= endTime) {
+      const duration = endTime - startTime;
+      const progress = duration > 0
+        ? (seconds - startTime) / duration
+        : 1;
+      const blend = demoSmoothstep(progress);
+
+      return startAccel + (endAccel - startAccel) * blend;
+    }
+  }
+
+  return 0;
+}
+
+function demoStateAt(seconds) {
+  for (const [until, state] of DEMO_STATE_PHASES) {
+    if (seconds < until) return state;
+  }
+  return "Demo · Idle";
+}
+
+function buildDemoTrajectory() {
+  const samples = [];
+  let speedMs = 0;
+  let previousAccel = demoAccelerationAt(0);
+  const sampleCount = Math.ceil(DEMO_DURATION / DEMO_STEP);
+
+  for (let i = 0; i <= sampleCount; i++) {
+    const seconds = Math.min(DEMO_DURATION, i * DEMO_STEP);
+    const accel = demoAccelerationAt(seconds);
+
+    if (i > 0) {
+      speedMs = Math.max(
+        0,
+        speedMs + (previousAccel + accel) * 0.5 * DEMO_STEP
+      );
+    }
+
+    samples.push({
+      kmh: speedMs * 3.6,
+      a: speedMs <= 0.002 && accel < 0 ? 0 : accel
+    });
+
+    previousAccel = accel;
+  }
+
+  return samples;
+}
+
+const DEMO_TRAJECTORY = buildDemoTrajectory();
 
 function demoValues(t) {
-  const phase =
-    (t / 1000) % 87;
+  const phase = (t / 1000) % DEMO_DURATION;
+  const samplePosition = phase / DEMO_STEP;
+  const index = Math.min(
+    DEMO_TRAJECTORY.length - 1,
+    Math.floor(samplePosition)
+  );
+  const nextIndex = Math.min(
+    DEMO_TRAJECTORY.length - 1,
+    index + 1
+  );
+  const blend = samplePosition - index;
+  const current = DEMO_TRAJECTORY[index];
+  const next = DEMO_TRAJECTORY[nextIndex];
 
-  let kmh;
-  let a;
-  let state;
+  let kmh = current.kmh + (next.kmh - current.kmh) * blend;
+  let a = current.a + (next.a - current.a) * blend;
 
-
-  // =========================
-  // 0–2,5 s
-  // Stillstand / Idle
-  // =========================
-
-  if (phase < 2.5) {
+  if (kmh < 0.05 && a < 0) {
     kmh = 0;
     a = 0;
-
-    state =
-      "Demo · Idle";
   }
-
-
-  // =========================
-  // 2,5–6,5 s
-  // 0 → 8 km/h
-  // =========================
-
-  else if (phase < 6.5) {
-    const p =
-      (phase - 2.5) / 4;
-
-    kmh =
-      p * 8;
-
-    a =
-      (8 / 3.6) / 4;
-
-    state =
-      "Demo · Anrollen";
-  }
-
-
-  // =========================
-  // 6,5–12,5 s
-  // 8 → 40 km/h
-  // =========================
-
-  else if (phase < 12.5) {
-    const p =
-      (phase - 6.5) / 6;
-
-    kmh =
-      8 +
-      p * 32;
-
-    a =
-      (32 / 3.6) / 6;
-
-    state =
-      "Demo · Sanft beschleunigen";
-  }
-
-
-  // =========================
-  // 12,5–16,5 s
-  // 40 km/h konstant
-  // =========================
-
-  else if (phase < 16.5) {
-    kmh = 40;
-    a = 0;
-
-    state =
-      "Demo · Konstant 40";
-  }
-
-
-  // =========================
-  // 16,5–21,5 s
-  // 40 → 80 km/h
-  // =========================
-
-  else if (phase < 21.5) {
-    const p =
-      (phase - 16.5) / 5;
-
-    kmh =
-      40 +
-      p * 40;
-
-    a =
-      (40 / 3.6) / 5;
-
-    state =
-      "Demo · Mittel beschleunigen";
-  }
-
-
-  // =========================
-  // 21,5–25,5 s
-  // 80 km/h konstant
-  // =========================
-
-  else if (phase < 25.5) {
-    kmh = 80;
-    a = 0;
-
-    state =
-      "Demo · Konstant 80";
-  }
-
-
-  // =========================
-  // 25,5–29,5 s
-  // 80 → 130 km/h
-  // =========================
-
-  else if (phase < 29.5) {
-    const p =
-      (phase - 25.5) / 4;
-
-    kmh =
-      80 +
-      p * 50;
-
-    a =
-      (50 / 3.6) / 4;
-
-    state =
-      "Demo · Voll beschleunigen";
-  }
-
-
-  // =========================
-  // 29,5–32 s
-  // Last weg
-  // =========================
-
-  else if (phase < 32) {
-    kmh = 130;
-    a = 0;
-
-    state =
-      "Demo · Lupfen 130";
-  }
-
-
-  // =========================
-  // 32–36,5 s
-  // Konstantfahrt 130
-  // =========================
-
-  else if (phase < 36.5) {
-    kmh = 130;
-    a = 0;
-
-    state =
-      "Demo · Konstant 130";
-  }
-
-
-  // =========================
-  // 36,5–42,5 s
-  // 130 → 170 km/h
-  // =========================
-
-  else if (phase < 42.5) {
-    const p =
-      (phase - 36.5) / 6;
-
-    kmh =
-      130 +
-      p * 40;
-
-    a =
-      (40 / 3.6) / 6;
-
-    state =
-      "Demo · Beschleunigen Highspeed";
-  }
-
-
-  // =========================
-  // 42,5–45 s
-  // Last weg
-  // =========================
-
-  else if (phase < 45) {
-    kmh = 170;
-    a = 0;
-
-    state =
-      "Demo · Lupfen 170";
-  }
-
-
-  // =========================
-  // 45–50 s
-  // leichte Reku
-  // 170 → 140 km/h
-  // =========================
-
-  else if (phase < 50) {
-    const p =
-      (phase - 45) / 5;
-
-    kmh =
-      170 -
-      p * 30;
-
-    a =
-      -(30 / 3.6) / 5;
-
-    state =
-      "Demo · Leichte Reku";
-  }
-
-
-  // =========================
-  // 50–55 s
-  // starke Reku
-  // 140 → 70 km/h
-  // =========================
-
-  else if (phase < 55) {
-    const p =
-      (phase - 50) / 5;
-
-    kmh =
-      140 -
-      p * 70;
-
-    a =
-      -(70 / 3.6) / 5;
-
-    state =
-      "Demo · Starke Reku";
-  }
-
-
-  // =========================
-  // 55–62 s
-  // normale Reku
-  // 70 → 10 km/h
-  // =========================
-
-  else if (phase < 62) {
-    const p =
-      (phase - 55) / 7;
-
-    kmh =
-      70 -
-      p * 60;
-
-    a =
-      -(60 / 3.6) / 7;
-
-    state =
-      "Demo · Reku";
-  }
-
-
-  // =========================
-  // 62–66 s
-  // langsames Ausrollen
-  // 10 → 0 km/h
-  // =========================
-
-  else if (phase < 66) {
-    const p =
-      (phase - 62) / 4;
-
-    kmh =
-      Math.max(
-        0,
-        10 -
-          p * 10
-      );
-
-    a =
-      -(10 / 3.6) / 4;
-
-    state =
-      "Demo · Ausrollen";
-  }
-
-
-  // =========================
-  // 66–69 s
-  // Stillstand
-  // =========================
-
-  else if (phase < 69) {
-    kmh = 0;
-    a = 0;
-
-    state =
-      "Demo · Idle";
-  }
-
-
-  // =========================
-  // 69–75 s
-  // erneute kräftige Beschleunigung
-  // 0 → 60 km/h
-  // =========================
-
-  else if (phase < 75) {
-    const p =
-      (phase - 69) / 6;
-
-    kmh =
-      p * 60;
-
-    a =
-      (60 / 3.6) / 6;
-
-    state =
-      "Demo · Erneut beschleunigen";
-  }
-
-
-  // =========================
-  // 75–77,5 s
-  // Last weg
-  // =========================
-
-  else if (phase < 77.5) {
-    kmh = 60;
-    a = 0;
-
-    state =
-      "Demo · Lupfen 60";
-  }
-
-
-  // =========================
-  // 77,5–84 s
-  // 60 → 0 km/h
-  // =========================
-
-  else if (phase < 84) {
-    const p =
-      (phase - 77.5) / 6.5;
-
-    kmh =
-      Math.max(
-        0,
-        60 -
-          p * 60
-      );
-
-    a =
-      -(60 / 3.6) / 6.5;
-
-    state =
-      "Demo · Reku bis Stillstand";
-  }
-
-
-  // =========================
-  // 84–87 s
-  // Stillstand
-  // =========================
-
-  else {
-    kmh = 0;
-    a = 0;
-
-    state =
-      "Demo · Idle";
-  }
-
 
   return {
     kmh,
     a,
-    state
+    state: demoStateAt(phase)
   };
 }
 
