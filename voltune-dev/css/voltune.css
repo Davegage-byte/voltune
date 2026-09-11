@@ -2545,3 +2545,142 @@ html[data-theme="light"]
       1 / -1;
   }
 }
+
+
+/* DEBUG COMPACT GROUPS V2 */
+
+body.debugActive .debugCore.debugOnly{
+  display:grid !important;
+}
+
+body.debugActive .debugFold.debugOnly{
+  display:block !important;
+}
+
+.debugCore{
+  grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+  gap:10px;
+  margin:0 0 10px;
+}
+
+.debugCore .stateBox{
+  margin:0;
+  padding:12px;
+  border-radius:14px;
+}
+
+.debugCore .state{
+  margin-top:5px;
+  font-size:24px;
+}
+
+.debugCore .accel{
+  margin-top:6px;
+  font-size:16px;
+}
+
+.debugCore .meter{
+  gap:6px;
+  margin-top:10px;
+}
+
+.debugCore .meter div,
+.triggerDebugPanel .gpsItem{
+  padding:8px 9px;
+  border-radius:9px;
+}
+
+.debugCore .meter b,
+.triggerDebugPanel .gpsItem b{
+  font-size:14px;
+}
+
+.triggerDebugPanel{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin:0;
+}
+
+.debugFold{
+  margin:0 0 7px;
+  overflow:hidden;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+
+.debugFold summary{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:42px;
+  padding:9px 11px;
+  cursor:pointer;
+  list-style:none;
+  user-select:none;
+  font-size:13px;
+  font-weight:800;
+}
+
+.debugFold summary::-webkit-details-marker{
+  display:none;
+}
+
+.debugFold summary small{
+  margin-left:auto;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:600;
+}
+
+.debugFold summary::after{
+  content:"›";
+  color:var(--muted);
+  font-size:22px;
+  line-height:1;
+  transform:rotate(0deg);
+  transition:transform .15s ease;
+}
+
+.debugFold[open] summary::after{
+  transform:rotate(90deg);
+}
+
+.debugFoldBody{
+  display:grid;
+  gap:7px;
+  padding:8px;
+  border-top:1px solid var(--line);
+}
+
+.debugFold .gpsPanel{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+  margin:0;
+}
+
+.debugFold .gpsItem{
+  padding:8px 9px;
+  border-radius:9px;
+}
+
+.debugFold .gpsItem b{
+  font-size:13px;
+}
+
+@media(max-width:1050px){
+  .debugCore{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:760px){
+  .triggerDebugPanel,
+  .debugFold .gpsPanel{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .debugFold summary small{
+    display:none;
+  }
+}

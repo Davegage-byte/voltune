@@ -227,7 +227,8 @@ html[data-theme="light"] #startupOverlay {
 
 </div>
 
-<div class="stateBox debugOnly">
+<div class="debugCore debugOnly">
+<div class="stateBox">
   <div class="label">Fahrzustand</div>
   <div class="state" id="state">Bereit</div>
   <div class="accel"><span id="accel">0.00</span> m/s²</div>
@@ -250,8 +251,8 @@ html[data-theme="light"] #startupOverlay {
   </div>
 </div>
 
-    <div class="gpsPanel debugOnly">
-      <div class="gpsItem"><span class="label">Trigger-Debug</span><b id="debugTriggerProfile">Normal</b></div>
+    <div class="gpsPanel triggerDebugPanel">
+      <div class="gpsItem"><span class="label">Profil</span><b id="debugTriggerProfile">Normal</b></div>
       <div class="gpsItem"><span class="label">Audio m/s²</span><b id="debugAudioAccel">0.00 m/s²</b></div>
       <div class="gpsItem"><span class="label">Lastabfall</span><b id="debugAccelDrop">0.00 m/s²</b></div>
       <div class="gpsItem"><span class="label">Letzter Effekt</span><b id="debugLastEffect">–</b></div>
@@ -261,15 +262,19 @@ html[data-theme="light"] #startupOverlay {
       <div class="gpsItem"><span class="label">Schub Peak</span><b id="debugOverrunPeak">0.00 m/s²</b></div>
       <div class="gpsItem"><span class="label">Schub Load / Drop</span><b id="debugOverrunThreshold">0.00 / 0.00</b></div>
     </div>
+</div>
 
-    <div class="gpsPanel debugOnly">
+<details class="debugFold debugOnly">
+  <summary><span>GPS</span><small>Status · Rohdaten · Glättung</small></summary>
+  <div class="debugFoldBody">
+    <div class="gpsPanel">
       <div class="gpsItem"><span class="label">GPS-Status</span><b id="gpsStatus">nicht gestartet</b></div>
       <div class="gpsItem"><span class="label">Genauigkeit</span><b id="gpsAccuracy">–</b></div>
       <div class="gpsItem"><span class="label">GPS-Rate</span><b id="gpsHz">0.0 Hz</b></div>
       <div class="gpsItem"><span class="label">Kontext</span><b id="secureContext">–</b></div>
       </div>
-      
-    <div class="gpsPanel debugOnly">
+
+    <div class="gpsPanel">
       <div class="gpsItem">
         <span class="label">Raw Speed</span>
           <b id="gpsRawSpeed">0.0 km/h</b>
@@ -290,8 +295,13 @@ html[data-theme="light"] #startupOverlay {
           <b id="gpsSmoothAccel">0.00 m/s²</b>
         </div>
       </div>
-      
-    <div class="gpsPanel debugOnly">
+  </div>
+</details>
+
+<details class="debugFold debugOnly">
+  <summary><span>Controller</span><small>Gamepad · Pedale · Achsen</small></summary>
+  <div class="debugFoldBody">
+    <div class="gpsPanel">
       <div class="gpsItem">
         <span class="label">Controller</span>
           <b id="gamepadStatus">nicht verbunden</b>
@@ -312,8 +322,13 @@ html[data-theme="light"] #startupOverlay {
           <b id="gamepadAxes">0.00 / 0.00</b>
         </div>
       </div>
+  </div>
+</details>
 
-  <div class="gpsPanel debugOnly">
+<details class="debugFold debugOnly">
+  <summary><span>Browser / Viewport</span><small>Größe · Skalierung · Pixel Ratio</small></summary>
+  <div class="debugFoldBody">
+  <div class="gpsPanel">
   <div class="gpsItem">
     <span class="label">Viewport</span>
     <b id="viewportSize">–</b>
@@ -334,6 +349,8 @@ html[data-theme="light"] #startupOverlay {
     <b id="devicePixelRatio">–</b>
   </div>
 </div>
+  </div>
+</details>
   
   <div class="controls">
 
