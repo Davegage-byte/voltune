@@ -1,0 +1,80 @@
+name: Voltune Demo Realistic Once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/voltune-demo-realistic-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Realistische Demo-Testfahrt integrieren
+        shell: bash
+        run: |
+          echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgpwYXRoID0gUGF0aCgidm9sdHVuZS1kZXYvanMvYXBwLmpzIikKYXBwID0gcGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKCnN0YXJ0X21hcmtlciA9ICIiIi8vID09PT09PT09PT09PT09PT09PT09PT09PQovLyBWb2x0dW5lIFRlc3RmYWhydAovLyA9PT09PT09PT09PT09PT09PT09PT09PT0iIiIKCmVuZF9tYXJrZXIgPSAiIiIgIGZ1bmN0aW9uIHVwZGF0ZUdhbWVwYWREZWJ1ZygpIHsiIiIKCnN0YXJ0ID0gYXBwLmZpbmQoc3RhcnRfbWFya2VyKQppZiBzdGFydCA9PSAtMToKICAgIHJhaXNlIFN5c3RlbUV4aXQoIkRlbW8tU3RhcnRtYXJrZXIgbmljaHQgZ2VmdW5kZW4iKQoKZW5kID0gYXBwLmZpbmQoZW5kX21hcmtlciwgc3RhcnQpCmlmIGVuZCA9PSAtMToKICAgIHJhaXNlIFN5c3RlbUV4aXQoIkRlbW8tRW5kbWFya2VyIG5pY2h0IGdlZnVuZGVuIikKCnJlcGxhY2VtZW50ID0gJy8vID09PT09PT09PT09PT09PT09PT09PT09PQovLyBWb2x0dW5lIFRlc3RmYWhydAovLyA9PT09PT09PT09PT09PT09PT09PT09PT0KLy8KLy8gRGllIERlbW8gaXN0IGpldHp0IGFscyBlY2h0ZXIga2luZW1hdGlzY2hlciBGYWhyenlrbHVzIGF1ZmdlYmF1dDoKLy8gQmVzY2hsZXVuaWd1bmcgd2lyZCB3ZWljaCB6d2lzY2hlbiBTY2hsw7xzc2VscHVua3RlbiBpbnRlcnBvbGllcnQKLy8gdW5kIGRpZSBHZXNjaHdpbmRpZ2tlaXQgZGFyYXVzIGludGVncmllcnQuCi8vCi8vIERhZHVyY2ggZW50c3RlaGVuIGtlaW5lIGhhcnRlbiBTcHLDvG5nZSBtZWhyIHp3aXNjaGVuCi8vICJCZXNjaGxldW5pZ2VuIiwgIktvbnN0YW50IiwgIkx1cGZlbiIgdW5kICJSZWt1Ii4KLy8KLy8gWmllbGdlc2Nod2luZGlna2VpdGVuIHNpbmQgdW5nZWbDpGhyOgovLyAgIDAgLT4gOCAtPiA0MCAtPiA4MCAtPiAxMzAgLT4gMTcwIGttL2gKLy8gICAtPiAxNDAgLT4gNzAgLT4gMTAgLT4gMCBrbS9oCi8vICAgLT4gNjAgLT4gMCBrbS9oCi8vCi8vIERpZSBrcsOkZnRpZ2VuIExhc3R3ZWNoc2VsIGJsZWliZW4gYWJzaWNodGxpY2ggZXJoYWx0ZW4sCi8vIGRhbWl0IEJPViwgU2NodWJrbmFsbGVuLCBEU0ctRnVyeiB1bmQgUsO8Y2tzY2hhbHR1bmdlbgovLyB3ZWl0ZXJoaW4gcmVwcm9kdXppZXJiYXIgdGVzdGV0IHdlcmRlbiBrw7ZubmVuLgoKY29uc3QgREVNT19EVVJBVElPTiA9IDk3Owpjb25zdCBERU1PX1NURVAgPSAwLjAyOwoKY29uc3QgREVNT19BQ0NFTF9LRVlGUkFNRVMgPSBbCiAgWzAuMCwgICAwLjAwXSwKCiAgLy8gSWRsZSAtPiBzYW5mdGVzIEFucm9sbGVuCiAgWzIuNSwgICAwLjAwXSwKICBbMy4zLCAgIDAuNjVdLAogIFs1LjcsICAgMC42NV0sCiAgWzYuNSwgICAwLjQwXSwKCiAgLy8gTm9ybWFsZSAvIGxlaWNodCB6w7xnaWdlIEJlc2NobGV1bmlndW5nCiAgWzcuNSwgICAxLjMwXSwKICBbMTMuMCwgIDEuMzBdLAogIFsxNC41LCAgMC4wMF0sCgogIC8vIEtvbnN0YW50IDQwCiAgWzE4LjAsICAwLjAwXSwKCiAgLy8gTWl0dGxlcmUgQmVzY2hsZXVuaWd1bmcKICBbMTkuMCwgIDEuNzFdLAogIFsyNC41LCAgMS43MV0sCiAgWzI1LjUsICAwLjAwXSwKCiAgLy8gS29uc3RhbnQgODAKICBbMjguMCwgIDAuMDBdLAoKICAvLyBLcsOkZnRpZ2UgQmVzY2hsZXVuaWd1bmcgLyBWb2xsbGFzdAogIFsyOC43LCAgMi42MF0sCiAgWzMzLjMsICAyLjYwXSwKICBbMzQuMCwgIDAuMDBdLAoKICAvLyBMdXBmZW4gbWl0IGxlaWNodGVtIG5hdMO8cmxpY2hlbiBTY2hsZXBwbW9tZW50CiAgWzM0LjQsIC0wLjEyXSwKICBbMzUuNSwgIDAuMDBdLAoKICAvLyBLb25zdGFudCAxMzAKICBbMzkuMCwgIDAuMDBdLAoKICAvLyBIaWdoc3BlZWQtQmVzY2hsZXVuaWd1bmcKICBbNDAuMCwgIDEuNzFdLAogIFs0NS41LCAgMS43MV0sCiAgWzQ2LjUsICAwLjAwXSwKCiAgLy8gTHVwZmVuIHZvciBSZWt1CiAgWzQ2LjksIC0wLjEyXSwKICBbNDguMCwgLTAuNTVdLAoKICAvLyBMZWljaHRlIFJla3UKICBbNDkuMCwgLTEuNTVdLAogIFs1Mi4yLCAtMS41NV0sCgogIC8vIFN0YXJrZSBSZWt1CiAgWzUzLjAsIC0yLjQwXSwKICBbNTQuMCwgLTMuNDBdLAogIFs1OC4wLCAtMy40MF0sCiAgWzU5LjAsIC0yLjQwXSwKCiAgLy8gTm9ybWFsZSBSZWt1CiAgWzYwLjAsIC0yLjUwXSwKICBbNjUuMCwgLTIuNTBdLAogIFs2Ni4wLCAtMS4yMF0sCgogIC8vIFNhbmZ0IGJpcyBTdGlsbHN0YW5kIGF1c2xhdWZlbgogIFs2Ny4wLCAtMC44MF0sCiAgWzcwLjAsIC0wLjgwXSwKICBbNzEuNSwgIDAuMDBdLAoKICAvLyBJZGxlCiAgWzc0LjAsICAwLjAwXSwKCiAgLy8gWndlaXRlIGtyw6RmdGlnZSBCZXNjaGxldW5pZ3VuZwogIFs3NC45LCAgMS42MF0sCiAgWzc1LjksICAyLjUwXSwKICBbODEuMCwgIDIuNTBdLAogIFs4Mi4wLCAgMC4wMF0sCgogIC8vIEVybmV1dCBsdXBmZW4KICBbODIuNCwgLTAuMTJdLAogIFs4My4wLCAgMC4wMF0sCgogIC8vIEFic2NobGllw59lbmRlIFJla3UKICBbODMuOCwgLTEuNTBdLAogIFs4OC41LCAtMi43MF0sCiAgWzkwLjUsIC0xLjUwXSwKICBbOTIuNSwgLTAuNzBdLAogIFs5NC4wLCAgMC4wMF0sCgogIC8vIElkbGUgdm9yIG5ldWVtIER1cmNobGF1ZgogIFs5Ny4wLCAgMC4wMF0KXTsKCmNvbnN0IERFTU9fU1RBVEVfUEhBU0VTID0gWwogIFsyLjUsICAiRGVtbyDCtyBJZGxlIl0sCiAgWzYuNSwgICJEZW1vIMK3IEFucm9sbGVuIl0sCiAgWzE0LjUsICJEZW1vIMK3IFNhbmZ0IGJlc2NobGV1bmlnZW4iXSwKICBbMTguMCwgIkRlbW8gwrcgS29uc3RhbnQgNDAiXSwKICBbMjUuNSwgIkRlbW8gwrcgTWl0dGVsIGJlc2NobGV1bmlnZW4iXSwKICBbMjguMCwgIkRlbW8gwrcgS29uc3RhbnQgODAiXSwKICBbMzQuMCwgIkRlbW8gwrcgVm9sbCBiZXNjaGxldW5pZ2VuIl0sCiAgWzM1LjUsICJEZW1vIMK3IEx1cGZlbiAxMzAiXSwKICBbMzkuMCwgIkRlbW8gwrcgS29uc3RhbnQgMTMwIl0sCiAgWzQ2LjUsICJEZW1vIMK3IEJlc2NobGV1bmlnZW4gSGlnaHNwZWVkIl0sCiAgWzQ4LjAsICJEZW1vIMK3IEx1cGZlbiAxNzAiXSwKICBbNTMuMCwgIkRlbW8gwrcgTGVpY2h0ZSBSZWt1Il0sCiAgWzU5LjAsICJEZW1vIMK3IFN0YXJrZSBSZWt1Il0sCiAgWzY2LjAsICJEZW1vIMK3IFJla3UiXSwKICBbNzEuNSwgIkRlbW8gwrcgQXVzcm9sbGVuIl0sCiAgWzc0LjAsICJEZW1vIMK3IElkbGUiXSwKICBbODIuMCwgIkRlbW8gwrcgRXJuZXV0IGJlc2NobGV1bmlnZW4iXSwKICBbODMuMCwgIkRlbW8gwrcgTHVwZmVuIDYwIl0sCiAgWzk0LjAsICJEZW1vIMK3IFJla3UgYmlzIFN0aWxsc3RhbmQiXSwKICBbOTcuMCwgIkRlbW8gwrcgSWRsZSJdCl07CgpmdW5jdGlvbiBkZW1vU21vb3Roc3RlcCh2YWx1ZSkgewogIGNvbnN0IHAgPQogICAgY2xhbXAoCiAgICAgIHZhbHVlLAogICAgICAwLAogICAgICAxCiAgICApOwoKICByZXR1cm4gKAogICAgcCAqCiAgICBwICoKICAgICgzIC0gMiAqIHApCiAgKTsKfQoKZnVuY3Rpb24gZGVtb0FjY2VsZXJhdGlvbkF0KHNlY29uZHMpIHsKICBmb3IgKAogICAgbGV0IGkgPSAwOwogICAgaSA8IERFTU9fQUNDRUxfS0VZRlJBTUVTLmxlbmd0aCAtIDE7CiAgICBpKysKICApIHsKICAgIGNvbnN0IFsKICAgICAgc3RhcnRUaW1lLAogICAgICBzdGFydEFjY2VsCiAgICBdID0KICAgICAgREVNT19BQ0NFTF9LRVlGUkFNRVNbaV07CgogICAgY29uc3QgWwogICAgICBlbmRUaW1lLAogICAgICBlbmRBY2NlbAogICAgXSA9CiAgICAgIERFTU9fQUNDRUxfS0VZRlJBTUVTW2kgKyAxXTsKCiAgICBpZiAoc2Vjb25kcyA8PSBlbmRUaW1lKSB7CiAgICAgIGNvbnN0IGR1cmF0aW9uID0KICAgICAgICBlbmRUaW1lIC0gc3RhcnRUaW1lOwoKICAgICAgY29uc3QgcHJvZ3Jlc3MgPQogICAgICAgIGR1cmF0aW9uID4gMAogICAgICAgICAgPyAoCiAgICAgICAgICAgICAgc2Vjb25kcyAtCiAgICAgICAgICAgICAgc3RhcnRUaW1lCiAgICAgICAgICAgICkgLwogICAgICAgICAgICBkdXJhdGlvbgogICAgICAgICAgOiAxOwoKICAgICAgY29uc3QgYmxlbmQgPQogICAgICAgIGRlbW9TbW9vdGhzdGVwKAogICAgICAgICAgcHJvZ3Jlc3MKICAgICAgICApOwoKICAgICAgcmV0dXJuICgKICAgICAgICBzdGFydEFjY2VsICsKICAgICAgICAoCiAgICAgICAgICBlbmRBY2NlbCAtCiAgICAgICAgICBzdGFydEFjY2VsCiAgICAgICAgKSAqCiAgICAgICAgYmxlbmQKICAgICAgKTsKICAgIH0KICB9CgogIHJldHVybiAwOwp9CgpmdW5jdGlvbiBkZW1vU3RhdGVBdChzZWNvbmRzKSB7CiAgZm9yICgKICAgIGNvbnN0IFsKICAgICAgdW50aWwsCiAgICAgIHN0YXRlCiAgICBdIG9mIERFTU9fU1RBVEVfUEhBU0VTCiAgKSB7CiAgICBpZiAoc2Vjb25kcyA8IHVudGlsKSB7CiAgICAgIHJldHVybiBzdGF0ZTsKICAgIH0KICB9CgogIHJldHVybiAiRGVtbyDCtyBJZGxlIjsKfQoKZnVuY3Rpb24gYnVpbGREZW1vVHJhamVjdG9yeSgpIHsKICBjb25zdCBzYW1wbGVzID0gW107CgogIGxldCBzcGVlZE1zID0gMDsKICBsZXQgcHJldmlvdXNBY2NlbCA9CiAgICBkZW1vQWNjZWxlcmF0aW9uQXQoMCk7CgogIGNvbnN0IHNhbXBsZUNvdW50ID0KICAgIE1hdGguY2VpbCgKICAgICAgREVNT19EVVJBVElPTiAvCiAgICAgIERFTU9fU1RFUAogICAgKTsKCiAgZm9yICgKICAgIGxldCBpID0gMDsKICAgIGkgPD0gc2FtcGxlQ291bnQ7CiAgICBpKysKICApIHsKICAgIGNvbnN0IHNlY29uZHMgPQogICAgICBNYXRoLm1pbigKICAgICAgICBERU1PX0RVUkFUSU9OLAogICAgICAgIGkgKiBERU1PX1NURVAKICAgICAgKTsKCiAgICBjb25zdCBhY2NlbCA9CiAgICAgIGRlbW9BY2NlbGVyYXRpb25BdCgKICAgICAgICBzZWNvbmRzCiAgICAgICk7CgogICAgaWYgKGkgPiAwKSB7CiAgICAgIC8vIFRyYXBlemludGVncmF0aW9uOgogICAgICAvLyBHZXNjaHdpbmRpZ2tlaXQgZm9sZ3QgZGlyZWt0IGRlcgogICAgICAvLyBCZXNjaGxldW5pZ3VuZyB1bmQgbmljaHQgdW1nZWtlaHJ0LgogICAgICBzcGVlZE1zID0KICAgICAgICBNYXRoLm1heCgKICAgICAgICAgIDAsCiAgICAgICAgICBzcGVlZE1zICsKICAgICAgICAgICgKICAgICAgICAgICAgcHJldmlvdXNBY2NlbCArCiAgICAgICAgICAgIGFjY2VsCiAgICAgICAgICApICoKICAgICAgICAgIDAuNSAqCiAgICAgICAgICBERU1PX1NURVAKICAgICAgICApOwogICAgfQoKICAgIHNhbXBsZXMucHVzaCh7CiAgICAgIGttaDoKICAgICAgICBzcGVlZE1zICoKICAgICAgICAzLjYsCgogICAgICBhOgogICAgICAgIHNwZWVkTXMgPD0gMC4wMDIgJiYKICAgICAgICBhY2NlbCA8IDAKICAgICAgICAgID8gMAogICAgICAgICAgOiBhY2NlbAogICAgfSk7CgogICAgcHJldmlvdXNBY2NlbCA9CiAgICAgIGFjY2VsOwogIH0KCiAgcmV0dXJuIHNhbXBsZXM7Cn0KCmNvbnN0IERFTU9fVFJBSkVDVE9SWSA9CiAgYnVpbGREZW1vVHJhamVjdG9yeSgpOwoKZnVuY3Rpb24gZGVtb1ZhbHVlcyh0KSB7CiAgY29uc3QgcGhhc2UgPQogICAgKHQgLyAxMDAwKSAlCiAgICBERU1PX0RVUkFUSU9OOwoKICBjb25zdCBzYW1wbGVQb3NpdGlvbiA9CiAgICBwaGFzZSAvCiAgICBERU1PX1NURVA7CgogIGNvbnN0IGluZGV4ID0KICAgIE1hdGgubWluKAogICAgICBERU1PX1RSQUpFQ1RPUlkubGVuZ3RoIC0gMSwKICAgICAgTWF0aC5mbG9vcigKICAgICAgICBzYW1wbGVQb3NpdGlvbgogICAgICApCiAgICApOwoKICBjb25zdCBuZXh0SW5kZXggPQogICAgTWF0aC5taW4oCiAgICAgIERFTU9fVFJBSkVDVE9SWS5sZW5ndGggLSAxLAogICAgICBpbmRleCArIDEKICAgICk7CgogIGNvbnN0IGJsZW5kID0KICAgIHNhbXBsZVBvc2l0aW9uIC0KICAgIGluZGV4OwoKICBjb25zdCBjdXJyZW50ID0KICAgIERFTU9fVFJBSkVDVE9SW2luZGV4XTsKCiAgY29uc3QgbmV4dCA9CiAgICBERU1PX1RSQUpFQ1RPUllbbmV4dEluZGV4XTsKCiAgbGV0IGttaCA9CiAgICBjdXJyZW50LmttaCArCiAgICAoCiAgICAgIG5leHQua21oIC0KICAgICAgY3VycmVudC5rbWgKICAgICkgKgogICAgYmxlbmQ7CgogIGxldCBhID0KICAgIGN1cnJlbnQuYSArCiAgICAoCiAgICAgIG5leHQuYSAtCiAgICAgIGN1cnJlbnQuYQogICAgKSAqCiAgICBibGVuZDsKCiAgLy8gU29iYWxkIGRpZSBEZW1vIHdpcmtsaWNoIHN0ZWh0LAogIC8vIGtlaW5lIG5lZ2F0aXZlIFJla3UgbWVociBhbiBkZW4KICAvLyBTb3VuZCB3ZWl0ZXJyZWljaGVuLgogIGlmICgKICAgIGttaCA8IDAuMDUgJiYKICAgIGEgPCAwCiAgKSB7CiAgICBrbWggPSAwOwogICAgYSA9IDA7CiAgfQoKICByZXR1cm4gewogICAga21oLAogICAgYSwKICAgIHN0YXRlOgogICAgICBkZW1vU3RhdGVBdCgKICAgICAgICBwaGFzZQogICAgICApCiAgfTsKfQoKJwoKYXBwID0gYXBwWzpzdGFydF0gKyByZXBsYWNlbWVudCArIGFwcFtlbmQ6XQpwYXRoLndyaXRlX3RleHQoYXBwLCBlbmNvZGluZz0idXRmLTgiKQo=' | base64 -d > /tmp/patch.py
+          python3 /tmp/patch.py
+
+      - name: JavaScript Syntax prüfen
+        run: node --check voltune-dev/js/app.js
+
+      - name: Demo-Kennwerte prüfen
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          # Plausibilitätscheck der im JS verwendeten Beschleunigungs-Schlüsselpunkte.
+          keyframes = [
+            (0.0,0.00),(2.5,0.00),(3.3,0.65),(5.7,0.65),(6.5,0.40),
+            (7.5,1.30),(13.0,1.30),(14.5,0.00),(18.0,0.00),
+            (19.0,1.71),(24.5,1.71),(25.5,0.00),(28.0,0.00),
+            (28.7,2.60),(33.3,2.60),(34.0,0.00),(34.4,-0.12),(35.5,0.00),
+            (39.0,0.00),(40.0,1.71),(45.5,1.71),(46.5,0.00),
+            (46.9,-0.12),(48.0,-0.55),(49.0,-1.55),(52.2,-1.55),
+            (53.0,-2.40),(54.0,-3.40),(58.0,-3.40),(59.0,-2.40),
+            (60.0,-2.50),(65.0,-2.50),(66.0,-1.20),(67.0,-0.80),
+            (70.0,-0.80),(71.5,0.00),(74.0,0.00),(74.9,1.60),
+            (75.9,2.50),(81.0,2.50),(82.0,0.00),(82.4,-0.12),
+            (83.0,0.00),(83.8,-1.50),(88.5,-2.70),(90.5,-1.50),
+            (92.5,-0.70),(94.0,0.00),(97.0,0.00)
+          ]
+          def smooth(p):
+              p=max(0,min(1,p)); return p*p*(3-2*p)
+          def accel(t):
+              for (t0,a0),(t1,a1) in zip(keyframes,keyframes[1:]):
+                  if t <= t1:
+                      p=(t-t0)/(t1-t0) if t1>t0 else 1
+                      s=smooth(p)
+                      return a0+(a1-a0)*s
+              return 0
+          dt=.02; speed=0; prev=accel(0); values={}
+          checkpoints=[6.5,14.5,25.5,34.0,46.5,53.0,59.0,66.0,71.5,82.0,92.5]
+          steps=round(97/dt)
+          for i in range(steps+1):
+              t=i*dt; a=accel(t)
+              if i: speed=max(0,speed+(prev+a)*.5*dt)
+              prev=a
+              for cp in checkpoints:
+                  if abs(t-cp) < dt/2:
+                      values[cp]=speed*3.6
+          expected={6.5:(7,9),14.5:(38,42),25.5:(78,83),34.0:(127,133),46.5:(166,173),71.5:(0,1),82.0:(58,63),92.5:(0,1)}
+          for cp,(lo,hi) in expected.items():
+              v=values[cp]
+              if not lo <= v <= hi:
+                  raise SystemExit(f'Demo-Plausibilitaet fehlgeschlagen bei {cp}s: {v:.1f} km/h')
+              print(f'{cp:4.1f}s -> {v:6.1f} km/h')
+          PY
+
+      - name: Commit und Cleanup
+        shell: bash
+        run: |
+          rm .github/workflows/voltune-demo-realistic-once.yml
+          git config user.name "Davegage-byte"
+          git config user.email "74912940+Davegage-byte@users.noreply.github.com"
+          git add voltune-dev/js/app.js .github/workflows/voltune-demo-realistic-once.yml
+          git commit -m "Demo-Testfahrt realistischer und weicher gestalten" -m "Die bisher stückweise lineare Demo durch einen kinematischen Fahrzyklus mit weich interpolierten Beschleunigungs-Schlüsselpunkten ersetzt. Geschwindigkeit wird nun aus der Beschleunigung integriert, wodurch Anfahren, Lastaufbau, Lupfen, Konstantfahrt und Rekuperation ohne harte Phasensprünge ineinander übergehen. Die bekannten Prüfpunkte um 8, 40, 80, 130 und 170 km/h bleiben erhalten; Vollast- und Rekuphase testen weiterhin BOV, Schubknallen, DSG-Furz und Rückschaltungen reproduzierbar. JavaScript-Syntax und wichtige Demo-Geschwindigkeiten automatisiert geprüft."
+          git push
