@@ -14,68 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start-Button flächenfüllend machen
+      - name: Patch CSS
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path('voltune-dev/css/voltune.css')
-          css = path.read_text(encoding='utf-8')
-
-          old_parent = '''.driveHudGear.startButtonPending{
-  padding:8px !important;
-}'''
-
-          new_parent = '''.driveHudGear.startButtonPending{
-  padding:0 !important;
-  overflow:hidden;
-
-  background:#123f36;
-
-  border-color:#236e5d;
-}'''
-
-          old_slot = '''.driveHudGear.startButtonPending > .gpsStartSlot{
-  display:flex;
-  width:100%;
-  min-height:72px;
-}'''
-
-          new_slot = '''.driveHudGear.startButtonPending > .gpsStartSlot{
-  display:flex;
-  width:100%;
-  min-height:88px;
-}'''
-
-          old_button = '''.gpsStartSlot #gps.mainStartButton{
-  width:100%;
-  min-height:72px;
-
-  padding:0 12px;
-
-  border-radius:10px;'''
-
-          new_button = '''.gpsStartSlot #gps.mainStartButton{
-  width:100%;
-  min-height:88px;
-
-  padding:0 12px;
-
-  border-radius:9px;'''
-
-          for label, old, new in [
-              ('Elternbox', old_parent, new_parent),
-              ('Start-Slot', old_slot, new_slot),
-              ('Start-Button', old_button, new_button),
-          ]:
-              count = css.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: erwartet 1 Treffer, gefunden {count}')
-              css = css.replace(old, new, 1)
-
-          path.write_text(css, encoding='utf-8')
-          PY
+          echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKcGF0aCA9IFBhdGgoInZvbHR1bmUtZGV2L2Nzcy92b2x0dW5lLmNzcyIpCmNzcyA9IHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpCgpyZXBsYWNlbWVudHMgPSBbCigKIiIiLmRyaXZlSHVkR2Vhci5zdGFydEJ1dHRvblBlbmRpbmd7CiAgcGFkZGluZzo4cHggIWltcG9ydGFudDsKfSIiIiwKIiIiLmRyaXZlSHVkR2Vhci5zdGFydEJ1dHRvblBlbmRpbmd7CiAgcGFkZGluZzowICFpbXBvcnRhbnQ7CiAgb3ZlcmZsb3c6aGlkZGVuOwoKICBiYWNrZ3JvdW5kOiMxMjNmMzY7CgogIGJvcmRlci1jb2xvcjojMjM2ZTVkOwp9IiIiCiksCigKIiIiLmRyaXZlSHVkR2Vhci5zdGFydEJ1dHRvblBlbmRpbmcgPiAuZ3BzU3RhcnRTbG90ewogIGRpc3BsYXk6ZmxleDsKICB3aWR0aDoxMDAlOwogIG1pbi1oZWlnaHQ6NzJweDsKfSIiIiwKIiIiLmRyaXZlSHVkR2Vhci5zdGFydEJ1dHRvblBlbmRpbmcgPiAuZ3BzU3RhcnRTbG90ewogIGRpc3BsYXk6ZmxleDsKICB3aWR0aDoxMDAlOwogIG1pbi1oZWlnaHQ6ODhweDsKfSIiIgopLAooCiIiIi5ncHNTdGFydFNsb3QgI2dwcy5tYWluU3RhcnRCdXR0b257CiAgd2lkdGg6MTAwJTsKICBtaW4taGVpZ2h0OjcycHg7CgogIHBhZGRpbmc6MCAxMnB4OwoKICBib3JkZXItcmFkaXVzOjEwcHg7IiIiLAoiIiIuZ3BzU3RhcnRTbG90ICNncHMubWFpblN0YXJ0QnV0dG9uewogIHdpZHRoOjEwMCU7CiAgbWluLWhlaWdodDo4OHB4OwoKICBwYWRkaW5nOjAgMTJweDsKCiAgYm9yZGVyLXJhZGl1czo5cHg7IiIiCikKXQoKZm9yIG9sZCwgbmV3IGluIHJlcGxhY2VtZW50czoKICAgIGNvdW50ID0gY3NzLmNvdW50KG9sZCkKICAgIGlmIGNvdW50ICE9IDE6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdChmIkNTUy1NYXJrZXI6IGVyd2FydGV0IDEgVHJlZmZlciwgZ2VmdW5kZW4ge2NvdW50fSIpCiAgICBjc3MgPSBjc3MucmVwbGFjZShvbGQsIG5ldywgMSkKCnBhdGgud3JpdGVfdGV4dChjc3MsIGVuY29kaW5nPSJ1dGYtOCIpCg==' | base64 -d > /tmp/patch.py
+          python3 /tmp/patch.py
 
       - name: Commit und Cleanup
         shell: bash
