@@ -574,7 +574,12 @@ body.debugActive .meter.debugOnly{
 }
 
 .driveHudGear.startButtonPending{
-  padding:8px !important;
+  padding:0 !important;
+  overflow:hidden;
+
+  background:#123f36;
+
+  border-color:#236e5d;
 }
 
 .driveHudGear.startButtonPending > .label,
@@ -585,7 +590,7 @@ body.debugActive .meter.debugOnly{
 .driveHudGear.startButtonPending > .gpsStartSlot{
   display:flex;
   width:100%;
-  min-height:72px;
+  min-height:88px;
 }
 
 #gps.mainStartButton{
@@ -602,11 +607,11 @@ body.debugActive .meter.debugOnly{
 
 .gpsStartSlot #gps.mainStartButton{
   width:100%;
-  min-height:72px;
+  min-height:88px;
 
   padding:0 12px;
 
-  border-radius:10px;
+  border-radius:9px;
 
   font-size:24px;
   font-weight:850;
