@@ -200,6 +200,7 @@ updateViewportDebug();
 
 
   let soundActive = false;
+  let startupDriveModeClaimed = false;
 
 const OVERRUN_SOUND_API_URL =
   "https://api.github.com/repos/Davegage-byte/voltune/contents/voltune-dev/sounds/overrun?ref=main";
@@ -2852,6 +2853,8 @@ function updateControllerDrive(now) {
   }
 
   ui.start.addEventListener("click", async () => {
+    startupDriveModeClaimed = true;
+
     if (!await ensureVoltuneAudio()) return;
 
     // Auch die Demo ist ein echter Startzustand.
@@ -3479,6 +3482,10 @@ if (
   });
 
 function restoreLastDriveMode() {
+  if (startupDriveModeClaimed) {
+    return;
+  }
+
   const lastMode =
     loadLastDriveMode();
 
