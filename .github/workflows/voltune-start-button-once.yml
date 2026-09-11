@@ -1,0 +1,251 @@
+name: Voltune Start Button Once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/voltune-start-button-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-start-button:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Start-Button über Ganganzeige integrieren
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app_path = Path('voltune-dev/js/app.js')
+          css_path = Path('voltune-dev/css/voltune.css')
+
+          app = app_path.read_text(encoding='utf-8')
+          css = css_path.read_text(encoding='utf-8')
+
+          helper_marker = '''  };
+
+  // =========================
+// Browser-Viewport Debug
+// ========================='''
+
+          helper_insert = '''  };
+
+  // =========================
+  // Großer Start-Button über der Ganganzeige
+  // =========================
+
+  const gpsButtonHome =
+    ui.stop?.parentElement || null;
+
+  const gpsButtonGearHost =
+    document.querySelector(
+      ".driveHudGear"
+    );
+
+  let gpsButtonDocked = false;
+
+  function mountGpsStartButton() {
+    if (
+      !ui.gps ||
+      !gpsButtonHome ||
+      !gpsButtonGearHost ||
+      gpsButtonDocked
+    ) {
+      return;
+    }
+
+    gpsButtonGearHost.classList.add(
+      "startButtonPending"
+    );
+
+    ui.gps.classList.add(
+      "startupStartButton"
+    );
+
+    gpsButtonGearHost.appendChild(
+      ui.gps
+    );
+  }
+
+  function dockGpsStartButton() {
+    if (
+      !ui.gps ||
+      !gpsButtonHome ||
+      gpsButtonDocked
+    ) {
+      return;
+    }
+
+    gpsButtonDocked = true;
+
+    ui.gps.classList.add(
+      "startButtonDocking"
+    );
+
+    window.setTimeout(() => {
+      ui.gps.classList.remove(
+        "startupStartButton",
+        "startButtonDocking"
+      );
+
+      gpsButtonGearHost?.classList.remove(
+        "startButtonPending"
+      );
+
+      gpsButtonHome.insertBefore(
+        ui.gps,
+        ui.stop
+      );
+    }, 150);
+  }
+
+  // =========================
+// Browser-Viewport Debug
+// ========================='''
+
+          count = app.count(helper_marker)
+          if count != 1:
+              raise SystemExit(f'App-Helfer-Marker: erwartet 1 Treffer, gefunden {count}')
+          app = app.replace(helper_marker, helper_insert, 1)
+
+          gps_click_marker = '''ui.gps.addEventListener("click", async () => {
+  if (!await ensureVoltuneAudio()) {
+    return;
+  }
+
+  VoltuneAudio.resetDrivingState();'''
+
+          gps_click_insert = '''ui.gps.addEventListener("click", async () => {
+  if (!await ensureVoltuneAudio()) {
+    return;
+  }
+
+  // Nach dem ersten erfolgreichen Benutzerstart
+  // wird der große Start-Button wieder an seine
+  // bisherige Position in der Steuerung verschoben.
+  dockGpsStartButton();
+
+  VoltuneAudio.resetDrivingState();'''
+
+          count = app.count(gps_click_marker)
+          if count != 1:
+              raise SystemExit(f'GPS-Klick-Marker: erwartet 1 Treffer, gefunden {count}')
+          app = app.replace(gps_click_marker, gps_click_insert, 1)
+
+          init_marker = '''renderVisual(
+  0,
+  0,
+  "Bereit"
+);
+  
+  VoltuneStartup.finish('''
+
+          init_insert = '''renderVisual(
+  0,
+  0,
+  "Bereit"
+);
+
+// Vor dem ersten Benutzerstart liegt der
+// Start-Button groß über der Ganganzeige.
+mountGpsStartButton();
+  
+  VoltuneStartup.finish('''
+
+          count = app.count(init_marker)
+          if count != 1:
+              raise SystemExit(f'Initialisierungs-Marker: erwartet 1 Treffer, gefunden {count}')
+          app = app.replace(init_marker, init_insert, 1)
+
+          css_marker = '''.driveHudRpm{
+  padding:
+    8px !important;
+}'''
+
+          css_insert = '''/* Großer Start-Button vor dem ersten GPS-/Audio-Start */
+.driveHudGear{
+  position:relative;
+  overflow:hidden;
+}
+
+.driveHudGear.startButtonPending > .label,
+.driveHudGear.startButtonPending > #gearDisplay{
+  visibility:hidden;
+}
+
+#gps.startupStartButton{
+  position:absolute;
+  inset:0;
+  z-index:8;
+
+  width:100%;
+  height:100%;
+  min-height:0;
+
+  border-radius:9px;
+
+  font-size:24px;
+  font-weight:850;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+
+  background:
+    linear-gradient(
+      145deg,
+      #1687df,
+      #145fa8
+    );
+
+  color:#ffffff;
+
+  border:
+    1px solid #6ac7ff;
+
+  box-shadow:
+    inset 0 0 18px rgba(255,255,255,.08),
+    0 0 18px rgba(77,163,255,.38);
+
+  transition:
+    opacity .15s ease,
+    transform .15s ease,
+    filter .12s ease;
+}
+
+#gps.startupStartButton.startButtonDocking{
+  opacity:0;
+  transform:
+    translateY(18px)
+    scale(.96);
+}
+
+.driveHudRpm{
+  padding:
+    8px !important;
+}'''
+
+          count = css.count(css_marker)
+          if count != 1:
+              raise SystemExit(f'CSS-Marker: erwartet 1 Treffer, gefunden {count}')
+          css = css.replace(css_marker, css_insert, 1)
+
+          app_path.write_text(app, encoding='utf-8')
+          css_path.write_text(css, encoding='utf-8')
+          PY
+
+      - name: JavaScript Syntax prüfen
+        run: node --check voltune-dev/js/app.js
+
+      - name: Änderung committen und One-Shot-Workflow entfernen
+        shell: bash
+        run: |
+          rm .github/workflows/voltune-start-button-once.yml
+          git config user.name "Davegage-byte"
+          git config user.email "74912940+Davegage-byte@users.noreply.github.com"
+          git add voltune-dev/js/app.js voltune-dev/css/voltune.css .github/workflows/voltune-start-button-once.yml
+          git commit -m "Start-Button groß über der Ganganzeige platzieren" -m "Den zentralen GPS-/Audio-Start vor dem ersten Benutzerstart groß über der Ganganzeige darstellen. Die Ganginformation bleibt darunter verborgen, bis der Start erfolgreich ausgelöst wurde. Danach blendet der Button kurz nach unten aus und wird an seine bisherige Position in der Steuerungsgruppe direkt über STOP verschoben. Die bestehende GPS-, Audio-, Wiederherstellungs- und Fahrlogik bleibt unverändert. JavaScript-Syntax mit node --check geprüft."
+          git push
