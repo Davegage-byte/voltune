@@ -563,20 +563,79 @@ body.debugActive .meter.debugOnly{
   display:grid !important;
 }
 
-/* Zentraler Start-Button */
+/* Zentraler Start-Button
+   Vor dem ersten Start liegt er groß über der Ganganzeige.
+   Sobald GPS/Audio aktiv ist, fällt die absolute Positionierung weg
+   und derselbe Button steht wieder an seiner normalen Stelle über STOP. */
 #gps.mainStartButton{
-  background:#176fc1;
+  position:absolute;
+
+  top:11px;
+  left:11px;
+
+  width:148px;
+  height:112px;
+  min-height:0;
+
+  z-index:25;
+
+  padding:0 12px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #1687df,
+      #145fa8
+    );
+
   color:#ffffff;
 
   border:
-    1px solid #55b8ff;
+    1px solid #6ac7ff;
+
+  border-radius:10px;
 
   box-shadow:
-    0 0 10px
-    rgba(77,163,255,.28);
+    inset 0 0 18px
+    rgba(255,255,255,.08),
+
+    0 0 18px
+    rgba(77,163,255,.38);
+
+  font-size:24px;
+  font-weight:850;
+
+  letter-spacing:.08em;
+  text-transform:uppercase;
+
+  transition:
+    opacity .18s ease,
+    transform .18s ease,
+    filter .12s ease,
+    background .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease;
 }
 
 #gps.mainStartButton.active{
+  position:static;
+
+  width:auto;
+  height:auto;
+  min-height:40px;
+
+  z-index:auto;
+
+  padding:1px 6px;
+
+  border-radius:11px;
+
+  font-size:inherit;
+  font-weight:750;
+
+  letter-spacing:normal;
+  text-transform:none;
+
   background:#176b4f;
   color:#effff9;
 
@@ -586,6 +645,25 @@ body.debugActive .meter.debugOnly{
   box-shadow:
     0 0 10px
     rgba(47,167,126,.28);
+
+  animation:
+    gpsStartDock .22s ease-out;
+}
+
+@keyframes gpsStartDock{
+  from{
+    opacity:0;
+    transform:
+      translateY(-12px)
+      scale(.97);
+  }
+
+  to{
+    opacity:1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
 }
 
 #debug{
