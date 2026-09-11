@@ -159,6 +159,11 @@ html[data-theme="light"] #startupOverlay {
       ></span>
     </div>
 
+    <div id="runStatus" class="runStatus" data-state="ready" aria-live="polite">
+      <span class="runStatusDot" aria-hidden="true"></span>
+      <span id="runStatusText">BEREIT</span>
+    </div>
+
   </div>
 
   <div class="driveModeGroup">
@@ -202,26 +207,21 @@ html[data-theme="light"] #startupOverlay {
     <button id="stop">STOP</button>
     <button id="mute">Stumm</button>
 
-    <button id="easyBov" class="featureBtn">EasyBOV</button>
+    <div class="controlSubgroup controlSubgroupOptions">
+      <div class="controlSubgroupTitle">Optionen</div>
+      <button id="easyBov" class="featureBtn">EasyBOV</button>
+      <button id="gears" class="featureBtn active">Gänge</button>
+      <button id="dynamicShift" class="featureBtn active">Dynamik</button>
+      <button id="animations" class="featureBtn active">Animationen</button>
+    </div>
 
-    <button id="gears" class="featureBtn active">Gänge</button>
-
-    <button id="dynamicShift" class="featureBtn active">Dynamik</button>
-    
-    <button id="animations" class="featureBtn active">Animationen</button>
-
-    <button
-      id="theme"
-      class="featureBtn"
-      type="button"
-    >
-      Theme: Auto
-    </button>
-    
-    <button id="debug" aria-pressed="false">Debug</button>
-
-    <button id="start" class="debugOnly">Demo Start</button>
-    <button id="controller" class="debugOnly">Controller</button>
+    <div class="controlSubgroup controlSubgroupSystem">
+      <div class="controlSubgroupTitle">System</div>
+      <button id="theme" class="featureBtn" type="button">Theme: Auto</button>
+      <button id="debug" aria-pressed="false">Debug</button>
+      <button id="start" class="debugOnly">Demo Start</button>
+      <button id="controller" class="debugOnly">Controller</button>
+    </div>
   </div>
 </div>
 

@@ -24,6 +24,8 @@
     shiftTargetDisplay:$("shiftTargetDisplay"),
     downshiftTargetDisplay:$("downshiftTargetDisplay"),
     drivingStyleDisplay:$("drivingStyleDisplay"),
+    runStatus:$("runStatus"),
+    runStatusText:$("runStatusText"),
 
     start:$("start"), gps:$("gps"), controller:$("controller"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
     easyBov:$("easyBov"),
@@ -89,6 +91,12 @@
     turboFlutterLabel:$("turboFlutterLabel"),
     overrunLabel:$("overrunLabel")
   };
+
+  function setRunStatus(state, text) {
+    if (!ui.runStatus || !ui.runStatusText) return;
+    ui.runStatus.dataset.state = state;
+    ui.runStatusText.textContent = text;
+  }
 
   // =========================
   // Start-Button im Gang-Kästchen
@@ -2221,6 +2229,7 @@ ui.gpsSmoothAccel.textContent =
     
       ui.gpsStatus.textContent = "aktiv";
       ui.gpsStatus.className = "okText";
+      if (soundActive) setRunStatus("active", "GPS AKTIV");
     
       const state =
         gpsAccel > 0.22
@@ -2247,6 +2256,7 @@ ui.gpsSmoothAccel.textContent =
         error.message || "GPS-Fehler";
     
       ui.gpsStatus.className = "errText";
+      setRunStatus("error", "GPS FEHLER");
     }
     
     function startGps() {
@@ -2291,6 +2301,7 @@ ui.gpsSmoothAccel.textContent =
     soundActive = false;
 
     ui.start.textContent = "Demo Start";
+    setRunStatus("stopped", "GESTOPPT");
     setGpsButtonActive(false);
     ui.mute.textContent = "Stumm";
 
@@ -2935,8 +2946,12 @@ function updateControllerDrive(now) {
 
   ui.start.addEventListener("click", async () => {
     startupDriveModeClaimed = true;
+    setRunStatus("starting", "STARTE DEMO …");
 
-    if (!await ensureVoltuneAudio()) return;
+    if (!await ensureVoltuneAudio()) {
+      setRunStatus("ready", "BEREIT");
+      return;
+    }
 
     // Auch die Demo ist ein echter Startzustand.
     dockGpsStartButton();
@@ -2950,12 +2965,20 @@ function updateControllerDrive(now) {
     lastState = "idle";
 
     ui.start.textContent = "Läuft ✓";
+    setRunStatus("active", "DEMO AKTIV");
     setGpsButtonActive(false);
     ui.mute.textContent = "Stumm";
   });
 
 ui.gps.addEventListener("click", async () => {
+  startupDriveModeClaimed = true;
+  const previousGpsLabel = ui.gps.textContent;
+  ui.gps.textContent = "STARTE …";
+  setRunStatus("starting", "GPS STARTET …");
+
   if (!await ensureVoltuneAudio()) {
+    ui.gps.textContent = previousGpsLabel;
+    setRunStatus("ready", "BEREIT");
     return;
   }
 
@@ -2976,6 +2999,7 @@ ui.gps.addEventListener("click", async () => {
 
     dockGpsStartButton();
     setGpsButtonActive(true);
+    setRunStatus(gpsHasRenderValue ? "active" : "waiting", gpsHasRenderValue ? "GPS AKTIV" : "GPS WARTET");
 
     ui.mute.textContent =
       "Stumm";
@@ -3001,6 +3025,7 @@ ui.gps.addEventListener("click", async () => {
 
     dockGpsStartButton();
     setGpsButtonActive(true);
+    setRunStatus("waiting", "GPS WARTET");
 
     ui.mute.textContent =
       "Stumm";
@@ -3056,6 +3081,7 @@ ui.controller.addEventListener(
 
     ui.controller.textContent =
       "Controller aktiv ✓";
+    setRunStatus("active", "CONTROLLER AKTIV");
 
     ui.start.textContent =
       "Sound läuft · Controller";
@@ -3387,6 +3413,7 @@ ui.speedTest.addEventListener(
 
     ui.start.textContent =
       "Sound läuft · Manuell";
+    setRunStatus("active", "MANUELL");
   }
 );
 
@@ -3589,6 +3616,8 @@ function restoreLastDriveMode() {
     // "Aktiv ✓" anzeigen.
     setGpsButtonActive(false);
 
+    setRunStatus("waiting", "GPS BEREIT");
+
     renderVisual(
       0,
       0,
@@ -3649,6 +3678,7 @@ renderVisual(
   0,
   "Bereit"
 );
+setRunStatus("ready", "BEREIT");
   
 // Vor dem ersten Benutzerstart sitzt der
 // Start-Button direkt im Gang-Kästchen.

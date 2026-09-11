@@ -2684,3 +2684,117 @@ body.debugActive .debugFold.debugOnly{
     display:none;
   }
 }
+
+
+/* UI-Feinschliff · Betriebsstatus */
+.runStatus{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:29px;
+  margin-top:8px;
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:rgba(255,255,255,.035);
+  color:var(--muted);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  transition:background .18s ease,border-color .18s ease,color .18s ease;
+}
+
+.runStatusDot{
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  border-radius:50%;
+  background:#75808d;
+  box-shadow:0 0 7px rgba(117,128,141,.28);
+}
+
+.runStatus[data-state="active"]{
+  color:#bff8dc;
+  border-color:rgba(85,214,139,.44);
+  background:rgba(35,125,75,.15);
+}
+
+.runStatus[data-state="active"] .runStatusDot{
+  background:var(--green);
+  box-shadow:0 0 9px rgba(85,214,139,.62);
+}
+
+.runStatus[data-state="waiting"],
+.runStatus[data-state="starting"]{
+  color:#ffe0a3;
+  border-color:rgba(255,169,77,.42);
+  background:rgba(155,90,25,.13);
+}
+
+.runStatus[data-state="waiting"] .runStatusDot,
+.runStatus[data-state="starting"] .runStatusDot{
+  background:var(--orange);
+  box-shadow:0 0 9px rgba(255,169,77,.55);
+}
+
+.runStatus[data-state="error"],
+.runStatus[data-state="stopped"]{
+  color:#ffb0b0;
+  border-color:rgba(255,98,98,.38);
+  background:rgba(150,45,45,.11);
+}
+
+.runStatus[data-state="error"] .runStatusDot,
+.runStatus[data-state="stopped"] .runStatusDot{
+  background:var(--red);
+  box-shadow:0 0 8px rgba(255,98,98,.45);
+}
+
+/* UI-Feinschliff · Seitenleiste */
+.controlSubgroup{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:5px;
+  margin-top:4px;
+  padding-top:7px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+.controlSubgroupTitle{
+  padding:0 3px 1px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.controlSubgroup .featureBtn,
+.controlSubgroup #debug,
+.controlSubgroup #start,
+.controlSubgroup #controller{
+  min-height:36px;
+}
+
+.controlSubgroupSystem{
+  margin-top:2px;
+}
+
+body.debugActive #debug{
+  background:rgba(77,163,255,.20);
+  color:#dceeff;
+  border-color:rgba(77,163,255,.55);
+}
+
+@media(max-width:760px){
+  .controlSubgroup{
+    grid-column:1 / -1;
+    grid-template-columns:1fr 1fr;
+  }
+
+  .controlSubgroupTitle{
+    grid-column:1 / -1;
+  }
+}
