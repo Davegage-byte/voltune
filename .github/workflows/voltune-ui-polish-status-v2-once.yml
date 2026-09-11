@@ -1,6 +1,6 @@
 name: Voltune UI Polish Status V2 Once
 
-on:
+'on':
   push:
     paths:
       - '.github/workflows/voltune-ui-polish-status-v2-once.yml'
