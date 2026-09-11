@@ -61,13 +61,13 @@ main{
     calc(100vw - 194px);
 
   margin:
-    8px
+    0
     8px
     16px
     186px;
 
   padding:
-    0
+    8px
     8px
     10px;
 }
