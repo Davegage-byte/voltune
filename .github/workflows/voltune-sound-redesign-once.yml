@@ -1,0 +1,168 @@
+name: Voltune Sound Redesign Once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/voltune-sound-redesign-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  redesign-sound:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Fahrsound neu abstimmen
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('voltune-dev/js/audio.js')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: erwartet 1 Treffer, gefunden {count}')
+              text = text.replace(old, new, 1)
+
+          # Grundsound: weniger sägend/beatend, stattdessen breiter synthetischer Körper.
+          replace_once('base2 = createOsc("sawtooth");', 'base2 = createOsc("triangle");', 'base2 waveform')
+          replace_once('baseFilter.Q.value = 0.8;', 'baseFilter.Q.value = 0.55;', 'base filter Q')
+
+          # Beschleunigung: Sirenen-/Mimimi-Charakter entfernen.
+          replace_once('driveOsc =\n      createOsc("sawtooth");', 'driveOsc =\n      createOsc("triangle");', 'drive waveform')
+          replace_once('driveFilter.Q.value = 1.8;', 'driveFilter.Q.value = 0.72;', 'drive filter Q')
+          replace_once('drivePulseOsc.frequency.value =\n      2.0;', 'drivePulseOsc.frequency.value =\n      0.70;', 'drive pulse start frequency')
+          replace_once('drivePulseDepth.gain.value =\n      0.10;', 'drivePulseDepth.gain.value =\n      0.02;', 'drive pulse start depth')
+          replace_once('drivePulseGain.gain.value =\n      0.90;', 'drivePulseGain.gain.value =\n      0.98;', 'drive pulse start gain')
+
+          # Reku: kein periodisches Jaulen, sondern ruhiges generatorartiges Ziehen.
+          replace_once('regenFilter.Q.value = 0.80;', 'regenFilter.Q.value = 0.58;', 'regen filter Q')
+          replace_once('regenPulseOsc.frequency.value =\n      1.5;', 'regenPulseOsc.frequency.value =\n      0.55;', 'regen pulse start frequency')
+          replace_once('regenPulseDepth.gain.value =\n      0.08;', 'regenPulseDepth.gain.value =\n      0.015;', 'regen pulse start depth')
+          replace_once('regenPulseGain.gain.value =\n      0.92;', 'regenPulseGain.gain.value =\n      0.985;', 'regen pulse start gain')
+
+          # Grundsound-Ebene bewusst leicht unharmonisch oberhalb des Körpers führen.
+          replace_once(
+              '''    setTarget(\n      base2.frequency,\n      fundamental * 1.006,\n      0.04\n    );''',
+              '''    setTarget(\n      base2.frequency,\n      fundamental *\n        (1.495 + pos * 0.015),\n      0.055\n    );''',
+              'base2 frequency'
+          )
+
+          replace_once(
+              '''    setTarget(\n      baseFilter.frequency,\n      760 +\n        rpmN * 1250 +\n        speedN * 350 +\n        pos * 500,\n      0.08\n    );''',
+              '''    setTarget(\n      baseFilter.frequency,\n      620 +\n        rpmN * 900 +\n        Math.pow(speedN, 0.70) * 650 +\n        pos * 320,\n      0.10\n    );''',
+              'base filter frequency'
+          )
+
+          replace_once(
+              '''          0.09 +\n          speedN * 0.07 +\n          pos * 0.018''',
+              '''          0.095 +\n          speedN * 0.055 +\n          pos * 0.028''',
+              'base gain1 character'
+          )
+
+          replace_once(
+              '''          0.012 +\n          speedN * 0.018''',
+              '''          0.006 +\n          speedN * 0.010 +\n          pos * 0.008''',
+              'base gain2 character'
+          )
+
+          replace_once(
+              '''        0.045 +\n          rpmN * 0.018 +\n          pos * 0.040 -\n          speedN * 0.018,\n        0.035,\n        0.105''',
+              '''        0.043 +\n          rpmN * 0.015 +\n          pos * 0.025 -\n          speedN * 0.022,\n        0.030,\n        0.090''',
+              'sub level'
+          )
+
+          # Beschleunigung: Geschwindigkeit verschiebt das Spektrum nach oben,
+          # Last macht den Klang heller und dichter, aber nicht sirenenartig.
+          replace_once(
+              '''    const driveFreq =\n      290 +\n      fundamental * 2.25 +\n      pos * 160 +\n    \n      // Deutlich stärkerer Hochzieheffekt\n      // speziell im Beschleunigungs-Layer.\n      accelSpeedRise * 380;''',
+              '''    const driveFreq =\n      220 +\n      fundamental * 1.55 +\n      Math.pow(speedN, 0.72) * 330 +\n      pos * 110 +\n      accelSpeedRise * 210;''',
+              'drive frequency'
+          )
+
+          replace_once(
+              '''    const drivePulseHz =\n      1.3 +\n    \n      // Grundanstieg mit Geschwindigkeit.\n      Math.pow(speedN, 0.75) * 5.0 +\n    \n      // Aktuelle Beschleunigung macht\n      // den Puls unmittelbar schneller.\n      Math.pow(drivePulseLoad, 0.75) * 2.0 +\n    \n      // Sportlicher Fahrstil erhöht die\n      // Frequenz zusätzlich.\n      //\n      // Bei wenig Last bleibt der Einfluss klein,\n      // damit ein zuvor aufgebauter Fahrstil\n      // nicht dauerhaft hektisch klingt.\n      drivePulseStyle *\n        (\n          0.5 +\n          drivePulseLoad * 2.5\n        );''',
+              '''    const drivePulseHz =\n      0.48 +\n      Math.pow(speedN, 0.65) * 0.55 +\n      Math.pow(drivePulseLoad, 0.80) * 0.32 +\n      drivePulseStyle *\n        drivePulseLoad *\n        0.18;''',
+              'drive pulse frequency'
+          )
+
+          replace_once(
+              '''      const drivePulseAmount =\n        clamp(\n          0.06 +\n      \n            // Hauptanteil kommt weiterhin\n            // von der aktuellen Beschleunigung.\n            drivePulseLoad * 0.27 +\n      \n            // Geschwindigkeit verstärkt den\n            // Effekt nur leicht.\n            speedN * 0.04 +\n      \n            // Bei sportlicher Fahrweise werden\n            // die einzelnen Pulse ausgeprägter.\n            // Auch dieser Anteil braucht Last.\n            drivePulseStyle *\n              drivePulseLoad *\n              0.12,\n      \n          0.06,\n          0.48\n        );''',
+              '''      const drivePulseAmount =\n        clamp(\n          0.008 +\n            drivePulseLoad * 0.035 +\n            speedN * 0.006 +\n            drivePulseStyle *\n              drivePulseLoad *\n              0.012,\n          0.008,\n          0.060\n        );''',
+              'drive pulse amount'
+          )
+
+          replace_once(
+              '''    setTarget(\n      driveFilter.frequency,\n      clamp(\n        620 +\n          rpmN * 1450 +\n          pos * 850,\n        500,\n        3500\n      ),\n      0.055\n    );''',
+              '''    setTarget(\n      driveFilter.frequency,\n      clamp(\n        520 +\n          Math.pow(speedN, 0.70) * 1250 +\n          rpmN * 450 +\n          pos * 420,\n        420,\n        2600\n      ),\n      0.075\n    );''',
+              'drive filter frequency'
+          )
+
+          replace_once(
+              '''          0.018 +\n          speedN * 0.035''',
+              '''          0.024 +\n          speedN * 0.044''',
+              'drive gain'
+          )
+
+          # Reku folgt vor allem der Geschwindigkeit. Beim langsamer Werden fällt
+          # der Generatorcharakter natürlich ab, ohne künstliches Wellenmuster.
+          replace_once(
+              '''    const regenFreq =\n      360 +\n    \n      // Reku folgt hauptsächlich der realen\n      // Fahrzeuggeschwindigkeit und nicht\n      // den virtuellen Gangwechseln.\n      Math.pow(\n        speedN,\n        0.72\n      ) * 1050 +\n    \n      // Stärkere Reku zieht den elektrischen\n      // Ton leicht nach oben.\n      neg * 140;''',
+              '''    const regenFreq =\n      260 +\n      Math.pow(\n        speedN,\n        0.68\n      ) * 760 +\n      neg * 90;''',
+              'regen frequency'
+          )
+
+          replace_once('      regenFreq * 2.02,', '      regenFreq * 1.62,', 'regen second ratio')
+
+          replace_once(
+              '''    setTarget(\n      regenFilter.frequency,\n      clamp(\n        650 +\n          Math.pow(\n            speedN,\n            0.70\n          ) * 1650 +\n          neg * 350,\n        650,\n        2800\n      ),\n      0.08\n    );''',
+              '''    setTarget(\n      regenFilter.frequency,\n      clamp(\n        520 +\n          Math.pow(\n            speedN,\n            0.68\n          ) * 1150 +\n          neg * 240,\n        450,\n        2100\n      ),\n      0.10\n    );''',
+              'regen filter frequency'
+          )
+
+          replace_once(
+              '''    const regenPulseHz =\n      1.1 +\n      Math.pow(speedN, 0.72) * 4.2 +\n      Math.pow(regenPulseLoad, 0.80) * 1.6 +\n      regenPulseStyle *\n        (\n          0.3 +\n          regenPulseLoad * 1.6\n        );''',
+              '''    const regenPulseHz =\n      0.42 +\n      Math.pow(speedN, 0.68) * 0.38 +\n      Math.pow(regenPulseLoad, 0.82) * 0.25 +\n      regenPulseStyle *\n        regenPulseLoad *\n        0.12;''',
+              'regen pulse frequency'
+          )
+
+          replace_once(
+              '''    const regenPulseAmount =\n      clamp(\n        0.04 +\n          regenPulseLoad * 0.20 +\n          speedN * 0.03 +\n          regenPulseStyle *\n            regenPulseLoad *\n            0.08,\n        0.04,\n        0.34\n      );''',
+              '''    const regenPulseAmount =\n      clamp(\n        0.006 +\n          regenPulseLoad * 0.025 +\n          speedN * 0.004 +\n          regenPulseStyle *\n            regenPulseLoad *\n            0.008,\n        0.006,\n        0.045\n      );''',
+              'regen pulse amount'
+          )
+
+          replace_once(
+              '''          0.016 +\n          speedN * 0.035''',
+              '''          0.022 +\n          speedN * 0.040''',
+              'regen gain'
+          )
+
+          replace_once(
+              '''        speedN * 0.005 +\n        pos * 0.011 +\n        neg * 0.007''',
+              '''        speedN * 0.004 +\n        pos * 0.016 +\n        neg * 0.012''',
+              'air texture'
+          )
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: JavaScript Syntax prüfen
+        run: node --check voltune-dev/js/audio.js
+
+      - name: Änderung committen und One-Shot-Workflow entfernen
+        shell: bash
+        run: |
+          git config user.name "Voltune Sound Tuning"
+          git config user.email "actions@users.noreply.github.com"
+          rm .github/workflows/voltune-sound-redesign-once.yml
+          git add voltune-dev/js/audio.js .github/workflows/voltune-sound-redesign-once.yml
+          git commit -m "Sounddesign: Fahrsound, Beschleunigung und Reku neu abgestimmt" -m "Der neue Idle-Sound bleibt unverändert. Der Fahrsound erhält einen ruhigeren, breiteren synthetischen Grundkörper mit leicht unharmonischer Zusatzebene. Beschleunigung wird von der bisherigen deutlich hörbaren Puls-/Sirenencharakteristik auf einen geschwindigkeits- und lastabhängigen Schub-/Turbinencharakter umgestellt. Die Reku arbeitet nun als gleichmäßiger generatorartiger Zug mit inharmonischer Zusatzebene statt rhythmischem Mimimiii. Lufttextur und Filterverläufe wurden passend neu gewichtet; die vorhandenen BOV-, Schubknall- und DSG-Funktionen bleiben unangetastet. JavaScript-Syntax mit node --check geprüft."
+          git push
