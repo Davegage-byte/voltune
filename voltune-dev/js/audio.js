@@ -3176,17 +3176,17 @@ const dt = clamp(
 
 lastSoundUpdate = nowMs;
 
-// EasyBOV nutzt ungefähr den bisherigen,
-// leicht aufbaubaren Ladedruck.
+// EasyBOV übernimmt das bisherige Normalprofil.
 //
-// Normal-BOV braucht mehr Beschleunigung,
-// baut weniger Druck auf und lädt langsamer.
+// Ohne EasyBOV braucht der virtuelle Ladedruck
+// deutlich stärkere oder länger anhaltende
+// Beschleunigung und baut sich langsamer auf.
 const easyBov = settings.easyBovEnabled;
 
-const pressureStart = easyBov ? 0.20 : 0.45;
-const pressureOffset = easyBov ? 0.15 : 0.40;
-const pressureRange = easyBov ? 2.8 : 3.8;
-const chargeTime = easyBov ? 0.55 : 1.20;
+const pressureStart = easyBov ? 0.45 : 0.65;
+const pressureOffset = easyBov ? 0.40 : 0.60;
+const pressureRange = easyBov ? 3.8 : 4.2;
+const chargeTime = easyBov ? 1.20 : 1.50;
 
   if (accel > pressureStart) {
     bovPeakAccel = Math.max(bovPeakAccel, accel);
@@ -3204,11 +3204,11 @@ const chargeTime = easyBov ? 0.55 : 1.20;
     bovPressure += (pressureTarget - bovPressure) * chargeRate;
   }
 
-  // EasyBOV wird weiterhin sehr früh scharf.
-  // Normal-BOV benötigt deutlich mehr Druck
-  // und eine stärkere Beschleunigung.
-  const armPressure = easyBov ? 0.05 : 0.22;
-  const armAccel = easyBov ? 0.25 : 0.65;
+  // EasyBOV verwendet die bisherigen
+  // Normal-Schwellen. Das neue Normalprofil
+  // wird erst nach klar aufgebauter Last scharf.
+  const armPressure = easyBov ? 0.22 : 0.18;
+  const armAccel = easyBov ? 0.65 : 0.95;
 
   if (bovPressure > armPressure && accel > armAccel) {
     bovArmed = true;
@@ -3234,23 +3234,31 @@ bovPressure =
 // =========================
 
 // Kräftige Beschleunigung merken.
-// Das Schubknallen arbeitet bewusst
-// unabhängig von EasyBOV und BOV-Druck.
+// Die TXT-Werte entsprechen dem EasyBOV-Profil.
+// Ohne EasyBOV benötigt Schubknallen jeweils
+// 35 % mehr aufgebaute Last und Lastabfall.
 const overrunTriggerSettings =
   overrunSoundMode === "sample"
     ? overrunSampleSettings
     : overrunSampleDefaultSettings;
 
+const overrunSensitivityScale =
+  easyBov
+    ? 1
+    : 1.35;
+
 const overrunTriggerLoad =
   Math.max(
     0.1,
-    overrunTriggerSettings.triggerLoad
+    overrunTriggerSettings.triggerLoad *
+      overrunSensitivityScale
   );
 
 const overrunTriggerDrop =
   Math.max(
     0.1,
-    overrunTriggerSettings.triggerDrop
+    overrunTriggerSettings.triggerDrop *
+      overrunSensitivityScale
   );
 
 const overrunCooldown =
@@ -3909,9 +3917,9 @@ const peakAccelDrop = bovPeakAccel - accel;
 // Sobald Druck aufgebaut wurde, darf das BOV
 // auch bei noch positiver Beschleunigung auslösen.
 // Entscheidend ist die deutliche Lastwegnahme.
-const releasePressure = easyBov ? 0.025 : 0.14;
-const releaseAccel = easyBov ? 0.55 : 0.45;
-const peakDropNeeded = easyBov ? 0.25 : 0.45;
+const releasePressure = easyBov ? 0.14 : 0.18;
+const releaseAccel = easyBov ? 0.45 : 0.30;
+const peakDropNeeded = easyBov ? 0.45 : 0.70;
 
 // Wie viel von der vorherigen Last noch übrig ist.
 // Beispiel:
@@ -3921,12 +3929,12 @@ const remainingLoad = bovPeakAccel > 0
   : 1;
 
 const relativeLoadDrop = easyBov
-  ? remainingLoad < 0.45
-  : remainingLoad < 0.35;
+  ? remainingLoad < 0.35
+  : remainingLoad < 0.25;
 
 // Sehr schnelle Lastwegnahme zusätzlich direkt erkennen.
-const abruptLastAccel = easyBov ? 0.35 : 0.70;
-const abruptAccelDrop = easyBov ? 0.18 : 0.35;
+const abruptLastAccel = easyBov ? 0.70 : 0.95;
+const abruptAccelDrop = easyBov ? 0.35 : 0.55;
 
 const bovRelease =
   bovArmed &&
@@ -3964,8 +3972,8 @@ if (bovRelease) {
     bovIntensity,
     settings.bovVolume,
     settings.easyBovEnabled
-      ? 500
-      : 700
+      ? 700
+      : 900
   );
 
   triggerTurboFlutter(
