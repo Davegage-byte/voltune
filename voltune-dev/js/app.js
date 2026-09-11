@@ -10,6 +10,15 @@
     drivePct:$("drivePct"),
     regenPct:$("regenPct"),
     bovPressureDisplay:$("bovPressureDisplay"),
+    debugTriggerProfile:$("debugTriggerProfile"),
+    debugAudioAccel:$("debugAudioAccel"),
+    debugAccelDrop:$("debugAccelDrop"),
+    debugLastEffect:$("debugLastEffect"),
+    debugBovArmed:$("debugBovArmed"),
+    debugBovPeak:$("debugBovPeak"),
+    debugOverrunArmed:$("debugOverrunArmed"),
+    debugOverrunPeak:$("debugOverrunPeak"),
+    debugOverrunThreshold:$("debugOverrunThreshold"),
     gearDisplay:$("gearDisplay"),
     rpmDisplay:$("rpmDisplay"),
     shiftTargetDisplay:$("shiftTargetDisplay"),
@@ -201,6 +210,15 @@ updateViewportDebug();
 
   let soundActive = false;
   let startupDriveModeClaimed = false;
+  let lastDebugEffect = "–";
+
+  function setLastDebugEffect(label) {
+    lastDebugEffect = label;
+
+    if (ui.debugLastEffect) {
+      ui.debugLastEffect.textContent = label;
+    }
+  }
 
 const OVERRUN_SOUND_API_URL =
   "https://api.github.com/repos/Davegage-byte/voltune/contents/voltune-dev/sounds/overrun?ref=main";
@@ -1849,6 +1867,8 @@ if (
     shiftIntensity,
     Number(ui.shiftBurble.value)
   );
+
+  setLastDebugEffect("DSG-Furz");
 }
 
   // =========================
@@ -1976,6 +1996,8 @@ if (!quietFirstGear) {
     blipIntensity,
     blipVolume
   );
+
+  setLastDebugEffect("Rückschalt-Blip");
 }
 }
 
@@ -2065,10 +2087,69 @@ lastTransmissionGear =
 
   // Anzeigen der einzelnen Sound-Layer
   if (soundState) {
+    if (
+      soundState.bovTriggered &&
+      soundState.overrunTriggered
+    ) {
+      setLastDebugEffect(
+        "BOV + Schubknallen"
+      );
+    } else if (soundState.bovTriggered) {
+      setLastDebugEffect("BOV");
+    } else if (soundState.overrunTriggered) {
+      setLastDebugEffect("Schubknallen");
+    }
+
     if (soundState.overrunTriggered) {
       overrunFlashUntil =
         performance.now() + 800;
     }
+
+    if (ui.debugTriggerProfile) {
+      ui.debugTriggerProfile.textContent =
+        soundState.easyBovEnabled
+          ? "EasyBOV"
+          : "Normal";
+
+      ui.debugAudioAccel.textContent =
+        `${Number(accel).toFixed(2)} m/s²`;
+
+      ui.debugAccelDrop.textContent =
+        `${Number(soundState.accelDrop).toFixed(2)} m/s²`;
+
+      ui.debugBovArmed.textContent =
+        soundState.bovArmed
+          ? "BEREIT"
+          : "–";
+
+      ui.debugBovArmed.className =
+        soundState.bovArmed
+          ? "okText"
+          : "";
+
+      ui.debugBovPeak.textContent =
+        `${Number(soundState.bovPeakAccel).toFixed(2)} m/s²`;
+
+      ui.debugOverrunArmed.textContent =
+        soundState.overrunArmed
+          ? "BEREIT"
+          : "–";
+
+      ui.debugOverrunArmed.className =
+        soundState.overrunArmed
+          ? "okText"
+          : "";
+
+      ui.debugOverrunPeak.textContent =
+        `${Number(soundState.overrunPeakAccel).toFixed(2)} m/s²`;
+
+      ui.debugOverrunThreshold.textContent =
+        `${Number(soundState.overrunTriggerLoad).toFixed(2)} / ${Number(soundState.overrunTriggerDrop).toFixed(2)}`;
+
+      ui.debugLastEffect.textContent =
+        lastDebugEffect;
+    }
+
     ui.baseHz.textContent =
       `${Math.round(soundState.fundamentalHz)} Hz`;
 

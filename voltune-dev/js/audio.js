@@ -3220,6 +3220,7 @@ const accelSpeedRise =
 const nowMs = performance.now();
 
 let overrunTriggered = false;
+let bovTriggered = false;
 
 const dt = clamp(
   (nowMs - lastSoundUpdate) / 1000,
@@ -3978,6 +3979,8 @@ const bovRelease =
   );
 
 if (bovRelease) {
+  bovTriggered = true;
+
   const bovIntensity =
     clamp(
       Math.pow(
@@ -4108,8 +4111,19 @@ lastAccel = accel;
     
       bovPressurePercent:
         Math.round(bovPressure * 100),
-      
-      overrunTriggered
+
+      bovTriggered,
+      bovArmed,
+      bovPeakAccel,
+
+      overrunTriggered,
+      overrunArmed,
+      overrunPeakAccel,
+
+      accelDrop,
+      overrunTriggerLoad,
+      overrunTriggerDrop,
+      easyBovEnabled: easyBov
     };
   }
 
