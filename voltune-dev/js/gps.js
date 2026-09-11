@@ -177,32 +177,34 @@ if (firstGpsValue) {
 ];
 
 } else {
+  // Für Debug-Rate und Rohbeschleunigung das echte
+  // Intervall zwischen den GPS-Ereignissen verwenden.
+  // Die frühere Mindestgrenze von 0,15 s deckelte
+  // die Anzeige künstlich auf maximal 6,67 Hz.
   const dt =
-    clamp(
-      (ts - lastGpsTs) / 1000,
-      0.15,
-      8
-    );
+    (ts - lastGpsTs) / 1000;
+
+  const validDt =
+    finite(dt) && dt > 0;
 
   gpsRate =
-    1 / dt;
+    validDt
+      ? 1 / dt
+      : 0;
 
   // Geschwindigkeit nicht zusätzlich glätten.
   smoothGpsSpeed = speed;
 
-  // Beschleunigung direkt aus der
-  // Geschwindigkeitsänderung berechnen.
-  rawGpsAccel =
-    (speed - lastGpsSpeed) / dt;
-
 // Direkter Wert zwischen genau zwei GPS-Messungen.
 // Bleibt für die Debuganzeige erhalten.
 rawGpsAccel =
-  clamp(
-    (speed - lastGpsSpeed) / dt,
-    -6,
-    6
-  );
+  validDt
+    ? clamp(
+        (speed - lastGpsSpeed) / dt,
+        -6,
+        6
+      )
+    : 0;
 
 // Für Voltune verwenden wir einen kurzen
 // Geschwindigkeitstrend statt nur eines
