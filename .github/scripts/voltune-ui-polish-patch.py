@@ -1,0 +1,284 @@
+from pathlib import Path
+
+
+def one(text, old, new, name):
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{name}: {count} Treffer")
+    return text.replace(old, new, 1)
+
+
+# =========================
+# index.html
+# =========================
+
+p = Path("voltune-dev/index.html")
+s = p.read_text(encoding="utf-8")
+
+s = one(
+    s,
+    '    </div>\n\n  </div>\n\n  <div class="driveModeGroup">',
+    '    </div>\n\n    <div id="runStatus" class="runStatus" data-state="ready" aria-live="polite">\n      <span class="runStatusDot" aria-hidden="true"></span>\n      <span id="runStatusText">BEREIT</span>\n    </div>\n\n  </div>\n\n  <div class="driveModeGroup">',
+    "runStatus",
+)
+
+s = one(
+    s,
+    '    <button id="easyBov" class="featureBtn">EasyBOV</button>\n\n    <button id="gears" class="featureBtn active">Gänge</button>\n\n    <button id="dynamicShift" class="featureBtn active">Dynamik</button>\n    \n    <button id="animations" class="featureBtn active">Animationen</button>',
+    '    <div class="controlSubgroup controlSubgroupOptions">\n      <div class="controlSubgroupTitle">Optionen</div>\n      <button id="easyBov" class="featureBtn">EasyBOV</button>\n      <button id="gears" class="featureBtn active">Gänge</button>\n      <button id="dynamicShift" class="featureBtn active">Dynamik</button>\n      <button id="animations" class="featureBtn active">Animationen</button>\n    </div>',
+    "Optionen",
+)
+
+s = one(
+    s,
+    '    <button\n      id="theme"\n      class="featureBtn"\n      type="button"\n    >\n      Theme: Auto\n    </button>\n    \n    <button id="debug" aria-pressed="false">Debug</button>\n\n    <button id="start" class="debugOnly">Demo Start</button>\n    <button id="controller" class="debugOnly">Controller</button>',
+    '    <div class="controlSubgroup controlSubgroupSystem">\n      <div class="controlSubgroupTitle">System</div>\n      <button id="theme" class="featureBtn" type="button">Theme: Auto</button>\n      <button id="debug" aria-pressed="false">Debug</button>\n      <button id="start" class="debugOnly">Demo Start</button>\n      <button id="controller" class="debugOnly">Controller</button>\n    </div>',
+    "System",
+)
+
+p.write_text(s, encoding="utf-8")
+
+
+# =========================
+# app.js
+# =========================
+
+p = Path("voltune-dev/js/app.js")
+s = p.read_text(encoding="utf-8")
+
+s = one(
+    s,
+    '    drivingStyleDisplay:$("drivingStyleDisplay"),\n\n    start:$("start"),',
+    '    drivingStyleDisplay:$("drivingStyleDisplay"),\n    runStatus:$("runStatus"),\n    runStatusText:$("runStatusText"),\n\n    start:$("start"),',
+    "ui status",
+)
+
+anchor = (
+    "  // =========================\n"
+    "  // Start-Button im Gang-Kästchen\n"
+    "  // =========================\n"
+)
+helper = (
+    "  function setRunStatus(state, text) {\n"
+    "    if (!ui.runStatus || !ui.runStatusText) return;\n"
+    "    ui.runStatus.dataset.state = state;\n"
+    "    ui.runStatusText.textContent = text;\n"
+    "  }\n\n"
+)
+s = one(s, anchor, helper + anchor, "helper")
+
+s = one(
+    s,
+    '  ui.start.addEventListener("click", async () => {\n    startupDriveModeClaimed = true;\n\n    if (!await ensureVoltuneAudio()) return;',
+    '  ui.start.addEventListener("click", async () => {\n    startupDriveModeClaimed = true;\n    setRunStatus("starting", "STARTE DEMO …");\n\n    if (!await ensureVoltuneAudio()) {\n      setRunStatus("ready", "BEREIT");\n      return;\n    }',
+    "demo start",
+)
+
+s = one(
+    s,
+    '    ui.start.textContent = "Läuft ✓";\n    setGpsButtonActive(false);',
+    '    ui.start.textContent = "Läuft ✓";\n    setRunStatus("active", "DEMO AKTIV");\n    setGpsButtonActive(false);',
+    "demo active",
+)
+
+s = one(
+    s,
+    'ui.gps.addEventListener("click", async () => {\n  if (!await ensureVoltuneAudio()) {\n    return;\n  }',
+    'ui.gps.addEventListener("click", async () => {\n  startupDriveModeClaimed = true;\n  const previousGpsLabel = ui.gps.textContent;\n  ui.gps.textContent = "STARTE …";\n  setRunStatus("starting", "GPS STARTET …");\n\n  if (!await ensureVoltuneAudio()) {\n    ui.gps.textContent = previousGpsLabel;\n    setRunStatus("ready", "BEREIT");\n    return;\n  }',
+    "gps start",
+)
+
+s = one(
+    s,
+    '    dockGpsStartButton();\n    setGpsButtonActive(true);\n\n    ui.mute.textContent =',
+    '    dockGpsStartButton();\n    setGpsButtonActive(true);\n    setRunStatus(gpsHasRenderValue ? "active" : "waiting", gpsHasRenderValue ? "GPS AKTIV" : "GPS WARTET");\n\n    ui.mute.textContent =',
+    "gps existing",
+)
+
+s = one(
+    s,
+    '    dockGpsStartButton();\n    setGpsButtonActive(true);\n\n    ui.mute.textContent =\n      "Stumm";\n\n    renderVisual(\n      0,',
+    '    dockGpsStartButton();\n    setGpsButtonActive(true);\n    setRunStatus("waiting", "GPS WARTET");\n\n    ui.mute.textContent =\n      "Stumm";\n\n    renderVisual(\n      0,',
+    "gps new",
+)
+
+s = one(
+    s,
+    '      ui.gpsStatus.textContent = "aktiv";\n      ui.gpsStatus.className = "okText";',
+    '      ui.gpsStatus.textContent = "aktiv";\n      ui.gpsStatus.className = "okText";\n      if (soundActive) setRunStatus("active", "GPS AKTIV");',
+    "gps update",
+)
+
+s = one(
+    s,
+    '      ui.gpsStatus.className = "errText";\n    }',
+    '      ui.gpsStatus.className = "errText";\n      setRunStatus("error", "GPS FEHLER");\n    }',
+    "gps error",
+)
+
+s = one(
+    s,
+    '    ui.controller.textContent =\n      "Controller aktiv ✓";\n\n    ui.start.textContent =',
+    '    ui.controller.textContent =\n      "Controller aktiv ✓";\n    setRunStatus("active", "CONTROLLER AKTIV");\n\n    ui.start.textContent =',
+    "controller",
+)
+
+s = one(
+    s,
+    '    ui.start.textContent = "Demo Start";\n    setGpsButtonActive(false);',
+    '    ui.start.textContent = "Demo Start";\n    setRunStatus("stopped", "GESTOPPT");\n    setGpsButtonActive(false);',
+    "stop",
+)
+
+s = one(
+    s,
+    '    ui.start.textContent =\n      "Sound läuft · Manuell";',
+    '    ui.start.textContent =\n      "Sound läuft · Manuell";\n    setRunStatus("active", "MANUELL");',
+    "manual",
+)
+
+s = one(
+    s,
+    '    renderVisual(\n      0,\n      0,\n      "GPS · bereit"\n    );',
+    '    setRunStatus("waiting", "GPS BEREIT");\n\n    renderVisual(\n      0,\n      0,\n      "GPS · bereit"\n    );',
+    "restore",
+)
+
+s = one(
+    s,
+    'renderVisual(\n  0,\n  0,\n  "Bereit"\n);',
+    'renderVisual(\n  0,\n  0,\n  "Bereit"\n);\nsetRunStatus("ready", "BEREIT");',
+    "initial",
+)
+
+p.write_text(s, encoding="utf-8")
+
+
+# =========================
+# voltune.css
+# =========================
+
+p = Path("voltune-dev/css/voltune.css")
+s = p.read_text(encoding="utf-8")
+
+marker = "/* UI-Feinschliff · Betriebsstatus */"
+if marker in s:
+    raise SystemExit("CSS-Feinschliff bereits vorhanden")
+
+s += r'''
+
+/* UI-Feinschliff · Betriebsstatus */
+.runStatus{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:29px;
+  margin-top:8px;
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:rgba(255,255,255,.035);
+  color:var(--muted);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  transition:background .18s ease,border-color .18s ease,color .18s ease;
+}
+
+.runStatusDot{
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  border-radius:50%;
+  background:#75808d;
+  box-shadow:0 0 7px rgba(117,128,141,.28);
+}
+
+.runStatus[data-state="active"]{
+  color:#bff8dc;
+  border-color:rgba(85,214,139,.44);
+  background:rgba(35,125,75,.15);
+}
+
+.runStatus[data-state="active"] .runStatusDot{
+  background:var(--green);
+  box-shadow:0 0 9px rgba(85,214,139,.62);
+}
+
+.runStatus[data-state="waiting"],
+.runStatus[data-state="starting"]{
+  color:#ffe0a3;
+  border-color:rgba(255,169,77,.42);
+  background:rgba(155,90,25,.13);
+}
+
+.runStatus[data-state="waiting"] .runStatusDot,
+.runStatus[data-state="starting"] .runStatusDot{
+  background:var(--orange);
+  box-shadow:0 0 9px rgba(255,169,77,.55);
+}
+
+.runStatus[data-state="error"],
+.runStatus[data-state="stopped"]{
+  color:#ffb0b0;
+  border-color:rgba(255,98,98,.38);
+  background:rgba(150,45,45,.11);
+}
+
+.runStatus[data-state="error"] .runStatusDot,
+.runStatus[data-state="stopped"] .runStatusDot{
+  background:var(--red);
+  box-shadow:0 0 8px rgba(255,98,98,.45);
+}
+
+/* UI-Feinschliff · Seitenleiste */
+.controlSubgroup{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:5px;
+  margin-top:4px;
+  padding-top:7px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+.controlSubgroupTitle{
+  padding:0 3px 1px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.controlSubgroup .featureBtn,
+.controlSubgroup #debug,
+.controlSubgroup #start,
+.controlSubgroup #controller{
+  min-height:36px;
+}
+
+.controlSubgroupSystem{
+  margin-top:2px;
+}
+
+body.debugActive #debug{
+  background:rgba(77,163,255,.20);
+  color:#dceeff;
+  border-color:rgba(77,163,255,.55);
+}
+
+@media(max-width:760px){
+  .controlSubgroup{
+    grid-column:1 / -1;
+    grid-template-columns:1fr 1fr;
+  }
+
+  .controlSubgroupTitle{
+    grid-column:1 / -1;
+  }
+}
+'''
+
+p.write_text(s, encoding="utf-8")
