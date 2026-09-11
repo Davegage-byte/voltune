@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start-Race zwischen Benutzerwahl und GPS-Restore beheben
+      - name: Start-Race zwischen Demo und GPS-Restore beheben
         shell: bash
         run: |
           python3 - <<'PY'
@@ -25,10 +25,6 @@ jobs:
           replacements = [
             ('  let soundActive = false;\n', '  let soundActive = false;\n  let startupDriveModeClaimed = false;\n'),
             ('  ui.start.addEventListener("click", async () => {\n    if (!await ensureVoltuneAudio()) return;', '  ui.start.addEventListener("click", async () => {\n    startupDriveModeClaimed = true;\n\n    if (!await ensureVoltuneAudio()) return;'),
-            ('ui.gps.addEventListener("click", async () => {\n  if (!await ensureVoltuneAudio()) {', 'ui.gps.addEventListener("click", async () => {\n  startupDriveModeClaimed = true;\n\n  if (!await ensureVoltuneAudio()) {'),
-            ('  "click",\n  async () => {\n    if (!await ensureVoltuneAudio()) {', '  "click",\n  async () => {\n    startupDriveModeClaimed = true;\n\n    if (!await ensureVoltuneAudio()) {'),
-            ('  ui.stop.addEventListener("click", () => {\n    stopAudio();', '  ui.stop.addEventListener("click", () => {\n    startupDriveModeClaimed = true;\n    stopAudio();'),
-            ('  "input",\n  async () => {\n    if (!await ensureVoltuneAudio()) {', '  "input",\n  async () => {\n    startupDriveModeClaimed = true;\n\n    if (!await ensureVoltuneAudio()) {'),
             ('function restoreLastDriveMode() {\n  const lastMode =', 'function restoreLastDriveMode() {\n  if (startupDriveModeClaimed) {\n    return;\n  }\n\n  const lastMode =')
           ]
 
@@ -48,6 +44,7 @@ jobs:
         shell: bash
         run: |
           grep -q 'let startupDriveModeClaimed = false;' voltune-dev/js/app.js
+          grep -q 'startupDriveModeClaimed = true;' voltune-dev/js/app.js
           grep -q 'if (startupDriveModeClaimed)' voltune-dev/js/app.js
 
       - name: Commit und Cleanup
@@ -57,5 +54,5 @@ jobs:
           git config user.name "Davegage-byte"
           git config user.email "74912940+Davegage-byte@users.noreply.github.com"
           git add voltune-dev/js/app.js .github/workflows/voltune-demo-start-race-once.yml
-          git commit -m "Demo-Start gegen verzögerten GPS-Restore absichern" -m "Eine Race Condition beim Seitenstart behoben: Der nach 300 ms ausgeführte Restore des zuletzt gespeicherten GPS-Modus konnte eine unmittelbar gestartete Demo wieder deaktivieren, während der Audio-/Idle-Sound bereits lief. Benutzeraktionen für Demo, GPS, Controller, Stop und manuellen Fahrmodus markieren nun sofort, dass der Fahrmodus bewusst gewählt wurde. Der automatische Start-Restore greift danach nicht mehr ein. JavaScript-Syntax mit node --check geprüft."
+          git commit -m "Demo-Start gegen verzögerten GPS-Restore absichern" -m "Eine Race Condition beim Seitenstart behoben: Der nach 300 ms ausgeführte Restore des zuletzt gespeicherten GPS-Modus konnte eine unmittelbar gestartete Demo wieder deaktivieren, während der Audio-/Idle-Sound bereits lief. Der Demo-Button markiert die Benutzerwahl nun sofort noch vor dem Audio-Await; der automatische GPS-Restore greift danach nicht mehr ein. JavaScript-Syntax mit node --check geprüft."
           git push
