@@ -15,11 +15,63 @@ jobs:
       - name: Repository auschecken
         uses: actions/checkout@v4
 
-      - name: BOV und Schubknallen koordinieren
+      - name: BOV und Schubknallen parallel freigeben
         shell: bash
         run: |
-          echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgpwYXRoID0gUGF0aCgidm9sdHVuZS1kZXYvanMvYXVkaW8uanMiKQp0ZXh0ID0gcGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKCmRlZiByZXBsYWNlX29uY2Uob2xkLCBuZXcsIGxhYmVsKToKICAgIGdsb2JhbCB0ZXh0CiAgICBjb3VudCA9IHRleHQuY291bnQob2xkKQogICAgaWYgY291bnQgIT0gMToKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KGYie2xhYmVsfTogZXJ3YXJ0ZXQgMSBUcmVmZmVyLCBnZWZ1bmRlbiB7Y291bnR9IikKICAgIHRleHQgPSB0ZXh0LnJlcGxhY2Uob2xkLCBuZXcsIDEpCgpyZXBsYWNlX29uY2UoCiIiImZ1bmN0aW9uIHRyaWdnZXJPdmVycnVuKAogIGludGVuc2l0eSA9IDEsCiAgdm9sdW1lUGVyY2VudCA9IDUwLAogIGZyb21RdWV1ZSA9IGZhbHNlLAogIGRyaXZpbmdTdHlsZSA9IDAKKSB7IiIiLAoiIiJmdW5jdGlvbiB0cmlnZ2VyT3ZlcnJ1bigKICBpbnRlbnNpdHkgPSAxLAogIHZvbHVtZVBlcmNlbnQgPSA1MCwKICBmcm9tUXVldWUgPSBmYWxzZSwKICBkcml2aW5nU3R5bGUgPSAwLAogIGltbWVkaWF0ZSA9IGZhbHNlCikgeyIiIiwKICAgICJ0cmlnZ2VyT3ZlcnJ1biBTaWduYXR1ciIKKQoKcmVwbGFjZV9vbmNlKAogICAgIiAgaWYgKCFmcm9tUXVldWUpIHsiLAogICAgIiAgaWYgKCFmcm9tUXVldWUgJiYgIWltbWVkaWF0ZSkgeyIsCiAgICAiRFNHLVdhcnRlc2NobGFuZ2Ugb3B0aW9uYWwgdW1nZWhlbiIKKQoKb2xkX2Jsb2NrID0gIiIiY29uc3QgYm92UmVsZWFzZSA9CiAgYm92QXJtZWQgJiYKICBib3ZQcmVzc3VyZSA+IHJlbGVhc2VQcmVzc3VyZSAmJgogICgKICAgIC8vIERpZSBzdGFya2UgQmVzY2hsZXVuaWd1bmdzcGhhc2UgaXN0IHZvcmJlaS4KICAgIC8vIERhcyBGYWhyemV1ZyBkYXJmIGRhYmVpIG5vY2ggbGVpY2h0IHdlaXRlcmJlc2NobGV1bmlnZW4uCiAgICAoCiAgICAgIHBlYWtBY2NlbERyb3AgPiBwZWFrRHJvcE5lZWRlZCAmJgogICAgICAoCiAgICAgICAgYWNjZWwgPCByZWxlYXNlQWNjZWwgfHwKICAgICAgICByZWxhdGl2ZUxvYWREcm9wCiAgICAgICkKICAgICkgfHwKCiAgICAvLyBTY2huZWxsZXMgTHVwZmVuIGRpcmVrdCBlcmtlbm5lbi4KICAgICgKICAgICAgbGFzdEFjY2VsID4gYWJydXB0TGFzdEFjY2VsICYmCiAgICAgIGFjY2VsRHJvcCA+IGFicnVwdEFjY2VsRHJvcAogICAgKQogICk7CgppZiAoYm92UmVsZWFzZSkgewogIGNvbnN0IGJvdkludGVuc2l0eSA9CiAgICBjbGFtcCgKICAgICAgTWF0aC5wb3coCiAgICAgICAgYm92UHJlc3N1cmUsCiAgICAgICAgMS43CiAgICAgICksCiAgICAgIDAuMDEsCiAgICAgIDEKICAgICk7CgogIHRyaWdnZXJCb3YoCiAgICBib3ZJbnRlbnNpdHksCiAgICBzZXR0aW5ncy5ib3ZWb2x1bWUsCiAgICBzZXR0aW5ncy5lYXN5Qm92RW5hYmxlZAogICAgICA/IDcwMAogICAgICA6IDkwMAogICk7CgogIHRyaWdnZXJUdXJib0ZsdXR0ZXIoCiAgICBib3ZJbnRlbnNpdHksCiAgICBzZXR0aW5ncy5mbHV0dGVyVm9sdW1lCiAgKTsKICAKICAvLyBFaW4gQk9WIGVudGxlZXJ0IGRlbiB2aXJ0dWVsbGVuIERydWNrCiAgLy8gdm9sbHN0w6RuZGlnLgogIGJvdlByZXNzdXJlID0gMDsKICBib3ZBcm1lZCA9IGZhbHNlOwogIGJvdlBlYWtBY2NlbCA9IDA7Cn0KCi8vID09PT09PT09PT09PT09PT09PT09PT09PQovLyBTY2h1YmtuYWxsZW4gYXVzbMO2c2VuCi8vID09PT09PT09PT09PT09PT09PT09PT09PQoKY29uc3Qgb3ZlcnJ1bkRyb3AgPQogIG92ZXJydW5QZWFrQWNjZWwgLSBhY2NlbDsKCmNvbnN0IG92ZXJydW5SZWxlYXNlID0KICBvdmVycnVuQXJtZWQgJiYKICAoCiAgICAvLyBEZXV0bGljaGVzIEx1cGZlbiBuYWNoIHN0w6Rya2VyZXIgTGFzdC4KICAgICgKICAgICAgb3ZlcnJ1bkRyb3AgPgogICAgICAgIG92ZXJydW5UcmlnZ2VyRHJvcCAmJgogICAgICBhY2NlbCA8IDAuNDUKICAgICkgfHwKCiAgICAvLyBTZWhyIHNjaG5lbGxlIExhc3R3ZWduYWhtZSBkaXJla3QgZXJrZW5uZW4uCiAgICAoCiAgICAgIGxhc3RBY2NlbCA+CiAgICAgICAgb3ZlcnJ1bkFicnVwdExvYWQgJiYKICAgICAgYWNjZWxEcm9wID4KICAgICAgICBvdmVycnVuQWJydXB0RHJvcAogICAgKQogICk7CgppZiAoCiAgb3ZlcnJ1blJlbGVhc2UgJiYKICBub3dNcyAtIGxhc3RPdmVycnVuQXQgPgogICAgb3ZlcnJ1bkNvb2xkb3duCikgewogIGNvbnN0IG92ZXJydW5JbnRlbnNpdHkgPQogICAgY2xhbXAoCiAgICAgIChvdmVycnVuUGVha0FjY2VsIC0gMC44KSAvIDEuNywKICAgICAgMC4xNSwKICAgICAgMQogICAgKTsKCiAgdHJpZ2dlck92ZXJydW4oCiAgICBvdmVycnVuSW50ZW5zaXR5LAogICAgc2V0dGluZ3Mub3ZlcnJ1blZvbHVtZSwKICAgIGZhbHNlLAogICAgZHJpdmluZ1N0eWxlCiAgKTsKICBvdmVycnVuVHJpZ2dlcmVkID0gdHJ1ZTsKICBsYXN0T3ZlcnJ1bkF0ID0gbm93TXM7CgogIC8vIERpZSBnZXNwZWljaGVydGUgTGFzdCBpc3QgbmFjaCBlaW5lbQogIC8vIFNjaHVibGtuYWxsZW4gdmVyYnJhdWNodC4KICBvdmVycnVuUGVha0FjY2VsID0gMDsKICBvdmVycnVuQXJtZWQgPSBmYWxzZTsKfSIiIgoKbmV3X2Jsb2NrID0gIiIiY29uc3QgcmF3Qm92UmVsZWFzZSA9CiAgYm92QXJtZWQgJiYKICBib3ZQcmVzc3VyZSA+IHJlbGVhc2VQcmVzc3VyZSAmJgogICgKICAgIC8vIERpZSBzdGFya2UgQmVzY2hsZXVuaWd1bmdzcGhhc2UgaXN0IHZvcmJlaS4KICAgIC8vIERhcyBGYWhyemV1ZyBkYXJmIGRhYmVpIG5vY2ggbGVpY2h0IHdlaXRlcmJlc2NobGV1bmlnZW4uCiAgICAoCiAgICAgIHBlYWtBY2NlbERyb3AgPiBwZWFrRHJvcE5lZWRlZCAmJgogICAgICAoCiAgICAgICAgYWNjZWwgPCByZWxlYXNlQWNjZWwgfHwKICAgICAgICByZWxhdGl2ZUxvYWREcm9wCiAgICAgICkKICAgICkgfHwKCiAgICAvLyBTY2huZWxsZXMgTHVwZmVuIGRpcmVrdCBlcmtlbm5lbi4KICAgICgKICAgICAgbGFzdEFjY2VsID4gYWJydXB0TGFzdEFjY2VsICYmCiAgICAgIGFjY2VsRHJvcCA+IGFicnVwdEFjY2VsRHJvcAogICAgKQogICk7CgovLyA9PT09PT09PT09PT09PT09PT09PT09PT0KLy8gU2NodWJrbmFsbGVuIGF1c2zDtnNlbgovLyA9PT09PT09PT09PT09PT09PT09PT09PT0KCmNvbnN0IG92ZXJydW5Ecm9wID0KICBvdmVycnVuUGVha0FjY2VsIC0gYWNjZWw7Cgpjb25zdCByYXdPdmVycnVuUmVsZWFzZSA9CiAgb3ZlcnJ1bkFybWVkICYmCiAgKAogICAgLy8gRGV1dGxpY2hlcyBMdXBmZW4gbmFjaCBzdMOkcmtlcmVyIExhc3QuCiAgICAoCiAgICAgIG92ZXJydW5Ecm9wID4KICAgICAgICBvdmVycnVuVHJpZ2dlckRyb3AgJiYKICAgICAgYWNjZWwgPCAwLjQ1CiAgICApIHx8CgogICAgLy8gU2VociBzY2huZWxsZSBMYXN0d2VnbmFobWUgZGlyZWt0IGVya2VubmVuLgogICAgKAogICAgICBsYXN0QWNjZWwgPgogICAgICAgIG92ZXJydW5BYnJ1cHRMb2FkICYmCiAgICAgIGFjY2VsRHJvcCA+CiAgICAgICAgb3ZlcnJ1bkFicnVwdERyb3AKICAgICkKICApOwoKLy8gV2VubiBCT1YgdW5kIFNjaHVia25hbGxlbiBhdXMgZGVyc2VsYmVuIExhc3RwaGFzZQovLyBiZXJlaXRzdGVoZW4sIHNvbGxlbiBzaWUgbmljaHQgbWVociBuYWNoZWluYW5kZXIKLy8gbG9zbGF1ZmVuLiBTb2JhbGQgYmVpZGUgamV3ZWlsaWdlbiBSZWxlYXNlLUJlZGluZ3VuZ2VuCi8vIGVyZsO8bGx0IHNpbmQsIHdpcmQgZGVyc2VsYmUgTGFzdHdlY2hzZWwgZsO8ciBiZWlkZSBnZW51dHp0LgovLyBJc3QgbnVyIGVpbiBFZmZla3QgYWt0aXYvaMO2cmJhciwgYmxlaWJ0IGVyIHVuYWJow6RuZ2lnLgpjb25zdCBib3ZFZmZlY3RBdWRpYmxlID0KICBOdW1iZXIoc2V0dGluZ3MuYm92Vm9sdW1lKSA+IDAgfHwKICBOdW1iZXIoc2V0dGluZ3MuZmx1dHRlclZvbHVtZSkgPiAwOwoKY29uc3Qgb3ZlcnJ1bkVmZmVjdEF1ZGlibGUgPQogIE51bWJlcihzZXR0aW5ncy5vdmVycnVuVm9sdW1lKSA+IDA7Cgpjb25zdCBvdmVycnVuQ29vbGRvd25SZWFkeSA9CiAgbm93TXMgLSBsYXN0T3ZlcnJ1bkF0ID4KICAgIG92ZXJydW5Db29sZG93bjsKCmNvbnN0IGNvb3JkaW5hdGVSZWxlYXNlID0KICBib3ZBcm1lZCAmJgogIG92ZXJydW5Bcm1lZCAmJgogIGJvdkVmZmVjdEF1ZGlibGUgJiYKICBvdmVycnVuRWZmZWN0QXVkaWJsZSAmJgogIG92ZXJydW5Db29sZG93blJlYWR5OwoKY29uc3QgcmVsZWFzZVRvZ2V0aGVyID0KICBjb29yZGluYXRlUmVsZWFzZSAmJgogIHJhd0JvdlJlbGVhc2UgJiYKICByYXdPdmVycnVuUmVsZWFzZTsKCmNvbnN0IGJvdlJlbGVhc2UgPQogIGNvb3JkaW5hdGVSZWxlYXNlCiAgICA/IHJlbGVhc2VUb2dldGhlcgogICAgOiByYXdCb3ZSZWxlYXNlOwoKY29uc3Qgb3ZlcnJ1blJlbGVhc2UgPQogIGNvb3JkaW5hdGVSZWxlYXNlCiAgICA/IHJlbGVhc2VUb2dldGhlcgogICAgOiByYXdPdmVycnVuUmVsZWFzZTsKCmlmIChib3ZSZWxlYXNlKSB7CiAgY29uc3QgYm92SW50ZW5zaXR5ID0KICAgIGNsYW1wKAogICAgICBNYXRoLnBvdygKICAgICAgICBib3ZQcmVzc3VyZSwKICAgICAgICAxLjcKICAgICAgKSwKICAgICAgMC4wMSwKICAgICAgMQogICAgKTsKCiAgdHJpZ2dlckJvdigKICAgIGJvdkludGVuc2l0eSwKICAgIHNldHRpbmdzLmJvdlZvbHVtZSwKICAgIHNldHRpbmdzLmVhc3lCb3ZFbmFibGVkCiAgICAgID8gNzAwCiAgICAgIDogOTAwCiAgKTsKCiAgdHJpZ2dlclR1cmJvRmx1dHRlcigKICAgIGJvdkludGVuc2l0eSwKICAgIHNldHRpbmdzLmZsdXR0ZXJWb2x1bWUKICApOwogIAogIC8vIEVpbiBCT1YgZW50bGVlcnQgZGVuIHZpcnR1ZWxsZW4gRHJ1Y2sKICAvLyB2b2xsc3TDpG5kaWcuCiAgYm92UHJlc3N1cmUgPSAwOwogIGJvdkFybWVkID0gZmFsc2U7CiAgYm92UGVha0FjY2VsID0gMDsKfQoKaWYgKAogIG92ZXJydW5SZWxlYXNlICYmCiAgb3ZlcnJ1bkNvb2xkb3duUmVhZHkKKSB7CiAgY29uc3Qgb3ZlcnJ1bkludGVuc2l0eSA9CiAgICBjbGFtcCgKICAgICAgKG92ZXJydW5QZWFrQWNjZWwgLSAwLjgpIC8gMS43LAogICAgICAwLjE1LAogICAgICAxCiAgICApOwoKICB0cmlnZ2VyT3ZlcnJ1bigKICAgIG92ZXJydW5JbnRlbnNpdHksCiAgICBzZXR0aW5ncy5vdmVycnVuVm9sdW1lLAogICAgZmFsc2UsCiAgICBkcml2aW5nU3R5bGUsCiAgICByZWxlYXNlVG9nZXRoZXIKICApOwogIG92ZXJydW5UcmlnZ2VyZWQgPSB0cnVlOwogIGxhc3RPdmVycnVuQXQgPSBub3dNczsKCiAgLy8gRGllIGdlc3BlaWNoZXJ0ZSBMYXN0IGlzdCBuYWNoIGVpbmVtCiAgLy8gU2NodWJrbmFsbGVuIHZlcmJyYXVjaHQuCiAgb3ZlcnJ1blBlYWtBY2NlbCA9IDA7CiAgb3ZlcnJ1bkFybWVkID0gZmFsc2U7Cn0iIiIKCnJlcGxhY2Vfb25jZShvbGRfYmxvY2ssIG5ld19ibG9jaywgIkJPVi9TY2h1YmtuYWxsIFJlbGVhc2UtS29vcmRpbmF0aW9uIikKcGF0aC53cml0ZV90ZXh0KHRleHQsIGVuY29kaW5nPSJ1dGYtOCIpCg==' | base64 -d > /tmp/voltune_patch.py
-          python3 /tmp/voltune_patch.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('voltune-dev/js/audio.js')
+          text = path.read_text(encoding='utf-8')
+
+          needle = '''  triggerTurboFlutter(
+            bovIntensity,
+            settings.flutterVolume
+          );'''
+
+          replacement = '''  triggerTurboFlutter(
+            bovIntensity,
+            settings.flutterVolume
+          );
+
+          // BOV und Schubknallen dürfen wieder gleichzeitig
+          // aus derselben Lastphase starten. Sobald das BOV
+          // entlädt und das Schubknallen bereits vorbereitet ist,
+          // startet der Overrun ohne den sonstigen 25-ms-Puffer.
+          // Eine bereits laufende DSG-Sequenz behält über
+          // shiftBurbleUntil weiterhin ihre Priorität.
+          if (
+            overrunArmed &&
+            Number(settings.overrunVolume) > 0 &&
+            nowMs - lastOverrunAt > overrunCooldown
+          ) {
+            const simultaneousOverrunIntensity =
+              clamp(
+                (overrunPeakAccel - 0.8) / 1.7,
+                0.15,
+                1
+              );
+
+            triggerOverrun(
+              simultaneousOverrunIntensity,
+              settings.overrunVolume,
+              true,
+              drivingStyle
+            );
+
+            overrunTriggered = true;
+            lastOverrunAt = nowMs;
+            overrunPeakAccel = 0;
+            overrunArmed = false;
+          }'''
+
+          count = text.count(needle)
+          if count != 1:
+              raise SystemExit(f'BOV-Automatik: erwartet 1 Treffer, gefunden {count}')
+
+          text = text.replace(needle, replacement, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
 
       - name: JavaScript Syntax prüfen
         run: node --check voltune-dev/js/audio.js
@@ -31,5 +83,5 @@ jobs:
           git config user.name "Davegage-byte"
           git config user.email "74912940+Davegage-byte@users.noreply.github.com"
           git add voltune-dev/js/audio.js .github/workflows/voltune-bov-overrun-parallel-once.yml
-          git commit -m "BOV und Schubknallen wieder parallel auslösen" -m "BOV und Schubknallen werden bei einer gemeinsamen Lastwegnahme wieder zeitgleich freigegeben, sobald beide Effekte aus derselben Lastphase bereitstehen und ihre jeweiligen Auslösebedingungen erfüllt sind. Die unterschiedlichen Release-Schwellen führen dadurch nicht mehr zu einem künstlichen Nacheinander. Bei gemeinsamem Release umgeht das Schubknallen den 25-ms-Puffer und startet direkt mit dem BOV; die bestehende DSG-Priorität über shiftBurbleUntil bleibt erhalten. Ist nur einer der beiden Effekte aktiv, hörbar oder auslösebereit, arbeitet er weiterhin unabhängig. Klang, Lautstärken und Empfindlichkeitsschwellen bleiben unverändert. JavaScript-Syntax mit node --check geprüft."
+          git commit -m "BOV und Schubknallen wieder parallel auslösen" -m "BOV und Schubknallen dürfen bei derselben Lastwegnahme wieder gleichzeitig starten. Sobald das BOV auslöst und das Schubknallen aus derselben Lastphase bereits vorbereitet ist, wird der Overrun direkt ohne den sonstigen 25-ms-Puffer gestartet. Eine bereits laufende DSG-Sequenz behält über shiftBurbleUntil weiterhin Priorität. Klang, Lautstärken, Trigger-Schwellen und die übrige Soundlogik bleiben unverändert. JavaScript-Syntax mit node --check geprüft."
           git push
