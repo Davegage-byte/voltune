@@ -4000,6 +4000,37 @@ if (bovRelease) {
     bovIntensity,
     settings.flutterVolume
   );
+
+  // BOV und Schubknallen dürfen wieder gleichzeitig
+  // aus derselben Lastphase starten. Sobald das BOV
+  // entlädt und das Schubknallen bereits vorbereitet ist,
+  // startet der Overrun ohne den sonstigen 25-ms-Puffer.
+  // Eine bereits laufende DSG-Sequenz behält über
+  // shiftBurbleUntil weiterhin ihre Priorität.
+  if (
+    overrunArmed &&
+    Number(settings.overrunVolume) > 0 &&
+    nowMs - lastOverrunAt > overrunCooldown
+  ) {
+    const simultaneousOverrunIntensity =
+      clamp(
+        (overrunPeakAccel - 0.8) / 1.7,
+        0.15,
+        1
+      );
+
+    triggerOverrun(
+      simultaneousOverrunIntensity,
+      settings.overrunVolume,
+      true,
+      drivingStyle
+    );
+
+    overrunTriggered = true;
+    lastOverrunAt = nowMs;
+    overrunPeakAccel = 0;
+    overrunArmed = false;
+  }
   
   // Ein BOV entleert den virtuellen Druck
   // vollständig.
