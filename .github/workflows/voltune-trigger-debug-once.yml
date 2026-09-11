@@ -1,0 +1,112 @@
+name: Voltune Trigger Debug Once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/voltune-trigger-debug-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger-Debug erweitern
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: erwartet 1 Treffer, gefunden {count}')
+              return text.replace(old, new, 1)
+
+          # index.html: neuer kompakter Trigger-Debugblock
+          path = Path('voltune-dev/index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = '    <div class="gpsPanel debugOnly">\n      <div class="gpsItem"><span class="label">GPS-Status</span><b id="gpsStatus">nicht gestartet</b></div>'
+          panel = '''    <div class="gpsPanel debugOnly">\n      <div class="gpsItem"><span class="label">Trigger-Debug</span><b id="debugTriggerProfile">Normal</b></div>\n      <div class="gpsItem"><span class="label">Audio m/s²</span><b id="debugAudioAccel">0.00 m/s²</b></div>\n      <div class="gpsItem"><span class="label">Lastabfall</span><b id="debugAccelDrop">0.00 m/s²</b></div>\n      <div class="gpsItem"><span class="label">Letzter Effekt</span><b id="debugLastEffect">–</b></div>\n      <div class="gpsItem"><span class="label">BOV</span><b id="debugBovArmed">–</b></div>\n      <div class="gpsItem"><span class="label">BOV Peak</span><b id="debugBovPeak">0.00 m/s²</b></div>\n      <div class="gpsItem"><span class="label">Schubknall</span><b id="debugOverrunArmed">–</b></div>\n      <div class="gpsItem"><span class="label">Schub Peak</span><b id="debugOverrunPeak">0.00 m/s²</b></div>\n      <div class="gpsItem"><span class="label">Schub Load / Drop</span><b id="debugOverrunThreshold">0.00 / 0.00</b></div>\n    </div>\n\n'''
+          text = replace_once(text, marker, panel + marker, 'index Trigger-Panel')
+          path.write_text(text, encoding='utf-8')
+
+          # audio.js: interne Triggerzustände nur zusätzlich nach außen geben
+          path = Path('voltune-dev/js/audio.js')
+          text = path.read_text(encoding='utf-8')
+          text = replace_once(
+              text,
+              'let overrunTriggered = false;\n',
+              'let overrunTriggered = false;\nlet bovTriggered = false;\n',
+              'audio bovTriggered Variable'
+          )
+          text = replace_once(
+              text,
+              'if (bovRelease) {\n  const bovIntensity =',
+              'if (bovRelease) {\n  bovTriggered = true;\n\n  const bovIntensity =',
+              'audio bovTriggered Set'
+          )
+          old_return = '''      bovPressurePercent:\n        Math.round(bovPressure * 100),\n      \n      overrunTriggered\n'''
+          new_return = '''      bovPressurePercent:\n        Math.round(bovPressure * 100),\n\n      bovTriggered,\n      bovArmed,\n      bovPeakAccel,\n\n      overrunTriggered,\n      overrunArmed,\n      overrunPeakAccel,\n\n      accelDrop,\n      overrunTriggerLoad,\n      overrunTriggerDrop,\n      easyBovEnabled: easyBov\n'''
+          text = replace_once(text, old_return, new_return, 'audio Debug Return')
+          path.write_text(text, encoding='utf-8')
+
+          # app.js: Debugfelder anbinden und live aktualisieren
+          path = Path('voltune-dev/js/app.js')
+          text = path.read_text(encoding='utf-8')
+          text = replace_once(
+              text,
+              '    bovPressureDisplay:$("bovPressureDisplay"),\n    gearDisplay:$("gearDisplay"),',
+              '    bovPressureDisplay:$("bovPressureDisplay"),\n    debugTriggerProfile:$("debugTriggerProfile"),\n    debugAudioAccel:$("debugAudioAccel"),\n    debugAccelDrop:$("debugAccelDrop"),\n    debugLastEffect:$("debugLastEffect"),\n    debugBovArmed:$("debugBovArmed"),\n    debugBovPeak:$("debugBovPeak"),\n    debugOverrunArmed:$("debugOverrunArmed"),\n    debugOverrunPeak:$("debugOverrunPeak"),\n    debugOverrunThreshold:$("debugOverrunThreshold"),\n    gearDisplay:$("gearDisplay"),',
+              'app UI Debug IDs'
+          )
+          text = replace_once(
+              text,
+              '  let soundActive = false;\n  let startupDriveModeClaimed = false;\n',
+              '  let soundActive = false;\n  let startupDriveModeClaimed = false;\n  let lastDebugEffect = "–";\n\n  function setLastDebugEffect(label) {\n    lastDebugEffect = label;\n\n    if (ui.debugLastEffect) {\n      ui.debugLastEffect.textContent = label;\n    }\n  }\n',
+              'app Debug Helper'
+          )
+          text = replace_once(
+              text,
+              '  VoltuneAudio.triggerShiftBurble(\n    shiftIntensity,\n    Number(ui.shiftBurble.value)\n  );\n',
+              '  VoltuneAudio.triggerShiftBurble(\n    shiftIntensity,\n    Number(ui.shiftBurble.value)\n  );\n\n  setLastDebugEffect("DSG-Furz");\n',
+              'app DSG Debug'
+          )
+          text = replace_once(
+              text,
+              '  VoltuneAudio.triggerDownshiftBlip(\n    blipIntensity,\n    blipVolume\n  );\n',
+              '  VoltuneAudio.triggerDownshiftBlip(\n    blipIntensity,\n    blipVolume\n  );\n\n  setLastDebugEffect("Rückschalt-Blip");\n',
+              'app Blip Debug'
+          )
+          old_state = '''  if (soundState) {\n    if (soundState.overrunTriggered) {\n      overrunFlashUntil =\n        performance.now() + 800;\n    }\n    ui.baseHz.textContent =\n'''
+          new_state = '''  if (soundState) {\n    if (\n      soundState.bovTriggered &&\n      soundState.overrunTriggered\n    ) {\n      setLastDebugEffect(\n        "BOV + Schubknallen"\n      );\n    } else if (soundState.bovTriggered) {\n      setLastDebugEffect("BOV");\n    } else if (soundState.overrunTriggered) {\n      setLastDebugEffect("Schubknallen");\n    }\n\n    if (soundState.overrunTriggered) {\n      overrunFlashUntil =\n        performance.now() + 800;\n    }\n\n    if (ui.debugTriggerProfile) {\n      ui.debugTriggerProfile.textContent =\n        soundState.easyBovEnabled\n          ? "EasyBOV"\n          : "Normal";\n\n      ui.debugAudioAccel.textContent =\n        `${Number(accel).toFixed(2)} m/s²`;\n\n      ui.debugAccelDrop.textContent =\n        `${Number(soundState.accelDrop).toFixed(2)} m/s²`;\n\n      ui.debugBovArmed.textContent =\n        soundState.bovArmed\n          ? "BEREIT"\n          : "–";\n\n      ui.debugBovArmed.className =\n        soundState.bovArmed\n          ? "okText"\n          : "";\n\n      ui.debugBovPeak.textContent =\n        `${Number(soundState.bovPeakAccel).toFixed(2)} m/s²`;\n\n      ui.debugOverrunArmed.textContent =\n        soundState.overrunArmed\n          ? "BEREIT"\n          : "–";\n\n      ui.debugOverrunArmed.className =\n        soundState.overrunArmed\n          ? "okText"\n          : "";\n\n      ui.debugOverrunPeak.textContent =\n        `${Number(soundState.overrunPeakAccel).toFixed(2)} m/s²`;\n\n      ui.debugOverrunThreshold.textContent =\n        `${Number(soundState.overrunTriggerLoad).toFixed(2)} / ${Number(soundState.overrunTriggerDrop).toFixed(2)}`;\n\n      ui.debugLastEffect.textContent =\n        lastDebugEffect;\n    }\n\n    ui.baseHz.textContent =\n'''
+          text = replace_once(text, old_state, new_state, 'app Soundstate Debug')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: JavaScript Syntax prüfen
+        run: |
+          node --check voltune-dev/js/audio.js
+          node --check voltune-dev/js/app.js
+
+      - name: Debug-Anbindung prüfen
+        shell: bash
+        run: |
+          grep -q 'id="debugBovArmed"' voltune-dev/index.html
+          grep -q 'id="debugOverrunArmed"' voltune-dev/index.html
+          grep -q 'bovTriggered' voltune-dev/js/audio.js
+          grep -q 'BOV + Schubknallen' voltune-dev/js/app.js
+          grep -q 'Schub Load / Drop' voltune-dev/index.html
+
+      - name: Commit und Cleanup
+        shell: bash
+        run: |
+          rm .github/workflows/voltune-trigger-debug-once.yml
+          git config user.name "Davegage-byte"
+          git config user.email "74912940+Davegage-byte@users.noreply.github.com"
+          git add voltune-dev/index.html voltune-dev/js/app.js voltune-dev/js/audio.js .github/workflows/voltune-trigger-debug-once.yml
+          git commit -m "Trigger-Debug für Soundeffekte erweitern" -m "Den Debug-Bereich um Live-Daten für die spätere Abstimmung im Fahrzeug erweitert. Angezeigt werden das tatsächlich an die Audioengine übergebene Beschleunigungssignal, Lastabfall, BOV- und Schubknall-Bereitschaft, jeweilige Lastpeaks, die aktuell wirksamen Schubknall-Schwellen sowie der zuletzt ausgelöste Effekt. Gleichzeitiges BOV und Schubknallen wird gemeinsam angezeigt; DSG-Furz und Rückschalt-Blip werden ebenfalls erfasst. Die Sound- und Triggerlogik selbst bleibt unverändert. JavaScript-Syntax von audio.js und app.js mit node --check geprüft."
+          git push
