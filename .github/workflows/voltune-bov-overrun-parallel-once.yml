@@ -24,52 +24,62 @@ jobs:
           path = Path('voltune-dev/js/audio.js')
           text = path.read_text(encoding='utf-8')
 
-          needle = '''  triggerTurboFlutter(
-            bovIntensity,
-            settings.flutterVolume
-          );'''
+          marker = "  triggerTurboFlutter("
+          positions = []
+          start = 0
+          while True:
+              pos = text.find(marker, start)
+              if pos < 0:
+                  break
+              positions.append(pos)
+              start = pos + len(marker)
 
-          replacement = '''  triggerTurboFlutter(
-            bovIntensity,
-            settings.flutterVolume
-          );
+          if len(positions) != 1:
+              raise SystemExit(f'triggerTurboFlutter-Aufruf: erwartet 1 Treffer, gefunden {len(positions)}')
 
-          // BOV und Schubknallen dürfen wieder gleichzeitig
-          // aus derselben Lastphase starten. Sobald das BOV
-          // entlädt und das Schubknallen bereits vorbereitet ist,
-          // startet der Overrun ohne den sonstigen 25-ms-Puffer.
-          // Eine bereits laufende DSG-Sequenz behält über
-          // shiftBurbleUntil weiterhin ihre Priorität.
-          if (
-            overrunArmed &&
-            Number(settings.overrunVolume) > 0 &&
-            nowMs - lastOverrunAt > overrunCooldown
-          ) {
-            const simultaneousOverrunIntensity =
-              clamp(
-                (overrunPeakAccel - 0.8) / 1.7,
-                0.15,
-                1
-              );
+          call_start = positions[0]
+          call_end = text.find("\n  );", call_start)
+          if call_end < 0:
+              raise SystemExit('Ende des triggerTurboFlutter-Aufrufs nicht gefunden')
 
-            triggerOverrun(
-              simultaneousOverrunIntensity,
-              settings.overrunVolume,
-              true,
-              drivingStyle
-            );
+          insert_at = call_end + len("\n  );")
 
-            overrunTriggered = true;
-            lastOverrunAt = nowMs;
-            overrunPeakAccel = 0;
-            overrunArmed = false;
-          }'''
+          insertion = (
+              "\n\n"
+              "  // BOV und Schubknallen dürfen wieder gleichzeitig\n"
+              "  // aus derselben Lastphase starten. Sobald das BOV\n"
+              "  // entlädt und das Schubknallen bereits vorbereitet ist,\n"
+              "  // startet der Overrun ohne den sonstigen 25-ms-Puffer.\n"
+              "  // Eine bereits laufende DSG-Sequenz behält über\n"
+              "  // shiftBurbleUntil weiterhin ihre Priorität.\n"
+              "  if (\n"
+              "    overrunArmed &&\n"
+              "    Number(settings.overrunVolume) > 0 &&\n"
+              "    nowMs - lastOverrunAt > overrunCooldown\n"
+              "  ) {\n"
+              "    const simultaneousOverrunIntensity =\n"
+              "      clamp(\n"
+              "        (overrunPeakAccel - 0.8) / 1.7,\n"
+              "        0.15,\n"
+              "        1\n"
+              "      );\n\n"
+              "    triggerOverrun(\n"
+              "      simultaneousOverrunIntensity,\n"
+              "      settings.overrunVolume,\n"
+              "      true,\n"
+              "      drivingStyle\n"
+              "    );\n\n"
+              "    overrunTriggered = true;\n"
+              "    lastOverrunAt = nowMs;\n"
+              "    overrunPeakAccel = 0;\n"
+              "    overrunArmed = false;\n"
+              "  }"
+          )
 
-          count = text.count(needle)
-          if count != 1:
-              raise SystemExit(f'BOV-Automatik: erwartet 1 Treffer, gefunden {count}')
+          if "simultaneousOverrunIntensity" in text:
+              raise SystemExit('Parallel-Logik ist bereits vorhanden')
 
-          text = text.replace(needle, replacement, 1)
+          text = text[:insert_at] + insertion + text[insert_at:]
           path.write_text(text, encoding='utf-8')
           PY
 
