@@ -82,6 +82,73 @@
   };
 
   // =========================
+  // Start-Button im Gang-Kästchen
+  // =========================
+
+  const gpsButtonHome =
+    ui.gps?.parentElement || null;
+
+  const gpsStartSlot =
+    $("gpsStartSlot");
+
+  const gpsGearBox =
+    gpsStartSlot?.closest(
+      ".driveHudGear"
+    ) || null;
+
+  let gpsButtonDocked = false;
+
+  function mountGpsStartButton() {
+    if (
+      !ui.gps ||
+      !gpsStartSlot ||
+      !gpsGearBox ||
+      gpsButtonDocked
+    ) {
+      return;
+    }
+
+    gpsGearBox.classList.add(
+      "startButtonPending"
+    );
+
+    gpsStartSlot.appendChild(
+      ui.gps
+    );
+  }
+
+  function dockGpsStartButton() {
+    if (
+      !ui.gps ||
+      !gpsButtonHome ||
+      gpsButtonDocked
+    ) {
+      return;
+    }
+
+    gpsButtonDocked = true;
+
+    gpsGearBox?.classList.remove(
+      "startButtonPending"
+    );
+
+    gpsButtonHome.insertBefore(
+      ui.gps,
+      ui.stop
+    );
+
+    ui.gps.classList.add(
+      "startButtonDocking"
+    );
+
+    window.setTimeout(() => {
+      ui.gps.classList.remove(
+        "startButtonDocking"
+      );
+    }, 240);
+  }
+
+  // =========================
 // Browser-Viewport Debug
 // =========================
 
@@ -3145,6 +3212,7 @@ ui.gps.addEventListener("click", async () => {
     ui.start.textContent =
       "Sound läuft · GPS";
 
+    dockGpsStartButton();
     setGpsButtonActive(true);
 
     ui.mute.textContent =
@@ -3169,6 +3237,7 @@ ui.gps.addEventListener("click", async () => {
     ui.start.textContent =
       "Sound läuft · GPS";
 
+    dockGpsStartButton();
     setGpsButtonActive(true);
 
     ui.mute.textContent =
@@ -3815,6 +3884,10 @@ renderVisual(
   "Bereit"
 );
   
+// Vor dem ersten Benutzerstart sitzt der
+// Start-Button direkt im Gang-Kästchen.
+mountGpsStartButton();
+
   VoltuneStartup.finish(
     animationsEnabled
 );

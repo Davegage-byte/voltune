@@ -564,43 +564,49 @@ body.debugActive .meter.debugOnly{
 }
 
 /* Zentraler Start-Button
-   Vor dem ersten Start liegt er groß über der Ganganzeige.
-   Sobald GPS/Audio aktiv ist, fällt die absolute Positionierung weg
-   und derselbe Button steht wieder an seiner normalen Stelle über STOP. */
+   Vor dem ersten Benutzerstart sitzt derselbe Button
+   direkt als Inhalt im Gang-Kästchen. Dadurch richtet
+   er sich automatisch nach dessen Breite auf Handy,
+   Tesla-Browser und Desktop. */
+
+.gpsStartSlot{
+  display:none;
+}
+
+.driveHudGear.startButtonPending{
+  padding:8px !important;
+}
+
+.driveHudGear.startButtonPending > .label,
+.driveHudGear.startButtonPending > #gearDisplay{
+  display:none;
+}
+
+.driveHudGear.startButtonPending > .gpsStartSlot{
+  display:flex;
+  width:100%;
+  min-height:72px;
+}
+
 #gps.mainStartButton{
-  position:absolute;
+  background:#123f36;
+  color:#dffff5;
 
-  top:11px;
-  left:11px;
+  border:
+    1px solid #236e5d;
 
-  width:148px;
-  height:112px;
-  min-height:0;
+  box-shadow:
+    0 0 10px
+    rgba(35,110,93,.24);
+}
 
-  z-index:25;
+.gpsStartSlot #gps.mainStartButton{
+  width:100%;
+  min-height:72px;
 
   padding:0 12px;
 
-  background:
-    linear-gradient(
-      145deg,
-      #1687df,
-      #145fa8
-    );
-
-  color:#ffffff;
-
-  border:
-    1px solid #6ac7ff;
-
   border-radius:10px;
-
-  box-shadow:
-    inset 0 0 18px
-    rgba(255,255,255,.08),
-
-    0 0 18px
-    rgba(77,163,255,.38);
 
   font-size:24px;
   font-weight:850;
@@ -608,34 +614,15 @@ body.debugActive .meter.debugOnly{
   letter-spacing:.08em;
   text-transform:uppercase;
 
-  transition:
-    opacity .18s ease,
-    transform .18s ease,
-    filter .12s ease,
-    background .18s ease,
-    border-color .18s ease,
-    box-shadow .18s ease;
+  box-shadow:
+    inset 0 0 16px
+    rgba(255,255,255,.045),
+
+    0 0 12px
+    rgba(35,110,93,.30);
 }
 
 #gps.mainStartButton.active{
-  position:static;
-
-  width:auto;
-  height:auto;
-  min-height:40px;
-
-  z-index:auto;
-
-  padding:1px 6px;
-
-  border-radius:11px;
-
-  font-size:inherit;
-  font-weight:750;
-
-  letter-spacing:normal;
-  text-transform:none;
-
   background:#176b4f;
   color:#effff9;
 
@@ -645,7 +632,9 @@ body.debugActive .meter.debugOnly{
   box-shadow:
     0 0 10px
     rgba(47,167,126,.28);
+}
 
+#gps.mainStartButton.startButtonDocking{
   animation:
     gpsStartDock .22s ease-out;
 }
@@ -654,7 +643,7 @@ body.debugActive .meter.debugOnly{
   from{
     opacity:0;
     transform:
-      translateY(-12px)
+      translateY(-10px)
       scale(.97);
   }
 
