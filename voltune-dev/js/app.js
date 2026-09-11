@@ -2853,6 +2853,9 @@ function updateControllerDrive(now) {
 
   ui.start.addEventListener("click", async () => {
     if (!await ensureVoltuneAudio()) return;
+
+    // Auch die Demo ist ein echter Startzustand.
+    dockGpsStartButton();
     
     VoltuneAudio.resetDrivingState();
 
