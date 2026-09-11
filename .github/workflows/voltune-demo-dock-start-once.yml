@@ -19,29 +19,13 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           path = Path('voltune-dev/js/app.js')
           text = path.read_text(encoding='utf-8')
-
-          old = '''  ui.start.addEventListener("click", async () => {
-    if (!await ensureVoltuneAudio()) return;
-    
-    VoltuneAudio.resetDrivingState();'''
-
-          new = '''  ui.start.addEventListener("click", async () => {
-    if (!await ensureVoltuneAudio()) return;
-
-    // Auch die Demo ist ein echter Startzustand:
-    // Den großen START aus der Ganganzeige entfernen
-    // und an seine normale Position zurücksetzen.
-    dockGpsStartButton();
-    
-    VoltuneAudio.resetDrivingState();'''
-
+          old = '  ui.start.addEventListener("click", async () => {\n    if (!await ensureVoltuneAudio()) return;\n    \n    VoltuneAudio.resetDrivingState();'
+          new = '  ui.start.addEventListener("click", async () => {\n    if (!await ensureVoltuneAudio()) return;\n\n    // Auch die Demo ist ein echter Startzustand.\n    dockGpsStartButton();\n    \n    VoltuneAudio.resetDrivingState();'
           count = text.count(old)
           if count != 1:
-              raise SystemExit(f'Demo-Start-Marker: erwartet 1 Treffer, gefunden {count}')
-
+              raise SystemExit(f'Demo-Start-Marker nicht eindeutig: {count}')
           path.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
 
