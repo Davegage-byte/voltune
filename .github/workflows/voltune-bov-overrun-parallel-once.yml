@@ -1,0 +1,321 @@
+name: Voltune BOV Overrun Parallel Once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/voltune-bov-overrun-parallel-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: BOV und Schubknallen koordinieren
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('voltune-dev/js/audio.js')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: erwartet 1 Treffer, gefunden {count}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              '''function triggerOverrun(
+  intensity = 1,
+  volumePercent = 50,
+  fromQueue = false,
+  drivingStyle = 0
+) {''',
+              '''function triggerOverrun(
+  intensity = 1,
+  volumePercent = 50,
+  fromQueue = false,
+  drivingStyle = 0,
+  immediate = false
+) {''',
+              'triggerOverrun Signatur'
+          )
+
+          replace_once(
+              '''  if (!fromQueue) {''',
+              '''  if (!fromQueue && !immediate) {''',
+              'DSG-Warteschlange optional umgehen'
+          )
+
+          old_block = '''const bovRelease =
+  bovArmed &&
+  bovPressure > releasePressure &&
+  (
+    // Die starke Beschleunigungsphase ist vorbei.
+    // Das Fahrzeug darf dabei noch leicht weiterbeschleunigen.
+    (
+      peakAccelDrop > peakDropNeeded &&
+      (
+        accel < releaseAccel ||
+        relativeLoadDrop
+      )
+    ) ||
+
+    // Schnelles Lupfen direkt erkennen.
+    (
+      lastAccel > abruptLastAccel &&
+      accelDrop > abruptAccelDrop
+    )
+  );
+
+if (bovRelease) {
+  const bovIntensity =
+    clamp(
+      Math.pow(
+        bovPressure,
+        1.7
+      ),
+      0.01,
+      1
+    );
+
+  triggerBov(
+    bovIntensity,
+    settings.bovVolume,
+    settings.easyBovEnabled
+      ? 700
+      : 900
+  );
+
+  triggerTurboFlutter(
+    bovIntensity,
+    settings.flutterVolume
+  );
+  
+  // Ein BOV entleert den virtuellen Druck
+  // vollständig.
+  bovPressure = 0;
+  bovArmed = false;
+  bovPeakAccel = 0;
+}
+
+// =========================
+// Schubknallen auslösen
+// =========================
+
+const overrunDrop =
+  overrunPeakAccel - accel;
+
+const overrunRelease =
+  overrunArmed &&
+  (
+    // Deutliches Lupfen nach stärkerer Last.
+    (
+      overrunDrop >
+        overrunTriggerDrop &&
+      accel < 0.45
+    ) ||
+
+    // Sehr schnelle Lastwegnahme direkt erkennen.
+    (
+      lastAccel >
+        overrunAbruptLoad &&
+      accelDrop >
+        overrunAbruptDrop
+    )
+  );
+
+if (
+  overrunRelease &&
+  nowMs - lastOverrunAt >
+    overrunCooldown
+) {
+  const overrunIntensity =
+    clamp(
+      (overrunPeakAccel - 0.8) / 1.7,
+      0.15,
+      1
+    );
+
+  triggerOverrun(
+    overrunIntensity,
+    settings.overrunVolume,
+    false,
+    drivingStyle
+  );
+  overrunTriggered = true;
+  lastOverrunAt = nowMs;
+
+  // Die gespeicherte Last ist nach einem
+  // Schubknallen verbraucht.
+  overrunPeakAccel = 0;
+  overrunArmed = false;
+}'''
+
+          new_block = '''const rawBovRelease =
+  bovArmed &&
+  bovPressure > releasePressure &&
+  (
+    // Die starke Beschleunigungsphase ist vorbei.
+    // Das Fahrzeug darf dabei noch leicht weiterbeschleunigen.
+    (
+      peakAccelDrop > peakDropNeeded &&
+      (
+        accel < releaseAccel ||
+        relativeLoadDrop
+      )
+    ) ||
+
+    // Schnelles Lupfen direkt erkennen.
+    (
+      lastAccel > abruptLastAccel &&
+      accelDrop > abruptAccelDrop
+    )
+  );
+
+// =========================
+// Schubknallen auslösen
+// =========================
+
+const overrunDrop =
+  overrunPeakAccel - accel;
+
+const rawOverrunRelease =
+  overrunArmed &&
+  (
+    // Deutliches Lupfen nach stärkerer Last.
+    (
+      overrunDrop >
+        overrunTriggerDrop &&
+      accel < 0.45
+    ) ||
+
+    // Sehr schnelle Lastwegnahme direkt erkennen.
+    (
+      lastAccel >
+        overrunAbruptLoad &&
+      accelDrop >
+        overrunAbruptDrop
+    )
+  );
+
+// Wenn BOV und Schubknallen aus derselben Lastphase
+// bereitstehen, sollen sie nicht mehr nacheinander
+// loslaufen. Sobald beide jeweiligen Release-Bedingungen
+// erfüllt sind, wird derselbe Lastwechsel für beide genutzt.
+// Ist nur ein Effekt aktiv/hörbar, bleibt er unabhängig.
+const bovEffectAudible =
+  Number(settings.bovVolume) > 0 ||
+  Number(settings.flutterVolume) > 0;
+
+const overrunEffectAudible =
+  Number(settings.overrunVolume) > 0;
+
+const overrunCooldownReady =
+  nowMs - lastOverrunAt >
+    overrunCooldown;
+
+const coordinateRelease =
+  bovArmed &&
+  overrunArmed &&
+  bovEffectAudible &&
+  overrunEffectAudible &&
+  overrunCooldownReady;
+
+const releaseTogether =
+  coordinateRelease &&
+  rawBovRelease &&
+  rawOverrunRelease;
+
+const bovRelease =
+  coordinateRelease
+    ? releaseTogether
+    : rawBovRelease;
+
+const overrunRelease =
+  coordinateRelease
+    ? releaseTogether
+    : rawOverrunRelease;
+
+if (bovRelease) {
+  const bovIntensity =
+    clamp(
+      Math.pow(
+        bovPressure,
+        1.7
+      ),
+      0.01,
+      1
+    );
+
+  triggerBov(
+    bovIntensity,
+    settings.bovVolume,
+    settings.easyBovEnabled
+      ? 700
+      : 900
+  );
+
+  triggerTurboFlutter(
+    bovIntensity,
+    settings.flutterVolume
+  );
+  
+  // Ein BOV entleert den virtuellen Druck
+  // vollständig.
+  bovPressure = 0;
+  bovArmed = false;
+  bovPeakAccel = 0;
+}
+
+if (
+  overrunRelease &&
+  overrunCooldownReady
+) {
+  const overrunIntensity =
+    clamp(
+      (overrunPeakAccel - 0.8) / 1.7,
+      0.15,
+      1
+    );
+
+  triggerOverrun(
+    overrunIntensity,
+    settings.overrunVolume,
+    false,
+    drivingStyle,
+    releaseTogether
+  );
+  overrunTriggered = true;
+  lastOverrunAt = nowMs;
+
+  // Die gespeicherte Last ist nach einem
+  // Schubknallen verbraucht.
+  overrunPeakAccel = 0;
+  overrunArmed = false;
+}'''
+
+          replace_once(old_block, new_block, 'BOV/Schubknall Release-Koordination')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: JavaScript Syntax prüfen
+        run: node --check voltune-dev/js/audio.js
+
+      - name: Änderung committen und One-Shot-Workflow entfernen
+        shell: bash
+        run: |
+          rm .github/workflows/voltune-bov-overrun-parallel-once.yml
+          git config user.name "Davegage-byte"
+          git config user.email "74912940+Davegage-byte@users.noreply.github.com"
+          git add voltune-dev/js/audio.js .github/workflows/voltune-bov-overrun-parallel-once.yml
+          git commit -m "BOV und Schubknallen wieder parallel auslösen" -m "BOV und Schubknallen werden bei einer gemeinsamen Lastwegnahme wieder zeitgleich freigegeben, sobald beide Effekte aus derselben Lastphase bereitstehen und ihre jeweiligen Auslösebedingungen erfüllt sind. Die unterschiedlichen Release-Schwellen führen dadurch nicht mehr zu einem künstlichen Nacheinander. Bei gemeinsamem Release umgeht das Schubknallen den 25-ms-Puffer und startet direkt mit dem BOV; die bestehende DSG-Priorität über shiftBurbleUntil bleibt erhalten. Ist nur einer der beiden Effekte aktiv, hörbar oder auslösebereit, arbeitet er weiterhin unabhängig. Klang, Lautstärken und Empfindlichkeitsschwellen bleiben unverändert. JavaScript-Syntax mit node --check geprüft."
+          git push
