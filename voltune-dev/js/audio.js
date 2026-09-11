@@ -26,12 +26,14 @@ window.VoltuneAudio = (() => {
   let base1, base2, sub;
   let baseGain1, baseGain2, subGain, baseFilter;
 
-  let idle1, idle2;
-  let idleGain, idle2Gain, idleFilter;
+  let idle1, idle2, idle3;
+  let idleGain, idle2Gain, idle3Gain;
+  let idleHighpass, idleFilter;
   
   let idlePulseOsc, idlePulseDepth, idlePulseGain;
   let idleDriftOsc, idleDriftDepth;
   let idleToneOsc, idleToneDepth;
+  let idlePitchDepth1, idlePitchDepth2, idlePitchDepth3;
 
   let inv1, inv2, inv3;
   let invGain1, invGain2, invGain3, invFilter;
@@ -512,14 +514,16 @@ async function setOverrunSound(
     // Stillstand / Idle
     // =========================
     
-    // Zwei eng benachbarte Frequenzen.
-    // Durch ihre Überlagerung entsteht
-    // ein langsames rhythmisches Wummern.
+    // Drei bewusst nicht oktavierte Ebenen:
+    // ein ruhiger Körper, elektrische Textur
+    // und ein leiser Präsenzton.
     idle1 = createOsc("sine");
     idle2 = createOsc("triangle");
+    idle3 = createOsc("sine");
     
-    idle1.frequency.value = 36;
-    idle2.frequency.value = 72;
+    idle1.frequency.value = 61;
+    idle2.frequency.value = 146;
+    idle3.frequency.value = 289;
     
     idleGain =
       ctx.createGain();
@@ -528,34 +532,54 @@ async function setOverrunSound(
       0.0001;
 
     idle2Gain = ctx.createGain();
-    idle2Gain.gain.value = 0.22;
+    idle2Gain.gain.value = 0.14;
 
+    idle3Gain = ctx.createGain();
+    idle3Gain.gain.value = 0.035;
+
+    // Nur eine ruhige Atembewegung statt
+    // des bisherigen deutlichen Wummerns.
     idlePulseGain = ctx.createGain();
-    idlePulseGain.gain.value = 0.82;
+    idlePulseGain.gain.value = 0.94;
     
     idlePulseOsc = createOsc("sine");
-    idlePulseOsc.frequency.value = 2.20;
+    idlePulseOsc.frequency.value = 0.86;
     
     idlePulseDepth = ctx.createGain();
-    idlePulseDepth.gain.value = 0.18;
+    idlePulseDepth.gain.value = 0.055;
     
     idlePulseOsc
       .connect(idlePulseDepth)
       .connect(idlePulseGain.gain);
 
-    // Sehr langsames Wandern der Pulsrate.
-    // Dadurch wirkt der Idle weniger synthetisch
-    // und nicht wie ein perfektes Metronom.
+    // Die Pulsrate wandert langsam, damit kein
+    // kurzer, ständig wiederholter Zyklus auffällt.
     idleDriftOsc = createOsc("sine");
-    idleDriftOsc.frequency.value = 0.17;
+    idleDriftOsc.frequency.value = 0.11;
     
     idleDriftDepth = ctx.createGain();
-    idleDriftDepth.gain.value = 0.18;
+    idleDriftDepth.gain.value = 0.22;
     
     idleDriftOsc
       .connect(idleDriftDepth)
       .connect(idlePulseOsc.frequency);
 
+    // Tiefbass und Resonanzen unterhalb des
+    // eigentlichen Klangkörpers abschwächen.
+    idleHighpass =
+      ctx.createBiquadFilter();
+
+    idleHighpass.type =
+      "highpass";
+
+    idleHighpass.frequency.value =
+      48;
+
+    idleHighpass.Q.value =
+      0.55;
+
+    // Genug Bandbreite für die elektrische Ebene,
+    // ohne den Idle scharf oder zischelig zu machen.
     idleFilter =
       ctx.createBiquadFilter();
     
@@ -563,31 +587,59 @@ async function setOverrunSound(
       "lowpass";
     
     idleFilter.frequency.value =
-      180;
+      480;
     
     idleFilter.Q.value =
-      0.7;
+      0.55;
 
-        // Sehr langsame Bewegung der Klangfarbe.
-        // Der Idle wird dadurch etwas lebendiger,
-        // ohne dass man einen eigenen Effekt heraushört.
-        idleToneOsc = createOsc("sine");
-        idleToneOsc.frequency.value = 0.09;
-        
-        idleToneDepth = ctx.createGain();
-        idleToneDepth.gain.value = 18;
-        
-        idleToneOsc
-          .connect(idleToneDepth)
-          .connect(idleFilter.frequency);
+    // Sehr langsame Bewegung der Klangfarbe und
+    // wenige Cent gegenläufige Tonhöhendrift.
+    // Die Ebenen bleiben stabil, wirken aber
+    // nicht wie starre Testoszillatoren.
+    idleToneOsc = createOsc("sine");
+    idleToneOsc.frequency.value = 0.073;
+    
+    idleToneDepth = ctx.createGain();
+    idleToneDepth.gain.value = 55;
+
+    idlePitchDepth1 = ctx.createGain();
+    idlePitchDepth1.gain.value = 3;
+
+    idlePitchDepth2 = ctx.createGain();
+    idlePitchDepth2.gain.value = -5;
+
+    idlePitchDepth3 = ctx.createGain();
+    idlePitchDepth3.gain.value = 7;
+    
+    idleToneOsc
+      .connect(idleToneDepth)
+      .connect(idleFilter.frequency);
+
+    idleToneOsc
+      .connect(idlePitchDepth1)
+      .connect(idle1.detune);
+
+    idleToneOsc
+      .connect(idlePitchDepth2)
+      .connect(idle2.detune);
+
+    idleToneOsc
+      .connect(idlePitchDepth3)
+      .connect(idle3.detune);
     
     idle1
-      .connect(idleGain)
-      .connect(idleFilter);
+      .connect(idleGain);
     
     idle2
       .connect(idle2Gain)
-      .connect(idleGain)
+      .connect(idleGain);
+
+    idle3
+      .connect(idle3Gain)
+      .connect(idleGain);
+
+    idleGain
+      .connect(idleHighpass)
       .connect(idleFilter);
     
     idleFilter
@@ -792,6 +844,7 @@ async function setOverrunSound(
       sub,
       idle1,
       idle2,
+      idle3,
       idlePulseOsc,
       idleDriftOsc,
       idleToneOsc,
@@ -3386,7 +3439,7 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       idleGain.gain,
       baseAmount *
         idleMix *
-        0.060,
+        0.052,
       0.12
     );
 
