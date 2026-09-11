@@ -90,8 +90,8 @@ s = one(
 
 s = one(
     s,
-    '    dockGpsStartButton();\n    setGpsButtonActive(true);\n\n    ui.mute.textContent =',
-    '    dockGpsStartButton();\n    setGpsButtonActive(true);\n    setRunStatus(gpsHasRenderValue ? "active" : "waiting", gpsHasRenderValue ? "GPS AKTIV" : "GPS WARTET");\n\n    ui.mute.textContent =',
+    '  if (gpsActive) {\n    ui.start.textContent =\n      "Sound läuft · GPS";\n\n    dockGpsStartButton();\n    setGpsButtonActive(true);\n\n    ui.mute.textContent =',
+    '  if (gpsActive) {\n    ui.start.textContent =\n      "Sound läuft · GPS";\n\n    dockGpsStartButton();\n    setGpsButtonActive(true);\n    setRunStatus(gpsHasRenderValue ? "active" : "waiting", gpsHasRenderValue ? "GPS AKTIV" : "GPS WARTET");\n\n    ui.mute.textContent =',
     "gps existing",
 )
 
