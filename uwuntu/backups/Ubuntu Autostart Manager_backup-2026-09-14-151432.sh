@@ -46,7 +46,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026091402
+MANAGER_BUILD=2026091401
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -12600,7 +12600,6 @@ SSID="Guest"
 TAG="uwuntu-wifi-selfheal"
 LOG="/var/log/uwuntu-wifi-selfheal.log"
 LOCK="/run/uwuntu-wifi-selfheal.lock"
-PROFILE_OPTIMIZED_STAMP="/run/uwuntu-wifi-selfheal-profile-v1.1"
 RECREATE_STAMP="/run/uwuntu-wifi-selfheal-last-recreate"
 NM_RESTART_STAMP="/run/uwuntu-wifi-selfheal-last-nm-restart"
 
@@ -12755,9 +12754,7 @@ recreate_guest_profile() {
     delete_guest_profiles
 
     timeout 10s nmcli device wifi connect "$SSID" ifname "$iface" name "$PROFILE" >/dev/null 2>&1 || true
-    if optimize_guest_profiles; then
-        touch "$PROFILE_OPTIMIZED_STAMP" 2>/dev/null || true
-    fi
+    optimize_guest_profiles || true
 
     if guest_active; then
         log "Guest-Profil neu erstellt und erfolgreich verbunden."
@@ -12801,20 +12798,12 @@ main() {
         exit 0
     fi
 
-    # Profilparameter nur einmal pro Boot aktiv korrigieren. Der 5-Sekunden-
-    # Healthy-Check darf nicht ständig das NetworkManager-Profil neu schreiben.
-    if [[ ! -e "$PROFILE_OPTIMIZED_STAMP" ]]; then
-        if optimize_guest_profiles; then
-            touch "$PROFILE_OPTIMIZED_STAMP" 2>/dev/null || true
-            if guest_active; then
-                nm device reapply "$iface" >/dev/null 2>&1 || true
-            fi
-        fi
-    fi
+    # Einstellungen immer korrigieren, auch wenn Guest bereits verbunden ist.
+    optimize_guest_profiles || true
 
-    # Gesund: nur prüfen und sofort still beenden. So bleibt der schnelle
-    # Wiederholungstimer praktisch ohne Schreib-/Loglast.
     if guest_active; then
+        nm device reapply "$iface" >/dev/null 2>&1 || true
+        log "Guest ist bereits verbunden. Profil geprüft; keine Reparatur nötig."
         exit 0
     fi
 
@@ -12940,16 +12929,8 @@ UWUNTU_WIFI_SELFHEAL_TIMER_EOF
         return 1
     fi
 
-    if ! sudo systemctl enable uwuntu-wifi-selfheal.timer >/dev/null 2>&1; then
+    if ! sudo systemctl enable --now uwuntu-wifi-selfheal.timer; then
         echo "FEHLER: WLAN Self-Heal Timer konnte nicht aktiviert werden."
-        return 1
-    fi
-
-    # Wichtig bei Updates vom alten einmaligen 8-Sekunden-Timer: Ein bereits
-    # 'elapsed' Timer muss explizit neu gestartet werden, damit die neue
-    # Wiederholung mit OnUnitInactiveSec=5s sofort wirksam wird.
-    if ! sudo systemctl restart uwuntu-wifi-selfheal.timer; then
-        echo "FEHLER: WLAN Self-Heal Timer konnte nicht neu gestartet werden."
         return 1
     fi
 
