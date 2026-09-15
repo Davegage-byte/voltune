@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.73 + Wipe Auto v3.32 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.72 + Wipe Auto v3.32 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026091502
+MANAGER_BUILD=2026091501
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -6107,9 +6107,9 @@ def _valid_hdmi_edid(connector_dir):
 
     available_blocks = len(data) // 128
     declared_blocks = 1 + int(data[126])
-    if available_blocks < declared_blocks:
+    blocks_to_check = min(available_blocks, declared_blocks)
+    if blocks_to_check < 1:
         return False
-    blocks_to_check = declared_blocks
 
     for index in range(blocks_to_check):
         block = data[index * 128:(index + 1) * 128]
@@ -8229,14 +8229,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.73")
+        self.window.set_title("Hardware Check v4.5.72")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.73")
+        title_label = Gtk.Label(label="Hardware Check v4.5.72")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -9027,19 +9027,19 @@ class App(Gtk.Application):
         return False
 
     def refresh_hdmi_status(self):
-        state, detail = detect_hdmi()
-        if state == "connected":
-            self.hdmi_ever_connected = True
-            self.set_hdmi_status_ui("blue", detail, "HDMI")
-        elif state == "checking":
-            self.set_hdmi_status_ui("blue", "PRÜFE VERBINDUNG", "HDMI")
-        elif state == "error":
-            self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")
-        elif self.hdmi_ever_connected:
-            self.set_hdmi_status_ui("green", "GETESTET", "HDMI")
-        else:
-            self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")
-        return False
+    state, detail = detect_hdmi()
+    if state == "connected":
+        self.hdmi_ever_connected = True
+        self.set_hdmi_status_ui("blue", detail, "HDMI")
+    elif state == "checking":
+        self.set_hdmi_status_ui("blue", "PRÜFE VERBINDUNG", "HDMI")
+    elif state == "error":
+        self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")
+    elif self.hdmi_ever_connected:
+        self.set_hdmi_status_ui("green", "GETESTET", "HDMI")
+    else:
+        self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")
+    return False
 
     def poll_hdmi_status(self):
         if self.window is None:
