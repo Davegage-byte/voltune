@@ -105,18 +105,18 @@ jobs:
               if needle not in text:
                   raise SystemExit(f'Abbruch: erwartete HDMI-Zeile fehlt: {needle}')
 
-          # Den konkreten Klassenabschnitt separat kompilieren ist zuverlässiger als
-          # irgendeinen früheren Heredoc-Marker im großen Manager zu erwischen.
-          class_pos = text.find('class HardwareCheck')
-          if class_pos < 0:
-              raise SystemExit('Abbruch: HardwareCheck-Klasse nicht gefunden.')
-
+          # Exakt das Hardware-Check-Heredoc kompilieren, verankert am eindeutigen
+          # /tmp/hardware-check-Dateinamen statt an einem Klassennamen.
+          anchor = 'TMP_PY="$(mktemp /tmp/hardware-check.XXXXXX.py)"\n'
+          anchor_pos = text.find(anchor)
+          if anchor_pos < 0:
+              raise SystemExit('Abbruch: Hardware-Check-TMP_PY-Anker nicht gefunden.')
           marker = 'cat > "$TMP_PY" <<\'PY\'\n'
-          heredoc_start = text.rfind(marker, 0, class_pos)
+          heredoc_start = text.find(marker, anchor_pos)
           if heredoc_start < 0:
               raise SystemExit('Abbruch: Hardware-Check-Python-Heredoc nicht gefunden.')
           heredoc_start += len(marker)
-          heredoc_end = text.find('\nPY\n', class_pos)
+          heredoc_end = text.find('\nPY\n', heredoc_start)
           if heredoc_end < 0:
               raise SystemExit('Abbruch: Ende des Hardware-Check-Python-Heredocs nicht gefunden.')
           compile(text[heredoc_start:heredoc_end], '<hardware-check>', 'exec')
