@@ -264,7 +264,11 @@ jobs:
               r'def detect_hdmi\(\):\n.*?\n\ndef read_float\(path\):',
               re.S,
           )
-          text, detect_count = detect_pattern.subn(new_detect + '\n\ndef read_float(path):', text, count=1)
+          text, detect_count = detect_pattern.subn(
+              lambda _match: new_detect + '\n\ndef read_float(path):',
+              text,
+              count=1,
+          )
           if detect_count != 1:
               raise SystemExit(f'Abbruch: detect_hdmi-Block nicht eindeutig ersetzt ({detect_count}).')
 
@@ -289,7 +293,7 @@ jobs:
               re.S,
           )
           text, refresh_count = refresh_pattern.subn(
-              new_refresh + '\n    def poll_hdmi_status(self):',
+              lambda _match: new_refresh + '\n    def poll_hdmi_status(self):',
               text,
               count=1,
           )
