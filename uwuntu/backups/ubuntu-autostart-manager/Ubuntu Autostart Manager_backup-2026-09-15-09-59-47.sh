@@ -2,7 +2,7 @@
 set -u
 
 # ============================================================
-# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.72 + Wipe Auto v3.32 + Audio Test v1.20
+# Ubuntu / GNOME Autostart Manager + 4-Tile Diagnose-Kiosk + Network Check v2.28 + Hardware Check v4.5.71 + Wipe Auto v3.32 + Audio Test v1.20
 # ============================================================
 
 USER_AUTOSTART="$HOME/.config/autostart"
@@ -43,7 +43,7 @@ MANAGER_INSTALL_PATH="$BIN_DIR/Ubuntu Autostart Manager.sh"
 
 # Interne Buildnummer für den manuellen GitHub-Updater.
 # Verhindert, dass U versehentlich eine ältere GitHub-Fassung installiert.
-MANAGER_BUILD=2026091501
+MANAGER_BUILD=2026090905
 AUTO_MODE=0
 
 mkdir -p "$USER_AUTOSTART" "$BIN_DIR" "$APP_DIR" "$HOME/.config"
@@ -5836,7 +5836,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 
-from gi.repository import Gtk, Gdk, GLib, Pango, Gio
+from gi.repository import Gtk, Gdk, GLib, Pango
 import pyatspi
 from pathlib import Path
 import glob
@@ -6078,210 +6078,29 @@ def detect_secure_boot():
             pass
 
     return "orange", "SECURE BOOT AUS", "Secure Boot nicht aktiv/ermittelbar"
-def _normalize_display_connector(name):
-    """DRM- und Mutter-Namen vergleichbar machen (HDMI-A-1 -> HDMI-1)."""
-    value = str(name or "").strip().upper()
-    value = re.sub(r"^CARD\d+-", "", value)
-    return value.replace("HDMI-A-", "HDMI-")
-
-
-def _variant_value(value):
-    """GLib.Variant-Werte sicher in normale Python-Werte entpacken."""
-    try:
-        return value.unpack() if hasattr(value, "unpack") else value
-    except Exception:
-        return value
-
-
-def _valid_hdmi_edid(connector_dir):
-    """EDID-Header und Prüfsummen der vom Monitor gelieferten Blöcke prüfen."""
-    try:
-        data = (Path(connector_dir) / "edid").read_bytes()
-    except Exception:
-        return False
-
-    if len(data) < 128 or len(data) % 128 != 0:
-        return False
-    if data[:8] != b"\x00\xff\xff\xff\xff\xff\xff\x00":
-        return False
-
-    available_blocks = len(data) // 128
-    declared_blocks = 1 + int(data[126])
-    blocks_to_check = min(available_blocks, declared_blocks)
-    if blocks_to_check < 1:
-        return False
-
-    for index in range(blocks_to_check):
-        block = data[index * 128:(index + 1) * 128]
-        if sum(block) % 256 != 0:
-            return False
-    return True
-
-
-def _format_hdmi_mode(width, height, refresh):
-    try:
-        hz = int(round(float(refresh)))
-        return f"{int(width)}x{int(height)} · {hz}Hz"
-    except Exception:
-        return ""
-
-
-def _active_hdmi_mode_mutter(connector_name):
-    """Aktiven physischen Modus direkt aus GNOME Mutter lesen (Wayland-tauglich)."""
-    try:
-        bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
-        reply = bus.call_sync(
-            "org.gnome.Mutter.DisplayConfig",
-            "/org/gnome/Mutter/DisplayConfig",
-            "org.gnome.Mutter.DisplayConfig",
-            "GetCurrentState",
-            None,
-            None,
-            Gio.DBusCallFlags.NONE,
-            1200,
-            None,
-        )
-        _serial, monitors, _logical_monitors, _properties = reply.unpack()
-    except Exception:
-        return ""
-
-    wanted = _normalize_display_connector(connector_name)
-    for monitor in monitors:
-        try:
-            monitor_spec, modes, _monitor_properties = monitor
-            current_connector = monitor_spec[0]
-        except Exception:
-            continue
-
-        if _normalize_display_connector(current_connector) != wanted:
-            continue
-
-        for mode in modes:
-            try:
-                _mode_id, width, height, refresh, _preferred_scale, _supported_scales, mode_properties = mode
-                is_current = _variant_value(mode_properties.get("is-current", False))
-            except Exception:
-                continue
-
-            if bool(is_current):
-                return _format_hdmi_mode(width, height, refresh)
-
-    return ""
-
-
-def _active_hdmi_mode_xrandr(connector_name):
-    """Xorg-Fallback, falls Mutter nicht erreichbar ist."""
-    if not shutil.which("xrandr"):
-        return ""
-
-    try:
-        env = os.environ.copy()
-        env["LC_ALL"] = "C"
-        proc = subprocess.run(
-            ["xrandr", "--current"],
-            capture_output=True,
-            text=True,
-            timeout=2.0,
-            env=env,
-            check=False,
-        )
-    except Exception:
-        return ""
-
-    if proc.returncode != 0:
-        return ""
-
-    wanted = _normalize_display_connector(connector_name)
-    in_wanted_connector = False
-
-    for line in proc.stdout.splitlines():
-        if line and not line[0].isspace():
-            parts = line.split()
-            in_wanted_connector = (
-                len(parts) >= 2
-                and _normalize_display_connector(parts[0]) == wanted
-                and parts[1] == "connected"
-            )
-            continue
-
-        if not in_wanted_connector:
-            continue
-
-        match = re.match(r"\s+(\d+)x(\d+)(?:i)?\s+(.+)$", line)
-        if not match:
-            continue
-
-        width, height, rates = match.groups()
-        for token in rates.split():
-            if "*" not in token:
-                continue
-            rate_match = re.search(r"(\d+(?:\.\d+)?)", token)
-            if rate_match:
-                return _format_hdmi_mode(width, height, rate_match.group(1))
-
-    return ""
-
-
-def _active_hdmi_mode(connector_name):
-    return (
-        _active_hdmi_mode_mutter(connector_name)
-        or _active_hdmi_mode_xrandr(connector_name)
-    )
-
-
-def _hdmi_connected_problem(reason):
-    """Kurze Hotplug-Kulanz verhindert einen roten Blitz beim Einstecken."""
-    now = time.monotonic()
-    started = getattr(detect_hdmi, "_problem_since", None)
-    if started is None:
-        detect_hdmi._problem_since = now
-        return "checking", "PRÜFE VERBINDUNG"
-    if now - started < 2.0:
-        return "checking", "PRÜFE VERBINDUNG"
-    return "error", reason
-
-
 def detect_hdmi():
-    """HDMI über DRM, EDID und den tatsächlich aktiven Anzeigemodus prüfen."""
+    """DRM-HDMI-Status wie im getesteten Standalone-Test v1.1 lesen.
+
+    Rückgabe ist bewusst nur der aktuelle Hardwarezustand. Ob HDMI bereits
+    einmal verbunden war, merkt sich die App separat (hdmi_ever_connected).
+    """
     connectors = sorted(glob.glob("/sys/class/drm/*HDMI*/status"))
     if not connectors:
-        detect_hdmi._problem_since = None
         return "error", "Kein HDMI-Connector erkannt"
 
-    connected_paths = []
-    readable = 0
+    statuses = []
+    read_errors = 0
     for status_path in connectors:
         try:
-            with open(status_path, "r", encoding="utf-8") as handle:
-                status = handle.read().strip().lower()
-            readable += 1
+            with open(status_path, "r", encoding="utf-8") as f:
+                statuses.append(f.read().strip().lower())
         except OSError:
-            continue
+            read_errors += 1
 
-        if status == "connected":
-            connected_paths.append(status_path)
+    if any(status == "connected" for status in statuses):
+        return "connected", "HDMI verbunden"
 
-    if connected_paths:
-        problems = []
-        for status_path in connected_paths:
-            connector_dir = Path(status_path).parent
-            connector_name = connector_dir.name
-
-            if not _valid_hdmi_edid(connector_dir):
-                problems.append("HDMI verbunden, aber EDID ungültig")
-                continue
-
-            mode = _active_hdmi_mode(connector_name)
-            if mode:
-                detect_hdmi._problem_since = None
-                return "connected", mode
-
-            problems.append("HDMI verbunden, aber kein aktiver Anzeigemodus")
-
-        return _hdmi_connected_problem(problems[0])
-
-    detect_hdmi._problem_since = None
-    if readable == 0:
+    if read_errors == len(connectors):
         return "error", "HDMI-Status nicht lesbar"
 
     return "disconnected", "HDMI nicht verbunden"
@@ -8229,14 +8048,14 @@ class App(Gtk.Application):
             return
 
         self.window = Gtk.ApplicationWindow(application=self)
-        self.window.set_title("Hardware Check v4.5.72")
+        self.window.set_title("Hardware Check v4.5.71")
         self.window.set_default_size(860, 360)
 
         # Einheitliche Titelleiste wie Network/Wipe und Audio.
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(True)
 
-        title_label = Gtk.Label(label="Hardware Check v4.5.72")
+        title_label = Gtk.Label(label="Hardware Check v4.5.71")
         title_label.add_css_class("title")
         self.header_bar.set_title_widget(title_label)
 
@@ -9027,19 +8846,17 @@ class App(Gtk.Application):
         return False
 
     def refresh_hdmi_status(self):
-    state, detail = detect_hdmi()
-    if state == "connected":
-        self.hdmi_ever_connected = True
-        self.set_hdmi_status_ui("blue", detail, "HDMI")
-    elif state == "checking":
-        self.set_hdmi_status_ui("blue", "PRÜFE VERBINDUNG", "HDMI")
-    elif state == "error":
-        self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")
-    elif self.hdmi_ever_connected:
-        self.set_hdmi_status_ui("green", "GETESTET", "HDMI")
-    else:
-        self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")
-    return False
+        state, detail = detect_hdmi()
+        if state == "connected":
+            self.hdmi_ever_connected = True
+            self.set_hdmi_status_ui("blue", "VERBUNDEN", "HDMI")
+        elif state == "error":
+            self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")
+        elif self.hdmi_ever_connected:
+            self.set_hdmi_status_ui("green", "GETESTET", "HDMI")
+        else:
+            self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")
+        return False
 
     def poll_hdmi_status(self):
         if self.window is None:
