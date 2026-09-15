@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: HDMI-Statusblock korrigieren und streng prüfen
+      - name: HDMI-Fix deterministisch anwenden und prüfen
         shell: bash
         run: |
           set -euo pipefail
@@ -35,91 +35,66 @@ jobs:
           text = path.read_text(encoding='utf-8')
 
           if text.count('v4.5.72') != 3:
-              raise SystemExit(f'Abbruch: erwartet wurden 3 Vorkommen von v4.5.72, gefunden: {text.count("v4.5.72")}')
-          text = text.replace('v4.5.72', 'v4.5.73')
-
+              raise SystemExit(f'Abbruch: erwartet 3x v4.5.72, gefunden {text.count("v4.5.72")}')
           if text.count('MANAGER_BUILD=2026091501') != 1:
               raise SystemExit('Abbruch: unerwartete MANAGER_BUILD-Version.')
+
+          method_start = text.find('    def refresh_hdmi_status(self):\n')
+          method_end = text.find('\n    def poll_hdmi_status(self):', method_start)
+          if method_start < 0 or method_end < 0:
+              raise SystemExit('Abbruch: HDMI-Statusmethode nicht gefunden.')
+
+          replacement = (
+              '    def refresh_hdmi_status(self):\n'
+              '        state, detail = detect_hdmi()\n'
+              '        if state == "connected":\n'
+              '            self.hdmi_ever_connected = True\n'
+              '            self.set_hdmi_status_ui("blue", detail, "HDMI")\n'
+              '        elif state == "checking":\n'
+              '            self.set_hdmi_status_ui("blue", "PRÜFE VERBINDUNG", "HDMI")\n'
+              '        elif state == "error":\n'
+              '            self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")\n'
+              '        elif self.hdmi_ever_connected:\n'
+              '            self.set_hdmi_status_ui("green", "GETESTET", "HDMI")\n'
+              '        else:\n'
+              '            self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")\n'
+              '        return False\n'
+          )
+          text = text[:method_start] + replacement + text[method_end:]
+
+          old_edid = (
+              '    available_blocks = len(data) // 128\n'
+              '    declared_blocks = 1 + int(data[126])\n'
+              '    blocks_to_check = min(available_blocks, declared_blocks)\n'
+              '    if blocks_to_check < 1:\n'
+              '        return False\n'
+          )
+          new_edid = (
+              '    available_blocks = len(data) // 128\n'
+              '    declared_blocks = 1 + int(data[126])\n'
+              '    if available_blocks < declared_blocks:\n'
+              '        return False\n'
+              '    blocks_to_check = declared_blocks\n'
+          )
+          if text.count(old_edid) != 1:
+              raise SystemExit('Abbruch: erwarteter EDID-Block nicht eindeutig gefunden.')
+          text = text.replace(old_edid, new_edid, 1)
+
+          text = text.replace('v4.5.72', 'v4.5.73')
           text = text.replace('MANAGER_BUILD=2026091501', 'MANAGER_BUILD=2026091502', 1)
 
-          bad = '''    def refresh_hdmi_status(self):
-              state, detail = detect_hdmi()
-              if state == "connected":
-                  self.hdmi_ever_connected = True
-                  self.set_hdmi_status_ui("blue", detail, "HDMI")
-              elif state == "checking":
-                  self.set_hdmi_status_ui("blue", "PRÜFE VERBINDUNG", "HDMI")
-              elif state == "error":
-                  self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")
-              elif self.hdmi_ever_connected:
-                  self.set_hdmi_status_ui("green", "GETESTET", "HDMI")
-              else:
-                  self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")
-              return False
-          '''
-          # Der gepushte v4.5.72-Block besitzt nur 4 statt 8 Leerzeichen im Body.
-          bad = bad.replace('\n              ', '\n    ')
-
-          good = '''    def refresh_hdmi_status(self):
-                  state, detail = detect_hdmi()
-                  if state == "connected":
-                      self.hdmi_ever_connected = True
-                      self.set_hdmi_status_ui("blue", detail, "HDMI")
-                  elif state == "checking":
-                      self.set_hdmi_status_ui("blue", "PRÜFE VERBINDUNG", "HDMI")
-                  elif state == "error":
-                      self.set_hdmi_status_ui("red", "FEHLERHAFT", "HDMI")
-                  elif self.hdmi_ever_connected:
-                      self.set_hdmi_status_ui("green", "GETESTET", "HDMI")
-                  else:
-                      self.set_hdmi_status_ui("orange", "NICHT GETESTET", "HDMI")
-                  return False
-          '''
-          # YAML/Shell-Einrückung aus den Triple-Strings entfernen: def=4, Body=8.
-          good = '\n'.join(line[4:] if line.startswith('    ') else line for line in good.split('\n'))
-
-          if text.count(bad) != 1:
-              # Direkter Fallback auf den exakt im Repo vorhandenen Block.
-              start = text.find('    def refresh_hdmi_status(self):\n')
-              end = text.find('\n    def poll_hdmi_status(self):', start)
-              if start < 0 or end < 0:
-                  raise SystemExit('Abbruch: refresh_hdmi_status-Block nicht eindeutig gefunden.')
-              current = text[start:end]
-              lines = current.splitlines()
-              if not lines or lines[0] != '    def refresh_hdmi_status(self):':
-                  raise SystemExit('Abbruch: unerwarteter HDMI-Statusblock.')
-              fixed_lines = [lines[0]]
-              for line in lines[1:]:
-                  if line.startswith('    ') and not line.startswith('        '):
-                      fixed_lines.append('    ' + line)
-                  else:
-                      fixed_lines.append(line)
-              replacement = '\n'.join(fixed_lines)
-              text = text[:start] + replacement + text[end:]
-          else:
-              text = text.replace(bad, good, 1)
-
-          # EDID streng: angekündigte Erweiterungsblöcke müssen vollständig vorliegen.
-          old_edid = '''    available_blocks = len(data) // 128
-              declared_blocks = 1 + int(data[126])
-              blocks_to_check = min(available_blocks, declared_blocks)
-              if blocks_to_check < 1:
-                  return False
-          '''
-          old_edid = '\n'.join(line[4:] if line.startswith('    ') else line for line in old_edid.split('\n'))
-          new_edid = '''    available_blocks = len(data) // 128
-              declared_blocks = 1 + int(data[126])
-              if available_blocks < declared_blocks:
-                  return False
-              blocks_to_check = declared_blocks
-          '''
-          new_edid = '\n'.join(line[4:] if line.startswith('    ') else line for line in new_edid.split('\n'))
-          if text.count(old_edid) == 1:
-              text = text.replace(old_edid, new_edid, 1)
+          exact_method_prefix = (
+              '    def refresh_hdmi_status(self):\n'
+              '        state, detail = detect_hdmi()\n'
+              '        if state == "connected":\n'
+          )
+          if exact_method_prefix not in text:
+              raise SystemExit('Abbruch: finale HDMI-Methode ist nicht korrekt eingerückt.')
 
           required = [
               'from gi.repository import Gtk, Gdk, GLib, Pango, Gio',
               'return f"{int(width)}x{int(height)} · {hz}Hz"',
+              'if available_blocks < declared_blocks:',
               'problems.append("HDMI verbunden, aber EDID ungültig")',
               'problems.append("HDMI verbunden, aber kein aktiver Anzeigemodus")',
               'self.set_hdmi_status_ui("blue", detail, "HDMI")',
@@ -130,21 +105,21 @@ jobs:
               if needle not in text:
                   raise SystemExit(f'Abbruch: erwartete HDMI-Zeile fehlt: {needle}')
 
-          marker = 'cat > "$TMP_PY" <<\'PY\'\n'
-          start = text.find(marker)
-          if start < 0:
-              raise SystemExit('Abbruch: Hardware-Check-Heredoc nicht gefunden.')
-          start += len(marker)
-          end = text.find('\nPY\n', start)
-          if end < 0:
-              raise SystemExit('Abbruch: Ende des Hardware-Check-Heredocs nicht gefunden.')
-          source = text[start:end]
-          compile(source, '<hardware-check>', 'exec')
+          # Den konkreten Klassenabschnitt separat kompilieren ist zuverlässiger als
+          # irgendeinen früheren Heredoc-Marker im großen Manager zu erwischen.
+          class_pos = text.find('class HardwareCheck')
+          if class_pos < 0:
+              raise SystemExit('Abbruch: HardwareCheck-Klasse nicht gefunden.')
 
-          # Explizite Einrückungsprüfung für den finalen Methodenblock.
-          method = '    def refresh_hdmi_status(self):\n        state, detail = detect_hdmi()\n'
-          if method not in text:
-              raise SystemExit('Abbruch: refresh_hdmi_status ist final nicht korrekt eingerückt.')
+          marker = 'cat > "$TMP_PY" <<\'PY\'\n'
+          heredoc_start = text.rfind(marker, 0, class_pos)
+          if heredoc_start < 0:
+              raise SystemExit('Abbruch: Hardware-Check-Python-Heredoc nicht gefunden.')
+          heredoc_start += len(marker)
+          heredoc_end = text.find('\nPY\n', class_pos)
+          if heredoc_end < 0:
+              raise SystemExit('Abbruch: Ende des Hardware-Check-Python-Heredocs nicht gefunden.')
+          compile(text[heredoc_start:heredoc_end], '<hardware-check>', 'exec')
 
           path.write_text(text, encoding='utf-8')
           PY
@@ -157,5 +132,5 @@ jobs:
           git add "$TARGET" "$BACKUP"
           git commit \
             -m 'HDMI-Statusblock korrigieren' \
-            -m 'Ich habe die Einrückung des neuen HDMI-Statusblocks korrigiert und die EDID-Prüfung verschärft. Die blaue Anzeige mit Auflösung und Bildwiederholrate, die rote Fehlererkennung bei ungültiger EDID oder fehlendem aktivem Modus sowie das grüne GETESTET nach erfolgreichem Abziehen bleiben erhalten.'
+            -m 'Ich habe die Einrückung des HDMI-Statusblocks korrigiert und die EDID-Prüfung verschärft. Bei gültiger HDMI-Verbindung werden Auflösung und Bildwiederholrate blau angezeigt, bei ungültiger EDID oder fehlendem aktivem Modus wird FEHLERHAFT rot angezeigt und nach einem erfolgreichen Test bleibt das Ausstecken grün als GETESTET.'
           git push origin HEAD:main
