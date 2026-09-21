@@ -7,8 +7,8 @@
   }
 
   let enabled = false;
-  let mediaElement = null;
-  let mediaStream = null;
+  let keepaliveAudio = null;
+  let keepaliveUrl = null;
   let lastHeartbeatAt = performance.now();
   let maxHeartbeatGap = 0;
   let lastLifecycleState = "bereit";
@@ -88,7 +88,7 @@
     diagnostics.media =
       createDiagnosticRow(
         panel,
-        "Voltune Media Output"
+        "Tesla Audio Anchor"
       );
 
     diagnostics.visibility =
@@ -113,9 +113,9 @@
   function updateDiagnostics() {
     const mediaRunning =
       Boolean(
-        mediaElement &&
-        !mediaElement.paused &&
-        !mediaElement.ended
+        keepaliveAudio &&
+        !keepaliveAudio.paused &&
+        !keepaliveAudio.ended
       );
 
     if (diagnostics.state) {
@@ -214,7 +214,7 @@
             maxHeartbeatGap /
             1000
           ).toFixed(1)} s`
-        : "Experimentellen Tesla-Background-Modus aktivieren";
+        : "Tesla-Background mit echtem URL-Audio testen";
   }
 
   function numberValue(
@@ -561,159 +561,99 @@
       wrappedStart;
   }
 
-  function ensureMediaElement(
-    stream
-  ) {
-    if (!mediaElement) {
-      mediaElement =
-        document.createElement(
-          "audio"
-        );
+  const TESLA_AUDIO_ANCHOR_URL =
+    "sounds/overrun/Firecracker%201.mp3";
 
-      mediaElement.autoplay = false;
-      mediaElement.controls = false;
-      mediaElement.preload = "none";
-      mediaElement.muted = false;
-      mediaElement.volume = 1.0;
-
-      mediaElement.setAttribute(
-        "playsinline",
-        ""
-      );
-
-      mediaElement.setAttribute(
-        "aria-hidden",
-        "true"
-      );
-
-      // Ein echtes HTMLMediaElement soll
-      // den kompletten Voltune-Mix ausgeben.
-      // Nicht display:none setzen, damit
-      // Chromium das Element nicht unnötig
-      // als inaktiv behandelt.
-      Object.assign(
-        mediaElement.style,
-        {
-          position: "fixed",
-          right: "0",
-          bottom: "0",
-          width: "1px",
-          height: "1px",
-          opacity: "0.01",
-          pointerEvents: "none",
-          zIndex: "-1"
-        }
-      );
-
-      mediaElement.addEventListener(
-        "playing",
-        updateDiagnostics
-      );
-
-      mediaElement.addEventListener(
-        "pause",
-        updateDiagnostics
-      );
-
-      mediaElement.addEventListener(
-        "ended",
-        updateDiagnostics
-      );
-
-      mediaElement.addEventListener(
-        "error",
-        () => {
-          lastLifecycleState =
-            "Media-Fehler";
-
-          updateDiagnostics();
-        }
-      );
-
-      document.body.appendChild(
-        mediaElement
-      );
+  function ensureKeepaliveAudio() {
+    if (keepaliveAudio) {
+      return keepaliveAudio;
     }
 
-    if (
-      stream &&
-      mediaElement.srcObject !== stream
-    ) {
-      mediaElement.srcObject =
-        stream;
-    }
-
-    return mediaElement;
-  }
-
-  async function startVoltuneMediaBridge() {
-    if (
-      !window.VoltuneAudio ||
-      typeof VoltuneAudio.start !==
-        "function" ||
-      typeof VoltuneAudio.setMediaOutputEnabled !==
-        "function"
-    ) {
-      throw new Error(
-        "Voltune Media-Ausgang nicht verfügbar."
-      );
-    }
-
-    // Background darf auch vor GPS aktiviert
-    // werden. Durch den Button-Klick haben wir
-    // hier eine echte User-Gesture und können
-    // AudioContext + HTMLMediaElement gemeinsam
-    // freischalten.
-    await VoltuneAudio.start();
-    await VoltuneAudio.resume();
-
-    mediaStream =
-      VoltuneAudio.setMediaOutputEnabled(
-        true
+    keepaliveAudio =
+      document.createElement(
+        "audio"
       );
 
-    if (!mediaStream) {
-      VoltuneAudio.setMediaOutputEnabled(
-        false
-      );
+    // Wichtig für diesen Test:
+    // keine blob:-URL und kein MediaStream.
+    // Tesla bekommt eine ganz normale,
+    // same-origin MP3-Datei über HTTP/HTTPS.
+    keepaliveAudio.src =
+      TESLA_AUDIO_ANCHOR_URL;
 
-      throw new Error(
-        "MediaStream-Ausgang wird von diesem Browser nicht unterstützt."
-      );
-    }
+    keepaliveAudio.loop = true;
+    keepaliveAudio.preload = "auto";
+    keepaliveAudio.controls = true;
+    keepaliveAudio.autoplay = false;
 
-    const element =
-      ensureMediaElement(
-        mediaStream
-      );
+    // Nicht stumm schalten. Ein sehr kleiner,
+    // aber echter Pegel verhindert, dass der
+    // Browser das Medium als stumm behandelt.
+    keepaliveAudio.muted = false;
+    keepaliveAudio.volume = 0.001;
 
-    try {
-      await element.play();
-    } catch (error) {
-      VoltuneAudio.setMediaOutputEnabled(
-        false
-      );
+    keepaliveAudio.setAttribute(
+      "playsinline",
+      ""
+    );
 
-      throw error;
-    }
+    keepaliveAudio.setAttribute(
+      "aria-hidden",
+      "true"
+    );
 
-    return element;
-  }
+    // Im DOM lassen, aber praktisch unsichtbar.
+    // Nicht display:none, damit Chromium/Tesla
+    // ein echtes aktives Mediaelement sieht.
+    Object.assign(
+      keepaliveAudio.style,
+      {
+        position: "fixed",
+        right: "0",
+        bottom: "0",
+        width: "2px",
+        height: "2px",
+        opacity: "0.01",
+        pointerEvents: "none",
+        zIndex: "-1"
+      }
+    );
 
-  function stopVoltuneMediaBridge() {
-    if (mediaElement) {
-      mediaElement.pause();
-    }
+    document.body.appendChild(
+      keepaliveAudio
+    );
 
-    if (
-      window.VoltuneAudio &&
-      typeof VoltuneAudio.setMediaOutputEnabled ===
-        "function"
-    ) {
-      VoltuneAudio.setMediaOutputEnabled(
-        false
-      );
-    }
+    keepaliveAudio.addEventListener(
+      "playing",
+      () => {
+        lastLifecycleState =
+          "Audio-Anker läuft";
+
+        updateDiagnostics();
+      }
+    );
+
+    keepaliveAudio.addEventListener(
+      "pause",
+      updateDiagnostics
+    );
+
+    keepaliveAudio.addEventListener(
+      "ended",
+      updateDiagnostics
+    );
+
+    keepaliveAudio.addEventListener(
+      "error",
+      () => {
+        lastLifecycleState =
+          "Audio-Anker Fehler";
+
+        updateDiagnostics();
+      }
+    );
+
+    return keepaliveAudio;
   }
 
   async function resumeVoltuneAudio() {
@@ -743,20 +683,18 @@
 
     lastLifecycleState = reason;
 
-    try {
-      if (
-        !mediaElement ||
-        mediaElement.paused ||
-        VoltuneAudio.getOutputMode?.() !==
-          "media"
-      ) {
-        await startVoltuneMediaBridge();
+    const audio =
+      ensureKeepaliveAudio();
+
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch (error) {
+        console.warn(
+          "Voltune Background: Tesla Audio Anchor konnte nicht fortgesetzt werden:",
+          error
+        );
       }
-    } catch (error) {
-      console.warn(
-        "Voltune Background: Media-Ausgang konnte nicht fortgesetzt werden:",
-        error
-      );
     }
 
     await resumeVoltuneAudio();
@@ -805,11 +743,13 @@
   }
 
   async function enableBackgroundMode() {
-    // Der tatsächliche Voltune-Mix wird jetzt
-    // selbst über ein natives <audio>-Element
-    // ausgegeben. Genau dieser Medientyp darf
-    // im Tesla-Browser im Hintergrund weiterlaufen.
-    await startVoltuneMediaBridge();
+    const audio =
+      ensureKeepaliveAudio();
+
+    // Muss direkt aus dem Button-Klick kommen,
+    // damit auch Browser mit striktem Autoplay-
+    // Schutz die Media-Session freigeben.
+    await audio.play();
 
     enabled = true;
     lastHeartbeatAt =
@@ -833,7 +773,16 @@
     lastLifecycleState =
       "deaktiviert";
 
-    stopVoltuneMediaBridge();
+    if (keepaliveAudio) {
+      keepaliveAudio.pause();
+
+      try {
+        keepaliveAudio.currentTime = 0;
+      } catch (error) {
+        // Manche Browser erlauben currentTime
+        // unmittelbar nach pause() noch nicht.
+      }
+    }
 
     setMediaSessionState(false);
     updateDiagnostics();
@@ -859,7 +808,6 @@
         );
 
         enabled = false;
-        stopVoltuneMediaBridge();
         lastLifecycleState =
           "Start fehlgeschlagen";
 
