@@ -19,6 +19,8 @@ window.VoltuneAudio = (() => {
   let loudnessGain = null;
   let overrunBus = null;
   let limiter = null;
+  let mediaDestination = null;
+  let mediaOutputActive = false;
   let started = false;
   
   let muted = false;
@@ -873,6 +875,77 @@ async function setOverrunSound(
     await ctx.resume();
 
     return true;
+  }
+
+  // =========================
+  // Nativer Browser-Media-Ausgang
+  // =========================
+  //
+  // Tesla lässt Audio aus einem normalen
+  // HTMLMediaElement beim Minimieren des
+  // Browsers weiterlaufen. Für den
+  // Background-Test kann deshalb der komplette
+  // Voltune-Mix statt direkt zu den Lautsprechern
+  // in einen MediaStream geroutet werden.
+  //
+  // background.js hängt diesen Stream anschließend
+  // an ein echtes <audio>-Element.
+
+  function setMediaOutputEnabled(value) {
+    if (!ctx || !limiter) {
+      return null;
+    }
+
+    const active =
+      Boolean(value);
+
+    if (active) {
+      if (
+        typeof ctx.createMediaStreamDestination !==
+        "function"
+      ) {
+        return null;
+      }
+
+      if (!mediaDestination) {
+        mediaDestination =
+          ctx.createMediaStreamDestination();
+      }
+
+      try {
+        limiter.disconnect();
+      } catch (error) {
+        // Bereits getrennt.
+      }
+
+      limiter.connect(
+        mediaDestination
+      );
+
+      mediaOutputActive = true;
+
+      return mediaDestination.stream;
+    }
+
+    try {
+      limiter.disconnect();
+    } catch (error) {
+      // Bereits getrennt.
+    }
+
+    limiter.connect(
+      ctx.destination
+    );
+
+    mediaOutputActive = false;
+
+    return null;
+  }
+
+  function getOutputMode() {
+    return mediaOutputActive
+      ? "media"
+      : "direct";
   }
 
 function stop() {
@@ -4163,6 +4236,8 @@ lastAccel = accel;
     
     setMasterVolume,
     setMuted,
+    setMediaOutputEnabled,
+    getOutputMode,
 
     isMuted,
     isStarted,
