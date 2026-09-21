@@ -7,7 +7,7 @@
   }
 
   let enabled = false;
-  let keepaliveAudio = null;
+  let keepaliveVideo = null;
   let keepaliveUrl = null;
   let lastHeartbeatAt = performance.now();
   let maxHeartbeatGap = 0;
@@ -88,7 +88,7 @@
     diagnostics.media =
       createDiagnosticRow(
         panel,
-        "Tesla Audio Anchor"
+        "Tesla Video Test"
       );
 
     diagnostics.visibility =
@@ -113,9 +113,9 @@
   function updateDiagnostics() {
     const mediaRunning =
       Boolean(
-        keepaliveAudio &&
-        !keepaliveAudio.paused &&
-        !keepaliveAudio.ended
+        keepaliveVideo &&
+        !keepaliveVideo.paused &&
+        !keepaliveVideo.ended
       );
 
     if (diagnostics.state) {
@@ -214,7 +214,7 @@
             maxHeartbeatGap /
             1000
           ).toFixed(1)} s`
-        : "Tesla-Background mit echtem URL-Audio testen";
+        : "Tesla-Background mit normalem Video testen";
   }
 
   function numberValue(
@@ -561,99 +561,121 @@
       wrappedStart;
   }
 
-  const TESLA_AUDIO_ANCHOR_URL =
-    "sounds/overrun/Firecracker%201.mp3";
+  const TESLA_VIDEO_TEST_URLS = [
+    "https://www.w3schools.com/html/mov_bbb.mp4",
+    "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+  ];
 
-  function ensureKeepaliveAudio() {
-    if (keepaliveAudio) {
-      return keepaliveAudio;
+  function ensureKeepaliveVideo() {
+    if (keepaliveVideo) {
+      return keepaliveVideo;
     }
 
-    keepaliveAudio =
+    keepaliveVideo =
       document.createElement(
-        "audio"
+        "video"
       );
 
-    // Wichtig für diesen Test:
-    // keine blob:-URL und kein MediaStream.
-    // Tesla bekommt eine ganz normale,
-    // same-origin MP3-Datei über HTTP/HTTPS.
-    keepaliveAudio.src =
-      TESLA_AUDIO_ANCHOR_URL;
+    keepaliveVideo.src =
+      TESLA_VIDEO_TEST_URLS[0];
 
-    keepaliveAudio.loop = true;
-    keepaliveAudio.preload = "auto";
-    keepaliveAudio.controls = true;
-    keepaliveAudio.autoplay = false;
+    keepaliveVideo.loop = true;
+    keepaliveVideo.preload = "auto";
+    keepaliveVideo.controls = true;
+    keepaliveVideo.autoplay = false;
+    keepaliveVideo.muted = false;
+    keepaliveVideo.volume = 0.25;
+    keepaliveVideo.playsInline = true;
 
-    // Nicht stumm schalten. Ein sehr kleiner,
-    // aber echter Pegel verhindert, dass der
-    // Browser das Medium als stumm behandelt.
-    keepaliveAudio.muted = false;
-    keepaliveAudio.volume = 0.001;
-
-    keepaliveAudio.setAttribute(
+    keepaliveVideo.setAttribute(
       "playsinline",
       ""
     );
 
-    keepaliveAudio.setAttribute(
-      "aria-hidden",
-      "true"
+    keepaliveVideo.setAttribute(
+      "webkit-playsinline",
+      ""
     );
 
-    // Im DOM lassen, aber praktisch unsichtbar.
-    // Nicht display:none, damit Chromium/Tesla
-    // ein echtes aktives Mediaelement sieht.
+    // Absichtlich ein ganz normales,
+    // sichtbares Video. Kein Mini-Element,
+    // kein display:none, kein Blob und kein
+    // MediaStream. Damit testen wir nur,
+    // ob Tesla Voltune überhaupt als
+    // normale Video-Seite erkennt.
     Object.assign(
-      keepaliveAudio.style,
+      keepaliveVideo.style,
       {
         position: "fixed",
-        right: "0",
-        bottom: "0",
-        width: "2px",
-        height: "2px",
-        opacity: "0.01",
-        pointerEvents: "none",
-        zIndex: "-1"
+        left: "50%",
+        top: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(70vw, 720px)",
+        maxHeight: "70vh",
+        background: "#000",
+        borderRadius: "14px",
+        boxShadow: "0 16px 60px rgba(0,0,0,.55)",
+        zIndex: "2147483647"
       }
     );
 
-    document.body.appendChild(
-      keepaliveAudio
-    );
+    let sourceIndex = 0;
 
-    keepaliveAudio.addEventListener(
+    keepaliveVideo.addEventListener(
       "playing",
       () => {
         lastLifecycleState =
-          "Audio-Anker läuft";
+          "Video läuft";
 
         updateDiagnostics();
       }
     );
 
-    keepaliveAudio.addEventListener(
+    keepaliveVideo.addEventListener(
       "pause",
       updateDiagnostics
     );
 
-    keepaliveAudio.addEventListener(
+    keepaliveVideo.addEventListener(
       "ended",
       updateDiagnostics
     );
 
-    keepaliveAudio.addEventListener(
+    keepaliveVideo.addEventListener(
       "error",
       () => {
+        sourceIndex++;
+
+        if (
+          sourceIndex <
+          TESLA_VIDEO_TEST_URLS.length
+        ) {
+          keepaliveVideo.src =
+            TESLA_VIDEO_TEST_URLS[
+              sourceIndex
+            ];
+
+          keepaliveVideo.load();
+
+          keepaliveVideo.play().catch(
+            () => {}
+          );
+
+          return;
+        }
+
         lastLifecycleState =
-          "Audio-Anker Fehler";
+          "Video-Fehler";
 
         updateDiagnostics();
       }
     );
 
-    return keepaliveAudio;
+    document.body.appendChild(
+      keepaliveVideo
+    );
+
+    return keepaliveVideo;
   }
 
   async function resumeVoltuneAudio() {
@@ -683,15 +705,15 @@
 
     lastLifecycleState = reason;
 
-    const audio =
-      ensureKeepaliveAudio();
+    const video =
+      ensureKeepaliveVideo();
 
-    if (audio.paused) {
+    if (video.paused) {
       try {
-        await audio.play();
+        await video.play();
       } catch (error) {
         console.warn(
-          "Voltune Background: Tesla Audio Anchor konnte nicht fortgesetzt werden:",
+          "Voltune Background: Video-Test konnte nicht fortgesetzt werden:",
           error
         );
       }
@@ -716,9 +738,9 @@
       ) {
         navigator.mediaSession.metadata =
           new MediaMetadata({
-            title: "Voltune Background",
+            title: "Voltune Video Test",
             artist: "Voltune",
-            album: "Drive Sound"
+            album: "Tesla Background Test"
           });
       } else if (!active) {
         navigator.mediaSession.metadata =
@@ -743,13 +765,13 @@
   }
 
   async function enableBackgroundMode() {
-    const audio =
-      ensureKeepaliveAudio();
+    const video =
+      ensureKeepaliveVideo();
 
-    // Muss direkt aus dem Button-Klick kommen,
-    // damit auch Browser mit striktem Autoplay-
-    // Schutz die Media-Session freigeben.
-    await audio.play();
+    // Direkt aus dem Button-Klick starten:
+    // ein ganz normales sichtbares Video mit
+    // Ton und nativen Controls.
+    await video.play();
 
     enabled = true;
     lastHeartbeatAt =
@@ -773,15 +795,18 @@
     lastLifecycleState =
       "deaktiviert";
 
-    if (keepaliveAudio) {
-      keepaliveAudio.pause();
+    if (keepaliveVideo) {
+      keepaliveVideo.pause();
 
       try {
-        keepaliveAudio.currentTime = 0;
+        keepaliveVideo.currentTime = 0;
       } catch (error) {
         // Manche Browser erlauben currentTime
         // unmittelbar nach pause() noch nicht.
       }
+
+      keepaliveVideo.remove();
+      keepaliveVideo = null;
     }
 
     setMediaSessionState(false);
