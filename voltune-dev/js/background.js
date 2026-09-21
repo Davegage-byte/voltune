@@ -730,7 +730,7 @@
     lastLifecycleState = reason;
 
     const video =
-      ensureKeepaliveVideo();
+      ensureKeepaliveAudio();
 
     if (video.paused) {
       try {
@@ -789,13 +789,28 @@
   }
 
   async function enableBackgroundMode() {
-    const video =
-      ensureKeepaliveVideo();
+    const audio =
+      ensureKeepaliveAudio();
 
     // Direkt aus dem Button-Klick starten:
-    // ein ganz normales sichtbares Video mit
-    // Ton und nativen Controls.
-    await video.play();
+    // ein ganz normaler sichtbarer HTML5-
+    // Audioplayer mit echter MP3-Datei.
+    //
+    // Falls Tesla den automatischen Start
+    // blockiert, bleibt der Testmodus trotzdem
+    // aktiv und der Nutzer kann im sichtbaren
+    // Player selbst auf Play drücken.
+    try {
+      await audio.play();
+    } catch (error) {
+      console.warn(
+        "Voltune Background: automatischer Audio-Start wurde blockiert:",
+        error
+      );
+
+      lastLifecycleState =
+        "Play manuell drücken";
+    }
 
     enabled = true;
     lastHeartbeatAt =
