@@ -7,7 +7,7 @@
   }
 
   let enabled = false;
-  let keepaliveVideo = null;
+  let keepaliveAudio = null;
   let keepaliveUrl = null;
   let lastHeartbeatAt = performance.now();
   let maxHeartbeatGap = 0;
@@ -88,7 +88,7 @@
     diagnostics.media =
       createDiagnosticRow(
         panel,
-        "Tesla Video Test"
+        "Tesla Audio Test"
       );
 
     diagnostics.visibility =
@@ -113,9 +113,9 @@
   function updateDiagnostics() {
     const mediaRunning =
       Boolean(
-        keepaliveVideo &&
-        !keepaliveVideo.paused &&
-        !keepaliveVideo.ended
+        keepaliveAudio &&
+        !keepaliveAudio.paused &&
+        !keepaliveAudio.ended
       );
 
     if (diagnostics.state) {
@@ -214,7 +214,7 @@
             maxHeartbeatGap /
             1000
           ).toFixed(1)} s`
-        : "Tesla-Background mit normalem Video testen";
+        : "Tesla-Background mit normalem Browser-Audio testen";
   }
 
   function numberValue(
@@ -561,121 +561,145 @@
       wrappedStart;
   }
 
-  const TESLA_VIDEO_TEST_URLS = [
-    "https://www.w3schools.com/html/mov_bbb.mp4",
-    "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-  ];
+  const TESLA_AUDIO_TEST_URL =
+    "sounds/overrun/Firecracker%201.mp3";
 
-  function ensureKeepaliveVideo() {
-    if (keepaliveVideo) {
-      return keepaliveVideo;
+  function ensureKeepaliveAudio() {
+    if (keepaliveAudio) {
+      return keepaliveAudio;
     }
 
-    keepaliveVideo =
+    const wrapper =
       document.createElement(
-        "video"
+        "div"
       );
 
-    keepaliveVideo.src =
-      TESLA_VIDEO_TEST_URLS[0];
+    wrapper.id =
+      "teslaAudioTestPanel";
 
-    keepaliveVideo.loop = true;
-    keepaliveVideo.preload = "auto";
-    keepaliveVideo.controls = true;
-    keepaliveVideo.autoplay = false;
-    keepaliveVideo.muted = false;
-    keepaliveVideo.volume = 0.25;
-    keepaliveVideo.playsInline = true;
-
-    keepaliveVideo.setAttribute(
-      "playsinline",
-      ""
-    );
-
-    keepaliveVideo.setAttribute(
-      "webkit-playsinline",
-      ""
-    );
-
-    // Absichtlich ein ganz normales,
-    // sichtbares Video. Kein Mini-Element,
-    // kein display:none, kein Blob und kein
-    // MediaStream. Damit testen wir nur,
-    // ob Tesla Voltune überhaupt als
-    // normale Video-Seite erkennt.
     Object.assign(
-      keepaliveVideo.style,
+      wrapper.style,
       {
         position: "fixed",
         left: "50%",
         top: "50%",
         transform: "translate(-50%, -50%)",
-        width: "min(70vw, 720px)",
-        maxHeight: "70vh",
-        background: "#000",
-        borderRadius: "14px",
-        boxShadow: "0 16px 60px rgba(0,0,0,.55)",
-        zIndex: "2147483647"
+        width: "min(82vw, 720px)",
+        padding: "20px",
+        background: "rgba(10,10,14,.96)",
+        border: "1px solid rgba(255,255,255,.18)",
+        borderRadius: "16px",
+        boxShadow: "0 18px 70px rgba(0,0,0,.65)",
+        zIndex: "2147483647",
+        color: "#fff",
+        textAlign: "center"
       }
     );
 
-    let sourceIndex = 0;
+    const title =
+      document.createElement(
+        "div"
+      );
 
-    keepaliveVideo.addEventListener(
+    title.textContent =
+      "Tesla Browser Audio Test";
+
+    Object.assign(
+      title.style,
+      {
+        fontSize: "20px",
+        fontWeight: "700",
+        marginBottom: "14px"
+      }
+    );
+
+    keepaliveAudio =
+      document.createElement(
+        "audio"
+      );
+
+    keepaliveAudio.src =
+      TESLA_AUDIO_TEST_URL;
+
+    keepaliveAudio.loop = true;
+    keepaliveAudio.preload = "auto";
+    keepaliveAudio.controls = true;
+    keepaliveAudio.autoplay = false;
+    keepaliveAudio.muted = false;
+    keepaliveAudio.volume = 0.25;
+
+    keepaliveAudio.setAttribute(
+      "playsinline",
+      ""
+    );
+
+    Object.assign(
+      keepaliveAudio.style,
+      {
+        display: "block",
+        width: "100%",
+        minHeight: "54px"
+      }
+    );
+
+    const hint =
+      document.createElement(
+        "div"
+      );
+
+    hint.textContent =
+      "Normaler HTML5-Audioplayer · echte MP3-Datei · keine Tricks";
+
+    Object.assign(
+      hint.style,
+      {
+        marginTop: "12px",
+        fontSize: "13px",
+        opacity: "0.68"
+      }
+    );
+
+    wrapper.append(
+      title,
+      keepaliveAudio,
+      hint
+    );
+
+    document.body.appendChild(
+      wrapper
+    );
+
+    keepaliveAudio.addEventListener(
       "playing",
       () => {
         lastLifecycleState =
-          "Video läuft";
+          "Audio läuft";
 
         updateDiagnostics();
       }
     );
 
-    keepaliveVideo.addEventListener(
+    keepaliveAudio.addEventListener(
       "pause",
       updateDiagnostics
     );
 
-    keepaliveVideo.addEventListener(
+    keepaliveAudio.addEventListener(
       "ended",
       updateDiagnostics
     );
 
-    keepaliveVideo.addEventListener(
+    keepaliveAudio.addEventListener(
       "error",
       () => {
-        sourceIndex++;
-
-        if (
-          sourceIndex <
-          TESLA_VIDEO_TEST_URLS.length
-        ) {
-          keepaliveVideo.src =
-            TESLA_VIDEO_TEST_URLS[
-              sourceIndex
-            ];
-
-          keepaliveVideo.load();
-
-          keepaliveVideo.play().catch(
-            () => {}
-          );
-
-          return;
-        }
-
         lastLifecycleState =
-          "Video-Fehler";
+          "Audio-Fehler";
 
         updateDiagnostics();
       }
     );
 
-    document.body.appendChild(
-      keepaliveVideo
-    );
-
-    return keepaliveVideo;
+    return keepaliveAudio;
   }
 
   async function resumeVoltuneAudio() {
@@ -738,9 +762,9 @@
       ) {
         navigator.mediaSession.metadata =
           new MediaMetadata({
-            title: "Voltune Video Test",
+            title: "Voltune Audio Test",
             artist: "Voltune",
-            album: "Tesla Background Test"
+            album: "Tesla Browser Test"
           });
       } else if (!active) {
         navigator.mediaSession.metadata =
@@ -795,18 +819,23 @@
     lastLifecycleState =
       "deaktiviert";
 
-    if (keepaliveVideo) {
-      keepaliveVideo.pause();
+    if (keepaliveAudio) {
+      keepaliveAudio.pause();
 
       try {
-        keepaliveVideo.currentTime = 0;
+        keepaliveAudio.currentTime = 0;
       } catch (error) {
         // Manche Browser erlauben currentTime
         // unmittelbar nach pause() noch nicht.
       }
 
-      keepaliveVideo.remove();
-      keepaliveVideo = null;
+      document
+        .getElementById(
+          "teslaAudioTestPanel"
+        )
+        ?.remove();
+
+      keepaliveAudio = null;
     }
 
     setMediaSessionState(false);
