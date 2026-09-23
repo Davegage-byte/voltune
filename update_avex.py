@@ -97,15 +97,15 @@ def current_entry(schedule, now):
 
 def parse_estations(html):
     text = html_to_text(html)
-    blocks = re.split(r'EVSE-ID:\\s*', text)[1:]
+    blocks = re.split(r'EVSE-ID:\s*', text)[1:]
     points, prices = {}, []
     states = {'Verfügbar': 'free', 'Lädt': 'occupied', 'Belegt': 'occupied',
               'Reserviert': 'occupied', 'Blockiert': 'occupied', 'Außer Dienst': 'offline',
               'Außer Betrieb': 'offline', 'Unbekannt': 'unknown'}
     for block in blocks:
         match = re.match(
-            r'(DE\\*AVX\\*E\\d+)\\s+(.+?)\\s+Stand\\s+'
-            r'(\\d{2}\\.\\d{2}\\.\\d{2},\\s*\\d{2}:\\d{2})\\s+Uhr', block)
+            r'(DE\*AVX\*E\d+)\s+(.+?)\s+Stand\s+'
+            r'(\d{2}\.\d{2}\.\d{2},\s*\d{2}:\d{2})\s+Uhr', block)
         if not match or match[1] not in EVSES:
             continue
         evse, label, status_at = match.groups()
@@ -115,31 +115,31 @@ def parse_estations(html):
             'status': states[label],
             'status_at': local_timestamp(status_at, '%d.%m.%y, %H:%M'),
         }
-        price = re.search(r'Ad-Hoc-Tarif\\s+HPC\\s+(\\d+[,.]\\d+)\\s*€\\s*/kWh', block)
+        price = re.search(r'Ad-Hoc-Tarif\s+HPC\s+(\d+[,.]\d+)\s*€\s*/kWh', block)
         if price:
             detail['price'] = valid_price(price[1])
             prices.append(detail['price'])
-        last_used = re.search(r'Zuletzt genutzt:\\s*(\\d{2}\\.\\d{2}\\.\\d{2},\\s*\\d{2}:\\d{2})\\s*Uhr', block)
+        last_used = re.search(r'Zuletzt genutzt:\s*(\d{2}\.\d{2}\.\d{2},\s*\d{2}:\d{2})\s*Uhr', block)
         if last_used:
             detail['last_used_at'] = local_timestamp(last_used[1], '%d.%m.%y, %H:%M')
-        uses = re.search(r'Nutzungen\\s*\\(7 Tage\\):\\s*(\\d+)', block)
+        uses = re.search(r'Nutzungen\s*\(7 Tage\):\s*(\d+)', block)
         if uses:
             detail['uses_7d'] = int(uses[1])
         last_offline = re.search(
-            r'Zuletzt außer Betrieb:\\s*(\\d{2}\\.\\d{2}\\.\\d{2},\\s*\\d{2}:\\d{2})\\s*Uhr', block)
+            r'Zuletzt außer Betrieb:\s*(\d{2}\.\d{2}\.\d{2},\s*\d{2}:\d{2})\s*Uhr', block)
         if last_offline:
             detail['last_offline_at'] = local_timestamp(last_offline[1], '%d.%m.%y, %H:%M')
-        outages = re.search(r'Störungen\\s*\\(6 Monate\\):\\s*(\\d+)', block)
+        outages = re.search(r'Störungen\s*\(6 Monate\):\s*(\d+)', block)
         if outages:
             detail['outages_6m'] = int(outages[1])
-        since = re.search(r'Daten seit\\s+(\\d{2}\\.\\d{2}\\.\\d{4})', block)
+        since = re.search(r'Daten seit\s+(\d{2}\.\d{2}\.\d{4})', block)
         if since:
             detail['data_since'] = datetime.strptime(since[1], '%d.%m.%Y').date().isoformat()
         points[evse] = detail
 
     if set(points) != EVSES:
         raise ValueError('Expected exactly the eight Euskirchen EVSEs')
-    publication = re.search(r'Stand:\\s*(\\d{2}\\.\\d{2}\\.\\d{4},\\s*\\d{2}:\\d{2})\\s*Uhr', text)
+    publication = re.search(r'Stand:\s*(\d{2}\.\d{2}\.\d{4},\s*\d{2}:\d{2})\s*Uhr', text)
     observed = datetime.strptime(publication[1], '%d.%m.%Y, %H:%M').replace(tzinfo=TIMEZONE) if publication else None
     statuses = [point['status'] for point in points.values()]
     result = {key: statuses.count(key) for key in ('free', 'occupied', 'offline', 'unknown')}
@@ -150,33 +150,33 @@ def parse_estations(html):
 
 def parse_adhoc(html):
     text = html_to_text(html)
-    if not EVSES.issubset(set(re.findall(r'DE\\*AVX\\*E\\d+', text))):
+    if not EVSES.issubset(set(re.findall(r'DE\*AVX\*E\d+', text))):
         raise ValueError('Euskirchen EVSE identity missing')
-    match = re.search(r'Günstigster\\s+Ad[- ]hoc[- ]Preis\\s+(\\d+[,.]\\d+)\\s*€\\s*/\\s*kWh', text, re.I)
+    match = re.search(r'Günstigster\s+Ad[- ]hoc[- ]Preis\s+(\d+[,.]\d+)\s*€\s*/\s*kWh', text, re.I)
     if not match:
         raise ValueError('Station price label missing; refusing page-wide price guessing')
     result = {'price': valid_price(match[1]), 'published_at': None}
     for key, label in [('free', 'frei'), ('occupied', 'belegt'), ('offline', 'offline')]:
-        match = re.search(r'<strong[^>]*>\\s*(\\d+)\\s*</strong>\\s*<span[^>]*>\\s*'+label, html, re.I)
+        match = re.search(r'<strong[^>]*>\s*(\d+)\s*</strong>\s*<span[^>]*>\s*'+label, html, re.I)
         if match:
             result[key] = int(match[1])
 
     points = {}
-    blocks = re.split(r'CCS\\s*\\(Combo 2\\)\\s+', text)[1:]
+    blocks = re.split(r'CCS\s*\(Combo 2\)\s+', text)[1:]
     state_map = {'Verfügbar': 'free', 'Belegt': 'occupied', 'Lädt': 'occupied',
                  'Offline': 'offline', 'Außer Betrieb': 'offline'}
     age_units = {'Sek.': 1, 'Min.': 60, 'Std.': 3600, 'Tag': 86400, 'Tage': 86400}
     for block in blocks:
-        evse_match = re.match(r'(DE\\*AVX\\*E\\d+)\\s+', block)
+        evse_match = re.match(r'(DE\*AVX\*E\d+)\s+', block)
         if not evse_match or evse_match[1] not in EVSES:
             continue
         evse = evse_match[1]
         detail = {}
-        power = re.search(r'Leistung\\s+(\\d+)\\s*kW', block)
-        price = re.search(r'Preis\\s+(\\d+[,.]\\d+)\\s*€\\s*/kWh', block)
+        power = re.search(r'Leistung\s+(\d+)\s*kW', block)
+        price = re.search(r'Preis\s+(\d+[,.]\d+)\s*€\s*/kWh', block)
         state = re.search(
-            r'\\b(Verfügbar|Belegt|Lädt|Offline|Außer Betrieb)\\s+seit\\s+'
-            r'(\\d+)\\s+(Sek\\.|Min\\.|Std\\.|Tag|Tage)(?:\\s|$)', block)
+            r'\b(Verfügbar|Belegt|Lädt|Offline|Außer Betrieb)\s+seit\s+'
+            r'(\d+)\s+(Sek\.|Min\.|Std\.|Tag|Tage)(?:\s|$)', block)
         if power:
             detail['power_kw'] = int(power[1])
         if price:
@@ -330,7 +330,7 @@ def make_observation(data, sources, now):
 def append_jsonl(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('a', encoding='utf-8') as handle:
-        handle.write(json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\\n')
+        handle.write(json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\n')
 
 
 def archive_observation(data, sources, now):
