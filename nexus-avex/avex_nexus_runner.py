@@ -16,6 +16,7 @@ import time
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Optional, Tuple
 
 VERSION = "0.1.0-test"
 TASK_INTERVAL_MINUTES = 5
@@ -196,7 +197,7 @@ def stage_generated(repo: Path) -> bool:
     return diff.returncode != 0
 
 
-def commit_generated(repo: Path) -> str | None:
+def commit_generated(repo: Path) -> Optional[str]:
     if not stage_generated(repo):
         LOGGER.info("Keine geänderten AVEX-Dateien.")
         return None
@@ -207,7 +208,7 @@ def commit_generated(repo: Path) -> str | None:
     return sha
 
 
-def push_with_one_recovery(repo: Path, scraper_ok: bool) -> tuple[bool, str | None]:
+def push_with_one_recovery(repo: Path, scraper_ok: bool) -> Tuple[bool, Optional[str]]:
     sha = commit_generated(repo)
     if sha is None:
         return True, None

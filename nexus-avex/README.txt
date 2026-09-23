@@ -26,7 +26,7 @@ Installation
    %LOCALAPPDATA%\AVEX-NEXUS\voltune
 5. Python-Abhaengigkeiten liegen getrennt in:
    %LOCALAPPDATA%\AVEX-NEXUS\venv
-6. Danach wird die Windows-Aufgabe "AVEX NEXUS Collector" angelegt.
+6. Danach wird die Windows-Aufgabe "AVEX NEXUS Collector" ueber PowerShell angelegt.\n   Sie laeuft im Benutzerkontext des angemeldeten NEXUS-Kontos.
 
 Betrieb
 -------
