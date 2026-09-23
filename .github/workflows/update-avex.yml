@@ -3,7 +3,7 @@ name: Update AVEX
 'on':
   workflow_dispatch:
   schedule:
-    - cron: '7,22,37,52 * * * *'
+    - cron: '2-59/5 * * * *'
 
 permissions:
   contents: write
@@ -28,6 +28,9 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Test AVEX parsers
+        run: python -m unittest discover -s tests -p "test_avex.py"
+
       - name: Scrape AVEX
         shell: bash
         run: |
@@ -50,6 +53,7 @@ jobs:
           exit 1
 
       - name: Commit
+        if: ${{ always() && !cancelled() }}
         shell: bash
         run: |
           set -e

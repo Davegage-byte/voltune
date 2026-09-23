@@ -1,12 +1,205 @@
 {
-  "price": "0,48",
+  "price": "0,59",
   "free": 8,
   "occupied": 0,
   "offline": 0,
-  "updated": "02:58",
-  "price_source": "adhocladen",
-  "status_source": "adhocladen",
+  "unknown": 0,
+  "price_source": "avex",
+  "status_source": "e-stations",
+  "price_checked_at": "2026-09-23T07:10:49+02:00",
+  "status_checked_at": "2026-09-23T07:10:49+02:00",
+  "price_changed_at": "2026-09-23T07:09:35+02:00",
+  "updated": "07:10",
+  "checked_at": "2026-09-23T07:10:49+02:00",
+  "scraper_version": "2026-09-23-v5",
   "price_fresh": true,
-  "status_fresh": true,
-  "scraper_version": "2026-09-07-v4"
+  "status_fresh": false,
+  "price_valid_from": "2026-09-23T03:30:00+00:00",
+  "price_valid_to": "2026-09-23T06:45:00+00:00",
+  "price_schedule": [
+    {
+      "valid_from": "2026-09-22T22:00:00+00:00",
+      "valid_to": "2026-09-22T23:15:00+00:00",
+      "price": 0.58
+    },
+    {
+      "valid_from": "2026-09-22T23:15:00+00:00",
+      "valid_to": "2026-09-23T03:30:00+00:00",
+      "price": 0.56
+    },
+    {
+      "valid_from": "2026-09-23T03:30:00+00:00",
+      "valid_to": "2026-09-23T06:45:00+00:00",
+      "price": 0.59
+    },
+    {
+      "valid_from": "2026-09-23T06:45:00+00:00",
+      "valid_to": "2026-09-23T07:45:00+00:00",
+      "price": 0.57
+    },
+    {
+      "valid_from": "2026-09-23T07:45:00+00:00",
+      "valid_to": "2026-09-23T08:45:00+00:00",
+      "price": 0.52
+    },
+    {
+      "valid_from": "2026-09-23T08:45:00+00:00",
+      "valid_to": "2026-09-23T09:45:00+00:00",
+      "price": 0.49
+    },
+    {
+      "valid_from": "2026-09-23T09:45:00+00:00",
+      "valid_to": "2026-09-23T11:15:00+00:00",
+      "price": 0.44
+    },
+    {
+      "valid_from": "2026-09-23T11:15:00+00:00",
+      "valid_to": "2026-09-23T12:30:00+00:00",
+      "price": 0.42
+    },
+    {
+      "valid_from": "2026-09-23T12:30:00+00:00",
+      "valid_to": "2026-09-23T13:30:00+00:00",
+      "price": 0.45
+    },
+    {
+      "valid_from": "2026-09-23T13:30:00+00:00",
+      "valid_to": "2026-09-23T14:30:00+00:00",
+      "price": 0.5
+    },
+    {
+      "valid_from": "2026-09-23T14:30:00+00:00",
+      "valid_to": "2026-09-23T15:30:00+00:00",
+      "price": 0.55
+    },
+    {
+      "valid_from": "2026-09-23T15:30:00+00:00",
+      "valid_to": "2026-09-23T19:30:00+00:00",
+      "price": 0.6
+    },
+    {
+      "valid_from": "2026-09-23T19:30:00+00:00",
+      "valid_to": "2026-09-23T20:30:00+00:00",
+      "price": 0.58
+    },
+    {
+      "valid_from": "2026-09-23T20:30:00+00:00",
+      "valid_to": "2026-09-23T21:30:00+00:00",
+      "price": 0.55
+    },
+    {
+      "valid_from": "2026-09-23T21:30:00+00:00",
+      "valid_to": "2026-09-23T22:00:00+00:00",
+      "price": 0.53
+    }
+  ],
+  "price_conflict": true,
+  "price_quality": "official",
+  "sources": {
+    "avex": {
+      "ok": true,
+      "url": "https://e-preis.avex-tankstellen.de",
+      "data": [
+        {
+          "valid_from": "2026-09-22T22:00:00+00:00",
+          "valid_to": "2026-09-22T23:15:00+00:00",
+          "price": 0.58
+        },
+        {
+          "valid_from": "2026-09-22T23:15:00+00:00",
+          "valid_to": "2026-09-23T03:30:00+00:00",
+          "price": 0.56
+        },
+        {
+          "valid_from": "2026-09-23T03:30:00+00:00",
+          "valid_to": "2026-09-23T06:45:00+00:00",
+          "price": 0.59
+        },
+        {
+          "valid_from": "2026-09-23T06:45:00+00:00",
+          "valid_to": "2026-09-23T07:45:00+00:00",
+          "price": 0.57
+        },
+        {
+          "valid_from": "2026-09-23T07:45:00+00:00",
+          "valid_to": "2026-09-23T08:45:00+00:00",
+          "price": 0.52
+        },
+        {
+          "valid_from": "2026-09-23T08:45:00+00:00",
+          "valid_to": "2026-09-23T09:45:00+00:00",
+          "price": 0.49
+        },
+        {
+          "valid_from": "2026-09-23T09:45:00+00:00",
+          "valid_to": "2026-09-23T11:15:00+00:00",
+          "price": 0.44
+        },
+        {
+          "valid_from": "2026-09-23T11:15:00+00:00",
+          "valid_to": "2026-09-23T12:30:00+00:00",
+          "price": 0.42
+        },
+        {
+          "valid_from": "2026-09-23T12:30:00+00:00",
+          "valid_to": "2026-09-23T13:30:00+00:00",
+          "price": 0.45
+        },
+        {
+          "valid_from": "2026-09-23T13:30:00+00:00",
+          "valid_to": "2026-09-23T14:30:00+00:00",
+          "price": 0.5
+        },
+        {
+          "valid_from": "2026-09-23T14:30:00+00:00",
+          "valid_to": "2026-09-23T15:30:00+00:00",
+          "price": 0.55
+        },
+        {
+          "valid_from": "2026-09-23T15:30:00+00:00",
+          "valid_to": "2026-09-23T19:30:00+00:00",
+          "price": 0.6
+        },
+        {
+          "valid_from": "2026-09-23T19:30:00+00:00",
+          "valid_to": "2026-09-23T20:30:00+00:00",
+          "price": 0.58
+        },
+        {
+          "valid_from": "2026-09-23T20:30:00+00:00",
+          "valid_to": "2026-09-23T21:30:00+00:00",
+          "price": 0.55
+        },
+        {
+          "valid_from": "2026-09-23T21:30:00+00:00",
+          "valid_to": "2026-09-23T22:00:00+00:00",
+          "price": 0.53
+        }
+      ]
+    },
+    "e-stations": {
+      "ok": true,
+      "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
+      "data": {
+        "free": 8,
+        "occupied": 0,
+        "offline": 0,
+        "unknown": 0,
+        "price": 0.56,
+        "published_at": "2026-09-23T00:17:00+02:00"
+      }
+    },
+    "adhocladen": {
+      "ok": true,
+      "url": "https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/",
+      "data": {
+        "price": 0.48,
+        "published_at": null,
+        "free": 8,
+        "occupied": 0,
+        "offline": 0
+      }
+    }
+  },
+  "status_published_at": "2026-09-23T00:17:00+02:00"
 }

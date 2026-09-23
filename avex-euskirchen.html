@@ -125,6 +125,8 @@ button:disabled{
         Bitte warten...
     </div>
 
+    <div id="sourceInfo" class="time"></div>
+
     <div id="refreshInfo" class="time">
         Letzte Änderung: --:-- | Refresh in 05:00
     </div>
@@ -177,6 +179,7 @@ button:disabled{
 
 let secondsLeft = 300;
 let lastUpdate = "--:--";
+let latestData = null;
 
 let priceChart = null;
 
@@ -647,7 +650,37 @@ function updateCountdown() {
 
     document.getElementById("refreshInfo")
         .innerText =
-        `Letzte Änderung: ${lastUpdate} | Refresh in ${min}:${sec}`;
+        `Letzter Abruf: ${lastUpdate} | Refresh in ${min}:${sec}`;
+}
+
+function renderLiveData() {
+    if (!latestData) return;
+    const data = latestData;
+    const now = Date.now();
+    const entries = (data.price_schedule || []).filter(entry =>
+        Date.parse(entry.valid_from) <= now && now < Date.parse(entry.valid_to)
+        && Number.isFinite(entry.price));
+    const current = entries.length === 1 ? entries[0] : null;
+    const price = current ? current.price.toFixed(2).replace(".", ",") : data.price;
+    document.getElementById("price").innerText = price + " €/kWh";
+    const statusAge = now - Date.parse(data.status_published_at || "");
+    const freshStatus = data.status_fresh && statusAge >= 0 && statusAge <= 30 * 60 * 1000;
+    const knownCounts = [data.free, data.occupied, data.offline].every(Number.isInteger);
+    const indicator = freshStatus ? (data.free <= 1 ? "🔴" : data.free <= 3 ? "🟡" : "🟢") : "⚪";
+    let status = knownCounts
+        ? `${indicator} ${data.free} von 8 frei | ${data.occupied} belegt | ${data.offline} offline`
+        : "⚪ Belegung unbekannt";
+    if (data.unknown) status += ` | ${data.unknown} unbekannt`;
+    if (!freshStatus && knownCounts) status += " (nicht aktuell bestätigt)";
+    document.getElementById("updated").innerText = status;
+    const source = current ? "AVEX Direktzahlung am EC-Terminal" : (data.price_source || "unbekannt");
+    let detail = current
+        ? `gültig bis ${new Date(current.valid_to).toLocaleTimeString("de-DE", {timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit"})} Uhr`
+        : "Letzter bekannter Preis, aktuell nicht bestätigt";
+    if (current && data.price_quality === "cached_schedule") detail += " · gespeicherter Betreiber-Preisplan";
+    if (data.price_conflict) detail += " · Vergleichsportale melden abweichende Preise";
+    document.getElementById("sourceInfo").innerText = `${source} · ${detail}`;
+    document.title = `${indicator} ${price} €/kWh | AVEX Euskirchen`;
 }
 
 async function loadData() {
@@ -675,52 +708,13 @@ async function loadData() {
 
         const data = await response.json();
 
-        lastUpdate = data.updated;
+        latestData = data;
+        lastUpdate = data.checked_at
+            ? new Date(data.checked_at).toLocaleString("de-DE", {timeZone: "Europe/Berlin"})
+            : data.updated;
         secondsLeft = 300;
-
         updateCountdown();
-
-        document.getElementById("price").innerText =
-            data.price + "€/kWh";
-
-        const totalActive =
-            data.free + data.occupied;
-        
-            let indicator = "🟢";
-            let statusClass = "green";
-            
-            if (data.free <= 1) {
-                indicator = "🔴";
-                statusClass = "red";
-            }
-            else if (data.free <= 3) {
-                indicator = "🟡";
-                statusClass = "yellow";
-            }
-        
-        let statusText =
-            indicator + " " +
-            data.free +
-            " von " +
-            totalActive +
-            " Frei";
-                document.title =
-                    indicator +
-                    " (" +
-                    data.free +
-                    "/" +
-                    totalActive +
-                    ") | " +
-                    data.price +
-                    "€/kWh";
-
-        if (data.offline > 0) {
-            statusText +=
-                " | ⚫ " + data.offline + " Offline";
-        }
-
-        document.getElementById("updated").innerHTML =
-            `<span class="${statusClass}">${statusText}</span>`;
+        renderLiveData();
 
         await loadPriceHistory();
         
@@ -743,6 +737,7 @@ async function loadData() {
 
 setInterval(() => {
 
+    renderLiveData();
     secondsLeft--;
 
     if (secondsLeft <= 0) {
