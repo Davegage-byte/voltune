@@ -1,4 +1,4 @@
-"""AVEX Euskirchen: official EC-terminal schedule, independent source diagnostics."""
+"""AVEX Euskirchen: official EC-terminal schedule, source diagnostics and raw observations."""
 import json
 import math
 import re
@@ -11,13 +11,15 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 TIMEZONE = ZoneInfo('Europe/Berlin')
-SCRAPER_VERSION = '2026-09-23-v5'
+SCRAPER_VERSION = '2026-09-23-v6'
 URLS = {
     'avex': 'https://e-preis.avex-tankstellen.de',
     'e-stations': 'https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108',
     'adhocladen': 'https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/',
 }
 EVSES = {f'DE*AVX*E262{x}' for x in ('414', '415', '426', '427', '430', '431', '451', '452')}
+OBSERVATION_DIR = Path('avex-observations')
+SCHEDULE_DIR = Path('avex-schedules')
 
 
 def timestamp(value):
@@ -25,6 +27,10 @@ def timestamp(value):
     if dt.tzinfo is None:
         raise ValueError('Timezone missing')
     return dt
+
+
+def local_timestamp(value, fmt):
+    return datetime.strptime(value, fmt).replace(tzinfo=TIMEZONE).isoformat()
 
 
 def valid_price(value):
@@ -91,48 +97,100 @@ def current_entry(schedule, now):
 
 def parse_estations(html):
     text = html_to_text(html)
-    blocks = re.split(r'EVSE-ID:\s*', text)[1:]
+    blocks = re.split(r'EVSE-ID:\\s*', text)[1:]
     points, prices = {}, []
     states = {'Verfügbar': 'free', 'Lädt': 'occupied', 'Belegt': 'occupied',
               'Reserviert': 'occupied', 'Blockiert': 'occupied', 'Außer Dienst': 'offline',
               'Außer Betrieb': 'offline', 'Unbekannt': 'unknown'}
     for block in blocks:
-        match = re.match(r'(DE\*AVX\*E\d+)\s+(.+?)\s+Stand\s', block)
+        match = re.match(
+            r'(DE\\*AVX\\*E\\d+)\\s+(.+?)\\s+Stand\\s+'
+            r'(\\d{2}\\.\\d{2}\\.\\d{2},\\s*\\d{2}:\\d{2})\\s+Uhr', block)
         if not match or match[1] not in EVSES:
             continue
-        if match[1] in points or match[2] not in states:
+        evse, label, status_at = match.groups()
+        if evse in points or label not in states:
             raise ValueError('Duplicate EVSE or unsupported status')
-        points[match[1]] = states[match[2]]
-        price = re.search(r'Ad-Hoc-Tarif\s+HPC\s+(\d+[,.]\d+)\s*€\s*/kWh', block)
+        detail = {
+            'status': states[label],
+            'status_at': local_timestamp(status_at, '%d.%m.%y, %H:%M'),
+        }
+        price = re.search(r'Ad-Hoc-Tarif\\s+HPC\\s+(\\d+[,.]\\d+)\\s*€\\s*/kWh', block)
         if price:
-            prices.append(valid_price(price[1]))
+            detail['price'] = valid_price(price[1])
+            prices.append(detail['price'])
+        last_used = re.search(r'Zuletzt genutzt:\\s*(\\d{2}\\.\\d{2}\\.\\d{2},\\s*\\d{2}:\\d{2})\\s*Uhr', block)
+        if last_used:
+            detail['last_used_at'] = local_timestamp(last_used[1], '%d.%m.%y, %H:%M')
+        uses = re.search(r'Nutzungen\\s*\\(7 Tage\\):\\s*(\\d+)', block)
+        if uses:
+            detail['uses_7d'] = int(uses[1])
+        last_offline = re.search(
+            r'Zuletzt außer Betrieb:\\s*(\\d{2}\\.\\d{2}\\.\\d{2},\\s*\\d{2}:\\d{2})\\s*Uhr', block)
+        if last_offline:
+            detail['last_offline_at'] = local_timestamp(last_offline[1], '%d.%m.%y, %H:%M')
+        outages = re.search(r'Störungen\\s*\\(6 Monate\\):\\s*(\\d+)', block)
+        if outages:
+            detail['outages_6m'] = int(outages[1])
+        since = re.search(r'Daten seit\\s+(\\d{2}\\.\\d{2}\\.\\d{4})', block)
+        if since:
+            detail['data_since'] = datetime.strptime(since[1], '%d.%m.%Y').date().isoformat()
+        points[evse] = detail
+
     if set(points) != EVSES:
         raise ValueError('Expected exactly the eight Euskirchen EVSEs')
-    publication = re.search(r'Stand:\s*(\d{2}\.\d{2}\.\d{4},\s*\d{2}:\d{2})\s*Uhr', text)
+    publication = re.search(r'Stand:\\s*(\\d{2}\\.\\d{2}\\.\\d{4},\\s*\\d{2}:\\d{2})\\s*Uhr', text)
     observed = datetime.strptime(publication[1], '%d.%m.%Y, %H:%M').replace(tzinfo=TIMEZONE) if publication else None
-    result = {key: list(points.values()).count(key) for key in ('free', 'occupied', 'offline', 'unknown')}
+    statuses = [point['status'] for point in points.values()]
+    result = {key: statuses.count(key) for key in ('free', 'occupied', 'offline', 'unknown')}
     result.update(price=prices[0] if len(prices) == 8 and len(set(prices)) == 1 else None,
-                  published_at=observed.isoformat() if observed else None)
+                  published_at=observed.isoformat() if observed else None,
+                  evses=points)
     return result
-
 
 def parse_adhoc(html):
     text = html_to_text(html)
-    if not EVSES.issubset(set(re.findall(r'DE\*AVX\*E\d+', text))):
+    if not EVSES.issubset(set(re.findall(r'DE\\*AVX\\*E\\d+', text))):
         raise ValueError('Euskirchen EVSE identity missing')
-    match = re.search(r'Günstigster\s+Ad[- ]hoc[- ]Preis\s+(\d+[,.]\d+)\s*€\s*/\s*kWh', text, re.I)
+    match = re.search(r'Günstigster\\s+Ad[- ]hoc[- ]Preis\\s+(\\d+[,.]\\d+)\\s*€\\s*/\\s*kWh', text, re.I)
     if not match:
         raise ValueError('Station price label missing; refusing page-wide price guessing')
     result = {'price': valid_price(match[1]), 'published_at': None}
     for key, label in [('free', 'frei'), ('occupied', 'belegt'), ('offline', 'offline')]:
-        match = re.search(r'<strong[^>]*>\s*(\d+)\s*</strong>\s*<span[^>]*>\s*'+label, html, re.I)
+        match = re.search(r'<strong[^>]*>\\s*(\\d+)\\s*</strong>\\s*<span[^>]*>\\s*'+label, html, re.I)
         if match:
             result[key] = int(match[1])
+
+    points = {}
+    blocks = re.split(r'CCS\\s*\\(Combo 2\\)\\s+', text)[1:]
+    state_map = {'Verfügbar': 'free', 'Belegt': 'occupied', 'Lädt': 'occupied',
+                 'Offline': 'offline', 'Außer Betrieb': 'offline'}
+    age_units = {'Sek.': 1, 'Min.': 60, 'Std.': 3600, 'Tag': 86400, 'Tage': 86400}
+    for block in blocks:
+        evse_match = re.match(r'(DE\\*AVX\\*E\\d+)\\s+', block)
+        if not evse_match or evse_match[1] not in EVSES:
+            continue
+        evse = evse_match[1]
+        detail = {}
+        power = re.search(r'Leistung\\s+(\\d+)\\s*kW', block)
+        price = re.search(r'Preis\\s+(\\d+[,.]\\d+)\\s*€\\s*/kWh', block)
+        state = re.search(
+            r'\\b(Verfügbar|Belegt|Lädt|Offline|Außer Betrieb)\\s+seit\\s+'
+            r'(\\d+)\\s+(Sek\\.|Min\\.|Std\\.|Tag|Tage)(?:\\s|$)', block)
+        if power:
+            detail['power_kw'] = int(power[1])
+        if price:
+            detail['price'] = valid_price(price[1])
+        if state:
+            detail['status'] = state_map[state[1]]
+            detail['status_age_seconds'] = int(state[2]) * age_units[state[3]]
+        points[evse] = detail
+    if set(points) == EVSES:
+        result['evses'] = points
     return result
 
-
 def download(url):
-    request = urllib.request.Request(url, headers={'User-Agent': 'AVEX-Price-Monitor/5.0', 'Cache-Control': 'no-cache'})
+    request = urllib.request.Request(url, headers={'User-Agent': 'AVEX-Price-Monitor/6.0', 'Cache-Control': 'no-cache'})
     with urllib.request.urlopen(request, timeout=20) as response:
         return response.read(2_000_000).decode('utf-8')
 
@@ -226,6 +284,76 @@ def update_history(history, data, now):
     return before[-1:] + [p for p in points if timestamp(p['time']) >= cutoff]
 
 
+
+def make_observation(data, sources, now):
+    """Build a compact, analysis-neutral snapshot of what each source returned."""
+    observation = {
+        'time': now.isoformat(timespec='seconds'),
+        'price': None,
+        'price_source': data.get('price_source'),
+        'price_valid_from': data.get('price_valid_from'),
+        'price_valid_to': data.get('price_valid_to'),
+        'status': {
+            'source': data.get('status_source'),
+            'fresh': bool(data.get('status_fresh')),
+            'published_at': data.get('status_published_at'),
+            'free': data.get('free'),
+            'occupied': data.get('occupied'),
+            'offline': data.get('offline'),
+            'unknown': data.get('unknown'),
+        },
+        'sources': {}
+    }
+    try:
+        observation['price'] = valid_price(data.get('price'))
+    except (TypeError, ValueError):
+        pass
+
+    for name, source in sources.items():
+        captured = {'ok': bool(source.get('ok'))}
+        if not source.get('ok'):
+            captured['error'] = source.get('error')
+        elif name == 'avex':
+            entry = current_entry(source.get('data', []), now)
+            captured['interval_count'] = len(source.get('data', []))
+            if entry:
+                captured['current'] = entry
+        else:
+            payload = source.get('data') or {}
+            for key in ('price', 'published_at', 'free', 'occupied', 'offline', 'unknown', 'evses'):
+                if key in payload:
+                    captured[key] = payload[key]
+        observation['sources'][name] = captured
+    return observation
+
+
+def append_jsonl(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open('a', encoding='utf-8') as handle:
+        handle.write(json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\\n')
+
+
+def archive_observation(data, sources, now):
+    append_jsonl(OBSERVATION_DIR / f'{now:%Y-%m-%d}.jsonl', make_observation(data, sources, now))
+
+
+def archive_schedule(sources, now):
+    official = sources.get('avex', {})
+    if not official.get('ok'):
+        return
+    schedule = official.get('data') or []
+    path = SCHEDULE_DIR / f'{now:%Y-%m-%d}.jsonl'
+    snapshot = {'observed_at': now.isoformat(timespec='seconds'), 'schedule': schedule}
+    if path.exists():
+        try:
+            last = path.read_text(encoding='utf-8').splitlines()[-1]
+            previous = json.loads(last)
+            if previous.get('schedule') == schedule:
+                return
+        except (IndexError, ValueError, OSError):
+            pass
+    append_jsonl(path, snapshot)
+
 def main():
     old = load_json('avex-data.json', {})
     with ThreadPoolExecutor(max_workers=3) as pool:
@@ -233,6 +361,8 @@ def main():
     now = datetime.now(TIMEZONE)
     data = build_data(old, sources, now)
     history = update_history(load_json('avex-history.json', []), data, now)
+    archive_observation(data, sources, now)
+    archive_schedule(sources, now)
     for filename, value in [('avex-data.json', data), ('avex-history.json', history)]:
         path = Path(filename)
         tmp = path.with_suffix('.tmp')
