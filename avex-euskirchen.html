@@ -61,15 +61,46 @@ h1{
 }
 
 .chart-box {
-    width: min(900px, 92vw);
-    height: 300px;
-    margin: 40px auto;
+    width:min(760px, 92vw);
+    height:220px;
+    margin:36px auto;
 }
 
 .chart-title {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 15px;
+    font-size:18px;
+    font-weight:600;
+    margin-bottom:12px;
+}
+
+.chart-current {
+    font-weight:700;
+}
+
+.day-stats {
+    display:flex;
+    justify-content:center;
+    gap:16px;
+    flex-wrap:wrap;
+    margin:0 auto 30px;
+}
+
+.day-stat {
+    min-width:180px;
+    padding:12px 18px;
+    background:#191919;
+    border:1px solid #303030;
+    border-radius:12px;
+}
+
+.day-stat-label {
+    color:#999;
+    font-size:13px;
+    margin-bottom:4px;
+}
+
+.day-stat-value {
+    font-size:18px;
+    font-weight:700;
 }
     
 button{
@@ -125,7 +156,16 @@ button:disabled{
         Bitte warten...
     </div>
 
-    <div id="sourceInfo" class="time"></div>
+    <div id="sourceInfo" class="day-stats">
+        <div class="day-stat">
+            <div class="day-stat-label">Tagestief</div>
+            <div id="dayLow" class="day-stat-value">--</div>
+        </div>
+        <div class="day-stat">
+            <div class="day-stat-label">Tageshoch</div>
+            <div id="dayHigh" class="day-stat-value">--</div>
+        </div>
+    </div>
 
     <div id="refreshInfo" class="time">
         Letzte Änderung: --:-- | Refresh in 05:00
@@ -138,7 +178,7 @@ button:disabled{
     <div class="chart-box">
 
     <div class="chart-title">
-        Preisverlauf letzte 24 Stunden
+        24h-Preisverlauf · Aktuell <span id="chartCurrentPrice" class="chart-current">--</span>
     </div>
 
     <canvas id="priceChart"></canvas>
@@ -338,303 +378,166 @@ const priceClickPlugin = {
 async function loadPriceHistory() {
 
     try {
+        if (!latestData) return;
 
-        const response = await fetch(
-            "avex-history.json?t=" + Date.now(),
-            {
-                cache: "no-store"
-            }
+        const schedule = (latestData.price_schedule || [])
+            .map(entry => ({
+                start: Date.parse(entry.valid_from),
+                end: Date.parse(entry.valid_to),
+                price: Number(entry.price)
+            }))
+            .filter(entry =>
+                Number.isFinite(entry.start) &&
+                Number.isFinite(entry.end) &&
+                Number.isFinite(entry.price)
+            )
+            .sort((a, b) => a.start - b.start);
+
+        if (!schedule.length) return;
+
+        const berlinDay = date =>
+            new Intl.DateTimeFormat("en-CA", {
+                timeZone: "Europe/Berlin",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit"
+            }).format(date);
+
+        const today = berlinDay(new Date());
+
+        const todayEntries = schedule.filter(entry =>
+            berlinDay(new Date(entry.start)) === today ||
+            berlinDay(new Date(entry.end - 1)) === today
         );
 
-        if (!response.ok) {
-            throw new Error(
-                "History HTTP " + response.status
-            );
-        }
+        if (!todayEntries.length) return;
 
-        const history =
-            await response.json();
+        const dayStart = Math.min(...todayEntries.map(entry => entry.start));
+        const dayEnd = Math.max(...todayEntries.map(entry => entry.end));
 
-        if (!history.length) {
-            return;
-        }
-
-
-        const now = Date.now();
-
-        const start =
-            now - (24 * 60 * 60 * 1000);
-
-
-        const parsed =
-            history
-                .map(point => ({
-                    x: new Date(point.time).getTime(),
-                    y: Number(point.price)
-                }))
-                .sort((a, b) => a.x - b.x);
-
-
-        /*
-         * Preis ermitteln, der exakt am Anfang
-         * des 24h-Fensters gültig war.
-         */
-        let startPrice = parsed[0].y;
-
-        for (const point of parsed) {
-
-            if (point.x <= start) {
-                startPrice = point.y;
-            }
-            else {
-                break;
-            }
-        }
-
-
-        /*
-         * Nur echte Preisänderungen innerhalb
-         * der letzten 24 Stunden übernehmen.
-         */
-        const visiblePoints =
-            parsed.filter(
-                point => point.x > start
-            );
-
-
-        /*
-         * Künstlicher Startpunkt:
-         * genau vor 24 Stunden.
-         */
-        const chartData = [
-            {
-                x: start,
-                y: startPrice
-            },
-            ...visiblePoints
-        ];
-
-
-        /*
-         * Linie bis zum aktuellen Zeitpunkt
-         * verlängern.
-         */
-        const latestPrice =
-            chartData[
-                chartData.length - 1
-            ].y;
-
-        chartData.push({
-            x: now,
-            y: latestPrice
+        const chartData = [];
+        todayEntries.forEach(entry => {
+            chartData.push({ x: entry.start, y: entry.price });
+            chartData.push({ x: entry.end, y: entry.price });
         });
 
-
-        const ctx =
-            document
-                .getElementById("priceChart")
-                .getContext("2d");
-
+        const ctx = document.getElementById("priceChart").getContext("2d");
 
         if (priceChart) {
-
-            priceChart.data.datasets[0].data =
-                chartData;
-
-            priceChart.options.scales.x.min =
-                start;
-
-            priceChart.options.scales.x.max =
-                now;
-
+            priceChart.data.datasets[0].data = chartData;
+            priceChart.options.scales.x.min = dayStart;
+            priceChart.options.scales.x.max = dayEnd;
             priceChart.update();
-
             return;
         }
 
+        priceChart = new Chart(ctx, {
+            type: "line",
+            plugins: [priceClickPlugin],
 
-        priceChart =
-            new Chart(ctx, {
+            data: {
+                datasets: [{
+                    label: "Preis €/kWh",
+                    data: chartData,
+                    stepped: "before",
+                    tension: 0,
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    pointHoverRadius: 5
+                }]
+            },
 
-                type: "line",
-                plugins: [
-                    priceClickPlugin
-                ],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                parsing: false,
 
-                data: {
-                    datasets: [{
-                        label: "Preis €/kWh",
-                        data: chartData,
+                onClick: function(event, elements, chart) {
+                    const clickedTime = chart.scales.x.getValueForPixel(event.x);
+                    const currentData = chart.data.datasets[0].data;
+                    let clickedPrice = currentData[0].y;
 
-                        /*
-                         * Harte Preisstufen:
-                         * KEINE Glättung.
-                         */
-                        stepped: "before",
-                        tension: 0,
+                    for (const point of currentData) {
+                        if (point.x <= clickedTime) clickedPrice = point.y;
+                        else break;
+                    }
 
-                        borderWidth: 3,
-                        pointRadius: 0,
-                        pointHoverRadius: 5
-                    }]
-                },
-
-                options: {
-
-                    responsive: true,
-                    maintainAspectRatio: false,
-
-                    animation: false,
-
-                    parsing: false,
-
-                    onClick: function(event, elements, chart) {
-
-                    const clickedTime =
-                        chart.scales.x.getValueForPixel(
-                            event.x
-                        );
-                
-                
-                        const currentData =
-                            chart.data.datasets[0].data;
-                        
-                        
-                        let clickedPrice =
-                            currentData[0].y;
-                        
-                        
-                        for (const point of currentData) {
-                        
-                            if (point.x <= clickedTime) {
-                                clickedPrice = point.y;
-                            }
-                            else {
-                                break;
-                            }
-                        }
-                
-                
                     chart.$selectedPrice = {
                         time: clickedTime,
                         price: clickedPrice
                     };
-                
-                
                     chart.draw();
                 },
 
-                    plugins: {
+                plugins: {
+                    legend: {
+                        display: false
+                    },
 
-                        legend: {
-                            display: false
+                    tooltip: {
+                        callbacks: {
+                            title: function(items) {
+                                return new Date(items[0].parsed.x)
+                                    .toLocaleTimeString("de-DE", {
+                                        timeZone: "Europe/Berlin",
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                    });
+                            },
+
+                            label: function(context) {
+                                return context.parsed.y
+                                    .toFixed(2)
+                                    .replace(".", ",") + " €/kWh";
+                            }
+                        }
+                    }
+                },
+
+                scales: {
+                    x: {
+                        type: "linear",
+                        min: dayStart,
+                        max: dayEnd,
+                        grid: {
+                            color: "rgba(255,255,255,0.08)"
                         },
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                title: function(items) {
-
-                                    const date =
-                                        new Date(
-                                            items[0].parsed.x
-                                        );
-
-                                    return date
-                                        .toLocaleString(
-                                            "de-DE",
-                                            {
-                                                hour: "2-digit",
-                                                minute: "2-digit"
-                                            }
-                                        );
-                                },
-
-                                label: function(context) {
-
-                                    return (
-                                        context.parsed.y
-                                            .toFixed(2)
-                                            .replace(".", ",")
-                                        + " €/kWh"
-                                    );
-                                }
+                        ticks: {
+                            color: "#999",
+                            maxTicksLimit: 7,
+                            callback: function(value) {
+                                return new Date(value)
+                                    .toLocaleTimeString("de-DE", {
+                                        timeZone: "Europe/Berlin",
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                    });
                             }
                         }
                     },
 
-                    scales: {
-
-                        x: {
-
-                            type: "linear",
-
-                            min: start,
-                            max: now,
-
-                            grid: {
-                                color:
-                                    "rgba(255,255,255,0.08)"
-                            },
-
-                            ticks: {
-
-                                color: "#999",
-
-                                maxTicksLimit: 7,
-
-                                callback: function(value) {
-
-                                    const date =
-                                        new Date(value);
-
-                                    return date
-                                        .toLocaleTimeString(
-                                            "de-DE",
-                                            {
-                                                hour: "2-digit",
-                                                minute: "2-digit"
-                                            }
-                                        );
-                                }
+                    y: {
+                        ticks: {
+                            stepSize: 0.01,
+                            color: "#999",
+                            callback: function(value) {
+                                return Number(value)
+                                    .toFixed(2)
+                                    .replace(".", ",") + " €";
                             }
                         },
-
-                        y: {
-                        
-                            ticks: {
-                                stepSize: 0.01,
-                        
-                                color: "#999",
-                        
-                                callback: function(value) {
-                        
-                                    return (
-                                        Number(value)
-                                            .toFixed(2)
-                                            .replace(".", ",")
-                                        + " €"
-                                    );
-                                }
-                            },
-                        
-                            grid: {
-                                color:
-                                    "rgba(255,255,255,0.08)"
-                            }
+                        grid: {
+                            color: "rgba(255,255,255,0.08)"
                         }
                     }
                 }
-            });
+            }
+        });
 
     }
     catch(err) {
-
-        console.error(
-            "AVEX Preisverlauf konnte nicht geladen werden:",
-            err
-        );
+        console.error("AVEX 24h-Preisverlauf konnte nicht geladen werden:", err);
     }
 }
 
@@ -655,32 +558,96 @@ function updateCountdown() {
 
 function renderLiveData() {
     if (!latestData) return;
+
     const data = latestData;
     const now = Date.now();
     const entries = (data.price_schedule || []).filter(entry =>
-        Date.parse(entry.valid_from) <= now && now < Date.parse(entry.valid_to)
-        && Number.isFinite(entry.price));
+        Date.parse(entry.valid_from) <= now &&
+        now < Date.parse(entry.valid_to) &&
+        Number.isFinite(Number(entry.price))
+    );
+
     const current = entries.length === 1 ? entries[0] : null;
-    const price = current ? current.price.toFixed(2).replace(".", ",") : data.price;
+    const price = current
+        ? Number(current.price).toFixed(2).replace(".", ",")
+        : data.price;
+
     document.getElementById("price").innerText = price + " €/kWh";
+
     const statusAge = now - Date.parse(data.status_published_at || "");
     const freshStatus = data.status_fresh && statusAge >= 0 && statusAge <= 30 * 60 * 1000;
     const knownCounts = [data.free, data.occupied, data.offline].every(Number.isInteger);
-    const indicator = freshStatus ? (data.free <= 1 ? "🔴" : data.free <= 3 ? "🟡" : "🟢") : "⚪";
+    const indicator = freshStatus
+        ? (data.free <= 1 ? "🔴" : data.free <= 3 ? "🟡" : "🟢")
+        : "⚪";
+
     let status = knownCounts
         ? `${indicator} ${data.free} von 8 frei | ${data.occupied} belegt | ${data.offline} offline`
         : "⚪ Belegung unbekannt";
+
     if (data.unknown) status += ` | ${data.unknown} unbekannt`;
     if (!freshStatus && knownCounts) status += " (nicht aktuell bestätigt)";
     document.getElementById("updated").innerText = status;
-    const source = current ? "AVEX Direktzahlung am EC-Terminal" : (data.price_source || "unbekannt");
-    let detail = current
-        ? `gültig bis ${new Date(current.valid_to).toLocaleTimeString("de-DE", {timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit"})} Uhr`
-        : "Letzter bekannter Preis, aktuell nicht bestätigt";
-    if (current && data.price_quality === "cached_schedule") detail += " · gespeicherter Betreiber-Preisplan";
-    if (data.price_conflict) detail += " · Vergleichsportale melden abweichende Preise";
-    document.getElementById("sourceInfo").innerText = `${source} · ${detail}`;
-    document.title = `${indicator} ${price} €/kWh | AVEX Euskirchen`;
+
+    const berlinDay = date =>
+        new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Europe/Berlin",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).format(date);
+
+    const today = berlinDay(new Date(now));
+    const dayEntries = (data.price_schedule || [])
+        .filter(entry =>
+            Number.isFinite(Number(entry.price)) &&
+            (
+                berlinDay(new Date(entry.valid_from)) === today ||
+                berlinDay(new Date(Date.parse(entry.valid_to) - 1)) === today
+            )
+        )
+        .sort((a, b) => Date.parse(a.valid_from) - Date.parse(b.valid_from));
+
+    const formatPrice = value =>
+        Number(value).toFixed(2).replace(".", ",") + " €/kWh";
+
+    const formatRange = entry => {
+        const options = {
+            timeZone: "Europe/Berlin",
+            hour: "2-digit",
+            minute: "2-digit"
+        };
+
+        const from = new Date(entry.valid_from)
+            .toLocaleTimeString("de-DE", options);
+        const to = new Date(entry.valid_to)
+            .toLocaleTimeString("de-DE", options);
+
+        return from + "–" + to + " Uhr";
+    };
+
+    if (dayEntries.length) {
+        const minPrice = Math.min(...dayEntries.map(entry => Number(entry.price)));
+        const maxPrice = Math.max(...dayEntries.map(entry => Number(entry.price)));
+        const low = dayEntries.find(entry => Number(entry.price) === minPrice);
+        const high = dayEntries.find(entry => Number(entry.price) === maxPrice);
+
+        document.getElementById("dayLow").innerText =
+            formatPrice(minPrice) + " · " + formatRange(low);
+
+        document.getElementById("dayHigh").innerText =
+            formatPrice(maxPrice) + " · " + formatRange(high);
+    }
+    else {
+        document.getElementById("dayLow").innerText = "--";
+        document.getElementById("dayHigh").innerText = "--";
+    }
+
+    document.getElementById("chartCurrentPrice").innerText =
+        price + " €/kWh";
+
+    document.title =
+        `${indicator} ${price} €/kWh | AVEX Euskirchen`;
 }
 
 async function loadData() {
