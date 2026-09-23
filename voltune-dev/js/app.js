@@ -3103,6 +3103,40 @@ ui.controller.addEventListener(
     stopAudio();
   });
 
+  ui.easyBov.addEventListener(
+    "click",
+    () => {
+      easyBovEnabled =
+        !easyBovEnabled;
+
+      ui.easyBov.classList.toggle(
+        "active",
+        easyBovEnabled
+      );
+
+      // Die Audioengine erhält den neuen Wert
+      // im nächsten normalen Sound-Update.
+      // Bei laufendem Sound einmal sofort
+      // aktualisieren, damit der Modus direkt
+      // wirksam und im Debug sichtbar wird.
+      if (soundActive) {
+        if (gpsActive) {
+          updateVoltuneSound(
+            gpsSpeedKmh,
+            gpsAccel
+          );
+        } else {
+          updateVoltuneSound(
+            manualSpeed,
+            manualAccel
+          );
+        }
+      }
+
+      scheduleSettingsSave();
+    }
+  );
+
 ui.gears.addEventListener("click", () => {
   gearsEnabled = !gearsEnabled;
 
