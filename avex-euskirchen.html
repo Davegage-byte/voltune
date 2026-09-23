@@ -375,6 +375,82 @@ const priceClickPlugin = {
     }
 };
 
+const currentTimePlugin = {
+
+    id: "currentTimeMarker",
+
+    afterDatasetsDraw(chart) {
+
+        const xScale = chart.scales.x;
+        const area = chart.chartArea;
+        const now = Date.now();
+
+        if (!xScale || !area || now < xScale.min || now > xScale.max) {
+            return;
+        }
+
+        const x = xScale.getPixelForValue(now);
+        const ctx = chart.ctx;
+
+        const timeText =
+            new Date(now).toLocaleTimeString(
+                "de-DE",
+                {
+                    timeZone: "Europe/Berlin",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+
+        const text = "Jetzt " + timeText;
+
+        ctx.save();
+
+        ctx.beginPath();
+        ctx.setLineDash([6, 5]);
+        ctx.moveTo(x, area.top);
+        ctx.lineTo(x, area.bottom);
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.font = "600 12px Segoe UI, Arial";
+
+        const paddingX = 7;
+        const boxHeight = 24;
+        const boxWidth = ctx.measureText(text).width + paddingX * 2;
+
+        let boxX = x - boxWidth / 2;
+
+        if (boxX < area.left) {
+            boxX = area.left;
+        }
+
+        if (boxX + boxWidth > area.right) {
+            boxX = area.right - boxWidth;
+        }
+
+        const boxY = area.top + 6;
+
+        ctx.fillStyle = "rgba(17,17,17,0.92)";
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.45)";
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.textBaseline = "middle";
+        ctx.fillText(
+            text,
+            boxX + paddingX,
+            boxY + boxHeight / 2
+        );
+
+        ctx.restore();
+    }
+};
+
 async function loadPriceHistory() {
 
     try {
@@ -433,7 +509,7 @@ async function loadPriceHistory() {
 
         priceChart = new Chart(ctx, {
             type: "line",
-            plugins: [priceClickPlugin],
+            plugins: [priceClickPlugin, currentTimePlugin],
 
             data: {
                 datasets: [{
@@ -645,6 +721,10 @@ function renderLiveData() {
 
     document.getElementById("chartCurrentPrice").innerText =
         price + " €/kWh";
+
+    if (priceChart) {
+        priceChart.draw();
+    }
 
     document.title =
         `${indicator} ${price} €/kWh | AVEX Euskirchen`;
