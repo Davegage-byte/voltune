@@ -1,7 +1,11 @@
 import json
+import tempfile
 import unittest
 from datetime import datetime, timedelta
-from update_avex import (TIMEZONE, EVSES, build_data, current_entry, parse_schedule,
+from pathlib import Path
+from unittest.mock import patch
+from update_avex import (TIMEZONE, EVSES, archive_observation, archive_schedule,
+                         build_data, current_entry, make_observation, parse_schedule,
                          parse_estations, parse_adhoc, update_history)
 
 NOW = datetime(2026, 9, 23, 10, tzinfo=TIMEZONE)
@@ -50,14 +54,37 @@ class AvexTests(unittest.TestCase):
         self.assertEqual(data['price_quality'], 'unconfirmed')
         self.assertFalse(data['price_fresh'])
 
-    def test_estations_exact_station_and_uniform_tariff(self):
-        blocks = ''.join(f'<div>EVSE-ID: {evse} Verfügbar Stand 23.09.26, 08:00 Uhr Ad-Hoc-Tarif HPC 0,42 € /kWh</div>' for evse in sorted(EVSES))
+    def test_estations_exact_station_uniform_tariff_and_details(self):
+        blocks = ''.join(
+            f'<div>EVSE-ID: {evse} Verfügbar Stand 23.09.26, 08:00 Uhr '
+            'Zuletzt genutzt: 22.09.26, 17:08 Uhr Nutzungen (7 Tage): 9 '
+            'Zuletzt außer Betrieb: 23.09.26, 06:14 Uhr Störungen (6 Monate): 73 '
+            'Daten seit 04.07.2026 Ad-Hoc-Tarif HPC 0,42 € /kWh</div>'
+            for evse in sorted(EVSES))
         html = blocks+'<div>Stand: 23.09.2026, 10:00 Uhr</div><script>0,01 €/kWh</script>'
         result = parse_estations(html)
         self.assertEqual(result['price'], .42)
         self.assertEqual(result['free'], 8)
+        self.assertEqual(len(result['evses']), 8)
+        detail = result['evses']['DE*AVX*E262414']
+        self.assertEqual(detail['status'], 'free')
+        self.assertEqual(detail['uses_7d'], 9)
+        self.assertEqual(detail['outages_6m'], 73)
+        self.assertEqual(detail['data_since'], '2026-07-04')
         with self.assertRaises(ValueError): parse_estations(html.replace('DE*AVX*E262414', 'DE*OTHER*123'))
         self.assertIsNone(parse_estations(html.replace('0,42', '0,55', 1))['price'])
+
+    def test_adhoc_collects_per_evse_details(self):
+        summary = '<strong>7</strong><span>frei</span><strong>1</strong><span>belegt</span><strong>0</strong><span>offline</span>'
+        parts = ['Günstigster Ad-hoc-Preis 0,38 €/kWh', summary]
+        for i, evse in enumerate(sorted(EVSES)):
+            state = 'Belegt' if i == 0 else 'Verfügbar'
+            parts.append(f'CCS (Combo 2) {evse} Leistung 400 kW Preis 0,38 €/kWh {state} seit 4 Min.')
+        result = parse_adhoc(' '.join(parts))
+        self.assertEqual(result['price'], .38)
+        self.assertEqual(len(result['evses']), 8)
+        self.assertEqual(result['evses'][sorted(EVSES)[0]]['status'], 'occupied')
+        self.assertEqual(result['evses'][sorted(EVSES)[1]]['status_age_seconds'], 240)
 
     def test_stale_status_not_live(self):
         src = sources([interval()])
@@ -78,5 +105,36 @@ class AvexTests(unittest.TestCase):
         result = update_history(history, data, NOW)
         self.assertEqual(len(result), 2)
         self.assertEqual(len(update_history(result, data, NOW)), 2)
+
+
+    def test_observation_keeps_source_values_without_full_schedule_duplication(self):
+        src = sources([interval()])
+        src['e-stations'] = {'ok': True, 'data': {
+            'price': .56, 'free': 7, 'occupied': 1, 'offline': 0, 'unknown': 0,
+            'published_at': NOW.isoformat(),
+            'evses': {'DE*AVX*E262414': {'status': 'occupied'}}
+        }}
+        data = build_data({}, src, NOW)
+        observation = make_observation(data, src, NOW)
+        self.assertEqual(observation['price'], .42)
+        self.assertEqual(observation['sources']['avex']['interval_count'], 1)
+        self.assertNotIn('schedule', observation['sources']['avex'])
+        self.assertEqual(observation['sources']['e-stations']['evses']['DE*AVX*E262414']['status'], 'occupied')
+
+    def test_archives_append_observations_and_dedupe_identical_schedule(self):
+        src = sources([interval()])
+        data = build_data({}, src, NOW)
+        with tempfile.TemporaryDirectory() as directory:
+            observation_dir = Path(directory) / 'observations'
+            schedule_dir = Path(directory) / 'schedules'
+            with patch('update_avex.OBSERVATION_DIR', observation_dir), patch('update_avex.SCHEDULE_DIR', schedule_dir):
+                archive_observation(data, src, NOW)
+                archive_observation(data, src, NOW + timedelta(minutes=5))
+                archive_schedule(src, NOW)
+                archive_schedule(src, NOW + timedelta(minutes=5))
+                observation_lines = (observation_dir / '2026-09-23.jsonl').read_text(encoding='utf-8').splitlines()
+                schedule_lines = (schedule_dir / '2026-09-23.jsonl').read_text(encoding='utf-8').splitlines()
+                self.assertEqual(len(observation_lines), 2)
+                self.assertEqual(len(schedule_lines), 1)
 
 if __name__ == '__main__': unittest.main()
