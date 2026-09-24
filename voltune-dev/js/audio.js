@@ -1411,13 +1411,16 @@ async function setOverrunSound(
         await ctx.resume();
       }
 
-      if (ctx.state !== "running") {
-        throw new Error(
-          `AudioContext nicht aktiv (Status: ${ctx.state}).`
-        );
+      if (ctx.state === "running") {
+        return true;
       }
 
-      return true;
+      // Ein bereits gestarteter Context kann vom
+      // Browser nach einem fehlerhaften Startversuch
+      // geschlossen/interrupted zurückbleiben.
+      // Nicht auf einen Seiten-Reload warten:
+      // unten sauber neu aufbauen.
+      started = false;
     }
 
     const AudioCtx =
@@ -1428,6 +1431,30 @@ async function setOverrunSound(
       throw new Error(
         "Dieser Browser unterstützt die Web Audio API nicht."
       );
+    }
+
+    // Falls ein vorheriger Startversuch einen halbfertigen
+    // Context hinterlassen hat, diesen zuerst entsorgen.
+    if (ctx && !started) {
+      try {
+        if (ctx.state !== "closed") {
+          await ctx.close();
+        }
+      } catch (error) {
+        console.warn(
+          "Alter AudioContext konnte nicht sauber geschlossen werden:",
+          error
+        );
+      }
+
+      ctx = null;
+
+      // Diese Arrays werden beim Graph-Aufbau befüllt
+      // und dürfen keine Nodes des alten Contexts behalten.
+      accelRissetOsc = [];
+      accelRissetGain = [];
+      regenRissetOsc = [];
+      regenRissetGain = [];
     }
 
     ctx = new AudioCtx();
