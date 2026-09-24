@@ -310,7 +310,7 @@
           </div>
           <select id="preset">
             <option value="bigblock">Big Block · tief & schwer</option>
-            <option value="lopey">Lopey Cam · dunkler Big Motor</option>
+            <option value="lopey">Lopey Cam · Hot Rod Reference</option>
             <option value="modern">Modern Muscle · härter & sauberer</option>
           </select>
         </div>
@@ -493,7 +493,7 @@
       rpm:780,load:12,rough:72,punch:78,exhaust:82,bass:92,intake:34,mechanical:16,seed:454
     },
     lopey:{
-      rpm:680,load:10,rough:90,punch:72,exhaust:96,bass:100,intake:8,mechanical:7,seed:427
+      rpm:700,load:9,rough:88,punch:64,exhaust:100,bass:100,intake:4,mechanical:4,seed:427
     },
     modern:{
       rpm:900,load:16,rough:34,punch:72,exhaust:66,bass:78,intake:50,mechanical:28,seed:502
@@ -609,18 +609,26 @@
       // damit er auch auf Kopfhörern und im Auto hörbar bleibt.
       addDecayingTone(
         buffer,start,sampleRate,
-        76 + load*12,
-        amp*(0.62+bass*0.28),
-        0.115,
+        82 + load*9,
+        amp*(0.72+bass*0.34),
+        0.145,
         bank?0.55:0.18
       );
 
       addDecayingTone(
         buffer,start,sampleRate,
-        112 + exhaust*18,
-        amp*(0.34+exhaust*0.20),
-        0.072,
+        108 + exhaust*12,
+        amp*(0.46+exhaust*0.24),
+        0.105,
         bank?0.96:0.34
+      );
+
+      addDecayingTone(
+        buffer,start,sampleRate,
+        136 + load*18,
+        amp*(0.20+exhaust*0.14),
+        0.060,
+        bank?0.72:0.27
       );
     }
 
@@ -637,7 +645,7 @@
       92 + exhaust*55 + rand()*12,
       amp*
         (0.20+punch*0.30)*
-        (lopey ? 0.62 : 1),
+        (lopey ? 0.38 : 1),
       0.028+exhaust*0.024,
       bank?1.2:0.4
     );
@@ -647,7 +655,7 @@
       210 + load*170 + rand()*34,
       amp*
         (0.08+punch*0.25+load*0.08)*
-        (lopey ? 0.24 : 1),
+        (lopey ? 0.10 : 1),
       0.014+exhaust*0.012,
       bank?0.3:1.1
     );
@@ -666,7 +674,7 @@
         env*
         amp*
         (0.035+punch*0.11)*
-        (lopey ? 0.22 : 1);
+        (lopey ? 0.08 : 1);
     }
   }
 
@@ -758,11 +766,38 @@
         (rand()*2-1)*
         (0.05+settings.rough*0.12);
 
+      const lopeyEvent =
+        settings.preset === "lopey";
+
+      const lopeyGroup =
+        lopeyEvent
+          ? (
+              0.76 +
+              0.24 *
+              Math.sin(
+                Math.PI * 2 *
+                e / 5.4 +
+                0.35
+              )
+            )
+          : 1;
+
+      const lopeyBankAccent =
+        lopeyEvent
+          ? (
+              (e & 1)
+                ? 0.91
+                : 1.08
+            )
+          : 1;
+
       const amp=
         (0.42+
           settings.load*0.26+
           settings.punch*0.20)*
-        eventVariation;
+        eventVariation*
+        lopeyGroup*
+        lopeyBankAccent;
 
       const bank=e&1;
 
@@ -812,7 +847,7 @@
 
       const sideDetailScale =
         settings.preset === "lopey"
-          ? 0.48
+          ? 0.22
           : 1;
 
       const intake=
@@ -855,9 +890,9 @@
     const lowpass=
       lopeyRender
         ? (
-            920+
-            settings.load*900+
-            settings.intake*350
+            760+
+            settings.load*720+
+            settings.intake*240
           )
         : (
             1800+
@@ -869,10 +904,17 @@
     r=lowpassOnePole(r,lowpass,sampleRate);
 
     const drive=
-      1.25+
-      settings.punch*1.20+
-      settings.load*0.90+
-      settings.bass*0.28;
+      (
+        1.25+
+        settings.punch*1.20+
+        settings.load*0.90+
+        settings.bass*0.28
+      ) *
+      (
+        lopeyRender
+          ? 0.78
+          : 1
+      );
 
     let peak=0;
 
