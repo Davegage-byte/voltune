@@ -2918,6 +2918,10 @@ async function setOverrunSound(
 
     airSource.start();
 
+    if (wankelSource) {
+      wankelSource.start();
+    }
+
     // Nach dem Aufbau noch einmal sicherstellen,
     // dass der Context wirklich läuft.
     if (
