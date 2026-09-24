@@ -310,7 +310,7 @@
           </div>
           <select id="preset">
             <option value="bigblock">Big Block · tief & schwer</option>
-            <option value="lopey">Lopey Cam · Hot Rod Reference</option>
+            <option value="lopey">Lopey Cam · Near Stall</option>
             <option value="modern">Modern Muscle · härter & sauberer</option>
           </select>
         </div>
@@ -493,7 +493,7 @@
       rpm:780,load:12,rough:72,punch:78,exhaust:82,bass:92,intake:34,mechanical:16,seed:454
     },
     lopey:{
-      rpm:700,load:9,rough:88,punch:64,exhaust:100,bass:100,intake:4,mechanical:4,seed:427
+      rpm:560,load:7,rough:96,punch:58,exhaust:100,bass:100,intake:2,mechanical:2,seed:427
     },
     modern:{
       rpm:900,load:16,rough:34,punch:72,exhaust:66,bass:78,intake:50,mechanical:28,seed:502
@@ -645,7 +645,7 @@
       92 + exhaust*55 + rand()*12,
       amp*
         (0.20+punch*0.30)*
-        (lopey ? 0.38 : 1),
+        (lopey ? 0.20 : 1),
       0.028+exhaust*0.024,
       bank?1.2:0.4
     );
@@ -655,7 +655,7 @@
       210 + load*170 + rand()*34,
       amp*
         (0.08+punch*0.25+load*0.08)*
-        (lopey ? 0.10 : 1),
+        (lopey ? 0.035 : 1),
       0.014+exhaust*0.012,
       bank?0.3:1.1
     );
@@ -674,7 +674,7 @@
         env*
         amp*
         (0.035+punch*0.11)*
-        (lopey ? 0.08 : 1);
+        (lopey ? 0.025 : 1);
     }
   }
 
@@ -740,23 +740,73 @@
       -0.032,0.030,-0.010,0.018
     ];
 
-    const eventCount=Math.ceil(actualDuration/baseInterval)+8;
+    const eventCount=Math.ceil(actualDuration/baseInterval)+16;
 
-    for(let e=-4;e<eventCount;e++){
+    let lopeyClock =
+      -6 * baseInterval;
+
+    for(let e=-6;e<eventCount;e++){
       const pattern=crossPlanePattern[((e%8)+8)%8];
-      const deterministicJitter=
-        pattern*settings.rough*baseInterval;
 
-      const randomJitter=
-        (rand()*2-1)*
-        settings.rough*
-        baseInterval*
-        0.035;
+      const lopeyEvent =
+        settings.preset === "lopey";
 
-      const eventTime=
-        e*baseInterval+
-        deterministicJitter+
-        randomJitter;
+      let eventTime;
+
+      if (lopeyEvent) {
+        // "Fast geht er aus":
+        // Die Zündabstände schwanken bewusst stärker und
+        // einzelne Takte bekommen eine längere Pause.
+        const groupPhase =
+          ((e % 16) + 16) % 16;
+
+        const stumbleGap =
+          groupPhase === 5
+            ? 0.34
+            : groupPhase === 12
+              ? 0.22
+              : 0;
+
+        const catchUp =
+          groupPhase === 6 ||
+          groupPhase === 13
+            ? -0.10
+            : 0;
+
+        const intervalVariation =
+          (
+            pattern * 0.16 +
+            (rand()*2-1) * 0.075 +
+            stumbleGap +
+            catchUp
+          ) *
+          settings.rough;
+
+        lopeyClock +=
+          baseInterval *
+          Math.max(
+            0.63,
+            1 + intervalVariation
+          );
+
+        eventTime =
+          lopeyClock;
+
+      } else {
+        const deterministicJitter=
+          pattern*settings.rough*baseInterval;
+
+        const randomJitter=
+          (rand()*2-1)*
+          settings.rough*
+          baseInterval*
+          0.035;
+
+        eventTime=
+          e*baseInterval+
+          deterministicJitter+
+          randomJitter;
+      }
 
       const start=Math.round(eventTime*sampleRate);
       if(start<0||start>=length) continue;
@@ -766,14 +816,11 @@
         (rand()*2-1)*
         (0.05+settings.rough*0.12);
 
-      const lopeyEvent =
-        settings.preset === "lopey";
-
       const lopeyGroup =
         lopeyEvent
           ? (
-              0.76 +
-              0.24 *
+              0.68 +
+              0.32 *
               Math.sin(
                 Math.PI * 2 *
                 e / 5.4 +
@@ -786,8 +833,24 @@
         lopeyEvent
           ? (
               (e & 1)
-                ? 0.91
-                : 1.08
+                ? 0.88
+                : 1.10
+            )
+          : 1;
+
+      const lopeyPhase =
+        ((e % 16) + 16) % 16;
+
+      const nearStallWeakness =
+        lopeyEvent
+          ? (
+              lopeyPhase === 4
+                ? 0.46
+                : lopeyPhase === 11
+                  ? 0.58
+                  : lopeyPhase === 5
+                    ? 0.72
+                    : 1
             )
           : 1;
 
@@ -797,7 +860,8 @@
           settings.punch*0.20)*
         eventVariation*
         lopeyGroup*
-        lopeyBankAccent;
+        lopeyBankAccent*
+        nearStallWeakness;
 
       const bank=e&1;
 
@@ -847,7 +911,7 @@
 
       const sideDetailScale =
         settings.preset === "lopey"
-          ? 0.22
+          ? 0.08
           : 1;
 
       const intake=
@@ -890,9 +954,9 @@
     const lowpass=
       lopeyRender
         ? (
-            760+
-            settings.load*720+
-            settings.intake*240
+            510+
+            settings.load*420+
+            settings.intake*100
           )
         : (
             1800+
@@ -903,6 +967,17 @@
     l=lowpassOnePole(l,lowpass,sampleRate);
     r=lowpassOnePole(r,lowpass,sampleRate);
 
+    if (lopeyRender) {
+      // Drei sanfte Pole hintereinander ergeben einen
+      // deutlich steileren Hochtonabfall als der bisherige
+      // einzelne Filter, ohne den Basskörper abzuschneiden.
+      l=lowpassOnePole(l,lowpass*0.92,sampleRate);
+      r=lowpassOnePole(r,lowpass*0.92,sampleRate);
+
+      l=lowpassOnePole(l,lowpass*0.82,sampleRate);
+      r=lowpassOnePole(r,lowpass*0.82,sampleRate);
+    }
+
     const drive=
       (
         1.25+
@@ -912,7 +987,7 @@
       ) *
       (
         lopeyRender
-          ? 0.78
+          ? 0.56
           : 1
       );
 
