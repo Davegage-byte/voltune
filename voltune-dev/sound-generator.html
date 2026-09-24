@@ -314,7 +314,7 @@
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
             <option value="rally">Rally Turbo · Dark Cam</option>
-            <option value="wankel">Wankel JDM · Rotor Engine BRAP</option>
+            <option value="wankel">Wankel JDM · RX-7 Reference BRAP</option>
           </select>
         </div>
 
@@ -1238,7 +1238,8 @@
     const shaftHz=settings.rpm/60;
     const rotorFireHz=shaftHz*2;
 
-    // Hörbarer Bridgeport-BRAP-Rhythmus bleibt langsam.
+    // Aus der RX-7-Referenz:
+    // hörbarer Bridgeport-Puls ca. 4,3-4,6 Hz.
     const brapHz=
       clamp(
         3.35+
@@ -1284,13 +1285,15 @@
       );
 
     // =====================================================
-    // 1) Eigentlicher Rotor-Motorkern
+    // 1) Echter Motorkern aus überlappenden Rotorimpulsen
     // =====================================================
     //
-    // Nicht als dauerhafte Sinusfläche, sondern aus
-    // vielen kleinen, sich überlappenden Verbrennungsimpulsen.
-    // Das soll ein zusammenhängendes "rrrrr / brrrrap"-Motorbett
-    // ergeben statt einzelner Trommelschläge.
+    // Referenz-Schwerpunkt:
+    // ca. 100-160 Hz, dominant um ~110 Hz.
+    //
+    // Die Resonanzen klingen länger als ein Rotorintervall
+    // und überlappen sich deshalb zu einem echten,
+    // zusammenhängenden Motorbett statt einzelner Schläge.
     const rotorInterval=
       1/rotorFireHz;
 
@@ -1299,10 +1302,10 @@
         actualDuration/
         rotorInterval
       )+
-      12;
+      16;
 
     for(
-      let e=-6;
+      let e=-8;
       e<rotorEvents;
       e++
     ){
@@ -1315,19 +1318,18 @@
         )*
         rotorInterval*
         (
-          0.012+
+          0.010+
           settings.rough*
-          0.035
+          0.025
         );
-
-      const eventTime=
-        e*
-        rotorInterval+
-        timingJitter;
 
       const start=
         Math.round(
-          eventTime*
+          (
+            e*
+            rotorInterval+
+            timingJitter
+          )*
           sampleRate
         );
 
@@ -1338,24 +1340,24 @@
         continue;
       }
 
-      const eventVariation=
-        0.86+
-        rand()*0.24;
+      const variation=
+        0.88+
+        rand()*0.22;
 
       const rotorAccent=
         rotor===0
-          ? 1.06
-          : 0.94;
+          ? 1.05
+          : 0.95;
 
       const amp=
         (
-          0.24+
+          0.42+
           settings.load*
-          0.12+
+          0.18+
           settings.exhaust*
-          0.08
+          0.12
         )*
-        eventVariation*
+        variation*
         rotorAccent;
 
       const side=
@@ -1368,242 +1370,218 @@
           ? left
           : right;
 
-      // Tiefer Grundkörper.
+      // Tiefer Unterbau, aber nicht dominant.
       addDecayingTone(
         side,
         start,
         sampleRate,
-        62+
-          settings.bass*18+
-          rand()*7,
+        56+
+          settings.bass*15+
+          rand()*6,
         amp*
           (
-            0.42+
+            0.25+
             settings.bass*
-            0.28
+            0.22
           ),
-        0.052+
-          settings.exhaust*
-          0.016,
+        0.095,
         rand()*0.7
       );
 
-      // Hauptresonanz, die dem Wankel "Motorfleisch" gibt.
+      // Haupt-Motorkörper.
+      // Genau hier sitzt der größte Teil der Referenzenergie.
       addDecayingTone(
         side,
         start,
         sampleRate,
-        104+
-          settings.exhaust*22+
-          rand()*16,
+        106+
+          settings.exhaust*10+
+          rand()*10,
         amp*
           (
-            0.46+
+            0.72+
             settings.exhaust*
             0.24
           ),
-        0.040,
+        0.125,
         rand()*1.0
       );
 
-      // Zweite kurze Resonanz für Rauheit, ohne Summton.
+      // Zweite breite Motorresonanz.
       addDecayingTone(
         other,
         start,
         sampleRate,
-        162+
-          rand()*28+
-          settings.load*20,
+        148+
+          rand()*16+
+          settings.load*8,
         amp*
-          (
-            0.15+
-            settings.punch*
-            0.08
-          ),
-        0.019,
-        rand()*1.3
+          0.27,
+        0.072,
+        rand()*1.2
       );
 
-      // Dunkler Verbrennungs-Attack.
+      // Kleine echte Verbrennungsrauheit.
+      addDecayingTone(
+        side,
+        start,
+        sampleRate,
+        255+
+          rand()*90,
+        amp*
+          0.080,
+        0.018,
+        rand()*1.5
+      );
+
       addDarkNoiseBurst(
         side,
         start,
         sampleRate,
         amp*
           (
-            0.030+
+            0.018+
             settings.punch*
-            0.035
+            0.018
           ),
-        0.018,
-        0.0060,
+        0.020,
+        0.007,
         rand
       );
     }
 
     // =====================================================
-    // 2) Langsame Bridgeport-BRAP-Betonung
+    // 2) Bridgeport-BRAP = Bewegung des ganzen Motors
     // =====================================================
     //
-    // Nur noch als leichte Auspuff-Modulation.
-    // Die BRAPs dürfen NICHT mehr den ganzen Klang dominieren.
-    const brapEvents=
-      Math.ceil(
-        actualDuration*
-        brapHz
-      )+
-      6;
+    // Statt extra "Trommelschläge" hinzuzufügen,
+    // moduliert der BRAP-Rhythmus jetzt den bereits
+    // vorhandenen Motorkörper. So bleibt es Motor.
+    let brapPhase=
+      0;
 
-    let brapClock=
-      -3/
-      brapHz;
+    let brapEnvelope=
+      1;
 
-    const stumblePattern=[
-       0.00,
-       0.10,
-      -0.04,
-       0.03,
-       0.16,
-      -0.08,
-       0.02,
-      -0.03
-    ];
-
-    const strengthPattern=[
+    const brapPattern=[
       1.00,
-      0.84,
+      0.82,
       1.08,
       0.90,
-      0.72,
+      0.74,
       1.12,
       0.88,
       1.02
     ];
 
+    let nextBrap=
+      0;
+
+    let brapIndex=
+      0;
+
+    let currentBrapGain=
+      1;
+
     for(
-      let e=-3;
-      e<brapEvents;
-      e++
+      let i=0;
+      i<length;
+      i++
     ){
-      const phase=
-        ((e%8)+8)%8;
-
-      const randomGap=
-        (
-          rand()*2-1
-        )*
-        (
-          0.012+
-          settings.rough*
-          0.018
-        );
-
-      const intervalScale=
-        Math.max(
-          0.76,
-          1+
-          stumblePattern[phase]*
-          settings.rough+
-          randomGap
-        );
-
-      brapClock +=
-        (
-          1/
-          brapHz
-        )*
-        intervalScale;
-
-      const start=
-        Math.round(
-          brapClock*
-          sampleRate
-        );
+      const t=
+        i/sampleRate;
 
       if(
-        start<0||
-        start>=length
+        t>=nextBrap
       ){
-        continue;
+        const patternIndex=
+          brapIndex%
+          brapPattern.length;
+
+        currentBrapGain=
+          brapPattern[
+            patternIndex
+          ];
+
+        const stumble=[
+           0.00,
+           0.08,
+          -0.03,
+           0.03,
+           0.13,
+          -0.06,
+           0.02,
+          -0.02
+        ][patternIndex];
+
+        const jitter=
+          (
+            rand()*2-1
+          )*
+          0.010*
+          settings.rough;
+
+        nextBrap +=
+          (
+            1/
+            brapHz
+          )*
+          Math.max(
+            0.80,
+            1+
+            stumble*
+            settings.rough+
+            jitter
+          );
+
+        brapIndex++;
+        brapPhase=0;
       }
 
-      const amp=
+      brapPhase +=
+        brapHz/
+        sampleRate;
+
+      // Kurzer, aber weicher BRAP-Punch:
+      // der ganze Motor wird kurz kräftiger/dunkler,
+      // statt dass ein separates "Klopfen" entsteht.
+      const pulse=
+        Math.exp(
+          -brapPhase*
+          7.5
+        );
+
+      const target=
+        0.76+
+        currentBrapGain*
         (
-          0.135+
-          settings.load*
-          0.050+
+          0.16+
+          settings.rough*
+          0.11
+        )+
+        pulse*
+        (
+          0.11+
           settings.punch*
-          0.075
+          0.08
+        );
+
+      brapEnvelope +=
+        (
+          target-
+          brapEnvelope
         )*
-        strengthPattern[phase];
+        0.050;
 
-      const side=
-        (e&1)
-          ? right
-          : left;
+      left[i]*=
+        brapEnvelope;
 
-      // Nur ein weicher, dunkler Auspuffstoß.
-      addDecayingTone(
-        side,
-        start,
-        sampleRate,
-        74+
-          settings.bass*16+
-          rand()*7,
-        amp*
-          (
-            0.40+
-            settings.bass*
-            0.22
-          ),
-        0.060,
-        rand()*0.5
-      );
-
-      addDecayingTone(
-        side,
-        start,
-        sampleRate,
-        118+
-          settings.exhaust*18+
-          rand()*12,
-        amp*
-          (
-            0.40+
-            settings.exhaust*
-            0.22
-          ),
-        0.040,
-        rand()*0.8
-      );
-
-      // Etwas "BRAP-Kante", aber weiterhin dunkel.
-      addDecayingTone(
-        side,
-        start,
-        sampleRate,
-        176+
-          rand()*24,
-        amp*
-          0.12,
-        0.013,
-        rand()*1.1
-      );
-
-      addDarkNoiseBurst(
-        side,
-        start,
-        sampleRate,
-        amp*
-          0.070,
-        0.016,
-        0.0050,
-        rand
-      );
+      right[i]*=
+        brapEnvelope;
     }
 
     // =====================================================
-    // 3) Sehr dunkle Hintergrundtextur
+    // 3) Minimale dunkle Textur
     // =====================================================
     let darkTexture=0;
 
@@ -1620,15 +1598,15 @@
           white-
           darkTexture
         )*
-        0.006;
+        0.005;
 
       const texture=
         darkTexture*
         (
           settings.intake*
-          0.0010+
+          0.0007+
           settings.mechanical*
-          0.0007
+          0.0005
         );
 
       left[i]+=
@@ -1640,28 +1618,30 @@
     }
 
     // =====================================================
-    // 4) Dunkle Gesamtformung
+    // 4) Referenznahe dunkle Gesamtformung
     // =====================================================
     let l=
       highpassOnePole(
         left,
-        28,
+        24,
         sampleRate
       );
 
     let r=
       highpassOnePole(
         right,
-        28,
+        24,
         sampleRate
       );
 
+    // Im Referenzvideo steckt oberhalb ~500 Hz
+    // nur wenig Energie. Darum bewusst sehr dunkel.
     const cutoff=
-      760+
+      540+
       settings.load*
-      420+
+      180+
       settings.intake*
-      100;
+      60;
 
     l=
       lowpassOnePole(
@@ -1681,7 +1661,7 @@
       lowpassOnePole(
         l,
         cutoff*
-        0.82,
+        0.86,
         sampleRate
       );
 
@@ -1689,18 +1669,17 @@
       lowpassOnePole(
         r,
         cutoff*
-        0.82,
+        0.86,
         sampleRate
       );
 
-    // Nur leichte Verdichtung. Keine aggressive Sättigung,
-    // die wieder künstliche Höhen erzeugt.
+    // Sehr wenig zusätzliche Oberwellen erzeugen.
     const drive=
-      1.10+
+      1.04+
       settings.load*
-      0.18+
+      0.10+
       settings.punch*
-      0.14;
+      0.08;
 
     for(
       let i=0;
@@ -1724,7 +1703,7 @@
       l,
       r,
       sampleRate,
-      0.060
+      0.070
     );
 
     const peak=
