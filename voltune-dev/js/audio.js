@@ -789,8 +789,8 @@ window.VoltuneAudio = (() => {
       ctx.createGain();
 
     const peak =
-      0.025 +
-      amount * 0.075;
+      0.030 +
+      amount * 0.095;
 
     gain.gain.setValueAtTime(
       0.0001,
@@ -5165,68 +5165,91 @@ const invLevel =
       driveMix > 0.15;
 
     if (sentinelAccelActive) {
+      const lowSpeedStability =
+        1 -
+        clamp(
+          speedKmh / 45,
+          0,
+          1
+        );
+
       const sentinelRampOffset =
         getSentinelRampOffset(
           true,
           dt,
 
-          // Schneller als vorher:
-          // weniger "Auf- und Abschwingen",
-          // mehr technisches Surren/Zirpen.
-          4.0 +
-            pos * 8.0,
+          // Noch schneller, besonders bei Last.
+          // Dadurch wird die Bewegung als technische
+          // Modulation wahrgenommen und nicht als
+          // langsames Frequenz-Eiern.
+          6.5 +
+            pos * 12.0 +
+            speedN * 3.5,
 
-          // Deutlich kleineres Frequenzfenster.
-          // Die Rampe bleibt hörbar, zieht den
-          // Klang aber nicht mehr so weit auseinander.
-          8 +
-            pos * 28
+          // Kleineres Band:
+          // schneller, enger, aggressiver.
+          6 +
+            pos * 18
         );
 
       updateSentinelMachine({
         active: true,
+
+        // Bei niedriger Geschwindigkeit den
+        // Grundkörper stark stabilisieren.
+        // Beschleunigung darf ihn dort kaum
+        // langsam hoch- und runterziehen.
         baseHz:
-          64 +
-          speedN * 86 +
-          pos * 42,
+          70 +
+          speedN * 78 +
+          pos *
+            (
+              28 -
+              lowSpeedStability * 23
+            ),
+
         level:
           driveAmount *
           (
-            0.045 +
-            pos * 0.11
+            0.055 +
+            pos * 0.14
           ),
-        filterHz:
-          430 +
-          speedN * 420 +
-          pos * 220,
-        pulseHz:
-          4.0 +
-          speedN * 2.0 +
-          pos * 4.0,
 
-        // Die frühere Amplitudenmodulation war
-        // ein großer Teil des "Eierns".
-        // Nur noch sehr leichte Bewegung lassen.
+        filterHz:
+          520 +
+          speedN * 520 +
+          pos * 320,
+
+        pulseHz:
+          6.0 +
+          speedN * 2.5 +
+          pos * 5.5,
+
+        // Nahezu keine langsame
+        // Lautstärke-Welle mehr.
         pulseDepth:
-          0.012 +
-          pos * 0.018,
+          0.004 +
+          pos * 0.008,
+
         fmHz: 0.2,
         fmDepth: 0,
+
         rampOffset:
           sentinelRampOffset,
+
         metal:
-          0.85 +
-          pos * 0.65
+          1.0 +
+          pos * 0.80
       });
 
       if (
-        accel > 1.35 &&
-        lastAccel <= 1.35
+        accel > 1.05 &&
+        lastAccel <= 1.05
       ) {
         triggerSentinelImpulse(
           1,
           clamp(
-            accel / 4.5,
+            accel / 4.0,
             0,
             1
           )
