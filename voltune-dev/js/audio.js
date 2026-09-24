@@ -167,19 +167,6 @@ window.VoltuneAudio = (() => {
         inverterPitchScale: 0.70,
         airScale: 0.05,
         muscle: true
-      }),
-
-      voltune6: Object.freeze({
-        label: "Voltune 6 · Wankel JDM",
-        frequencyScale: 0.72,
-        harmonicRatio: 1.20,
-        filterScale: 0.48,
-        subScale: 1.05,
-        gainScale: 0.025,
-        inverterScale: 0.02,
-        inverterPitchScale: 0.70,
-        airScale: 0.02,
-        wankel: true
       })
     }),
 
@@ -235,17 +222,6 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.32,
         pulseDepthScale: 0.25,
         muscle: true
-      }),
-
-      voltune6: Object.freeze({
-        label: "Voltune 6 · Wankel JDM",
-        frequencyScale: 0.64,
-        filterScale: 0.46,
-        speedRiseScale: 0.18,
-        gainScale: 0.020,
-        pulseRateScale: 0.28,
-        pulseDepthScale: 0.18,
-        wankel: true
       })
     }),
 
@@ -301,17 +277,6 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.34,
         pulseDepthScale: 0.26,
         muscle: true
-      }),
-
-      voltune6: Object.freeze({
-        label: "Voltune 6 · Wankel JDM",
-        frequencyScale: 0.60,
-        harmonicRatio: 1.18,
-        filterScale: 0.46,
-        gainScale: 0.020,
-        pulseRateScale: 0.28,
-        pulseDepthScale: 0.18,
-        wankel: true
       })
     })
   });
@@ -6257,9 +6222,7 @@ const invLevel =
       (
         driveProfile.muscle
           ? 0.25
-          : driveProfile.wankel
-            ? 0.08
-            : 1
+          : 1
       ) *
       (
         speedN * 0.004 +
@@ -6282,98 +6245,51 @@ const invLevel =
 
 
     // =========================
-    // Voltune 6 · Wankel JDM Runtime
+    // Voltune 6 · Wankel JDM Idle Runtime
     // =========================
-
-    const wankelActive =
+    //
+    // Der Sound Generator erzeugt ausschließlich
+    // Stand-/Idle-Sounds. Deshalb wird der Wankel
+    // hier NICHT mehr an virtuelle RPM, Last,
+    // Beschleunigung oder Reku gekoppelt.
+    //
+    // Im Stand läuft der Loop exakt mit der
+    // Generator-Geschwindigkeit (playbackRate 1.0).
+    // Zwischen 0 und 5 km/h wird er über idleMix
+    // sauber ausgeblendet.
+    const wankelIdleActive =
       Boolean(
-        idleProfile.wankel ||
-        driveProfile.wankel ||
-        accelProfile.wankel ||
-        regenProfile.wankel
-      );
+        idleProfile.wankel
+      ) &&
+      idleMix > 0.001;
 
     if (
       wankelSource &&
       wankelGain &&
       wankelFilter
     ) {
-      if (wankelActive) {
-        const effectiveRpm =
-          Math.max(
-            900,
-            rpm ||
-              (
-                speedKmh < 2
-                  ? wankelReferenceRpm
-                  : wankelReferenceRpm +
-                    speedKmh * 38
-              )
-          );
+      setTarget(
+        wankelSource.playbackRate,
+        1.0,
+        0.025
+      );
 
-        const playbackRate =
-          clamp(
-            effectiveRpm /
-            wankelReferenceRpm,
-            0.62,
-            4.6
-          );
-
-        setTarget(
-          wankelSource.playbackRate,
-          playbackRate,
-          0.055
-        );
-
-        const wankelLoad =
-          Math.max(
-            0.10,
-            pos,
-            neg * 0.35
-          );
-
-        const wankelLevel =
-          (
-            baseAmount *
-            (
-              0.095 +
-              driveMix * 0.060
-            ) +
-            driveAmount *
-            pos *
-            0.095 +
-            regenAmount *
-            neg *
-            0.025
-          ) *
-          (
-            1 -
-            cruiseQuiet *
-            cruiseDamping *
-            0.22
-          );
-
+      if (wankelIdleActive) {
         setTarget(
           wankelGain.gain,
           clamp(
-            wankelLevel,
+            baseAmount *
+              idleMix *
+              0.155,
             0.0001,
-            0.34
+            0.30
           ),
           0.060
         );
 
         setTarget(
           wankelFilter.frequency,
-          clamp(
-            720 +
-            playbackRate *
-              180 +
-            wankelLoad *
-              900,
-            620,
-            2600
-          ),
+          1050,
           0.070
         );
 
