@@ -314,7 +314,7 @@
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
             <option value="rally">Rally Turbo · Dark Cam</option>
-            <option value="wankel">Wankel JDM · Bridgeport BRAP</option>
+            <option value="wankel">Wankel JDM · Bridgeport Motor BRAP</option>
           </select>
         </div>
 
@@ -1236,6 +1236,12 @@
     const sampleRate=44100;
     const shaftHz=settings.rpm/60;
 
+    // Tatsächliche Rotor-/Verbrennungsgrundrate.
+    // Bei 1450 RPM liegt sie knapp unter 50 Hz und
+    // eignet sich perfekt als tiefer Motorkörper.
+    const rotorFireHz=
+      shaftHz*2;
+
     // Klassischer Bridgeport-Charakter:
     // Die hörbare BRAP-Geschwindigkeit ist bewusst
     // deutlich langsamer als die reale Rotorereignisrate.
@@ -1497,15 +1503,24 @@
       }
     }
 
-    // Zwischen den BRAPs bleibt absichtlich fast Stille.
-    // Keine kontinuierliche Rotor-/Ansaug-Sinusfläche.
+    // Unter den BRAP-Schlägen läuft ein echter,
+    // dunkler Rotary-Motorkörper weiter.
+    //
+    // Wichtig: keine hohe Dauersirene. Die Energie sitzt
+    // hauptsächlich bei ca. 50 / 100 / 150 / 200 Hz.
+    // So hört man "Motor", während die BRAP-Gruppen
+    // nur den charakteristischen Leerlaufrhythmus liefern.
     let darkTexture=0;
+    let bodyDrift=0;
 
     for(
       let i=0;
       i<length;
       i++
     ){
+      const t=
+        i/sampleRate;
+
       const white=
         rand()*2-1;
 
@@ -1514,20 +1529,100 @@
           white-
           darkTexture
         )*
-        0.008;
+        0.006;
+
+      bodyDrift =
+        0.985*bodyDrift+
+        0.015*
+        (
+          rand()*2-1
+        );
+
+      const slowWobble=
+        1+
+        bodyDrift*
+        settings.rough*
+        0.018;
+
+      const phase1=
+        Math.PI*2*
+        rotorFireHz*
+        slowWobble*
+        t;
+
+      const body=
+        (
+          Math.sin(
+            phase1
+          )*
+          0.44+
+          Math.sin(
+            phase1*2+
+            0.42
+          )*
+          0.29+
+          Math.sin(
+            phase1*3+
+            0.95
+          )*
+          0.17+
+          Math.sin(
+            phase1*4+
+            1.40
+          )*
+          0.08
+        )*
+        (
+          0.055+
+          settings.load*
+          0.030+
+          settings.exhaust*
+          0.018
+        );
+
+      // Ganz leichte Lautstärkebewegung im BRAP-Takt,
+      // aber nie komplett weg. Der Motor bleibt hörbar.
+      const brapMotion=
+        0.82+
+        0.18*
+        Math.max(
+          0,
+          Math.sin(
+            Math.PI*2*
+            brapHz*
+            t+
+            0.45
+          )
+        );
 
       const texture=
         darkTexture*
         (
           settings.intake*
-          0.00055+
+          0.0012+
           settings.mechanical*
-          0.00045
+          0.0008
         );
 
-      left[i]+=texture;
+      left[i]+=
+        body*
+        brapMotion+
+        texture;
+
       right[i]+=
-        texture*0.96;
+        body*
+        (
+          0.985+
+          0.015*
+          Math.sin(
+            Math.PI*2*
+            0.73*
+            t
+          )
+        )*
+        brapMotion+
+        texture*
+        0.96;
     }
 
     let l=
@@ -1545,9 +1640,9 @@
       );
 
     const cutoff=
-      720+
-      settings.load*480+
-      settings.intake*120;
+      980+
+      settings.load*620+
+      settings.intake*160;
 
     l=
       lowpassOnePole(
