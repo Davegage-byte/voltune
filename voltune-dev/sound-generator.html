@@ -314,7 +314,7 @@
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
             <option value="rally">Rally Turbo · Dark Cam</option>
-            <option value="wankel">Wankel JDM · RX-7 Spectral BRAP</option>
+            <option value="wankel">Wankel JDM · RX-7 Sharp BRAP</option>
           </select>
         </div>
 
@@ -1300,6 +1300,16 @@
     const brapEnvelope=
       new Float32Array(length);
 
+    // Separater kurzer "Bark"-Layer.
+    // Der gibt nur dem ANFANG jedes BRAPs die
+    // scharfkantige Abgaskante, ohne den ganzen
+    // Motor wieder hell oder künstlich zu machen.
+    const brapEdgeLeft=
+      new Float32Array(length);
+
+    const brapEdgeRight=
+      new Float32Array(length);
+
     const stumblePattern=[
        0.00,
        0.08,
@@ -1380,10 +1390,10 @@
           ];
 
         const attackSeconds=
-          0.010;
+          0.0035;
 
         const decaySeconds=
-          0.080;
+          0.066;
 
         const envLength=
           Math.min(
@@ -1426,6 +1436,113 @@
             attack*
             decay*
             strength;
+        }
+
+        // Scharfkantiger "BRAP"-Anriss:
+        // 2 sehr kurze Abgasimpulse dicht hintereinander.
+        // Schwerpunkt bewusst ca. 170-430 Hz,
+        // nicht im hellen Zisch-/Surrbereich.
+        const edgeStrength=
+          (
+            0.16+
+            settings.punch*
+            0.18
+          )*
+          strength;
+
+        const edgeGap=
+          Math.round(
+            sampleRate*
+            0.0055
+          );
+
+        for(
+          let m=0;
+          m<2;
+          m++
+        ){
+          const edgeStart=
+            start+
+            m*
+            edgeGap;
+
+          if(
+            edgeStart<0||
+            edgeStart>=length
+          ){
+            continue;
+          }
+
+          const micro=
+            m===0
+              ? 1
+              : 0.52;
+
+          const edgeSide=
+            (
+              brapIndex+
+              m
+            )&
+            1
+              ? brapEdgeRight
+              : brapEdgeLeft;
+
+          const edgeOther=
+            edgeSide===
+            brapEdgeRight
+              ? brapEdgeLeft
+              : brapEdgeRight;
+
+          addDecayingTone(
+            edgeSide,
+            edgeStart,
+            sampleRate,
+            176+
+              rand()*18,
+            edgeStrength*
+              micro*
+              0.62,
+            0.020,
+            rand()*0.8
+          );
+
+          addDecayingTone(
+            edgeSide,
+            edgeStart,
+            sampleRate,
+            268+
+              rand()*30,
+            edgeStrength*
+              micro*
+              0.43,
+            0.012,
+            rand()*1.2
+          );
+
+          addDecayingTone(
+            edgeOther,
+            edgeStart,
+            sampleRate,
+            392+
+              rand()*38,
+            edgeStrength*
+              micro*
+              0.20,
+            0.0065,
+            rand()*1.5
+          );
+
+          addDarkNoiseBurst(
+            edgeSide,
+            edgeStart,
+            sampleRate,
+            edgeStrength*
+              micro*
+              0.095,
+            0.010,
+            0.0028,
+            rand
+          );
         }
       }
 
@@ -1613,52 +1730,21 @@
     }
 
     // =====================================================
-    // 3) Kurzer Abgas-"Biss" bei jedem BRAP
+    // 3) Scharfkantigen BRAP-Bark zum Motor mischen
     // =====================================================
     //
-    // Nur Textur, kein Trommelschlag.
+    // Dieser Layer ist extrem kurz und sitzt nur am
+    // Beginn des BRAPs. Dadurch "BRAP" statt "Wuuuuh".
     for(
-      let i=1;
+      let i=0;
       i<length;
       i++
     ){
-      const rising=
-        brapEnvelope[i]-
-        brapEnvelope[i-1];
+      left[i]+=
+        brapEdgeLeft[i];
 
-      if(
-        rising>
-        0.010
-      ){
-        const amp=
-          rising*
-          (
-            0.18+
-            settings.punch*
-            0.12
-          );
-
-        addDarkNoiseBurst(
-          left,
-          i,
-          sampleRate,
-          amp,
-          0.022,
-          0.0065,
-          rand
-        );
-
-        addDarkNoiseBurst(
-          right,
-          i,
-          sampleRate,
-          amp*
-          0.96,
-          0.022,
-          0.0065,
-          rand
-        );
-      }
+      right[i]+=
+        brapEdgeRight[i];
     }
 
     // =====================================================
@@ -1681,11 +1767,11 @@
     // Referenz ist dunkel, aber die BRAP-Obertöne
     // bis einige hundert Hz müssen erhalten bleiben.
     const cutoff=
-      900+
+      1120+
       settings.load*
-      360+
+      420+
       settings.intake*
-      100;
+      110;
 
     l=
       lowpassOnePole(
