@@ -371,6 +371,59 @@ html[data-theme="light"] #startupOverlay {
         </small>
     </div>
 
+    <div class="control control-neutral control-sound-profiles">
+      <div class="top">
+        <span>Sound-Profile</span>
+        <span class="soundProfileStatus">Live-Auswahl</span>
+      </div>
+
+      <div class="soundProfileGrid">
+        <label class="soundProfileItem soundProfileIdle">
+          <span>Stand</span>
+          <select
+            id="idleSoundProfile"
+            aria-label="Stand-Sound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+
+        <label class="soundProfileItem soundProfileDrive">
+          <span>Fahren</span>
+          <select
+            id="driveSoundProfile"
+            aria-label="Fahrsound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+
+        <label class="soundProfileItem soundProfileAccel">
+          <span>Beschleunigen</span>
+          <select
+            id="accelSoundProfile"
+            aria-label="Beschleunigungssound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+
+        <label class="soundProfileItem soundProfileRegen">
+          <span>Reku</span>
+          <select
+            id="regenSoundProfile"
+            aria-label="Reku-Sound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+      </div>
+
+      <small class="controlHint">
+        Jede Klanggruppe kann unabhängig gewählt werden. Neue Varianten erscheinen später automatisch in diesen Listen.
+      </small>
+    </div>
+
 <div class="control control-driving control-frequency">
 
   <div class="top">
