@@ -5169,10 +5169,18 @@ const invLevel =
         getSentinelRampOffset(
           true,
           dt,
-          1.8 +
-            pos * 4.4,
-          12 +
-            pos * 74
+
+          // Schneller als vorher:
+          // weniger "Auf- und Abschwingen",
+          // mehr technisches Surren/Zirpen.
+          4.0 +
+            pos * 8.0,
+
+          // Deutlich kleineres Frequenzfenster.
+          // Die Rampe bleibt hörbar, zieht den
+          // Klang aber nicht mehr so weit auseinander.
+          8 +
+            pos * 28
         );
 
       updateSentinelMachine({
@@ -5192,12 +5200,16 @@ const invLevel =
           speedN * 420 +
           pos * 220,
         pulseHz:
-          3.2 +
-          speedN * 3.5 +
-          pos * 7.2,
+          4.0 +
+          speedN * 2.0 +
+          pos * 4.0,
+
+        // Die frühere Amplitudenmodulation war
+        // ein großer Teil des "Eierns".
+        // Nur noch sehr leichte Bewegung lassen.
         pulseDepth:
-          0.10 +
-          pos * 0.20,
+          0.012 +
+          pos * 0.018,
         fmHz: 0.2,
         fmDepth: 0,
         rampOffset:
