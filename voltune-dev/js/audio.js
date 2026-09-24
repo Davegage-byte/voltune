@@ -48,6 +48,19 @@ window.VoltuneAudio = (() => {
         presenceGain: 0.020,
         toneDepth: 42,
         gainScale: 0.98
+      }),
+
+      voltune3: Object.freeze({
+        label: "Voltune 3",
+        frequencies: [47, 127, 311],
+        highpass: 38,
+        lowpass: 620,
+        pulseHz: 0.47,
+        pulseDepth: 0.074,
+        textureGain: 0.19,
+        presenceGain: 0.055,
+        toneDepth: 105,
+        gainScale: 1.04
       })
     }),
 
@@ -74,6 +87,18 @@ window.VoltuneAudio = (() => {
         inverterScale: 0.72,
         inverterPitchScale: 0.88,
         airScale: 1.15
+      }),
+
+      voltune3: Object.freeze({
+        label: "Voltune 3",
+        frequencyScale: 0.98,
+        harmonicRatio: 1.414,
+        filterScale: 1.14,
+        subScale: 0.92,
+        gainScale: 0.98,
+        inverterScale: 1.18,
+        inverterPitchScale: 1.08,
+        airScale: 1.38
       })
     }),
 
@@ -96,6 +121,17 @@ window.VoltuneAudio = (() => {
         gainScale: 1.12,
         pulseRateScale: 0.78,
         pulseDepthScale: 1.28
+      }),
+
+      voltune3: Object.freeze({
+        label: "Voltune 3",
+        frequencyScale: 0.84,
+        filterScale: 0.74,
+        speedRiseScale: 0.62,
+        gainScale: 0.88,
+        pulseRateScale: 0.58,
+        pulseDepthScale: 0.82,
+        infiniteRise: true
       })
     }),
 
@@ -118,6 +154,17 @@ window.VoltuneAudio = (() => {
         gainScale: 1.10,
         pulseRateScale: 0.82,
         pulseDepthScale: 1.22
+      }),
+
+      voltune3: Object.freeze({
+        label: "Voltune 3",
+        frequencyScale: 0.78,
+        harmonicRatio: 1.31,
+        filterScale: 0.72,
+        gainScale: 0.92,
+        pulseRateScale: 0.66,
+        pulseDepthScale: 0.88,
+        infiniteFall: true
       })
     })
   });
@@ -193,6 +240,21 @@ window.VoltuneAudio = (() => {
   let regenOsc1, regenOsc2, regenGain, regenFilter;
   let regenPulseOsc, regenPulseDepth, regenPulseGain;
 
+  // Psychoakustische Shepard/Risset-Layer.
+  // Die Stimmen laufen dauerhaft, sind aber nur
+  // bei Voltune 3 hörbar.
+  let accelRissetOsc = [];
+  let accelRissetGain = [];
+  let accelRissetBus = null;
+  let accelRissetFilter = null;
+  let accelRissetPhase = 0.18;
+
+  let regenRissetOsc = [];
+  let regenRissetGain = [];
+  let regenRissetBus = null;
+  let regenRissetFilter = null;
+  let regenRissetPhase = 0.72;
+
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
   
@@ -267,6 +329,93 @@ window.VoltuneAudio = (() => {
       value,
       ctx.currentTime,
       time
+    );
+  }
+
+  function updateRissetLayer(
+    oscillators,
+    gains,
+    bus,
+    filter,
+    phase,
+    {
+      minHz,
+      octaves,
+      level,
+      filterHz
+    }
+  ) {
+    if (
+      !oscillators.length ||
+      !gains.length ||
+      !bus ||
+      !filter
+    ) {
+      return;
+    }
+
+    const count =
+      oscillators.length;
+
+    for (
+      let index = 0;
+      index < count;
+      index++
+    ) {
+      const position =
+        (
+          phase +
+          index / count
+        ) % 1;
+
+      const frequency =
+        minHz *
+        Math.pow(
+          2,
+          position * octaves
+        );
+
+      // An beiden Enden des Frequenzfensters
+      // verschwindet die Stimme vollständig.
+      // Dadurch ist ihr Sprung von oben nach unten
+      // beziehungsweise umgekehrt nicht hörbar.
+      const window =
+        Math.pow(
+          Math.sin(
+            Math.PI * position
+          ),
+          1.65
+        );
+
+      setTarget(
+        oscillators[index].frequency,
+        frequency,
+        0.025
+      );
+
+      setTarget(
+        gains[index].gain,
+        Math.max(
+          0.0001,
+          window * 0.19
+        ),
+        0.035
+      );
+    }
+
+    setTarget(
+      filter.frequency,
+      filterHz,
+      0.08
+    );
+
+    setTarget(
+      bus.gain,
+      Math.max(
+        0.0001,
+        level
+      ),
+      0.055
     );
   }
 
@@ -958,6 +1107,117 @@ async function setOverrunSound(
 
 
     // =========================
+    // Infinite Rise / Fall
+    // =========================
+    //
+    // Je sieben logarithmisch versetzte Stimmen.
+    // Jede Stimme wandert durch mehrere Oktaven,
+    // wird an den Rändern ausgeblendet und springt
+    // dort unhörbar an das andere Ende zurück.
+    // So entsteht die Shepard/Risset-Illusion.
+
+    accelRissetBus =
+      ctx.createGain();
+
+    accelRissetBus.gain.value =
+      0.0001;
+
+    accelRissetFilter =
+      ctx.createBiquadFilter();
+
+    accelRissetFilter.type =
+      "lowpass";
+
+    accelRissetFilter.frequency.value =
+      2800;
+
+    accelRissetFilter.Q.value =
+      0.35;
+
+    regenRissetBus =
+      ctx.createGain();
+
+    regenRissetBus.gain.value =
+      0.0001;
+
+    regenRissetFilter =
+      ctx.createBiquadFilter();
+
+    regenRissetFilter.type =
+      "lowpass";
+
+    regenRissetFilter.frequency.value =
+      2200;
+
+    regenRissetFilter.Q.value =
+      0.42;
+
+    for (
+      let index = 0;
+      index < 7;
+      index++
+    ) {
+      const accelOsc =
+        createOsc(
+          index % 3 === 0
+            ? "triangle"
+            : "sine"
+        );
+
+      const accelGain =
+        ctx.createGain();
+
+      accelGain.gain.value =
+        0.0001;
+
+      accelOsc
+        .connect(accelGain)
+        .connect(accelRissetFilter);
+
+      accelRissetOsc.push(
+        accelOsc
+      );
+
+      accelRissetGain.push(
+        accelGain
+      );
+
+      const regenOsc =
+        createOsc(
+          index % 4 === 0
+            ? "triangle"
+            : "sine"
+        );
+
+      const regenVoiceGain =
+        ctx.createGain();
+
+      regenVoiceGain.gain.value =
+        0.0001;
+
+      regenOsc
+        .connect(regenVoiceGain)
+        .connect(regenRissetFilter);
+
+      regenRissetOsc.push(
+        regenOsc
+      );
+
+      regenRissetGain.push(
+        regenVoiceGain
+      );
+    }
+
+    accelRissetFilter
+      .connect(accelRissetBus)
+      .connect(master);
+
+    regenRissetFilter
+      .connect(regenRissetBus)
+      .connect(master);
+
+
+    // =========================
     // Luft / Textur
     // =========================
 
@@ -1006,6 +1266,13 @@ async function setOverrunSound(
       regenOsc2,
       regenPulseOsc
     ].forEach(osc => osc.start());
+
+    [
+      ...accelRissetOsc,
+      ...regenRissetOsc
+    ].forEach(
+      osc => osc.start()
+    );
 
     airSource.start();
 
@@ -4053,6 +4320,59 @@ const invLevel =
       0.045
     );
 
+    // =========================
+    // Voltune 3 · Infinite Rise
+    // =========================
+
+    if (
+      accelProfile.infiniteRise &&
+      pos > 0.01
+    ) {
+      const riseRate =
+        0.026 +
+        Math.pow(
+          pos,
+          0.58
+        ) * 0.115 +
+        speedN * 0.028;
+
+      accelRissetPhase =
+        (
+          accelRissetPhase +
+          dt * riseRate
+        ) % 1;
+    }
+
+    const accelRissetLevel =
+      accelProfile.infiniteRise
+        ? driveAmount *
+          pos *
+          (
+            0.010 +
+            Math.pow(pos, 0.72) *
+              0.018 +
+            speedN * 0.010
+          )
+        : 0;
+
+    updateRissetLayer(
+      accelRissetOsc,
+      accelRissetGain,
+      accelRissetBus,
+      accelRissetFilter,
+      accelRissetPhase,
+      {
+        minHz: 72,
+        octaves: 5.05,
+        level:
+          accelRissetLevel,
+        filterHz:
+          1850 +
+          speedN * 1450 +
+          pos * 900
+      }
+    );
+
 
     // =========================
     // Reku
@@ -4187,6 +4507,60 @@ const invLevel =
         ) *
         regenProfile.gainScale,
       0.055
+    );
+
+    // =========================
+    // Voltune 3 · Infinite Fall
+    // =========================
+
+    if (
+      regenProfile.infiniteFall &&
+      neg > 0.01
+    ) {
+      const fallRate =
+        0.024 +
+        Math.pow(
+          neg,
+          0.62
+        ) * 0.098 +
+        speedN * 0.022;
+
+      regenRissetPhase =
+        (
+          regenRissetPhase -
+          dt * fallRate +
+          1
+        ) % 1;
+    }
+
+    const regenRissetLevel =
+      regenProfile.infiniteFall
+        ? regenAmount *
+          neg *
+          (
+            0.009 +
+            Math.pow(neg, 0.74) *
+              0.016 +
+            speedN * 0.009
+          )
+        : 0;
+
+    updateRissetLayer(
+      regenRissetOsc,
+      regenRissetGain,
+      regenRissetBus,
+      regenRissetFilter,
+      regenRissetPhase,
+      {
+        minHz: 64,
+        octaves: 4.85,
+        level:
+          regenRissetLevel,
+        filterHz:
+          1450 +
+          speedN * 1050 +
+          neg * 420
+      }
     );
 
 
