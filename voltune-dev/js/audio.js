@@ -784,10 +784,13 @@ window.VoltuneAudio = (() => {
         1
       );
 
+    // Die starke Leerlauf-Unruhe nur noch im
+    // echten Stand-/Schrittgeschwindigkeitsbereich.
+    // 0.037 entspricht ungefähr 10 km/h.
     const idleAmount =
       1 -
       clamp(
-        speedN / 0.08,
+        speedN / 0.037,
         0,
         1
       );
@@ -804,8 +807,8 @@ window.VoltuneAudio = (() => {
     // "unsaubere" Zusammenlaufen der Zylindergruppen.
     const irregularity =
       1 +
-      idleAmount * 0.020 +
-      safeLoad * 0.006;
+      idleAmount * 0.010 +
+      safeLoad * 0.004;
 
     setTarget(
       muscle1.frequency,
@@ -882,9 +885,9 @@ window.VoltuneAudio = (() => {
     // Leerlauf bewusst langsam und stark,
     // mit steigender Drehzahl dichter und etwas flacher.
     const pulseHz =
-      4.4 +
-      safeRpmN * 20 +
-      safeLoad * 5.5;
+      7.2 +
+      safeRpmN * 24 +
+      safeLoad * 6.5;
 
     setTarget(
       musclePulseOsc.frequency,
@@ -894,12 +897,12 @@ window.VoltuneAudio = (() => {
 
     const pulseDepth =
       clamp(
-        0.30 -
-          safeRpmN * 0.15 +
-          idleAmount * 0.13 +
-          safeBrake * 0.06,
-        0.10,
-        0.43
+        0.20 -
+          safeRpmN * 0.08 +
+          idleAmount * 0.07 +
+          safeBrake * 0.05,
+        0.08,
+        0.29
       );
 
     setTarget(
@@ -919,31 +922,31 @@ window.VoltuneAudio = (() => {
     // damit der Idle nicht periodisch sauber klingt.
     setTarget(
       muscleRumbleOsc.frequency,
-      0.83 +
-        safeRpmN * 0.75,
+      1.55 +
+        safeRpmN * 1.10,
       0.10
     );
 
     setTarget(
       muscleRumbleDepth.gain,
       idleAmount *
-        7.5 +
-        safeBrake * 2.0,
+        3.2 +
+        safeBrake * 1.6,
       0.10
     );
 
     setTarget(
       muscleIrregularOsc.frequency,
-      1.37 +
-        safeRpmN * 1.15,
+      2.35 +
+        safeRpmN * 1.60,
       0.10
     );
 
     setTarget(
       muscleIrregularDepth.gain,
       idleAmount *
-        5.0 +
-        safeLoad * 1.8,
+        2.1 +
+        safeLoad * 1.2,
       0.10
     );
 
