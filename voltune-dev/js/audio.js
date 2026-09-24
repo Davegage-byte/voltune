@@ -1404,10 +1404,19 @@ async function setOverrunSound(
 
   async function start() {
     if (started && ctx) {
-      if (ctx.state === "suspended") {
+      if (
+        ctx.state !== "running" &&
+        ctx.state !== "closed"
+      ) {
         await ctx.resume();
       }
-    
+
+      if (ctx.state !== "running") {
+        throw new Error(
+          `AudioContext nicht aktiv (Status: ${ctx.state}).`
+        );
+      }
+
       return true;
     }
 
@@ -1423,39 +1432,53 @@ async function setOverrunSound(
 
     ctx = new AudioCtx();
 
-    // Wichtig für Tesla-/Mobile-Browser:
-    // direkt im echten Benutzer-Gesture den
-    // AudioContext aktivieren, bevor asynchrone
-    // Sample-Ladevorgänge den Gesture-Kontext
-    // verlieren können.
-    if (ctx.state === "suspended") {
-      await ctx.resume();
-    }
-
     if (ctx.state === "closed") {
       throw new Error(
         "AudioContext wurde vom Browser geschlossen."
       );
     }
 
+    // Sofort im echten Benutzerklick eine praktisch
+    // unhörbare Quelle starten. Das ist robuster als
+    // ausschließlich auf resume() zu vertrauen.
+    const unlockSource =
+      ctx.createBufferSource();
+
+    const unlockBuffer =
+      ctx.createBuffer(
+        1,
+        1,
+        ctx.sampleRate
+      );
+
+    const unlockGain =
+      ctx.createGain();
+
+    unlockGain.gain.value =
+      0.0001;
+
+    unlockSource.buffer =
+      unlockBuffer;
+
+    unlockSource
+      .connect(unlockGain)
+      .connect(ctx.destination);
+
+    unlockSource.start();
+
+    if (
+      ctx.state !== "running" &&
+      ctx.state !== "closed"
+    ) {
+      await ctx.resume();
+    }
+
     sharedNoiseBuffer =
       createNoiseBuffer(2);
 
-    if (
-      overrunSoundMode === "sample" &&
-      overrunSampleUrl
-    ) {
-      overrunSampleBuffer =
-        await loadAudioBuffer(
-          overrunSampleUrl
-        );
-
-      overrunSampleSettings =
-        await loadSampleSettings(
-          overrunSampleUrl,
-          overrunSampleDefaultSettings
-        );
-    }
+    // Externe Schubknall-Samples gehören NICHT
+    // in den kritischen Audio-Startpfad.
+    // Sie werden nach dem Start separat geladen.
 
     master =
       ctx.createGain();
@@ -2276,6 +2299,19 @@ async function setOverrunSound(
     started = true;
     lastAccel = 0;
     lastBovAt = -9999;
+
+    // Erst jetzt externe Samples nachladen.
+    // Ein langsames oder kurz nicht erreichbares Netz
+    // kann die Demo dadurch nicht mehr blockieren.
+    if (
+      overrunSoundMode === "sample" &&
+      overrunSampleUrl &&
+      !overrunSampleBuffer
+    ) {
+      void setOverrunSound(
+        overrunSampleUrl
+      );
+    }
 
     return true;
   }
@@ -3754,10 +3790,11 @@ function triggerOverrun(
     );
 
 
-  // Sample ausgewählt:
-  // nur den Sample-Charakter abspielen.
+  // Sample ausgewählt UND bereits geladen:
+  // dann nur den Sample-Charakter abspielen.
   if (
-    overrunSoundMode === "sample"
+    overrunSoundMode === "sample" &&
+    overrunSampleBuffer
   ) {
     triggerOverrunSample(
       now,
@@ -3769,9 +3806,12 @@ function triggerOverrun(
     return;
   }
 
-  // Voltune Standard:
-  // ab hier läuft ausschließlich
-  // das bisherige synthetische Schubknallen.
+  // Falls ein gewähltes Sample noch lädt oder
+  // kurz nicht erreichbar ist, fällt Voltune
+  // automatisch auf das synthetische Schubknallen
+  // zurück. Die Demo bleibt dadurch vollständig
+  // funktionsfähig.
+  // Ab hier: Voltune Standard.
 
 
   
