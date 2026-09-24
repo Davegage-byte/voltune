@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="de">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
@@ -383,7 +386,7 @@ html[data-theme="light"] #startupOverlay {
             class="quickDemoStart"
             type="button"
             title="Temporärer Demo-Start für Soundtests"
-          >▶ Demo Start</button>
+          >▶ Demo Start · B240924-0915</button>
         </span>
       </div>
 
@@ -722,8 +725,14 @@ html[data-theme="light"] #startupOverlay {
     // Die Dateien werden weiterhin frisch geladen,
     // aber ein einzelner Netzfehler legt Voltune
     // nicht mehr dauerhaft bis zum nächsten Reload lahm.
+    const VOLTUNE_BUILD =
+      "B240924-0915";
+
+    window.VOLTUNE_BUILD =
+      VOLTUNE_BUILD;
+
     const devVersion =
-      Date.now();
+      `${VOLTUNE_BUILD}-${Date.now()}`;
 
     const scripts = [
       "js/drivetrain.js",
