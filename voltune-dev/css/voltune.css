@@ -1116,6 +1116,55 @@ body.debugActive .meter.debugOnly{
     600;
 }
 
+.soundProfileTop{
+  align-items:
+    center;
+}
+
+.soundProfileActions{
+  display:flex;
+
+  align-items:center;
+
+  gap:
+    8px;
+}
+
+.quickDemoStart{
+  min-height:
+    30px;
+
+  padding:
+    0 11px;
+
+  border:
+    1px solid
+    rgba(77,163,255,.58);
+
+  border-radius:
+    8px;
+
+  background:
+    rgba(38,100,160,.28);
+
+  color:
+    #d9efff;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  cursor:
+    pointer;
+}
+
+.quickDemoStart:hover{
+  background:
+    rgba(38,100,160,.44);
+}
+
 .soundProfileGrid{
   display:grid;
 
