@@ -1095,6 +1095,146 @@ body.debugActive .meter.debugOnly{
     rgba(255,98,98,.12);
 }
 
+
+/* =========================
+   Sound-Profile
+   ========================= */
+
+.control-sound-profiles{
+  grid-column:
+    1 / -1;
+}
+
+.soundProfileStatus{
+  color:
+    var(--muted);
+
+  font-size:
+    10px;
+
+  font-weight:
+    600;
+}
+
+.soundProfileGrid{
+  display:grid;
+
+  grid-template-columns:
+    repeat(4,minmax(0,1fr));
+
+  gap:
+    8px;
+}
+
+.soundProfileItem{
+  display:grid;
+
+  gap:
+    5px;
+
+  min-width:
+    0;
+
+  padding:
+    8px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius:
+    9px;
+
+  background:
+    rgba(255,255,255,.025);
+}
+
+.soundProfileItem > span{
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    .04em;
+
+  color:
+    var(--muted);
+}
+
+.soundProfileItem select{
+  width:
+    100%;
+
+  min-width:
+    0;
+
+  height:
+    34px;
+
+  padding:
+    0 9px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius:
+    8px;
+
+  background:
+    #111820;
+
+  color:
+    #f4f7fb;
+
+  font:
+    inherit;
+
+  font-size:
+    12px;
+
+  cursor:
+    pointer;
+}
+
+.soundProfileItem select:focus{
+  outline:
+    none;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(77,163,255,.12);
+}
+
+.soundProfileIdle select:focus{
+  border-color:
+    rgba(210,220,235,.65);
+}
+
+.soundProfileDrive select:focus{
+  border-color:
+    rgba(77,163,255,.75);
+}
+
+.soundProfileAccel select:focus{
+  border-color:
+    rgba(255,98,98,.75);
+}
+
+.soundProfileRegen select:focus{
+  border-color:
+    rgba(85,214,139,.75);
+}
+
+@media (max-width: 820px){
+  .soundProfileGrid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+}
+
 input[type=range]{
   width:100%;
 }
