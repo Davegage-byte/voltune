@@ -1920,7 +1920,17 @@ function applyPersistentSettings(settings) {
   
 async function ensureVoltuneAudio() {
   try {
+    if (ui.quickDemoStart) {
+      ui.quickDemoStart.textContent =
+        "Audio startet …";
+    }
+
     await VoltuneAudio.start();
+
+    if (ui.quickDemoStart) {
+      ui.quickDemoStart.textContent =
+        "Audio aktiv ✓";
+    }
 
     VoltuneAudio.setMuted(
       false,
@@ -1935,6 +1945,17 @@ async function ensureVoltuneAudio() {
       "Voltune Audio konnte nicht gestartet werden:",
       error
     );
+
+    if (ui.quickDemoStart) {
+      ui.quickDemoStart.textContent =
+        `⚠ Audiofehler · ${window.VOLTUNE_BUILD || "Build ?"}`;
+
+      ui.quickDemoStart.title =
+        String(
+          error?.message ||
+          error
+        );
+    }
 
     alert(
       error.message ||
@@ -2447,7 +2468,7 @@ ui.gpsSmoothAccel.textContent =
 
     if (ui.quickDemoStart) {
       ui.quickDemoStart.textContent =
-        "▶ Demo Start";
+        `▶ Demo Start · ${window.VOLTUNE_BUILD || "Build ?"}`;
     }
 
     setRunStatus("stopped", "GESTOPPT");
@@ -3095,6 +3116,12 @@ function updateControllerDrive(now) {
 
   async function startDemo() {
     startupDriveModeClaimed = true;
+
+    if (ui.quickDemoStart) {
+      ui.quickDemoStart.textContent =
+        `Klick erkannt · ${window.VOLTUNE_BUILD || "Build ?"}`;
+    }
+
     setRunStatus("starting", "STARTE DEMO …");
 
     // Nicht über einen künstlichen .click() gehen:
@@ -3128,7 +3155,10 @@ function updateControllerDrive(now) {
     manualAccel = 0;
 
     ui.start.textContent = "Läuft ✓";
-    ui.quickDemoStart.textContent = "▶ Demo läuft";
+    if (ui.quickDemoStart) {
+      ui.quickDemoStart.textContent =
+        `▶ Demo läuft · ${window.VOLTUNE_BUILD || "Build ?"}`;
+    }
 
     setRunStatus("active", "DEMO AKTIV");
     setGpsButtonActive(false);
@@ -3139,10 +3169,12 @@ function updateControllerDrive(now) {
   // Beide Buttons rufen dieselbe Funktion DIREKT auf.
   // Dadurch bleibt der echte Benutzer-Gesture-Kontext
   // für den AudioContext erhalten.
-  ui.quickDemoStart.addEventListener(
-    "click",
-    startDemo
-  );
+  if (ui.quickDemoStart) {
+    ui.quickDemoStart.addEventListener(
+      "click",
+      startDemo
+    );
+  }
 
   ui.start.addEventListener(
     "click",
