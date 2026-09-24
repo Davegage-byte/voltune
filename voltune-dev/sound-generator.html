@@ -314,7 +314,7 @@
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
             <option value="rally">Rally Turbo · Dark Cam</option>
-            <option value="wankel">Wankel JDM · RX-7 Sharp BRAP</option>
+            <option value="wankel">Wankel JDM · Split-Bus BRAP</option>
           </select>
         </div>
 
@@ -1236,14 +1236,9 @@
     const startedAt=performance.now();
     const sampleRate=44100;
     const shaftHz=settings.rpm/60;
+    const rotorFireHz=shaftHz*2;
 
-    // 2-Rotor-Grundrate.
-    // Bei 1600 RPM sind das ca. 53,3 Hz und damit
-    // sehr nah am dominanten Raster der RX-7-Referenz.
-    const rotorFireHz=
-      shaftHz*2;
-
-    // Referenz: deutlich hörbarer BRAP-Puls ~4,4 Hz.
+    // RX-7 Referenz: ca. 4,35 BRAP/s.
     const brapHz=
       clamp(
         3.35+
@@ -1277,10 +1272,19 @@
         )
       );
 
-    const left=
+    // Zwei getrennte Busse:
+    // 1) permanenter tiefer Motorkern
+    // 2) fast komplett separater BRAP-Bus
+    const motorLeft=
       new Float32Array(length);
 
-    const right=
+    const motorRight=
+      new Float32Array(length);
+
+    const brapLeft=
+      new Float32Array(length);
+
+    const brapRight=
       new Float32Array(length);
 
     const rand=
@@ -1289,25 +1293,181 @@
       );
 
     // =====================================================
-    // 1) BRAP-Ereignisse als SPEKTRALE Hüllkurve
+    // 1) Permanenter ROTARY-MOTORKERN
     // =====================================================
     //
-    // Referenzanalyse:
-    // 30-70 Hz bleiben zwischen BRAPs fast konstant.
-    // 100-500 Hz steigen beim BRAP hingegen massiv an.
+    // Viele überlappende Verbrennungsereignisse.
+    // Hauptsächlich <100 Hz, damit der BRAP-Bereich
+    // um 100-500 Hz akustisch frei bleibt.
+    const rotorInterval=
+      1/rotorFireHz;
+
+    const rotorEvents=
+      Math.ceil(
+        actualDuration/
+        rotorInterval
+      )+
+      16;
+
+    for(
+      let e=-8;
+      e<rotorEvents;
+      e++
+    ){
+      const rotor=
+        ((e%2)+2)%2;
+
+      const jitter=
+        (
+          rand()*2-1
+        )*
+        rotorInterval*
+        (
+          0.010+
+          settings.rough*
+          0.022
+        );
+
+      const start=
+        Math.round(
+          (
+            e*
+            rotorInterval+
+            jitter
+          )*
+          sampleRate
+        );
+
+      if(
+        start<0||
+        start>=length
+      ){
+        continue;
+      }
+
+      const side=
+        rotor
+          ? motorRight
+          : motorLeft;
+
+      const other=
+        rotor
+          ? motorLeft
+          : motorRight;
+
+      const amp=
+        (
+          0.34+
+          settings.load*
+          0.10+
+          settings.bass*
+          0.10
+        )*
+        (
+          0.90+
+          rand()*0.20
+        );
+
+      addDecayingTone(
+        side,
+        start,
+        sampleRate,
+        48+
+          settings.bass*12+
+          rand()*5,
+        amp*
+          0.52,
+        0.105,
+        rand()*0.6
+      );
+
+      addDecayingTone(
+        side,
+        start,
+        sampleRate,
+        72+
+          rand()*8,
+        amp*
+          0.43,
+        0.078,
+        rand()*0.9
+      );
+
+      addDecayingTone(
+        other,
+        start,
+        sampleRate,
+        92+
+          rand()*7,
+        amp*
+          0.18,
+        0.052,
+        rand()*1.1
+      );
+
+      addDarkNoiseBurst(
+        side,
+        start,
+        sampleRate,
+        amp*
+          0.018,
+        0.018,
+        0.006,
+        rand
+      );
+    }
+
+    // Motorkern dunkel halten.
+    let motorL=
+      highpassOnePole(
+        motorLeft,
+        22,
+        sampleRate
+      );
+
+    let motorR=
+      highpassOnePole(
+        motorRight,
+        22,
+        sampleRate
+      );
+
+    motorL=
+      lowpassOnePole(
+        motorL,
+        360,
+        sampleRate
+      );
+
+    motorR=
+      lowpassOnePole(
+        motorR,
+        360,
+        sampleRate
+      );
+
+    motorL=
+      lowpassOnePole(
+        motorL,
+        300,
+        sampleRate
+      );
+
+    motorR=
+      lowpassOnePole(
+        motorR,
+        300,
+        sampleRate
+      );
+
+    // =====================================================
+    // 2) BRAP-EVENTS UND BRAP-HÜLLKURVE
+    // =====================================================
     //
-    // Darum modulieren wir NICHT mehr die Gesamtlautstärke.
+    // Zwischen den BRAPs ist dieser Bus fast NULL.
+    // Dadurch kann er nicht wieder zu einem Dauerton
+    // verschmelzen.
     const brapEnvelope=
-      new Float32Array(length);
-
-    // Separater kurzer "Bark"-Layer.
-    // Der gibt nur dem ANFANG jedes BRAPs die
-    // scharfkantige Abgaskante, ohne den ganzen
-    // Motor wieder hell oder künstlich zu machen.
-    const brapEdgeLeft=
-      new Float32Array(length);
-
-    const brapEdgeRight=
       new Float32Array(length);
 
     const stumblePattern=[
@@ -1344,7 +1504,7 @@
       actualDuration+
       brapPeriod
     ){
-      const patternIndex=
+      const p=
         (
           brapIndex%
           stumblePattern.length+
@@ -1359,20 +1519,15 @@
         0.010*
         settings.rough;
 
-      const intervalScale=
+      brapTime +=
+        brapPeriod*
         Math.max(
           0.82,
           1+
-          stumblePattern[
-            patternIndex
-          ]*
+          stumblePattern[p]*
           settings.rough+
           jitter
         );
-
-      brapTime +=
-        brapPeriod*
-        intervalScale;
 
       const start=
         Math.round(
@@ -1385,22 +1540,15 @@
         start<length
       ){
         const strength=
-          strengthPattern[
-            patternIndex
-          ];
+          strengthPattern[p];
 
-        const attackSeconds=
-          0.0035;
-
-        const decaySeconds=
-          0.066;
-
+        // Sehr schneller Anriss, dann ~70 ms Abfall.
         const envLength=
           Math.min(
             length-start,
             Math.round(
               sampleRate*
-              0.180
+              0.155
             )
           );
 
@@ -1413,21 +1561,16 @@
             n/sampleRate;
 
           const attack=
-            clamp(
-              t/
-              attackSeconds,
-              0,
-              1
+            1-
+            Math.exp(
+              -t/
+              0.0032
             );
 
           const decay=
             Math.exp(
-              -Math.max(
-                0,
-                t-
-                attackSeconds
-              )/
-              decaySeconds
+              -t/
+              0.062
             );
 
           brapEnvelope[
@@ -1438,134 +1581,127 @@
             strength;
         }
 
-        // Scharfkantiger "BRAP"-Anriss:
-        // 2 sehr kurze Abgasimpulse dicht hintereinander.
-        // Schwerpunkt bewusst ca. 170-430 Hz,
-        // nicht im hellen Zisch-/Surrbereich.
-        const edgeStrength=
+        // Echte scharfkantige Abgasattacke pro BRAP.
+        const edgeAmp=
           (
-            0.16+
+            0.24+
             settings.punch*
-            0.18
+            0.22
           )*
           strength;
 
-        const edgeGap=
-          Math.round(
-            sampleRate*
-            0.0055
-          );
+        addDecayingTone(
+          brapLeft,
+          start,
+          sampleRate,
+          112+
+            rand()*9,
+          edgeAmp*
+          0.68,
+          0.045,
+          rand()*0.8
+        );
 
-        for(
-          let m=0;
-          m<2;
-          m++
-        ){
-          const edgeStart=
-            start+
-            m*
-            edgeGap;
+        addDecayingTone(
+          brapRight,
+          start,
+          sampleRate,
+          118+
+            rand()*10,
+          edgeAmp*
+          0.66,
+          0.045,
+          rand()*0.8
+        );
 
-          if(
-            edgeStart<0||
-            edgeStart>=length
-          ){
-            continue;
-          }
+        addDecayingTone(
+          brapLeft,
+          start,
+          sampleRate,
+          168+
+            rand()*18,
+          edgeAmp*
+          0.42,
+          0.027,
+          rand()*1.0
+        );
 
-          const micro=
-            m===0
-              ? 1
-              : 0.52;
+        addDecayingTone(
+          brapRight,
+          start,
+          sampleRate,
+          176+
+            rand()*20,
+          edgeAmp*
+          0.40,
+          0.027,
+          rand()*1.0
+        );
 
-          const edgeSide=
-            (
-              brapIndex+
-              m
-            )&
-            1
-              ? brapEdgeRight
-              : brapEdgeLeft;
+        addDecayingTone(
+          brapLeft,
+          start,
+          sampleRate,
+          245+
+            rand()*35,
+          edgeAmp*
+          0.22,
+          0.014,
+          rand()*1.2
+        );
 
-          const edgeOther=
-            edgeSide===
-            brapEdgeRight
-              ? brapEdgeLeft
-              : brapEdgeRight;
+        addDecayingTone(
+          brapRight,
+          start,
+          sampleRate,
+          255+
+            rand()*35,
+          edgeAmp*
+          0.21,
+          0.014,
+          rand()*1.2
+        );
 
-          addDecayingTone(
-            edgeSide,
-            edgeStart,
-            sampleRate,
-            176+
-              rand()*18,
-            edgeStrength*
-              micro*
-              0.62,
-            0.020,
-            rand()*0.8
-          );
+        addDarkNoiseBurst(
+          brapLeft,
+          start,
+          sampleRate,
+          edgeAmp*
+          0.090,
+          0.018,
+          0.0045,
+          rand
+        );
 
-          addDecayingTone(
-            edgeSide,
-            edgeStart,
-            sampleRate,
-            268+
-              rand()*30,
-            edgeStrength*
-              micro*
-              0.43,
-            0.012,
-            rand()*1.2
-          );
-
-          addDecayingTone(
-            edgeOther,
-            edgeStart,
-            sampleRate,
-            392+
-              rand()*38,
-            edgeStrength*
-              micro*
-              0.20,
-            0.0065,
-            rand()*1.5
-          );
-
-          addDarkNoiseBurst(
-            edgeSide,
-            edgeStart,
-            sampleRate,
-            edgeStrength*
-              micro*
-              0.095,
-            0.010,
-            0.0028,
-            rand
-          );
-        }
+        addDarkNoiseBurst(
+          brapRight,
+          start,
+          sampleRate,
+          edgeAmp*
+          0.086,
+          0.018,
+          0.0045,
+          rand
+        );
       }
 
       brapIndex++;
     }
 
     // =====================================================
-    // 2) Durchgehender echter Rotor-Motorkörper
+    // 3) BRAP-HARMONIKEN
     // =====================================================
     //
-    // Nicht "Krach an/aus", sondern ein permanentes
-    // tiefes Verbrennungsraster. Der BRAP verändert
-    // hauptsächlich die Obertöne dieses Kerns.
+    // Der Motorgrundton bleibt bestehen.
+    // Nur der BRAP-Bus bekommt die markanten
+    // 100-500-Hz-Anteile.
     let rotorPhase=
       0;
 
-    let speedDrift=
+    let phaseDrift=
       0;
 
-    let roughNoise=
-      0;
-
-    let stereoDrift=
+    let brapRough=
       0;
 
     for(
@@ -1576,41 +1712,30 @@
       const white=
         rand()*2-1;
 
-      speedDrift +=
+      phaseDrift +=
         (
           white-
-          speedDrift
+          phaseDrift
         )*
-        0.0007;
+        0.0006;
 
-      roughNoise +=
+      brapRough +=
         (
           white-
-          roughNoise
+          brapRough
         )*
-        0.018;
-
-      stereoDrift +=
-        (
-          (rand()*2-1)-
-          stereoDrift
-        )*
-        0.0004;
-
-      const frequencyScale=
-        1+
-        speedDrift*
-        (
-          0.010+
-          settings.rough*
-          0.018
-        );
+        0.025;
 
       rotorPhase +=
         Math.PI*
         2*
         rotorFireHz*
-        frequencyScale/
+        (
+          1+
+          phaseDrift*
+          settings.rough*
+          0.012
+        )/
         sampleRate;
 
       if(
@@ -1625,227 +1750,169 @@
         clamp(
           brapEnvelope[i],
           0,
-          1.25
+          1.30
         );
 
-      // Grundton bleibt relativ konstant.
-      const h1=
-        Math.sin(
-          rotorPhase
-        )*
+      // Zwischen BRAPs praktisch 0.
+      // Peak dagegen deutlich hörbar.
+      const spectralBrap=
+        brap*
         (
-          0.105+
-          settings.bass*
-          0.030
-        );
-
-      // ~107 Hz: stärkster Referenzbereich.
-      // Beim BRAP wird er deutlich kräftiger.
-      const h2=
-        Math.sin(
-          rotorPhase*2+
-          0.36
-        )*
-        (
-          0.235+
-          settings.exhaust*
-          0.045+
-          brap*
-          0.205
-        );
-
-      // ~160 Hz: sehr starker BRAP-Träger.
-      const h3=
-        Math.sin(
-          rotorPhase*3+
-          0.92
-        )*
-        (
-          0.065+
-          brap*
-          0.155
-        );
-
-      // Höhere Motorresonanzen werden fast nur
-      // während des BRAP sichtbar.
-      const h4=
-        Math.sin(
-          rotorPhase*4+
-          1.31
-        )*
-        (
-          0.018+
-          brap*
+          Math.sin(
+            rotorPhase*2+
+            0.28
+          )*
+          0.34+
+          Math.sin(
+            rotorPhase*3+
+            0.92
+          )*
+          0.25+
+          Math.sin(
+            rotorPhase*4+
+            1.18
+          )*
+          0.15+
+          Math.sin(
+            rotorPhase*5+
+            0.63
+          )*
           0.075
         );
 
-      const h5=
-        Math.sin(
-          rotorPhase*5+
-          0.68
-        )*
+      const roughBrap=
+        brapRough*
         brap*
-        0.038;
-
-      // Dunkle, verrauschte Verbrennungsrauheit.
-      // Ebenfalls beim BRAP stärker, aber nie weiß/hell.
-      const combustionTexture=
-        roughNoise*
         (
-          0.006+
-          settings.rough*
-          0.006+
-          brap*
-          (
-            0.018+
-            settings.punch*
-            0.010
-          )
-        );
-
-      const body=
-        h1+
-        h2+
-        h3+
-        h4+
-        h5+
-        combustionTexture;
-
-      // Sehr kleine Stereo-Differenz, Motor bleibt mittig.
-      left[i]=
-        body*
-        (
-          0.995+
-          stereoDrift*
+          0.022+
+          settings.punch*
           0.010
         );
+
+      brapLeft[i]+=
+        spectralBrap+
+        roughBrap;
+
+      brapRight[i]+=
+        spectralBrap*
+        0.985+
+        roughBrap*
+        0.96;
+    }
+
+    // BRAP-Bus separat formen.
+    let brapL=
+      highpassOnePole(
+        brapLeft,
+        72,
+        sampleRate
+      );
+
+    let brapR=
+      highpassOnePole(
+        brapRight,
+        72,
+        sampleRate
+      );
+
+    brapL=
+      lowpassOnePole(
+        brapL,
+        720,
+        sampleRate
+      );
+
+    brapR=
+      lowpassOnePole(
+        brapR,
+        720,
+        sampleRate
+      );
+
+    brapL=
+      lowpassOnePole(
+        brapL,
+        620,
+        sampleRate
+      );
+
+    brapR=
+      lowpassOnePole(
+        brapR,
+        620,
+        sampleRate
+      );
+
+    // =====================================================
+    // 4) Motor + BRAP zusammenführen
+    // =====================================================
+    const left=
+      new Float32Array(length);
+
+    const right=
+      new Float32Array(length);
+
+    for(
+      let i=0;
+      i<length;
+      i++
+    ){
+      left[i]=
+        motorL[i]*
+        0.80+
+        brapL[i]*
+        1.42;
 
       right[i]=
-        body*
-        (
-          0.995-
-          stereoDrift*
-          0.010
-        );
+        motorR[i]*
+        0.80+
+        brapR[i]*
+        1.42;
     }
 
-    // =====================================================
-    // 3) Scharfkantigen BRAP-Bark zum Motor mischen
-    // =====================================================
-    //
-    // Dieser Layer ist extrem kurz und sitzt nur am
-    // Beginn des BRAPs. Dadurch "BRAP" statt "Wuuuuh".
-    for(
-      let i=0;
-      i<length;
-      i++
-    ){
-      left[i]+=
-        brapEdgeLeft[i];
-
-      right[i]+=
-        brapEdgeRight[i];
-    }
-
-    // =====================================================
-    // 4) Referenznahe Gesamtformung
-    // =====================================================
-    let l=
-      highpassOnePole(
-        left,
-        24,
-        sampleRate
-      );
-
-    let r=
-      highpassOnePole(
-        right,
-        24,
-        sampleRate
-      );
-
-    // Referenz ist dunkel, aber die BRAP-Obertöne
-    // bis einige hundert Hz müssen erhalten bleiben.
-    const cutoff=
-      1120+
-      settings.load*
-      420+
-      settings.intake*
-      110;
-
-    l=
-      lowpassOnePole(
-        l,
-        cutoff,
-        sampleRate
-      );
-
-    r=
-      lowpassOnePole(
-        r,
-        cutoff,
-        sampleRate
-      );
-
-    l=
-      lowpassOnePole(
-        l,
-        cutoff*
-        0.88,
-        sampleRate
-      );
-
-    r=
-      lowpassOnePole(
-        r,
-        cutoff*
-        0.88,
-        sampleRate
-      );
-
-    // Nur sehr leichte Verdichtung.
+    // Nur minimale Verdichtung.
     const drive=
-      1.035+
+      1.025+
       settings.load*
-      0.080+
+      0.060+
       settings.punch*
-      0.055;
+      0.040;
 
     for(
       let i=0;
       i<length;
       i++
     ){
-      l[i]=
+      left[i]=
         softClip(
-          l[i],
+          left[i],
           drive
         );
 
-      r[i]=
+      right[i]=
         softClip(
-          r[i],
+          right[i],
           drive
         );
     }
 
     applyLoopCrossfade(
-      l,
-      r,
+      left,
+      right,
       sampleRate,
-      0.070
+      0.060
     );
 
     const peak=
       normalizeStereo(
-        l,
-        r,
+        left,
+        right,
         0.90
       );
 
     return {
-      left:l,
-      right:r,
+      left,
+      right,
       sampleRate,
       duration:actualDuration,
       cycles,
