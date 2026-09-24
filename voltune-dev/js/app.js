@@ -2682,14 +2682,35 @@ function demoValues(t) {
   };
 }
 
-  function updateGamepadDebug() {
-  const gamepads =
-    navigator.getGamepads
-      ? navigator.getGamepads()
-      : [];
+  function getGamepadsSafe() {
+    try {
+      if (
+        typeof navigator.getGamepads !==
+        "function"
+      ) {
+        return [];
+      }
 
+      const gamepads =
+        navigator.getGamepads();
+
+      return gamepads
+        ? Array.from(gamepads)
+        : [];
+
+    } catch (error) {
+      console.warn(
+        "Gamepad-Abfrage nicht verfügbar:",
+        error
+      );
+
+      return [];
+    }
+  }
+
+  function updateGamepadDebug() {
   const gamepad =
-    Array.from(gamepads).find(
+    getGamepadsSafe().find(
       pad => pad !== null
     );
 
@@ -2735,13 +2756,8 @@ function demoValues(t) {
 }
 
 function updateControllerDrive(now) {
-  const gamepads =
-    navigator.getGamepads
-      ? navigator.getGamepads()
-      : [];
-
   const gamepad =
-    Array.from(gamepads).find(
+    getGamepadsSafe().find(
       pad => pad !== null
     );
 
@@ -2903,215 +2919,269 @@ function updateControllerDrive(now) {
   );
 }
   
-  function loop(now) {
-    updateGamepadDebug();
-  
-    if (controllerActive) {
-      updateControllerDrive(now);
-  
-    } else if (demoActive) {
-      const v = demoValues(now-demoStart);
+  let lastLoopErrorMessage =
+    "";
 
-      manualSpeed = v.kmh;
-      ui.speedTest.value = Math.round(v.kmh);
-      ui.speedTestLabel.textContent = `${Math.round(v.kmh)} km/h`;
-
-      render(v.kmh,v.a,v.state);
-
-      lastState = v.state;
-} else if (
-  soundActive &&
-  gpsActive &&
-  gpsHasRenderValue
-) {
-  const dt =
-    clamp(
-      (now - lastGpsRenderTime) / 1000,
-      0,
-      0.05
-    );
-
-  lastGpsRenderTime = now;
-
-  // Geschwindigkeit weich zwischen
-  // den GPS-Messwerten bewegen.
-  const speedResponse =
-    1 - Math.exp(-dt / 0.28);
-
-  gpsRenderSpeed +=
-    (gpsSpeedKmh - gpsRenderSpeed) *
-    speedResponse;
-
-  // Smooth m/s² ist bereits gut.
-  // Nur noch leicht für die Audioengine glätten.
-  const accelResponse =
-    1 - Math.exp(-dt / 0.12);
-
-  gpsRenderAccel +=
-    (gpsAccel - gpsRenderAccel) *
-    accelResponse;
-
-  const state =
-    gpsRenderAccel > 0.22
-      ? "GPS · Beschleunigen"
-      : gpsRenderAccel < -0.22
-        ? "GPS · Reku"
-        : "GPS · Fahrt";
-
-  render(
-    gpsRenderSpeed,
-    gpsRenderAccel,
-    state
-  );
-
-} else if (soundActive && !gpsActive) {
-
-  const dt =
-    clamp(
-      (now - lastManualTime) / 1000,
-      0,
-      0.05
-    );
-
-  lastManualTime = now;
-
-  const speedError =
-    manualTargetSpeed -
-    manualSpeed;
-
-  const speedN =
-    clamp(
-      manualSpeed / 270,
-      0,
-      1
-    );
-
-  let targetAccel = 0;
-
-
-  // =========================
-  // Beschleunigen
-  // =========================
-
-  if (speedError > 0.15) {
-
-    // Bei niedrigem Tempo kräftiger,
-    // bei höherem Tempo zunehmend weniger Schub.
-    const maxAccel =
-      6.0 -
-      speedN * 4.0;
-
-    // Kurz vor dem Ziel automatisch
-    // sanfter werden.
-    const approach =
-      clamp(
-        speedError / 30,
-        0.12,
-        1
-      );
-
-    targetAccel =
-      maxAccel *
-      approach;
-  }
-
-
-  // =========================
-  // Verzögern / Reku
-  // =========================
-
-  else if (speedError < -0.15) {
-
-    const approach =
-      clamp(
-        -speedError / 25,
-        0.15,
-        1
-      );
-
-    targetAccel =
-      -3.0 *
-      approach;
-  }
-
-
-  // =========================
-  // Beschleunigung glätten
-  // =========================
-
-  const accelResponse =
-    1 -
-    Math.exp(
-      -dt / 0.18
-    );
-
-  manualAccel +=
-    (
-      targetAccel -
-      manualAccel
-    ) *
-    accelResponse;
-
-
-  // =========================
-  // Geschwindigkeit bewegen
-  // =========================
-
-  const previousSpeed =
-    manualSpeed;
-
-  manualSpeed +=
-    manualAccel *
-    dt *
-    3.6;
-
-  manualSpeed =
-    clamp(
-      manualSpeed,
-      0,
-      270
-    );
-
-
-  // Ziel erreicht bzw. überschritten:
-  // exakt auf die gewünschte Geschwindigkeit setzen.
-  if (
-    (
-      previousSpeed <
-        manualTargetSpeed &&
-      manualSpeed >=
-        manualTargetSpeed
-    ) ||
-    (
-      previousSpeed >
-        manualTargetSpeed &&
-      manualSpeed <=
-        manualTargetSpeed
-    ) ||
-    Math.abs(speedError) <= 0.15
+  function reportLoopError(
+    error
   ) {
-    manualSpeed =
-      manualTargetSpeed;
+    const message =
+      error?.message ||
+      String(error);
 
-    manualAccel = 0;
+    if (
+      message !==
+      lastLoopErrorMessage
+    ) {
+      lastLoopErrorMessage =
+        message;
+
+      console.error(
+        "Voltune Fahrloop-Fehler:",
+        error
+      );
+    }
+
+    if (ui.runStatusText) {
+      ui.runStatusText.textContent =
+        "LOOP FEHLER";
+    }
+
+    if (ui.quickDemoStart) {
+      ui.quickDemoStart.title =
+        `Fahrloop-Fehler: ${message}`;
+    }
   }
 
+  function loop(now) {
+    // ZUERST den nächsten Frame sichern.
+    // Dadurch kann ein einzelner Browser-/Debugfehler
+    // den Fahrloop nie wieder dauerhaft beenden.
+    requestAnimationFrame(
+      loop
+    );
 
-  const state =
-    manualAccel > 0.25
-      ? "Manuell · Beschleunigen"
-      : manualAccel < -0.25
-        ? "Manuell · Reku"
-        : "Manuell · Konstant";
+    try {
+      updateGamepadDebug();
+    } catch (error) {
+      console.warn(
+        "Gamepad-Debug übersprungen:",
+        error
+      );
+    }
 
-  render(
-    manualSpeed,
-    manualAccel,
-    state
-  );
-}
-
-    requestAnimationFrame(loop);
+    try {
+      if (controllerActive) {
+        updateControllerDrive(now);
+    
+      } else if (demoActive) {
+        const v = demoValues(now-demoStart);
+  
+        manualSpeed = v.kmh;
+        ui.speedTest.value = Math.round(v.kmh);
+        ui.speedTestLabel.textContent = `${Math.round(v.kmh)} km/h`;
+  
+        render(v.kmh,v.a,v.state);
+  
+        lastState = v.state;
+  } else if (
+    soundActive &&
+    gpsActive &&
+    gpsHasRenderValue
+  ) {
+    const dt =
+      clamp(
+        (now - lastGpsRenderTime) / 1000,
+        0,
+        0.05
+      );
+  
+    lastGpsRenderTime = now;
+  
+    // Geschwindigkeit weich zwischen
+    // den GPS-Messwerten bewegen.
+    const speedResponse =
+      1 - Math.exp(-dt / 0.28);
+  
+    gpsRenderSpeed +=
+      (gpsSpeedKmh - gpsRenderSpeed) *
+      speedResponse;
+  
+    // Smooth m/s² ist bereits gut.
+    // Nur noch leicht für die Audioengine glätten.
+    const accelResponse =
+      1 - Math.exp(-dt / 0.12);
+  
+    gpsRenderAccel +=
+      (gpsAccel - gpsRenderAccel) *
+      accelResponse;
+  
+    const state =
+      gpsRenderAccel > 0.22
+        ? "GPS · Beschleunigen"
+        : gpsRenderAccel < -0.22
+          ? "GPS · Reku"
+          : "GPS · Fahrt";
+  
+    render(
+      gpsRenderSpeed,
+      gpsRenderAccel,
+      state
+    );
+  
+  } else if (soundActive && !gpsActive) {
+  
+    const dt =
+      clamp(
+        (now - lastManualTime) / 1000,
+        0,
+        0.05
+      );
+  
+    lastManualTime = now;
+  
+    const speedError =
+      manualTargetSpeed -
+      manualSpeed;
+  
+    const speedN =
+      clamp(
+        manualSpeed / 270,
+        0,
+        1
+      );
+  
+    let targetAccel = 0;
+  
+  
+    // =========================
+    // Beschleunigen
+    // =========================
+  
+    if (speedError > 0.15) {
+  
+      // Bei niedrigem Tempo kräftiger,
+      // bei höherem Tempo zunehmend weniger Schub.
+      const maxAccel =
+        6.0 -
+        speedN * 4.0;
+  
+      // Kurz vor dem Ziel automatisch
+      // sanfter werden.
+      const approach =
+        clamp(
+          speedError / 30,
+          0.12,
+          1
+        );
+  
+      targetAccel =
+        maxAccel *
+        approach;
+    }
+  
+  
+    // =========================
+    // Verzögern / Reku
+    // =========================
+  
+    else if (speedError < -0.15) {
+  
+      const approach =
+        clamp(
+          -speedError / 25,
+          0.15,
+          1
+        );
+  
+      targetAccel =
+        -3.0 *
+        approach;
+    }
+  
+  
+    // =========================
+    // Beschleunigung glätten
+    // =========================
+  
+    const accelResponse =
+      1 -
+      Math.exp(
+        -dt / 0.18
+      );
+  
+    manualAccel +=
+      (
+        targetAccel -
+        manualAccel
+      ) *
+      accelResponse;
+  
+  
+    // =========================
+    // Geschwindigkeit bewegen
+    // =========================
+  
+    const previousSpeed =
+      manualSpeed;
+  
+    manualSpeed +=
+      manualAccel *
+      dt *
+      3.6;
+  
+    manualSpeed =
+      clamp(
+        manualSpeed,
+        0,
+        270
+      );
+  
+  
+    // Ziel erreicht bzw. überschritten:
+    // exakt auf die gewünschte Geschwindigkeit setzen.
+    if (
+      (
+        previousSpeed <
+          manualTargetSpeed &&
+        manualSpeed >=
+          manualTargetSpeed
+      ) ||
+      (
+        previousSpeed >
+          manualTargetSpeed &&
+        manualSpeed <=
+          manualTargetSpeed
+      ) ||
+      Math.abs(speedError) <= 0.15
+    ) {
+      manualSpeed =
+        manualTargetSpeed;
+  
+      manualAccel = 0;
+    }
+  
+  
+    const state =
+      manualAccel > 0.25
+        ? "Manuell · Beschleunigen"
+        : manualAccel < -0.25
+          ? "Manuell · Reku"
+          : "Manuell · Konstant";
+  
+    render(
+      manualSpeed,
+      manualAccel,
+      state
+    );
+  }
+  
+  
+    } catch (error) {
+      reportLoopError(
+        error
+      );
+    }
   }
 
   async function startDemo() {
@@ -3153,6 +3223,18 @@ function updateControllerDrive(now) {
     manualSpeed = 0;
     manualTargetSpeed = 0;
     manualAccel = 0;
+
+    // Sofort einen echten Demo-Zustand anzeigen.
+    // Wenn danach etwas im Animationsloop schiefgeht,
+    // bleibt die Anzeige nicht irreführend auf "Bereit".
+    const initialDemo =
+      demoValues(0);
+
+    render(
+      initialDemo.kmh,
+      initialDemo.a,
+      initialDemo.state
+    );
 
     ui.start.textContent = "Läuft ✓";
     if (ui.quickDemoStart) {
