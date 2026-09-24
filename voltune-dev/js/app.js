@@ -2444,6 +2444,12 @@ ui.gpsSmoothAccel.textContent =
     soundActive = false;
 
     ui.start.textContent = "Demo Start";
+
+    if (ui.quickDemoStart) {
+      ui.quickDemoStart.textContent =
+        "▶ Demo Start";
+    }
+
     setRunStatus("stopped", "GESTOPPT");
     setGpsButtonActive(false);
     ui.mute.textContent = "Stumm";
@@ -3087,43 +3093,61 @@ function updateControllerDrive(now) {
     requestAnimationFrame(loop);
   }
 
-  // Temporärer sichtbarer Demo-Button für
-  // schnelle A/B-Soundtests. Der originale
-  // Debug-Demo-Button bleibt unverändert und
-  // kann später einfach wieder allein genutzt
-  // werden.
-  ui.quickDemoStart.addEventListener(
-    "click",
-    () => {
-      ui.start.click();
-    }
-  );
-
-  ui.start.addEventListener("click", async () => {
+  async function startDemo() {
     startupDriveModeClaimed = true;
     setRunStatus("starting", "STARTE DEMO …");
 
+    // Nicht über einen künstlichen .click() gehen:
+    // WebAudio soll direkt aus dem echten
+    // Benutzerklick heraus gestartet werden.
     if (!await ensureVoltuneAudio()) {
       setRunStatus("ready", "BEREIT");
       return;
     }
 
-    // Auch die Demo ist ein echter Startzustand.
     dockGpsStartButton();
-    
+
     VoltuneAudio.resetDrivingState();
+    VoltuneDrivetrain.reset();
 
     stopGps(false);
+
+    controllerActive = false;
     demoActive = true;
+
     saveLastDriveMode("demo");
+
+    // Immer sauber bei Sekunde 0 anfangen,
+    // auch nach einem vorherigen Demo-Versuch.
     demoStart = performance.now();
     lastState = "idle";
+    lastTransmissionGear = 1;
+
+    manualSpeed = 0;
+    manualTargetSpeed = 0;
+    manualAccel = 0;
 
     ui.start.textContent = "Läuft ✓";
+    ui.quickDemoStart.textContent = "▶ Demo läuft";
+
     setRunStatus("active", "DEMO AKTIV");
     setGpsButtonActive(false);
+
     ui.mute.textContent = "Stumm";
-  });
+  }
+
+  // Beide Buttons rufen dieselbe Funktion DIREKT auf.
+  // Dadurch bleibt der echte Benutzer-Gesture-Kontext
+  // für den AudioContext erhalten.
+  ui.quickDemoStart.addEventListener(
+    "click",
+    startDemo
+  );
+
+  ui.start.addEventListener(
+    "click",
+    startDemo
+  );
 
 ui.gps.addEventListener("click", async () => {
   startupDriveModeClaimed = true;
