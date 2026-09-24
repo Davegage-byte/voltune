@@ -372,9 +372,19 @@ html[data-theme="light"] #startupOverlay {
     </div>
 
     <div class="control control-neutral control-sound-profiles">
-      <div class="top">
+      <div class="top soundProfileTop">
         <span>Sound-Profile</span>
-        <span class="soundProfileStatus">Live-Auswahl</span>
+
+        <span class="soundProfileActions">
+          <span class="soundProfileStatus">Live-Auswahl</span>
+
+          <button
+            id="quickDemoStart"
+            class="quickDemoStart"
+            type="button"
+            title="Temporärer Demo-Start für Soundtests"
+          >▶ Demo Start</button>
+        </span>
       </div>
 
       <div class="soundProfileGrid">
