@@ -61,6 +61,20 @@ window.VoltuneAudio = (() => {
         presenceGain: 0.055,
         toneDepth: 105,
         gainScale: 1.04
+      }),
+
+      voltune4: Object.freeze({
+        label: "Voltune 4 · Sentinel",
+        frequencies: [43, 97, 233],
+        highpass: 34,
+        lowpass: 520,
+        pulseHz: 0.39,
+        pulseDepth: 0.032,
+        textureGain: 0.045,
+        presenceGain: 0.012,
+        toneDepth: 28,
+        gainScale: 0.38,
+        sentinel: true
       })
     }),
 
@@ -99,6 +113,19 @@ window.VoltuneAudio = (() => {
         inverterScale: 1.18,
         inverterPitchScale: 1.08,
         airScale: 1.38
+      }),
+
+      voltune4: Object.freeze({
+        label: "Voltune 4 · Sentinel",
+        frequencyScale: 0.86,
+        harmonicRatio: 1.27,
+        filterScale: 0.66,
+        subScale: 1.26,
+        gainScale: 0.48,
+        inverterScale: 0.24,
+        inverterPitchScale: 0.74,
+        airScale: 0.10,
+        sentinel: true
       })
     }),
 
@@ -132,6 +159,17 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.58,
         pulseDepthScale: 0.82,
         infiniteRise: true
+      }),
+
+      voltune4: Object.freeze({
+        label: "Voltune 4 · Sentinel",
+        frequencyScale: 0.72,
+        filterScale: 0.52,
+        speedRiseScale: 0.24,
+        gainScale: 0.32,
+        pulseRateScale: 0.42,
+        pulseDepthScale: 0.38,
+        sentinel: true
       })
     }),
 
@@ -165,6 +203,17 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.66,
         pulseDepthScale: 0.88,
         infiniteFall: true
+      }),
+
+      voltune4: Object.freeze({
+        label: "Voltune 4 · Sentinel",
+        frequencyScale: 0.68,
+        harmonicRatio: 1.22,
+        filterScale: 0.55,
+        gainScale: 0.34,
+        pulseRateScale: 0.44,
+        pulseDepthScale: 0.42,
+        sentinel: true
       })
     })
   });
@@ -254,6 +303,15 @@ window.VoltuneAudio = (() => {
   let regenRissetBus = null;
   let regenRissetFilter = null;
   let regenRissetPhase = 0.72;
+
+  // Eigenständiger Voltune-4-Maschinenklang:
+  // tiefer Körper + ungerade Resonanzen + FM/Puls.
+  let sentinel1, sentinel2, sentinel3;
+  let sentinelGain1, sentinelGain2, sentinelGain3;
+  let sentinelFilter, sentinelBus;
+  let sentinelFmOsc, sentinelFmDepth;
+  let sentinelPulseOsc, sentinelPulseDepth, sentinelPulseGain;
+  let lastSentinelImpulseAt = -9999;
 
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
@@ -416,6 +474,322 @@ window.VoltuneAudio = (() => {
         level
       ),
       0.055
+    );
+  }
+
+  function updateSentinelMachine({
+    active,
+    baseHz,
+    level,
+    filterHz,
+    pulseHz,
+    pulseDepth,
+    fmHz,
+    fmDepth,
+    metal = 1
+  }) {
+    if (
+      !sentinel1 ||
+      !sentinelBus
+    ) {
+      return;
+    }
+
+    const safeBase =
+      Math.max(
+        28,
+        Number(baseHz) || 42
+      );
+
+    setTarget(
+      sentinel1.frequency,
+      safeBase,
+      0.045
+    );
+
+    // Bewusst keine saubere Oktave/Quinte:
+    // die leicht "falschen" Verhältnisse geben
+    // dem Klang seine maschinenartige Identität.
+    setTarget(
+      sentinel2.frequency,
+      safeBase *
+        (
+          1.71 +
+          metal * 0.04
+        ) +
+        5,
+      0.045
+    );
+
+    setTarget(
+      sentinel3.frequency,
+      safeBase *
+        (
+          2.63 +
+          metal * 0.10
+        ) +
+        11,
+      0.045
+    );
+
+    setTarget(
+      sentinelGain1.gain,
+      active
+        ? 0.72
+        : 0.0001,
+      0.055
+    );
+
+    setTarget(
+      sentinelGain2.gain,
+      active
+        ? 0.34 +
+          metal * 0.10
+        : 0.0001,
+      0.055
+    );
+
+    setTarget(
+      sentinelGain3.gain,
+      active
+        ? 0.12 +
+          metal * 0.08
+        : 0.0001,
+      0.055
+    );
+
+    setTarget(
+      sentinelFilter.frequency,
+      Math.max(
+        180,
+        filterHz
+      ),
+      0.06
+    );
+
+    setTarget(
+      sentinelFmOsc.frequency,
+      Math.max(
+        0.05,
+        fmHz
+      ),
+      0.06
+    );
+
+    setTarget(
+      sentinelFmDepth.gain,
+      active
+        ? fmDepth
+        : 0,
+      0.06
+    );
+
+    setTarget(
+      sentinelPulseOsc.frequency,
+      Math.max(
+        0.05,
+        pulseHz
+      ),
+      0.05
+    );
+
+    const depth =
+      clamp(
+        pulseDepth,
+        0,
+        0.42
+      );
+
+    setTarget(
+      sentinelPulseGain.gain,
+      active
+        ? 1 - depth
+        : 1,
+      0.05
+    );
+
+    setTarget(
+      sentinelPulseDepth.gain,
+      active
+        ? depth
+        : 0,
+      0.05
+    );
+
+    setTarget(
+      sentinelBus.gain,
+      active
+        ? Math.max(
+            0.0001,
+            level
+          )
+        : 0.0001,
+      0.05
+    );
+  }
+
+  function triggerSentinelImpulse(
+    direction,
+    intensity
+  ) {
+    if (
+      !ctx ||
+      !master
+    ) {
+      return;
+    }
+
+    const nowMs =
+      performance.now();
+
+    if (
+      nowMs -
+        lastSentinelImpulseAt <
+      650
+    ) {
+      return;
+    }
+
+    lastSentinelImpulseAt =
+      nowMs;
+
+    const amount =
+      clamp(
+        intensity,
+        0,
+        1
+      );
+
+    const now =
+      ctx.currentTime;
+
+    const carrier =
+      ctx.createOscillator();
+
+    carrier.type =
+      "triangle";
+
+    const subCarrier =
+      ctx.createOscillator();
+
+    subCarrier.type =
+      "sine";
+
+    if (direction > 0) {
+      carrier.frequency.setValueAtTime(
+        520 +
+          amount * 170,
+        now
+      );
+
+      carrier.frequency.exponentialRampToValueAtTime(
+        118 +
+          amount * 34,
+        now + 0.22
+      );
+
+      subCarrier.frequency.setValueAtTime(
+        96 +
+          amount * 18,
+        now
+      );
+
+      subCarrier.frequency.exponentialRampToValueAtTime(
+        48,
+        now + 0.24
+      );
+    } else {
+      carrier.frequency.setValueAtTime(
+        150 +
+          amount * 30,
+        now
+      );
+
+      carrier.frequency.exponentialRampToValueAtTime(
+        410 +
+          amount * 110,
+        now + 0.18
+      );
+
+      subCarrier.frequency.setValueAtTime(
+        62,
+        now
+      );
+
+      subCarrier.frequency.exponentialRampToValueAtTime(
+        92 +
+          amount * 16,
+        now + 0.20
+      );
+    }
+
+    const filter =
+      ctx.createBiquadFilter();
+
+    filter.type =
+      "bandpass";
+
+    filter.frequency.value =
+      direction > 0
+        ? 310
+        : 260;
+
+    filter.Q.value =
+      1.5;
+
+    const gain =
+      ctx.createGain();
+
+    const peak =
+      0.025 +
+      amount * 0.075;
+
+    gain.gain.setValueAtTime(
+      0.0001,
+      now
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      peak,
+      now + 0.012
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      peak * 0.58,
+      now + 0.075
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      now + 0.27
+    );
+
+    const subGainLocal =
+      ctx.createGain();
+
+    subGainLocal.gain.value =
+      0.48;
+
+    carrier
+      .connect(filter);
+
+    subCarrier
+      .connect(subGainLocal)
+      .connect(filter);
+
+    filter
+      .connect(gain)
+      .connect(master);
+
+    carrier.start(now);
+    subCarrier.start(now);
+
+    carrier.stop(
+      now + 0.30
+    );
+
+    subCarrier.stop(
+      now + 0.30
     );
   }
 
@@ -1107,6 +1481,116 @@ async function setOverrunSound(
 
 
     // =========================
+    // Voltune 4 · Sentinel Core
+    // =========================
+
+    sentinel1 =
+      createOsc("triangle");
+
+    sentinel2 =
+      createOsc("triangle");
+
+    sentinel3 =
+      createOsc("sine");
+
+    sentinelGain1 =
+      ctx.createGain();
+
+    sentinelGain2 =
+      ctx.createGain();
+
+    sentinelGain3 =
+      ctx.createGain();
+
+    sentinelGain1.gain.value =
+      0.0001;
+
+    sentinelGain2.gain.value =
+      0.0001;
+
+    sentinelGain3.gain.value =
+      0.0001;
+
+    sentinelFilter =
+      ctx.createBiquadFilter();
+
+    sentinelFilter.type =
+      "lowpass";
+
+    sentinelFilter.frequency.value =
+      720;
+
+    sentinelFilter.Q.value =
+      0.9;
+
+    sentinelPulseGain =
+      ctx.createGain();
+
+    sentinelPulseGain.gain.value =
+      1;
+
+    sentinelBus =
+      ctx.createGain();
+
+    sentinelBus.gain.value =
+      0.0001;
+
+    sentinel1
+      .connect(sentinelGain1)
+      .connect(sentinelFilter);
+
+    sentinel2
+      .connect(sentinelGain2)
+      .connect(sentinelFilter);
+
+    sentinel3
+      .connect(sentinelGain3)
+      .connect(sentinelFilter);
+
+    sentinelFilter
+      .connect(sentinelPulseGain)
+      .connect(sentinelBus)
+      .connect(master);
+
+    // Frequenzmodulation nur auf die mittlere
+    // Resonanz. Dadurch entsteht eher ein
+    // roboterartiges Knurren als ein Sirenen-Jaulen.
+    sentinelFmOsc =
+      createOsc("sine");
+
+    sentinelFmOsc.frequency.value =
+      1.4;
+
+    sentinelFmDepth =
+      ctx.createGain();
+
+    sentinelFmDepth.gain.value =
+      0;
+
+    sentinelFmOsc
+      .connect(sentinelFmDepth)
+      .connect(sentinel2.frequency);
+
+    // Amplitudenpuls als wiedererkennbarer
+    // "Energie"-Rhythmus.
+    sentinelPulseOsc =
+      createOsc("sine");
+
+    sentinelPulseOsc.frequency.value =
+      1.0;
+
+    sentinelPulseDepth =
+      ctx.createGain();
+
+    sentinelPulseDepth.gain.value =
+      0;
+
+    sentinelPulseOsc
+      .connect(sentinelPulseDepth)
+      .connect(sentinelPulseGain.gain);
+
+
+    // =========================
     // Infinite Rise / Fall
     // =========================
     //
@@ -1264,7 +1748,12 @@ async function setOverrunSound(
       drivePulseOsc,
       regenOsc1,
       regenOsc2,
-      regenPulseOsc
+      regenPulseOsc,
+      sentinel1,
+      sentinel2,
+      sentinel3,
+      sentinelFmOsc,
+      sentinelPulseOsc
     ].forEach(osc => osc.start());
 
     [
@@ -4139,6 +4628,7 @@ const inverterLoadPresence =
 
 const invLevel =
   inverterAmount *
+  0.78 *
   cruiseScale *
   driveProfile.inverterScale *
   (
@@ -4570,6 +5060,7 @@ const invLevel =
 
     const airLevel =
       airAmount *
+      0.55 *
       cruiseScale *
       driveProfile.airScale *
       (
@@ -4590,6 +5081,201 @@ const invLevel =
         speedN * 1800,
       0.1
     );
+
+
+    // =========================
+    // Voltune 4 · Sentinel Runtime
+    // =========================
+
+    const sentinelAccelActive =
+      Boolean(
+        accelProfile.sentinel
+      ) &&
+      pos > 0.045;
+
+    const sentinelRegenActive =
+      Boolean(
+        regenProfile.sentinel
+      ) &&
+      neg > 0.045;
+
+    const sentinelIdleActive =
+      !sentinelAccelActive &&
+      !sentinelRegenActive &&
+      Boolean(
+        idleProfile.sentinel
+      ) &&
+      idleMix > 0.35;
+
+    const sentinelDriveActive =
+      !sentinelAccelActive &&
+      !sentinelRegenActive &&
+      !sentinelIdleActive &&
+      Boolean(
+        driveProfile.sentinel
+      ) &&
+      driveMix > 0.15;
+
+    if (sentinelAccelActive) {
+      updateSentinelMachine({
+        active: true,
+        baseHz:
+          64 +
+          speedN * 86 +
+          pos * 42,
+        level:
+          driveAmount *
+          (
+            0.045 +
+            pos * 0.11
+          ),
+        filterHz:
+          430 +
+          speedN * 420 +
+          pos * 220,
+        pulseHz:
+          3.2 +
+          speedN * 3.5 +
+          pos * 7.2,
+        pulseDepth:
+          0.10 +
+          pos * 0.20,
+        fmHz:
+          1.8 +
+          pos * 4.4,
+        fmDepth:
+          12 +
+          pos * 74,
+        metal:
+          0.85 +
+          pos * 0.65
+      });
+
+      if (
+        accel > 1.35 &&
+        lastAccel <= 1.35
+      ) {
+        triggerSentinelImpulse(
+          1,
+          clamp(
+            accel / 4.5,
+            0,
+            1
+          )
+        );
+      }
+
+    } else if (sentinelRegenActive) {
+      updateSentinelMachine({
+        active: true,
+        baseHz:
+          54 +
+          speedN * 58 -
+          neg * 12,
+        level:
+          regenAmount *
+          (
+            0.040 +
+            neg * 0.095
+          ),
+        filterHz:
+          360 +
+          speedN * 280,
+        pulseHz:
+          2.4 +
+          speedN * 2.0 +
+          neg * 4.8,
+        pulseDepth:
+          0.08 +
+          neg * 0.16,
+        fmHz:
+          1.1 +
+          neg * 3.2,
+        fmDepth:
+          8 +
+          neg * 46,
+        metal:
+          0.62 +
+          neg * 0.44
+      });
+
+      if (
+        accel < -1.05 &&
+        lastAccel >= -1.05
+      ) {
+        triggerSentinelImpulse(
+          -1,
+          clamp(
+            -accel / 3.5,
+            0,
+            1
+          )
+        );
+      }
+
+    } else if (sentinelIdleActive) {
+      updateSentinelMachine({
+        active: true,
+        baseHz: 41,
+        level:
+          baseAmount *
+          idleMix *
+          0.050,
+        filterHz: 360,
+        pulseHz: 0.44,
+        pulseDepth: 0.055,
+        fmHz: 0.31,
+        fmDepth: 7,
+        metal: 0.72
+      });
+
+    } else if (sentinelDriveActive) {
+      updateSentinelMachine({
+        active: true,
+        baseHz:
+          48 +
+          speedN * 74,
+        level:
+          baseAmount *
+          driveMix *
+          cruiseScale *
+          (
+            0.038 +
+            speedN * 0.028
+          ),
+        filterHz:
+          390 +
+          speedN * 340,
+        pulseHz:
+          1.4 +
+          speedN * 2.8,
+        pulseDepth:
+          0.06 +
+          speedN * 0.06,
+        fmHz:
+          0.8 +
+          speedN * 1.8,
+        fmDepth:
+          6 +
+          speedN * 28,
+        metal:
+          0.65 +
+          speedN * 0.30
+      });
+
+    } else {
+      updateSentinelMachine({
+        active: false,
+        baseHz: 42,
+        level: 0,
+        filterHz: 360,
+        pulseHz: 0.5,
+        pulseDepth: 0,
+        fmHz: 0.5,
+        fmDepth: 0,
+        metal: 0
+      });
+    }
 
 
     // =========================
