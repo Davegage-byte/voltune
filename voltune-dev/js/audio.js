@@ -167,6 +167,19 @@ window.VoltuneAudio = (() => {
         inverterPitchScale: 0.70,
         airScale: 0.05,
         muscle: true
+      }),
+
+      voltune6: Object.freeze({
+        label: "Voltune 6 · Wankel JDM",
+        frequencyScale: 0.70,
+        harmonicRatio: 1.18,
+        filterScale: 0.44,
+        subScale: 1.00,
+        gainScale: 0.018,
+        inverterScale: 0.015,
+        inverterPitchScale: 0.70,
+        airScale: 0.03,
+        wankelDrive: true
       })
     }),
 
@@ -400,6 +413,12 @@ window.VoltuneAudio = (() => {
   let wankelFilter = null;
   let wankelBuffer = null;
   const wankelReferenceRpm = 1600;
+
+  let wankelDriveSource = null;
+  let wankelDriveGain = null;
+  let wankelDriveFilter = null;
+  let wankelDriveBuffer = null;
+  const wankelDriveReferenceRpm = 3000;
 
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
@@ -1915,6 +1934,246 @@ async function setOverrunSound(
     return buffer;
   }
 
+  function createWankelDriveBuffer() {
+    const sampleRate =
+      ctx.sampleRate;
+
+    const rpm =
+      wankelDriveReferenceRpm;
+
+    const shaftHz =
+      rpm / 60;
+
+    const rotorFireHz =
+      shaftHz * 2;
+
+    const duration =
+      2.4;
+
+    const length =
+      Math.round(
+        duration * sampleRate
+      );
+
+    const buffer =
+      ctx.createBuffer(
+        2,
+        length,
+        sampleRate
+      );
+
+    const left =
+      buffer.getChannelData(0);
+
+    const right =
+      buffer.getChannelData(1);
+
+    let seed =
+      1787;
+
+    const random = () => {
+      seed |= 0;
+      seed =
+        seed + 0x6D2B79F5 | 0;
+
+      let value =
+        Math.imul(
+          seed ^ seed >>> 15,
+          1 | seed
+        );
+
+      value =
+        value +
+        Math.imul(
+          value ^ value >>> 7,
+          61 | value
+        ) ^
+        value;
+
+      return (
+        (
+          value ^
+          value >>> 14
+        ) >>> 0
+      ) / 4294967296;
+    };
+
+    const addTone = (
+      channel,
+      start,
+      frequency,
+      amplitude,
+      decay,
+      phase = 0
+    ) => {
+      const count =
+        Math.min(
+          channel.length - start,
+          Math.ceil(
+            decay *
+            sampleRate *
+            6
+          )
+        );
+
+      const step =
+        Math.PI *
+        2 *
+        frequency /
+        sampleRate;
+
+      for (
+        let n = 0;
+        n < count;
+        n++
+      ) {
+        const time =
+          n /
+          sampleRate;
+
+        channel[start + n] +=
+          Math.sin(
+            step * n +
+            phase
+          ) *
+          Math.exp(
+            -time / decay
+          ) *
+          amplitude;
+      }
+    };
+
+    const interval =
+      1 / rotorFireHz;
+
+    const events =
+      Math.ceil(
+        duration / interval
+      ) + 12;
+
+    for (
+      let event = -6;
+      event < events;
+      event++
+    ) {
+      const rotor =
+        (
+          (
+            event % 2
+          ) +
+          2
+        ) % 2;
+
+      const start =
+        Math.round(
+          (
+            event *
+            interval +
+            (
+              random() * 2 - 1
+            ) *
+            interval *
+            0.012
+          ) *
+          sampleRate
+        );
+
+      if (
+        start < 0 ||
+        start >= length
+      ) {
+        continue;
+      }
+
+      const side =
+        rotor
+          ? right
+          : left;
+
+      const other =
+        rotor
+          ? left
+          : right;
+
+      const amp =
+        0.42 *
+        (
+          0.92 +
+          random() * 0.16
+        );
+
+      // Fahrgrundsound: dichter Rotary-Körper,
+      // aber kein ausgeprägtes Stand-BRAP.
+      addTone(
+        side,
+        start,
+        72 + random() * 8,
+        amp * 0.42,
+        0.060,
+        random() * 0.6
+      );
+
+      addTone(
+        side,
+        start,
+        112 + random() * 12,
+        amp * 0.55,
+        0.045,
+        random() * 0.9
+      );
+
+      addTone(
+        other,
+        start,
+        168 + random() * 18,
+        amp * 0.25,
+        0.026,
+        random() * 1.2
+      );
+
+      addTone(
+        other,
+        start,
+        250 + random() * 35,
+        amp * 0.075,
+        0.010,
+        random() * 1.5
+      );
+    }
+
+    let peak =
+      0;
+
+    for (
+      let i = 0;
+      i < length;
+      i++
+    ) {
+      peak =
+        Math.max(
+          peak,
+          Math.abs(left[i]),
+          Math.abs(right[i])
+        );
+    }
+
+    const gain =
+      peak > 0
+        ? 0.86 / peak
+        : 1;
+
+    for (
+      let i = 0;
+      i < length;
+      i++
+    ) {
+      left[i] *= gain;
+      right[i] *= gain;
+    }
+
+    return buffer;
+  }
+
   function createOsc(type) {
     const osc =
       ctx.createOscillator();
@@ -2122,6 +2381,42 @@ async function setOverrunSound(
     wankelSource
       .connect(wankelFilter)
       .connect(wankelGain)
+      .connect(master);
+
+    // Fahrgrundsound separat vom Idle-BRAP.
+    wankelDriveBuffer =
+      createWankelDriveBuffer();
+
+    wankelDriveSource =
+      ctx.createBufferSource();
+
+    wankelDriveSource.buffer =
+      wankelDriveBuffer;
+
+    wankelDriveSource.loop =
+      true;
+
+    wankelDriveGain =
+      ctx.createGain();
+
+    wankelDriveGain.gain.value =
+      0.0001;
+
+    wankelDriveFilter =
+      ctx.createBiquadFilter();
+
+    wankelDriveFilter.type =
+      "lowpass";
+
+    wankelDriveFilter.frequency.value =
+      1200;
+
+    wankelDriveFilter.Q.value =
+      0.55;
+
+    wankelDriveSource
+      .connect(wankelDriveFilter)
+      .connect(wankelDriveGain)
       .connect(master);
 
     // =========================
@@ -2885,6 +3180,10 @@ async function setOverrunSound(
 
     if (wankelSource) {
       wankelSource.start();
+    }
+
+    if (wankelDriveSource) {
+      wankelDriveSource.start();
     }
 
     // Nach dem Aufbau noch einmal sicherstellen,
@@ -6296,6 +6595,87 @@ const invLevel =
       } else {
         setTarget(
           wankelGain.gain,
+          0.0001,
+          0.080
+        );
+      }
+    }
+
+    // =========================
+    // Voltune 6 · Wankel JDM Fahrgrundsound
+    // =========================
+
+    const wankelDriveActive =
+      Boolean(
+        driveProfile.wankelDrive
+      ) &&
+      driveMix > 0.001;
+
+    if (
+      wankelDriveSource &&
+      wankelDriveGain &&
+      wankelDriveFilter
+    ) {
+      if (wankelDriveActive) {
+        const effectiveRpm =
+          Math.max(
+            1600,
+            rpm || 1600
+          );
+
+        const playbackRate =
+          clamp(
+            effectiveRpm /
+            wankelDriveReferenceRpm,
+            0.53,
+            2.80
+          );
+
+        setTarget(
+          wankelDriveSource.playbackRate,
+          playbackRate,
+          0.050
+        );
+
+        const load =
+          clamp(
+            pos +
+              drivingStyle * 0.22,
+            0,
+            1
+          );
+
+        setTarget(
+          wankelDriveGain.gain,
+          clamp(
+            baseAmount *
+              driveMix *
+              cruiseScale *
+              (
+                0.105 +
+                load * 0.055
+              ),
+            0.0001,
+            0.28
+          ),
+          0.060
+        );
+
+        setTarget(
+          wankelDriveFilter.frequency,
+          clamp(
+            760 +
+              playbackRate * 290 +
+              load * 950,
+            700,
+            3000
+          ),
+          0.070
+        );
+
+      } else {
+        setTarget(
+          wankelDriveGain.gain,
           0.0001,
           0.080
         );
