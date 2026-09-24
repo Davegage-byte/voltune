@@ -13,6 +13,98 @@ window.VoltuneAudio = (() => {
       return normalized * normalized;
     };
 
+  // =========================
+  // Sound-Profile
+  // =========================
+  //
+  // Jede Klanggruppe hat eine eigene Auswahl.
+  // Neue Varianten werden zentral hier ergänzt.
+  // Die Oberfläche liest diese Liste automatisch
+  // aus, sodass für neue Profile kein weiteres
+  // Dropdown-Markup nötig ist.
+  const SOUND_PROFILES = Object.freeze({
+    idle: Object.freeze({
+      voltune1: Object.freeze({
+        label: "Voltune 1",
+        frequencies: [61, 146, 289],
+        highpass: 48,
+        lowpass: 480,
+        pulseHz: 0.86,
+        gainScale: 1
+      })
+    }),
+
+    drive: Object.freeze({
+      voltune1: Object.freeze({
+        label: "Voltune 1",
+        frequencyScale: 1,
+        gainScale: 1,
+        inverterScale: 1,
+        airScale: 1
+      })
+    }),
+
+    accel: Object.freeze({
+      voltune1: Object.freeze({
+        label: "Voltune 1",
+        frequencyScale: 1,
+        gainScale: 1,
+        pulseRateScale: 1,
+        pulseDepthScale: 1
+      })
+    }),
+
+    regen: Object.freeze({
+      voltune1: Object.freeze({
+        label: "Voltune 1",
+        frequencyScale: 1,
+        gainScale: 1,
+        pulseRateScale: 1,
+        pulseDepthScale: 1
+      })
+    })
+  });
+
+  function getSoundProfile(
+    category,
+    key
+  ) {
+    const profiles =
+      SOUND_PROFILES[category];
+
+    if (!profiles) {
+      return null;
+    }
+
+    return (
+      profiles[key] ||
+      profiles.voltune1 ||
+      Object.values(profiles)[0]
+    );
+  }
+
+  function getSoundProfiles() {
+    const result = {};
+
+    Object.entries(
+      SOUND_PROFILES
+    ).forEach(
+      ([category, profiles]) => {
+        result[category] =
+          Object.entries(profiles).map(
+            ([key, profile]) => ({
+              key,
+              label:
+                profile.label ||
+                key
+            })
+          );
+      }
+    );
+
+    return result;
+  }
+
   let ctx = null;
   let master = null;
   let compressor = null;
@@ -3132,6 +3224,30 @@ function triggerDownshiftBlip(
           1
         );
 
+    const idleProfile =
+      getSoundProfile(
+        "idle",
+        settings.idleSoundProfile
+      );
+
+    const driveProfile =
+      getSoundProfile(
+        "drive",
+        settings.driveSoundProfile
+      );
+
+    const accelProfile =
+      getSoundProfile(
+        "accel",
+        settings.accelSoundProfile
+      );
+
+    const regenProfile =
+      getSoundProfile(
+        "regen",
+        settings.regenSoundProfile
+      );
+
     const baseStart =
       Number(settings.baseFrequency);
     
@@ -3435,12 +3551,49 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     // Idle 0 % · Grundsound 100 %
     const driveMix = clamp(speedKmh / 5, 0, 1);
     const idleMix = 1 - driveMix;
+
+    setTarget(
+      idle1.frequency,
+      idleProfile.frequencies[0],
+      0.18
+    );
+
+    setTarget(
+      idle2.frequency,
+      idleProfile.frequencies[1],
+      0.18
+    );
+
+    setTarget(
+      idle3.frequency,
+      idleProfile.frequencies[2],
+      0.18
+    );
+
+    setTarget(
+      idleHighpass.frequency,
+      idleProfile.highpass,
+      0.18
+    );
+
+    setTarget(
+      idleFilter.frequency,
+      idleProfile.lowpass,
+      0.18
+    );
+
+    setTarget(
+      idlePulseOsc.frequency,
+      idleProfile.pulseHz,
+      0.18
+    );
     
     setTarget(
       idleGain.gain,
       baseAmount *
         idleMix *
-        0.052,
+        0.052 *
+        idleProfile.gainScale,
       0.12
     );
 
@@ -3484,15 +3637,23 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
           )
         );
 
+    const driveFundamental =
+      baseStart +
+      (
+        fundamental -
+        baseStart
+      ) *
+      driveProfile.frequencyScale;
+
     setTarget(
       base1.frequency,
-      fundamental,
+      driveFundamental,
       0.04
     );
 
     setTarget(
       base2.frequency,
-      fundamental *
+      driveFundamental *
         (1.495 + pos * 0.015),
       0.055
     );
@@ -3530,7 +3691,8 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
           0.095 +
           speedN * 0.055 +
           pos * 0.028
-        ),
+        ) *
+        driveProfile.gainScale,
       0.08
     );
     
@@ -3543,7 +3705,8 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
           0.006 +
           speedN * 0.010 +
           pos * 0.008
-        ),
+        ) *
+        driveProfile.gainScale,
       0.08
     );
 
@@ -3562,7 +3725,8 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       baseAmount *
         driveMix *
         cruiseScale *
-        subLevel,
+        subLevel *
+        driveProfile.gainScale,
       0.08
     );
 
@@ -3614,6 +3778,7 @@ const inverterLoadPresence =
 const invLevel =
   inverterAmount *
   cruiseScale *
+  driveProfile.inverterScale *
   (
     // Sehr leiser Grundanteil.
     0.002 +
@@ -3659,11 +3824,14 @@ const invLevel =
     // =========================
 
     const driveFreq =
-      220 +
-      fundamental * 1.55 +
-      Math.pow(speedN, 0.72) * 330 +
-      pos * 110 +
-      accelSpeedRise * 210;
+      (
+        220 +
+        driveFundamental * 1.55 +
+        Math.pow(speedN, 0.72) * 330 +
+        pos * 110 +
+        accelSpeedRise * 210
+      ) *
+      accelProfile.frequencyScale;
 
       // =========================
       // Beschleunigungs-Pulsierung
@@ -3699,12 +3867,15 @@ const invLevel =
       // Hohes Tempo:
       // zunehmend dichter und hektischer.
     const drivePulseHz =
-      0.48 +
-      Math.pow(speedN, 0.65) * 0.55 +
-      Math.pow(drivePulseLoad, 0.80) * 0.32 +
-      drivePulseStyle *
-        drivePulseLoad *
-        0.18;
+      (
+        0.48 +
+        Math.pow(speedN, 0.65) * 0.55 +
+        Math.pow(drivePulseLoad, 0.80) * 0.32 +
+        drivePulseStyle *
+          drivePulseLoad *
+          0.18
+      ) *
+      accelProfile.pulseRateScale;
       
       setTarget(
         drivePulseOsc.frequency,
@@ -3722,12 +3893,15 @@ const invLevel =
       // deutliches rhythmisches Pumpen.
       const drivePulseAmount =
         clamp(
-          0.008 +
+          (
+            0.008 +
             drivePulseLoad * 0.035 +
             speedN * 0.006 +
             drivePulseStyle *
               drivePulseLoad *
-              0.012,
+              0.012
+          ) *
+          accelProfile.pulseDepthScale,
           0.008,
           0.060
         );
@@ -3774,7 +3948,8 @@ const invLevel =
         (
           0.024 +
           speedN * 0.044
-        ),
+        ) *
+        accelProfile.gainScale,
       0.045
     );
 
@@ -3784,12 +3959,15 @@ const invLevel =
     // =========================
 
     const regenFreq =
-      260 +
-      Math.pow(
-        speedN,
-        0.68
-      ) * 760 +
-      neg * 90;
+      (
+        260 +
+        Math.pow(
+          speedN,
+          0.68
+        ) * 760 +
+        neg * 90
+      ) *
+      regenProfile.frequencyScale;
 
     setTarget(
       regenOsc1.frequency,
@@ -3846,12 +4024,15 @@ const invLevel =
     // starke Reku und sportlicher Fahrstil
     // verstärken sie zusätzlich.
     const regenPulseHz =
-      0.42 +
-      Math.pow(speedN, 0.68) * 0.38 +
-      Math.pow(regenPulseLoad, 0.82) * 0.25 +
-      regenPulseStyle *
-        regenPulseLoad *
-        0.12;
+      (
+        0.42 +
+        Math.pow(speedN, 0.68) * 0.38 +
+        Math.pow(regenPulseLoad, 0.82) * 0.25 +
+        regenPulseStyle *
+          regenPulseLoad *
+          0.12
+      ) *
+      regenProfile.pulseRateScale;
     
     setTarget(
       regenPulseOsc.frequency,
@@ -3867,12 +4048,15 @@ const invLevel =
     // aggressiven Hämmerns.
     const regenPulseAmount =
       clamp(
-        0.006 +
+        (
+          0.006 +
           regenPulseLoad * 0.025 +
           speedN * 0.004 +
           regenPulseStyle *
             regenPulseLoad *
-            0.008,
+            0.008
+        ) *
+        regenProfile.pulseDepthScale,
         0.006,
         0.045
       );
@@ -3896,7 +4080,8 @@ const invLevel =
         (
           0.022 +
           speedN * 0.040
-        ),
+        ) *
+        regenProfile.gainScale,
       0.055
     );
 
@@ -3908,6 +4093,7 @@ const invLevel =
     const airLevel =
       airAmount *
       cruiseScale *
+      driveProfile.airScale *
       (
         speedN * 0.004 +
         pos * 0.016 +
@@ -4123,7 +4309,22 @@ lastAccel = accel;
       accelDrop,
       overrunTriggerLoad,
       overrunTriggerDrop,
-      easyBovEnabled: easyBov
+      easyBovEnabled: easyBov,
+
+      soundProfiles: {
+        idle:
+          settings.idleSoundProfile ||
+          "voltune1",
+        drive:
+          settings.driveSoundProfile ||
+          "voltune1",
+        accel:
+          settings.accelSoundProfile ||
+          "voltune1",
+        regen:
+          settings.regenSoundProfile ||
+          "voltune1"
+      }
     };
   }
 
@@ -4163,6 +4364,8 @@ lastAccel = accel;
     
     setMasterVolume,
     setMuted,
+
+    getSoundProfiles,
 
     isMuted,
     isStarted,
