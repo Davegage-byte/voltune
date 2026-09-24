@@ -30,7 +30,24 @@ window.VoltuneAudio = (() => {
         highpass: 48,
         lowpass: 480,
         pulseHz: 0.86,
+        pulseDepth: 0.055,
+        textureGain: 0.14,
+        presenceGain: 0.035,
+        toneDepth: 55,
         gainScale: 1
+      }),
+
+      voltune2: Object.freeze({
+        label: "Voltune 2",
+        frequencies: [55, 131, 247],
+        highpass: 43,
+        lowpass: 405,
+        pulseHz: 0.66,
+        pulseDepth: 0.037,
+        textureGain: 0.10,
+        presenceGain: 0.020,
+        toneDepth: 42,
+        gainScale: 0.98
       })
     }),
 
@@ -38,9 +55,25 @@ window.VoltuneAudio = (() => {
       voltune1: Object.freeze({
         label: "Voltune 1",
         frequencyScale: 1,
+        harmonicRatio: 1.495,
+        filterScale: 1,
+        subScale: 1,
         gainScale: 1,
         inverterScale: 1,
+        inverterPitchScale: 1,
         airScale: 1
+      }),
+
+      voltune2: Object.freeze({
+        label: "Voltune 2",
+        frequencyScale: 0.93,
+        harmonicRatio: 1.38,
+        filterScale: 0.86,
+        subScale: 1.18,
+        gainScale: 1.06,
+        inverterScale: 0.72,
+        inverterPitchScale: 0.88,
+        airScale: 1.15
       })
     }),
 
@@ -48,9 +81,21 @@ window.VoltuneAudio = (() => {
       voltune1: Object.freeze({
         label: "Voltune 1",
         frequencyScale: 1,
+        filterScale: 1,
+        speedRiseScale: 1,
         gainScale: 1,
         pulseRateScale: 1,
         pulseDepthScale: 1
+      }),
+
+      voltune2: Object.freeze({
+        label: "Voltune 2",
+        frequencyScale: 0.88,
+        filterScale: 0.80,
+        speedRiseScale: 1.30,
+        gainScale: 1.12,
+        pulseRateScale: 0.78,
+        pulseDepthScale: 1.28
       })
     }),
 
@@ -58,9 +103,21 @@ window.VoltuneAudio = (() => {
       voltune1: Object.freeze({
         label: "Voltune 1",
         frequencyScale: 1,
+        harmonicRatio: 1.62,
+        filterScale: 1,
         gainScale: 1,
         pulseRateScale: 1,
         pulseDepthScale: 1
+      }),
+
+      voltune2: Object.freeze({
+        label: "Voltune 2",
+        frequencyScale: 0.80,
+        harmonicRatio: 1.38,
+        filterScale: 0.78,
+        gainScale: 1.10,
+        pulseRateScale: 0.82,
+        pulseDepthScale: 1.22
       })
     })
   });
@@ -3587,6 +3644,30 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
       idleProfile.pulseHz,
       0.18
     );
+
+    setTarget(
+      idlePulseDepth.gain,
+      idleProfile.pulseDepth,
+      0.18
+    );
+
+    setTarget(
+      idle2Gain.gain,
+      idleProfile.textureGain,
+      0.18
+    );
+
+    setTarget(
+      idle3Gain.gain,
+      idleProfile.presenceGain,
+      0.18
+    );
+
+    setTarget(
+      idleToneDepth.gain,
+      idleProfile.toneDepth,
+      0.18
+    );
     
     setTarget(
       idleGain.gain,
@@ -3654,7 +3735,10 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     setTarget(
       base2.frequency,
       driveFundamental *
-        (1.495 + pos * 0.015),
+        (
+          driveProfile.harmonicRatio +
+          pos * 0.015
+        ),
       0.055
     );
 
@@ -3675,10 +3759,17 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
 
     setTarget(
       baseFilter.frequency,
-      620 +
-        rpmN * 900 +
-        Math.pow(speedN, 0.70) * 650 +
-        pos * 320,
+      clamp(
+        (
+          620 +
+          rpmN * 900 +
+          Math.pow(speedN, 0.70) * 650 +
+          pos * 320
+        ) *
+        driveProfile.filterScale,
+        420,
+        2600
+      ),
       0.10
     );
 
@@ -3726,6 +3817,7 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
         driveMix *
         cruiseScale *
         subLevel *
+        driveProfile.subScale *
         driveProfile.gainScale,
       0.08
     );
@@ -3736,9 +3828,12 @@ const cruiseScale = 1 - cruiseQuiet * cruiseDamping;
     // =========================
 
     const inverterHz =
-      235 +
-      rpmN * 1600 +
-      Math.pow(rpmN, 2) * 410;
+      (
+        235 +
+        rpmN * 1600 +
+        Math.pow(rpmN, 2) * 410
+      ) *
+      driveProfile.inverterPitchScale;
 
     setTarget(
       inv1.frequency,
@@ -3829,7 +3924,9 @@ const invLevel =
         driveFundamental * 1.55 +
         Math.pow(speedN, 0.72) * 330 +
         pos * 110 +
-        accelSpeedRise * 210
+        accelSpeedRise *
+          210 *
+          accelProfile.speedRiseScale
       ) *
       accelProfile.frequencyScale;
 
@@ -3931,11 +4028,14 @@ const invLevel =
     setTarget(
       driveFilter.frequency,
       clamp(
-        520 +
+        (
+          520 +
           Math.pow(speedN, 0.70) * 1250 +
           rpmN * 450 +
-          pos * 420,
-        420,
+          pos * 420
+        ) *
+        accelProfile.filterScale,
+        360,
         2600
       ),
       0.075
@@ -3977,20 +4077,24 @@ const invLevel =
 
     setTarget(
       regenOsc2.frequency,
-      regenFreq * 1.62,
+      regenFreq *
+        regenProfile.harmonicRatio,
       0.045
     );
 
     setTarget(
       regenFilter.frequency,
       clamp(
-        520 +
+        (
+          520 +
           Math.pow(
             speedN,
             0.68
           ) * 1150 +
-          neg * 240,
-        450,
+          neg * 240
+        ) *
+        regenProfile.filterScale,
+        360,
         2100
       ),
       0.10
