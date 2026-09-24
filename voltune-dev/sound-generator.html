@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090b0f">
+  <title>Voltune Sound Generator</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#090b0f;
+      --panel:#11151c;
+      --panel2:#171d26;
+      --line:#2a3442;
+      --text:#f4f7fb;
+      --muted:#93a0b2;
+      --accent:#ff7b4d;
+      --accent2:#ffc15b;
+      --ok:#55d68b;
+      --warn:#ffa94d;
+    }
+
+    *{box-sizing:border-box}
+
+    html{
+      min-height:100%;
+      background:
+        radial-gradient(circle at 50% -18%,#52261e 0,#261411 25%,transparent 55%),
+        var(--bg);
+    }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      background:transparent;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    main{
+      width:min(1180px,calc(100% - 24px));
+      margin:0 auto;
+      padding:22px 0 40px;
+    }
+
+    .hero{
+      display:flex;
+      gap:18px;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-bottom:16px;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(25px,4vw,42px);
+      letter-spacing:-.04em;
+    }
+
+    .subtitle{
+      max-width:760px;
+      margin:7px 0 0;
+      color:var(--muted);
+      line-height:1.45;
+    }
+
+    .build{
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:minmax(300px,.88fr) minmax(360px,1.25fr);
+      gap:14px;
+    }
+
+    .panel{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:linear-gradient(180deg,rgba(23,29,38,.96),rgba(14,18,24,.96));
+      box-shadow:0 18px 45px rgba(0,0,0,.28);
+      overflow:hidden;
+    }
+
+    .panelHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:14px 15px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .panelHead strong{
+      font-size:14px;
+      letter-spacing:.03em;
+    }
+
+    .status{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .status.ok{color:var(--ok)}
+    .status.warn{color:var(--warn)}
+
+    .controls{
+      display:grid;
+      gap:12px;
+      padding:15px;
+    }
+
+    .control{
+      padding:11px 12px 12px;
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:12px;
+      background:rgba(255,255,255,.025);
+    }
+
+    .controlTop{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin-bottom:8px;
+      font-size:13px;
+    }
+
+    .value{
+      color:var(--accent2);
+      font-variant-numeric:tabular-nums;
+    }
+
+    input[type="range"]{
+      width:100%;
+      accent-color:var(--accent);
+    }
+
+    select,
+    input[type="number"]{
+      width:100%;
+      min-height:42px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:8px 10px;
+      color:var(--text);
+      background:#0c1016;
+      font:inherit;
+    }
+
+    .row2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .buttons{
+      display:grid;
+      grid-template-columns:1.4fr 1fr 1fr;
+      gap:9px;
+      padding:0 15px 15px;
+    }
+
+    button{
+      min-height:46px;
+      border:1px solid var(--line);
+      border-radius:11px;
+      padding:9px 12px;
+      color:var(--text);
+      background:#171d26;
+      font:inherit;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    button:hover{filter:brightness(1.1)}
+    button:active{transform:translateY(1px)}
+
+    button.primary{
+      border-color:rgba(255,123,77,.65);
+      background:linear-gradient(180deg,#a74327,#6f2a1c);
+    }
+
+    button:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      filter:none;
+    }
+
+    .visual{
+      display:grid;
+      gap:12px;
+      padding:15px;
+    }
+
+    canvas{
+      display:block;
+      width:100%;
+      height:250px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#080b10;
+    }
+
+    .meters{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px;
+    }
+
+    .meter{
+      min-width:0;
+      padding:10px;
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:11px;
+      background:rgba(255,255,255,.025);
+    }
+
+    .meter span{
+      display:block;
+      color:var(--muted);
+      font-size:11px;
+      margin-bottom:4px;
+    }
+
+    .meter strong{
+      display:block;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:14px;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .note{
+      margin:0 15px 15px;
+      padding:11px 12px;
+      border-left:3px solid var(--accent);
+      border-radius:8px;
+      color:var(--muted);
+      background:rgba(255,123,77,.06);
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .dna{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      padding:15px;
+      border-top:1px solid var(--line);
+    }
+
+    .dna div{
+      padding:10px;
+      border-radius:10px;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .dna b{
+      display:block;
+      margin-bottom:3px;
+      font-size:12px;
+    }
+
+    .dna small{
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    @media(max-width:820px){
+      main{width:min(100% - 14px,1180px);padding-top:10px}
+      .hero{align-items:flex-start;flex-direction:column}
+      .grid{grid-template-columns:1fr}
+      .buttons{grid-template-columns:1fr 1fr}
+      .buttons .primary{grid-column:1/-1}
+      .meters{grid-template-columns:1fr 1fr}
+      .dna{grid-template-columns:1fr}
+      canvas{height:190px}
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div>
+      <h1>Voltune Sound Generator</h1>
+      <p class="subtitle">
+        Offline-Soundlabor für neue Voltune-Klangfamilien. Der erste Generator baut einen
+        synthetischen V8-artigen Klang aus einzelnen Zündimpulsen, Abgasresonanzen,
+        Ansauganteil und mechanischer Textur statt nur aus dauerhaft laufenden Oszillatoren.
+      </p>
+    </div>
+    <div class="build">Generator v0.1 · 24.09.2026</div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <div class="panelHead">
+        <strong>Sound-DNA</strong>
+        <span id="status" class="status">bereit</span>
+      </div>
+
+      <div class="controls">
+        <div class="control">
+          <div class="controlTop">
+            <span>Muscle-Preset</span>
+          </div>
+          <select id="preset">
+            <option value="bigblock">Big Block · tief & schwer</option>
+            <option value="lopey">Lopey Cam · maximal unruhig</option>
+            <option value="modern">Modern Muscle · härter & sauberer</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Drehzahl</span>
+            <span id="rpmValue" class="value">780 RPM</span>
+          </div>
+          <input id="rpm" type="range" min="600" max="6500" step="10" value="780">
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Last</span>
+            <span id="loadValue" class="value">12 %</span>
+          </div>
+          <input id="load" type="range" min="0" max="100" step="1" value="12">
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Nockenwellen-Unruhe</span>
+            <span id="roughValue" class="value">72 %</span>
+          </div>
+          <input id="rough" type="range" min="0" max="100" step="1" value="72">
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Zündimpuls / Punch</span>
+            <span id="punchValue" class="value">78 %</span>
+          </div>
+          <input id="punch" type="range" min="0" max="100" step="1" value="78">
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Auspuffkörper</span>
+            <span id="exhaustValue" class="value">82 %</span>
+          </div>
+          <input id="exhaust" type="range" min="0" max="100" step="1" value="82">
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Ansaug-Raspeln</span>
+            <span id="intakeValue" class="value">34 %</span>
+          </div>
+          <input id="intake" type="range" min="0" max="100" step="1" value="34">
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Mechanische Ebene</span>
+            <span id="mechanicalValue" class="value">16 %</span>
+          </div>
+          <input id="mechanical" type="range" min="0" max="100" step="1" value="16">
+        </div>
+
+        <div class="row2">
+          <div class="control">
+            <div class="controlTop">
+              <span>Länge</span>
+              <span id="durationValue" class="value">4.0 s</span>
+            </div>
+            <input id="duration" type="range" min="2" max="8" step=".5" value="4">
+          </div>
+
+          <div class="control">
+            <div class="controlTop">
+              <span>Seed</span>
+            </div>
+            <input id="seed" type="number" min="1" max="999999" step="1" value="454">
+          </div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="generate" class="primary">⚙ Sound generieren</button>
+        <button id="play" disabled>▶ Anhören</button>
+        <button id="save" disabled>WAV speichern</button>
+      </div>
+
+      <p class="note">
+        Ziel dieses Labors ist nicht die perfekte Simulation eines bestimmten realen Motors.
+        Wir testen zuerst, ob ein impuls- und resonanzbasierter Ansatz eine deutlich
+        glaubwürdigere und eigenständigere Sound-DNA liefert als die bisherigen Voltune-Oszillatoren.
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panelHead">
+        <strong>Render & Analyse</strong>
+        <span id="renderInfo" class="status">noch kein Render</span>
+      </div>
+
+      <div class="visual">
+        <canvas id="wave" width="1100" height="360"></canvas>
+
+        <div class="meters">
+          <div class="meter">
+            <span>Zündfrequenz</span>
+            <strong id="fireHz">–</strong>
+          </div>
+          <div class="meter">
+            <span>Motorzyklen</span>
+            <strong id="cycles">–</strong>
+          </div>
+          <div class="meter">
+            <span>Peak</span>
+            <strong id="peak">–</strong>
+          </div>
+          <div class="meter">
+            <span>Renderzeit</span>
+            <strong id="renderMs">–</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="dna">
+        <div>
+          <b>Zündimpulse</b>
+          <small>Vier Ereignisse pro Kurbelwellenumdrehung, mit absichtlich leicht unterschiedlicher Stärke und Timing.</small>
+        </div>
+        <div>
+          <b>Resonatoren</b>
+          <small>Jeder Impuls regt mehrere tiefe und mittlere Abgasresonanzen mit verschiedenen Abklingzeiten an.</small>
+        </div>
+        <div>
+          <b>Textur</b>
+          <small>Ansaugung und Mechanik werden separat erzeugt und reagieren anders auf RPM und Last.</small>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
+
+  const ui = {
+    preset:$("preset"),
+    rpm:$("rpm"), rpmValue:$("rpmValue"),
+    load:$("load"), loadValue:$("loadValue"),
+    rough:$("rough"), roughValue:$("roughValue"),
+    punch:$("punch"), punchValue:$("punchValue"),
+    exhaust:$("exhaust"), exhaustValue:$("exhaustValue"),
+    intake:$("intake"), intakeValue:$("intakeValue"),
+    mechanical:$("mechanical"), mechanicalValue:$("mechanicalValue"),
+    duration:$("duration"), durationValue:$("durationValue"),
+    seed:$("seed"),
+    generate:$("generate"),
+    play:$("play"),
+    save:$("save"),
+    status:$("status"),
+    renderInfo:$("renderInfo"),
+    fireHz:$("fireHz"),
+    cycles:$("cycles"),
+    peak:$("peak"),
+    renderMs:$("renderMs"),
+    wave:$("wave")
+  };
+
+  const PRESETS = {
+    bigblock:{
+      rpm:780,load:12,rough:72,punch:78,exhaust:82,intake:34,mechanical:16,seed:454
+    },
+    lopey:{
+      rpm:720,load:10,rough:94,punch:84,exhaust:88,intake:24,mechanical:20,seed:427
+    },
+    modern:{
+      rpm:900,load:16,rough:34,punch:72,exhaust:66,intake:50,mechanical:28,seed:502
+    }
+  };
+
+  let rendered = null;
+  let audio = null;
+  let audioUrl = null;
+
+  function mulberry32(seed){
+    let a = seed >>> 0;
+    return () => {
+      a |= 0;
+      a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15,1 | a);
+      t = t + Math.imul(t ^ t >>> 7,61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function readSettings(){
+    return {
+      rpm:Number(ui.rpm.value),
+      load:Number(ui.load.value)/100,
+      rough:Number(ui.rough.value)/100,
+      punch:Number(ui.punch.value)/100,
+      exhaust:Number(ui.exhaust.value)/100,
+      intake:Number(ui.intake.value)/100,
+      mechanical:Number(ui.mechanical.value)/100,
+      duration:Number(ui.duration.value),
+      seed:Math.max(1,Math.round(Number(ui.seed.value)||1))
+    };
+  }
+
+  function refreshLabels(){
+    ui.rpmValue.textContent = \`\${ui.rpm.value} RPM\`;
+    ui.loadValue.textContent = \`\${ui.load.value} %\`;
+    ui.roughValue.textContent = \`\${ui.rough.value} %\`;
+    ui.punchValue.textContent = \`\${ui.punch.value} %\`;
+    ui.exhaustValue.textContent = \`\${ui.exhaust.value} %\`;
+    ui.intakeValue.textContent = \`\${ui.intake.value} %\`;
+    ui.mechanicalValue.textContent = \`\${ui.mechanical.value} %\`;
+    ui.durationValue.textContent = \`\${Number(ui.duration.value).toFixed(1)} s\`;
+  }
+
+  function applyPreset(){
+    const p = PRESETS[ui.preset.value];
+    if(!p) return;
+
+    ui.rpm.value = p.rpm;
+    ui.load.value = p.load;
+    ui.rough.value = p.rough;
+    ui.punch.value = p.punch;
+    ui.exhaust.value = p.exhaust;
+    ui.intake.value = p.intake;
+    ui.mechanical.value = p.mechanical;
+    ui.seed.value = p.seed;
+    refreshLabels();
+  }
+
+  function addDecayingTone(buffer,start,sampleRate,freq,amp,decay,phase=0){
+    const max = Math.min(
+      buffer.length-start,
+      Math.ceil(decay*sampleRate*6)
+    );
+
+    const w = Math.PI*2*freq/sampleRate;
+
+    for(let n=0;n<max;n++){
+      const t=n/sampleRate;
+      const env=Math.exp(-t/decay);
+      buffer[start+n]+=Math.sin(w*n+phase)*env*amp;
+    }
+  }
+
+  function addPulse(buffer,start,sampleRate,amp,settings,rand,bank){
+    const exhaust = settings.exhaust;
+    const punch = settings.punch;
+    const load = settings.load;
+
+    addDecayingTone(
+      buffer,start,sampleRate,
+      48 + exhaust*28 + load*10,
+      amp*(0.34+exhaust*0.32),
+      0.050+exhaust*0.045,
+      bank?0.7:0.1
+    );
+
+    addDecayingTone(
+      buffer,start,sampleRate,
+      92 + exhaust*55 + rand()*12,
+      amp*(0.20+punch*0.30),
+      0.028+exhaust*0.024,
+      bank?1.2:0.4
+    );
+
+    addDecayingTone(
+      buffer,start,sampleRate,
+      210 + load*170 + rand()*34,
+      amp*(0.08+punch*0.25+load*0.08),
+      0.014+exhaust*0.012,
+      bank?0.3:1.1
+    );
+
+    const crackLength=Math.min(
+      buffer.length-start,
+      Math.round(sampleRate*(0.010+punch*0.018))
+    );
+
+    for(let n=0;n<crackLength;n++){
+      const t=n/sampleRate;
+      const env=Math.exp(-t/(0.0035+punch*0.004));
+      const noise=(rand()*2-1);
+      buffer[start+n]+=noise*env*amp*(0.035+punch*0.11);
+    }
+  }
+
+  function highpassOnePole(input,cutoff,sampleRate){
+    const out=new Float32Array(input.length);
+    const rc=1/(2*Math.PI*cutoff);
+    const dt=1/sampleRate;
+    const a=rc/(rc+dt);
+    let y=0;
+    let xPrev=0;
+
+    for(let i=0;i<input.length;i++){
+      const x=input[i];
+      y=a*(y+x-xPrev);
+      out[i]=y;
+      xPrev=x;
+    }
+
+    return out;
+  }
+
+  function lowpassOnePole(input,cutoff,sampleRate){
+    const out=new Float32Array(input.length);
+    const rc=1/(2*Math.PI*cutoff);
+    const dt=1/sampleRate;
+    const a=dt/(rc+dt);
+    let y=0;
+
+    for(let i=0;i<input.length;i++){
+      y += a*(input[i]-y);
+      out[i]=y;
+    }
+
+    return out;
+  }
+
+  function softClip(x,drive){
+    return Math.tanh(x*drive)/Math.tanh(drive);
+  }
+
+  function renderMuscle(settings){
+    const startedAt=performance.now();
+    const sampleRate=44100;
+    const crankHz=settings.rpm/60;
+    const cycleSeconds=2/crankHz;
+
+    const cycles=Math.max(
+      1,
+      Math.round(settings.duration/cycleSeconds)
+    );
+
+    const actualDuration=cycles*cycleSeconds;
+    const length=Math.max(1,Math.round(actualDuration*sampleRate));
+    const left=new Float32Array(length);
+    const right=new Float32Array(length);
+    const rand=mulberry32(settings.seed);
+
+    const fireHz=crankHz*4;
+    const baseInterval=1/fireHz;
+
+    const crossPlanePattern=[
+      -0.055,0.020,-0.018,0.047,
+      -0.032,0.030,-0.010,0.018
+    ];
+
+    const eventCount=Math.ceil(actualDuration/baseInterval)+8;
+
+    for(let e=-4;e<eventCount;e++){
+      const pattern=crossPlanePattern[((e%8)+8)%8];
+      const deterministicJitter=
+        pattern*settings.rough*baseInterval;
+
+      const randomJitter=
+        (rand()*2-1)*
+        settings.rough*
+        baseInterval*
+        0.035;
+
+      const eventTime=
+        e*baseInterval+
+        deterministicJitter+
+        randomJitter;
+
+      const start=Math.round(eventTime*sampleRate);
+      if(start<0||start>=length) continue;
+
+      const eventVariation=
+        1+
+        (rand()*2-1)*
+        (0.05+settings.rough*0.12);
+
+      const amp=
+        (0.42+
+          settings.load*0.26+
+          settings.punch*0.20)*
+        eventVariation;
+
+      const bank=e&1;
+
+      addPulse(
+        bank?right:left,
+        start,
+        sampleRate,
+        amp,
+        settings,
+        rand,
+        bank
+      );
+
+      addPulse(
+        bank?left:right,
+        start,
+        sampleRate,
+        amp*(0.55+settings.exhaust*0.12),
+        settings,
+        rand,
+        bank^1
+      );
+    }
+
+    // Kontinuierliche Ansaug- und Mechanikebene.
+    for(let i=0;i<length;i++){
+      const t=i/sampleRate;
+
+      const intakeCarrier=
+        Math.sin(
+          Math.PI*2*
+          (
+            crankHz*2.0+
+            settings.load*crankHz*0.7
+          )*t
+        );
+
+      const intakeHarmonic=
+        Math.sin(
+          Math.PI*2*
+          crankHz*6.0*t+
+          0.7
+        );
+
+      const intakeNoise=
+        rand()*2-1;
+
+      const intake=
+        (
+          intakeCarrier*0.34+
+          intakeHarmonic*0.18+
+          intakeNoise*0.48
+        )*
+        settings.intake*
+        (0.010+settings.load*0.036);
+
+      const mech=
+        (
+          Math.sin(Math.PI*2*crankHz*8*t)*
+          0.52+
+          Math.sin(Math.PI*2*crankHz*12*t+1.1)*
+          0.28+
+          (rand()*2-1)*0.20
+        )*
+        settings.mechanical*
+        (0.008+settings.load*0.020);
+
+      left[i]+=intake+mech;
+      right[i]+=intake*0.97+mech*1.03;
+    }
+
+    let l=highpassOnePole(left,28,sampleRate);
+    let r=highpassOnePole(right,28,sampleRate);
+
+    const lowpass=
+      1800+
+      settings.load*2600+
+      settings.intake*1600;
+
+    l=lowpassOnePole(l,lowpass,sampleRate);
+    r=lowpassOnePole(r,lowpass,sampleRate);
+
+    const drive=
+      1.25+
+      settings.punch*1.20+
+      settings.load*0.90;
+
+    let peak=0;
+
+    for(let i=0;i<length;i++){
+      l[i]=softClip(l[i],drive);
+      r[i]=softClip(r[i],drive);
+      peak=Math.max(peak,Math.abs(l[i]),Math.abs(r[i]));
+    }
+
+    // Kurzer Loop-Crossfade.
+    const fadeSamples=Math.min(
+      Math.round(sampleRate*0.065),
+      Math.floor(length/4)
+    );
+
+    for(let i=0;i<fadeSamples;i++){
+      const p=i/fadeSamples;
+      const a=0.5-0.5*Math.cos(Math.PI*p);
+      const b=1-a;
+
+      const li=l[i];
+      const ri=r[i];
+      const end=length-fadeSamples+i;
+
+      const le=l[end];
+      const re=r[end];
+
+      l[i]=li*a+le*b;
+      r[i]=ri*a+re*b;
+
+      l[end]=le*a+li*b;
+      r[end]=re*a+ri*b;
+    }
+
+    // Headroom normalisieren.
+    peak=0;
+    for(let i=0;i<length;i++){
+      peak=Math.max(peak,Math.abs(l[i]),Math.abs(r[i]));
+    }
+
+    const gain=peak>0 ? 0.91/peak : 1;
+
+    for(let i=0;i<length;i++){
+      l[i]*=gain;
+      r[i]*=gain;
+    }
+
+    return {
+      left:l,
+      right:r,
+      sampleRate,
+      duration:actualDuration,
+      cycles,
+      fireHz,
+      peak:0.91,
+      renderMs:performance.now()-startedAt,
+      settings
+    };
+  }
+
+  function encodeWav(result){
+    const length=result.left.length;
+    const bytesPerSample=2;
+    const blockAlign=2*bytesPerSample;
+    const buffer=new ArrayBuffer(44+length*blockAlign);
+    const view=new DataView(buffer);
+
+    function writeString(offset,text){
+      for(let i=0;i<text.length;i++){
+        view.setUint8(offset+i,text.charCodeAt(i));
+      }
+    }
+
+    writeString(0,"RIFF");
+    view.setUint32(4,36+length*blockAlign,true);
+    writeString(8,"WAVE");
+    writeString(12,"fmt ");
+    view.setUint32(16,16,true);
+    view.setUint16(20,1,true);
+    view.setUint16(22,2,true);
+    view.setUint32(24,result.sampleRate,true);
+    view.setUint32(28,result.sampleRate*blockAlign,true);
+    view.setUint16(32,blockAlign,true);
+    view.setUint16(34,16,true);
+    writeString(36,"data");
+    view.setUint32(40,length*blockAlign,true);
+
+    let offset=44;
+
+    for(let i=0;i<length;i++){
+      const l=clamp(result.left[i],-1,1);
+      const r=clamp(result.right[i],-1,1);
+
+      view.setInt16(
+        offset,
+        l<0 ? l*0x8000 : l*0x7fff,
+        true
+      );
+
+      view.setInt16(
+        offset+2,
+        r<0 ? r*0x8000 : r*0x7fff,
+        true
+      );
+
+      offset+=4;
+    }
+
+    return new Blob([buffer],{type:"audio/wav"});
+  }
+
+  function drawWave(result){
+    const canvas=ui.wave;
+    const ctx=canvas.getContext("2d");
+    const w=canvas.width;
+    const h=canvas.height;
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle="#080b10";
+    ctx.fillRect(0,0,w,h);
+
+    ctx.strokeStyle="rgba(255,255,255,.08)";
+    ctx.lineWidth=1;
+
+    for(let y=1;y<4;y++){
+      const yy=h*y/4;
+      ctx.beginPath();
+      ctx.moveTo(0,yy);
+      ctx.lineTo(w,yy);
+      ctx.stroke();
+    }
+
+    const center=h/2;
+    const samples=result.left;
+    const step=Math.max(1,Math.floor(samples.length/w));
+
+    ctx.strokeStyle="#ff9a63";
+    ctx.lineWidth=1.6;
+    ctx.beginPath();
+
+    for(let x=0;x<w;x++){
+      const start=x*step;
+      const end=Math.min(samples.length,start+step);
+      let max=0;
+
+      for(let i=start;i<end;i++){
+        const v=Math.abs(samples[i]);
+        if(v>max) max=v;
+      }
+
+      const y=center-max*(h*.43);
+      if(x===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+
+    for(let x=w-1;x>=0;x--){
+      const start=x*step;
+      const end=Math.min(samples.length,start+step);
+      let max=0;
+
+      for(let i=start;i<end;i++){
+        const v=Math.abs(samples[i]);
+        if(v>max) max=v;
+      }
+
+      const y=center+max*(h*.43);
+      ctx.lineTo(x,y);
+    }
+
+    ctx.closePath();
+    ctx.globalAlpha=.55;
+    ctx.fillStyle="#ff7b4d";
+    ctx.fill();
+    ctx.globalAlpha=1;
+    ctx.stroke();
+
+    ctx.fillStyle="#93a0b2";
+    ctx.font="24px system-ui";
+    ctx.fillText(
+      \`\${Math.round(result.settings.rpm)} RPM · \${Math.round(result.settings.load*100)} % Last\`,
+      24,
+      38
+    );
+  }
+
+  function stopAudio(){
+    if(audio){
+      audio.pause();
+      audio.currentTime=0;
+      audio=null;
+    }
+
+    ui.play.textContent="▶ Anhören";
+  }
+
+  function createAudioUrl(){
+    if(audioUrl){
+      URL.revokeObjectURL(audioUrl);
+      audioUrl=null;
+    }
+
+    if(!rendered) return null;
+
+    audioUrl=URL.createObjectURL(
+      encodeWav(rendered)
+    );
+
+    return audioUrl;
+  }
+
+  async function generate(){
+    stopAudio();
+
+    ui.status.textContent="rendert …";
+    ui.status.className="status warn";
+    ui.generate.disabled=true;
+
+    await new Promise(resolve =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(resolve)
+      )
+    );
+
+    try{
+      const settings=readSettings();
+      rendered=renderMuscle(settings);
+
+      drawWave(rendered);
+      createAudioUrl();
+
+      ui.fireHz.textContent=
+        \`\${rendered.fireHz.toFixed(1)} Hz\`;
+
+      ui.cycles.textContent=
+        String(rendered.cycles);
+
+      ui.peak.textContent=
+        \`\${(rendered.peak*100).toFixed(0)} %\`;
+
+      ui.renderMs.textContent=
+        \`\${rendered.renderMs.toFixed(0)} ms\`;
+
+      ui.renderInfo.textContent=
+        \`\${rendered.duration.toFixed(3)} s · Stereo · 44,1 kHz\`;
+
+      ui.status.textContent="fertig";
+      ui.status.className="status ok";
+      ui.play.disabled=false;
+      ui.save.disabled=false;
+
+    }catch(error){
+      console.error(error);
+      ui.status.textContent="Fehler";
+      ui.status.className="status warn";
+      alert(
+        error?.message ||
+        "Sound konnte nicht generiert werden."
+      );
+    }finally{
+      ui.generate.disabled=false;
+    }
+  }
+
+  function play(){
+    if(!rendered) return;
+
+    if(audio && !audio.paused){
+      stopAudio();
+      return;
+    }
+
+    const url=audioUrl || createAudioUrl();
+    audio=new Audio(url);
+    audio.loop=true;
+
+    audio.addEventListener(
+      "ended",
+      stopAudio,
+      {once:true}
+    );
+
+    audio.play()
+      .then(() => {
+        ui.play.textContent="■ Stop";
+      })
+      .catch(error => {
+        console.error(error);
+        stopAudio();
+        alert("Audio konnte nicht gestartet werden.");
+      });
+  }
+
+  function save(){
+    if(!rendered) return;
+
+    const url=audioUrl || createAudioUrl();
+    const s=rendered.settings;
+
+    const link=document.createElement("a");
+    link.href=url;
+    link.download=
+      \`voltune-muscle-\${ui.preset.value}-\${Math.round(s.rpm)}rpm-\${Math.round(s.load*100)}load.wav\`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  [
+    ui.rpm,ui.load,ui.rough,ui.punch,
+    ui.exhaust,ui.intake,ui.mechanical,
+    ui.duration
+  ].forEach(el => {
+    el.addEventListener("input",refreshLabels);
+  });
+
+  ui.preset.addEventListener("change",applyPreset);
+  ui.generate.addEventListener("click",generate);
+  ui.play.addEventListener("click",play);
+  ui.save.addEventListener("click",save);
+
+  refreshLabels();
+
+  const ctx=ui.wave.getContext("2d");
+  ctx.fillStyle="#080b10";
+  ctx.fillRect(0,0,ui.wave.width,ui.wave.height);
+  ctx.fillStyle="#93a0b2";
+  ctx.font="24px system-ui";
+  ctx.fillText("Sound generieren, um die Wellenform zu sehen.",24,42);
+})();
+</script>
+</body>
+</html>
