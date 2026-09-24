@@ -81,6 +81,7 @@
     driveSoundProfile:$("driveSoundProfile"),
     accelSoundProfile:$("accelSoundProfile"),
     regenSoundProfile:$("regenSoundProfile"),
+    quickDemoStart:$("quickDemoStart"),
 
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
     cruiseDampingLabel:$("cruiseDampingLabel"),
@@ -3085,6 +3086,18 @@ function updateControllerDrive(now) {
 
     requestAnimationFrame(loop);
   }
+
+  // Temporärer sichtbarer Demo-Button für
+  // schnelle A/B-Soundtests. Der originale
+  // Debug-Demo-Button bleibt unverändert und
+  // kann später einfach wieder allein genutzt
+  // werden.
+  ui.quickDemoStart.addEventListener(
+    "click",
+    () => {
+      ui.start.click();
+    }
+  );
 
   ui.start.addEventListener("click", async () => {
     startupDriveModeClaimed = true;
