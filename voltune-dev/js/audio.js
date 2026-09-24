@@ -1393,6 +1393,65 @@ async function setOverrunSound(
   return true;
 }
   
+  async function resumeContextWithTimeout(
+    audioContext,
+    timeoutMs = 1400
+  ) {
+    if (!audioContext) {
+      return false;
+    }
+
+    if (audioContext.state === "running") {
+      return true;
+    }
+
+    let timeoutId = null;
+
+    const timeoutPromise =
+      new Promise(resolve => {
+        timeoutId =
+          window.setTimeout(
+            () => resolve(false),
+            timeoutMs
+          );
+      });
+
+    try {
+      const resumePromise =
+        Promise.resolve(
+          audioContext.resume()
+        ).then(
+          () =>
+            audioContext.state ===
+            "running"
+        );
+
+      const result =
+        await Promise.race([
+          resumePromise,
+          timeoutPromise
+        ]);
+
+      window.clearTimeout(
+        timeoutId
+      );
+
+      return Boolean(result);
+
+    } catch (error) {
+      window.clearTimeout(
+        timeoutId
+      );
+
+      console.warn(
+        "AudioContext resume fehlgeschlagen:",
+        error
+      );
+
+      return false;
+    }
+  }
+
   function createOsc(type) {
     const osc =
       ctx.createOscillator();
@@ -1408,7 +1467,9 @@ async function setOverrunSound(
         ctx.state !== "running" &&
         ctx.state !== "closed"
       ) {
-        await ctx.resume();
+        await resumeContextWithTimeout(
+          ctx
+        );
       }
 
       if (ctx.state === "running") {
@@ -1497,7 +1558,16 @@ async function setOverrunSound(
       ctx.state !== "running" &&
       ctx.state !== "closed"
     ) {
-      await ctx.resume();
+      const resumed =
+        await resumeContextWithTimeout(
+          ctx
+        );
+
+      if (!resumed) {
+        throw new Error(
+          `AudioContext Start-Timeout (Status: ${ctx.state})`
+        );
+      }
     }
 
     sharedNoiseBuffer =
@@ -2313,8 +2383,13 @@ async function setOverrunSound(
 
     // Nach dem Aufbau noch einmal sicherstellen,
     // dass der Context wirklich läuft.
-    if (ctx.state === "suspended") {
-      await ctx.resume();
+    if (
+      ctx.state !== "running" &&
+      ctx.state !== "closed"
+    ) {
+      await resumeContextWithTimeout(
+        ctx
+      );
     }
 
     if (ctx.state !== "running") {
