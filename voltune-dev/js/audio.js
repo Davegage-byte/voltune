@@ -312,10 +312,11 @@ window.VoltuneAudio = (() => {
   let sentinelFmOsc, sentinelFmDepth;
   let sentinelPulseOsc, sentinelPulseDepth, sentinelPulseGain;
 
-  // Klare Sägezahn-Pitchfahrt statt sinusförmigem
-  // Hoch-/Runtereiern.
-  let sentinelSweepPhase = 0;
-  let sentinelSweepMode = "idle";
+  // Beschleunigung: nur die schnelle FM-Bewegung
+  // wird zur Aufwärtsrampe. Der eigentliche
+  // Fahr-/Lastton bleibt stabil.
+  let sentinelRampPhase = 0;
+  let sentinelRampActive = false;
 
   let lastSentinelImpulseAt = -9999;
 
@@ -492,6 +493,7 @@ window.VoltuneAudio = (() => {
     pulseDepth,
     fmHz,
     fmDepth,
+    rampOffset = 0,
     metal = 1
   }) {
     if (
@@ -523,8 +525,13 @@ window.VoltuneAudio = (() => {
           1.71 +
           metal * 0.04
         ) +
-        5,
-      0.045
+        5 +
+        rampOffset,
+      // Die Modulationsrampe soll klar hörbar sein
+      // und nicht wieder weich nach unten "eiern".
+      rampOffset !== 0
+        ? 0.008
+        : 0.045
     );
 
     setTarget(
@@ -582,13 +589,15 @@ window.VoltuneAudio = (() => {
       0.06
     );
 
-    // Keine sinusförmige Frequenzmodulation mehr.
-    // Der markante Pitch-Verlauf wird in der Runtime
-    // als reine Sägezahnfahrt erzeugt.
+    // Reku darf weiter sinusförmig "eiern".
+    // Bei Beschleunigung wird fmDepth = 0 gesetzt
+    // und stattdessen rampOffset verwendet.
     setTarget(
       sentinelFmDepth.gain,
-      0,
-      0.03
+      active
+        ? fmDepth
+        : 0,
+      0.04
     );
 
     setTarget(
@@ -635,78 +644,36 @@ window.VoltuneAudio = (() => {
     );
   }
 
-  function getSentinelSweepBase({
-    mode,
+  function getSentinelRampOffset(
+    active,
     dt,
-    load,
-    speedN
-  }) {
-    const normalizedLoad =
-      clamp(
-        load,
-        0,
-        1
-      );
-
-    if (
-      sentinelSweepMode !== mode
-    ) {
-      sentinelSweepMode =
-        mode;
-
-      sentinelSweepPhase =
-        mode === "regen"
-          ? 0.98
-          : 0.02;
+    rateHz,
+    depthHz
+  ) {
+    if (!active) {
+      sentinelRampActive = false;
+      sentinelRampPhase = 0;
+      return 0;
     }
 
-    const rate =
-      0.22 +
-      normalizedLoad * 0.46 +
-      speedN * 0.16;
-
-    if (mode === "accel") {
-      sentinelSweepPhase =
-        (
-          sentinelSweepPhase +
-          dt * rate
-        ) % 1;
-
-      // Nur aufwärts. Am Ende springt die
-      // Frequenz direkt wieder nach unten.
-      return (
-        58 *
-        Math.pow(
-          2,
-          sentinelSweepPhase * 2.08
-        )
-      );
+    if (!sentinelRampActive) {
+      sentinelRampActive = true;
+      sentinelRampPhase = 0;
     }
 
-    if (mode === "regen") {
-      sentinelSweepPhase -=
-        dt * rate * 0.82;
+    // Nur aufwärts:
+    // 0 -> Maximalwert, dann ohne Rückweg
+    // direkt wieder bei 0 beginnen.
+    sentinelRampPhase =
+      (
+        sentinelRampPhase +
+        dt * rateHz
+      ) % 1;
 
-      if (
-        sentinelSweepPhase < 0
-      ) {
-        sentinelSweepPhase += 1;
-      }
-
-      // Spiegelbild:
-      // nur abwärts, dann harter Sprung nach oben.
-      return (
-        52 *
-        Math.pow(
-          2,
-          sentinelSweepPhase * 1.82
-        )
-      );
-    }
-
-    sentinelSweepMode = mode;
-
-    return 42;
+    return (
+      sentinelRampPhase *
+      depthHz
+    );
   }
 
   function triggerSentinelImpulse(
@@ -5198,18 +5165,22 @@ const invLevel =
       driveMix > 0.15;
 
     if (sentinelAccelActive) {
-      const sentinelAccelSweep =
-        getSentinelSweepBase({
-          mode: "accel",
+      const sentinelRampOffset =
+        getSentinelRampOffset(
+          true,
           dt,
-          load: pos,
-          speedN
-        });
+          1.8 +
+            pos * 4.4,
+          12 +
+            pos * 74
+        );
 
       updateSentinelMachine({
         active: true,
         baseHz:
-          sentinelAccelSweep,
+          64 +
+          speedN * 86 +
+          pos * 42,
         level:
           driveAmount *
           (
@@ -5221,14 +5192,16 @@ const invLevel =
           speedN * 420 +
           pos * 220,
         pulseHz:
-          2.0 +
-          speedN * 1.4 +
-          pos * 2.2,
+          3.2 +
+          speedN * 3.5 +
+          pos * 7.2,
         pulseDepth:
-          0.018 +
-          pos * 0.025,
+          0.10 +
+          pos * 0.20,
         fmHz: 0.2,
         fmDepth: 0,
+        rampOffset:
+          sentinelRampOffset,
         metal:
           0.85 +
           pos * 0.65
@@ -5249,18 +5222,19 @@ const invLevel =
       }
 
     } else if (sentinelRegenActive) {
-      const sentinelRegenSweep =
-        getSentinelSweepBase({
-          mode: "regen",
-          dt,
-          load: neg,
-          speedN
-        });
+      getSentinelRampOffset(
+        false,
+        dt,
+        0,
+        0
+      );
 
       updateSentinelMachine({
         active: true,
         baseHz:
-          sentinelRegenSweep,
+          54 +
+          speedN * 58 -
+          neg * 12,
         level:
           regenAmount *
           (
@@ -5271,14 +5245,19 @@ const invLevel =
           360 +
           speedN * 280,
         pulseHz:
-          1.8 +
-          speedN * 1.1 +
-          neg * 1.8,
+          2.4 +
+          speedN * 2.0 +
+          neg * 4.8,
         pulseDepth:
-          0.016 +
-          neg * 0.022,
-        fmHz: 0.2,
-        fmDepth: 0,
+          0.08 +
+          neg * 0.16,
+        fmHz:
+          1.1 +
+          neg * 3.2,
+        fmDepth:
+          8 +
+          neg * 46,
+        rampOffset: 0,
         metal:
           0.62 +
           neg * 0.44
@@ -5299,6 +5278,13 @@ const invLevel =
       }
 
     } else if (sentinelIdleActive) {
+      getSentinelRampOffset(
+        false,
+        dt,
+        0,
+        0
+      );
+
       updateSentinelMachine({
         active: true,
         baseHz: 41,
@@ -5315,6 +5301,13 @@ const invLevel =
       });
 
     } else if (sentinelDriveActive) {
+      getSentinelRampOffset(
+        false,
+        dt,
+        0,
+        0
+      );
+
       updateSentinelMachine({
         active: true,
         baseHz:
@@ -5345,6 +5338,13 @@ const invLevel =
       });
 
     } else {
+      getSentinelRampOffset(
+        false,
+        dt,
+        0,
+        0
+      );
+
       updateSentinelMachine({
         active: false,
         baseHz: 42,
