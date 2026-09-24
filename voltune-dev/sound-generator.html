@@ -288,12 +288,12 @@
     <div>
       <h1>Voltune Sound Generator</h1>
       <p class="subtitle">
-        Offline-Soundlabor für neue Voltune-Klangfamilien. Der erste Generator baut einen
-        synthetischen V8-artigen Klang aus einzelnen Zündimpulsen, Abgasresonanzen,
-        tiefem Sub-Körper, Ansauganteil und mechanischer Textur statt nur aus dauerhaft laufenden Oszillatoren.
+        Offline-Soundlabor für neue Voltune-Klangfamilien. Muscle, V10, Rally-Turbo und
+        Wankel werden mit unterschiedlichen Impuls-, Resonanz- und Texturmodellen erzeugt,
+        statt nur dieselbe Oszillator-Engine mit anderen Frequenzen zu verwenden.
       </p>
     </div>
-    <div class="build">Generator v0.1 · 24.09.2026</div>
+    <div class="build">Generator v0.2 · 24.09.2026</div>
   </section>
 
   <section class="grid">
@@ -306,12 +306,15 @@
       <div class="controls">
         <div class="control">
           <div class="controlTop">
-            <span>Muscle-Preset</span>
+            <span>Sound-Preset</span>
           </div>
           <select id="preset">
             <option value="bigblock">Big Block · tief & schwer</option>
             <option value="lopey">Lopey Cam · Near Stall</option>
             <option value="modern">Modern Muscle · härter & sauberer</option>
+            <option value="v10">V10 Exotic · Scream</option>
+            <option value="rally">Rally Turbo · 4-Zylinder</option>
+            <option value="wankel">Wankel JDM · 2-Rotor</option>
           </select>
         </div>
 
@@ -320,7 +323,7 @@
             <span>Drehzahl</span>
             <span id="rpmValue" class="value">780 RPM</span>
           </div>
-          <input id="rpm" type="range" min="600" max="6500" step="10" value="780">
+          <input id="rpm" type="range" min="450" max="10000" step="10" value="780">
         </div>
 
         <div class="control">
@@ -442,15 +445,15 @@
       <div class="dna">
         <div>
           <b>Zündimpulse</b>
-          <small>Vier Ereignisse pro Kurbelwellenumdrehung, mit absichtlich leicht unterschiedlicher Stärke und Timing.</small>
+          <small>Je Klangfamilie ein eigenes Ereignismuster: V8, V10, Inline-4 oder 2-Rotor.</small>
         </div>
         <div>
           <b>Resonatoren</b>
-          <small>Jeder Impuls regt mehrere tiefe und mittlere Abgasresonanzen mit verschiedenen Abklingzeiten an.</small>
+          <small>Resonanzfrequenzen und Abklingzeiten unterscheiden sich je nach Motor-DNA deutlich.</small>
         </div>
         <div>
           <b>Textur</b>
-          <small>Ansaugung und Mechanik werden separat erzeugt und reagieren anders auf RPM und Last.</small>
+          <small>Ansaugung, Turbo, Mechanik und harmonische Textur werden je nach Familie separat erzeugt.</small>
         </div>
       </div>
     </div>
@@ -490,13 +493,28 @@
 
   const PRESETS = {
     bigblock:{
+      family:"muscle",
       rpm:780,load:12,rough:72,punch:78,exhaust:82,bass:92,intake:34,mechanical:16,seed:454
     },
     lopey:{
+      family:"muscle",
       rpm:560,load:7,rough:96,punch:58,exhaust:100,bass:100,intake:2,mechanical:2,seed:427
     },
     modern:{
+      family:"muscle",
       rpm:900,load:16,rough:34,punch:72,exhaust:66,bass:78,intake:50,mechanical:28,seed:502
+    },
+    v10:{
+      family:"v10",
+      rpm:5200,load:72,rough:10,punch:56,exhaust:58,bass:40,intake:86,mechanical:30,seed:510
+    },
+    rally:{
+      family:"rally",
+      rpm:3600,load:78,rough:26,punch:82,exhaust:74,bass:68,intake:54,mechanical:38,seed:404
+    },
+    wankel:{
+      family:"wankel",
+      rpm:7000,load:68,rough:8,punch:46,exhaust:54,bass:34,intake:76,mechanical:22,seed:787
     }
   };
 
@@ -516,8 +534,12 @@
   }
 
   function readSettings(){
+    const preset =
+      PRESETS[ui.preset.value];
+
     return {
       preset:ui.preset.value,
+      family:preset?.family || "muscle",
       rpm:Number(ui.rpm.value),
       load:Number(ui.load.value)/100,
       rough:Number(ui.rough.value)/100,
@@ -713,6 +735,518 @@
 
   function softClip(x,drive){
     return Math.tanh(x*drive)/Math.tanh(drive);
+  }
+
+
+  function normalizeStereo(left,right,target=0.91){
+    let peak=0;
+
+    for(let i=0;i<left.length;i++){
+      peak=Math.max(
+        peak,
+        Math.abs(left[i]),
+        Math.abs(right[i])
+      );
+    }
+
+    const gain=
+      peak>0
+        ? target/peak
+        : 1;
+
+    for(let i=0;i<left.length;i++){
+      left[i]*=gain;
+      right[i]*=gain;
+    }
+
+    return target;
+  }
+
+  function applyLoopCrossfade(left,right,sampleRate,seconds=0.055){
+    const length=left.length;
+
+    const fadeSamples=Math.min(
+      Math.round(sampleRate*seconds),
+      Math.floor(length/4)
+    );
+
+    for(let i=0;i<fadeSamples;i++){
+      const p=i/fadeSamples;
+      const a=0.5-0.5*Math.cos(Math.PI*p);
+      const b=1-a;
+      const end=length-fadeSamples+i;
+
+      const li=left[i];
+      const ri=right[i];
+      const le=left[end];
+      const re=right[end];
+
+      left[i]=li*a+le*b;
+      right[i]=ri*a+re*b;
+
+      left[end]=le*a+li*b;
+      right[end]=re*a+ri*b;
+    }
+  }
+
+  function renderV10(settings){
+    const startedAt=performance.now();
+    const sampleRate=44100;
+    const crankHz=settings.rpm/60;
+    const fireHz=crankHz*5;
+    const cycleSeconds=2/crankHz;
+    const cycles=Math.max(1,Math.round(settings.duration/cycleSeconds));
+    const actualDuration=cycles*cycleSeconds;
+    const length=Math.max(1,Math.round(actualDuration*sampleRate));
+    const left=new Float32Array(length);
+    const right=new Float32Array(length);
+    const rand=mulberry32(settings.seed);
+
+    const interval=1/fireHz;
+    const events=Math.ceil(actualDuration/interval)+8;
+
+    for(let e=-4;e<events;e++){
+      const jitter=
+        (rand()*2-1)*
+        interval*
+        settings.rough*
+        0.018;
+
+      const eventTime=
+        e*interval+jitter;
+
+      const start=
+        Math.round(eventTime*sampleRate);
+
+      if(start<0||start>=length) continue;
+
+      const bank=e&1;
+
+      const amp=
+        (
+          0.24+
+          settings.load*0.28+
+          settings.punch*0.12
+        )*
+        (
+          0.96+
+          (rand()*2-1)*0.035
+        );
+
+      // V10: wenig Sub, dafür dichte, saubere Zündfolge
+      // und starke obere Abgas-/Ansaugresonanzen.
+      addDecayingTone(
+        bank?right:left,
+        start,sampleRate,
+        Math.max(72,fireHz*0.24),
+        amp*(0.20+settings.bass*0.18),
+        0.030,
+        bank?0.7:0.2
+      );
+
+      addDecayingTone(
+        bank?right:left,
+        start,sampleRate,
+        fireHz*0.82,
+        amp*(0.26+settings.exhaust*0.20),
+        0.020,
+        bank?1.1:0.35
+      );
+
+      addDecayingTone(
+        bank?left:right,
+        start,sampleRate,
+        fireHz*1.62,
+        amp*(0.14+settings.intake*0.22),
+        0.012,
+        bank?0.45:1.25
+      );
+    }
+
+    for(let i=0;i<length;i++){
+      const t=i/sampleRate;
+
+      const scream=
+        (
+          Math.sin(Math.PI*2*fireHz*t)*0.48+
+          Math.sin(Math.PI*2*fireHz*2*t+0.38)*0.25+
+          Math.sin(Math.PI*2*fireHz*3*t+0.92)*0.11
+        )*
+        (0.026+settings.load*0.052);
+
+      const intake=
+        (
+          Math.sin(Math.PI*2*crankHz*10*t+0.2)*0.56+
+          Math.sin(Math.PI*2*crankHz*15*t+0.9)*0.23+
+          (rand()*2-1)*0.21
+        )*
+        settings.intake*
+        (0.010+settings.load*0.028);
+
+      const mech=
+        (
+          Math.sin(Math.PI*2*crankHz*20*t)*0.7+
+          (rand()*2-1)*0.3
+        )*
+        settings.mechanical*
+        0.007;
+
+      left[i]+=scream+intake+mech;
+      right[i]+=scream*0.985+intake*1.015+mech;
+    }
+
+    let l=highpassOnePole(left,48,sampleRate);
+    let r=highpassOnePole(right,48,sampleRate);
+
+    const cutoff=
+      4200+
+      settings.load*5200+
+      settings.intake*2200;
+
+    l=lowpassOnePole(l,cutoff,sampleRate);
+    r=lowpassOnePole(r,cutoff,sampleRate);
+
+    const drive=
+      1.20+
+      settings.load*0.60+
+      settings.punch*0.35;
+
+    for(let i=0;i<length;i++){
+      l[i]=softClip(l[i],drive);
+      r[i]=softClip(r[i],drive);
+    }
+
+    applyLoopCrossfade(l,r,sampleRate,0.040);
+    const peak=normalizeStereo(l,r,0.90);
+
+    return {
+      left:l,right:r,sampleRate,
+      duration:actualDuration,
+      cycles,
+      fireHz,
+      peak,
+      renderMs:performance.now()-startedAt,
+      settings
+    };
+  }
+
+  function renderRally(settings){
+    const startedAt=performance.now();
+    const sampleRate=44100;
+    const crankHz=settings.rpm/60;
+    const fireHz=crankHz*2;
+    const cycleSeconds=2/crankHz;
+    const cycles=Math.max(1,Math.round(settings.duration/cycleSeconds));
+    const actualDuration=cycles*cycleSeconds;
+    const length=Math.max(1,Math.round(actualDuration*sampleRate));
+    const left=new Float32Array(length);
+    const right=new Float32Array(length);
+    const rand=mulberry32(settings.seed);
+
+    const interval=1/fireHz;
+    const events=Math.ceil(actualDuration/interval)+8;
+
+    for(let e=-4;e<events;e++){
+      const pairPhase=((e%4)+4)%4;
+
+      const uneven=
+        (
+          pairPhase===1
+            ? 0.050
+            : pairPhase===2
+              ? -0.025
+              : 0
+        )*
+        settings.rough*
+        interval;
+
+      const eventTime=
+        e*interval+
+        uneven+
+        (rand()*2-1)*
+        interval*
+        settings.rough*
+        0.025;
+
+      const start=
+        Math.round(eventTime*sampleRate);
+
+      if(start<0||start>=length) continue;
+
+      const amp=
+        (
+          0.36+
+          settings.load*0.34+
+          settings.punch*0.22
+        )*
+        (
+          0.90+
+          rand()*0.18
+        );
+
+      addDecayingTone(
+        left,start,sampleRate,
+        74+settings.bass*30,
+        amp*(0.30+settings.bass*0.35),
+        0.045+settings.exhaust*0.035,
+        0.15
+      );
+
+      addDecayingTone(
+        right,start,sampleRate,
+        128+settings.exhaust*55,
+        amp*(0.28+settings.exhaust*0.27),
+        0.030,
+        0.72
+      );
+
+      addDecayingTone(
+        left,start,sampleRate,
+        260+settings.load*260,
+        amp*(0.12+settings.punch*0.25),
+        0.016,
+        1.05
+      );
+
+      // Kurzer trockener Auspuffschlag.
+      const crackLength=Math.min(
+        length-start,
+        Math.round(sampleRate*(0.006+settings.punch*0.010))
+      );
+
+      for(let n=0;n<crackLength;n++){
+        const t=n/sampleRate;
+        const env=Math.exp(-t/0.003);
+        const noise=(rand()*2-1);
+
+        left[start+n]+=
+          noise*
+          env*
+          amp*
+          (0.035+settings.punch*0.055);
+
+        right[start+n]+=
+          noise*
+          env*
+          amp*
+          (0.030+settings.punch*0.050);
+      }
+    }
+
+    // Rally-DNA: Turbo-Welle + Ansaug-/Wastegate-Rauschen.
+    const turboHz=
+      900+
+      settings.rpm*0.34+
+      settings.load*2100;
+
+    for(let i=0;i<length;i++){
+      const t=i/sampleRate;
+      const noise=rand()*2-1;
+
+      const turbo=
+        (
+          Math.sin(Math.PI*2*turboHz*t)*0.68+
+          Math.sin(Math.PI*2*turboHz*1.013*t+0.8)*0.24
+        )*
+        settings.load*
+        (0.006+settings.intake*0.012);
+
+      const induction=
+        noise*
+        settings.intake*
+        settings.load*
+        0.018;
+
+      const mechanical=
+        (
+          Math.sin(Math.PI*2*crankHz*8*t)*0.55+
+          noise*0.45
+        )*
+        settings.mechanical*
+        0.009;
+
+      left[i]+=turbo+induction+mechanical;
+      right[i]+=turbo*1.03+induction*0.96+mechanical;
+    }
+
+    let l=highpassOnePole(left,34,sampleRate);
+    let r=highpassOnePole(right,34,sampleRate);
+
+    const cutoff=
+      2500+
+      settings.load*3000+
+      settings.intake*1200;
+
+    l=lowpassOnePole(l,cutoff,sampleRate);
+    r=lowpassOnePole(r,cutoff,sampleRate);
+
+    const drive=
+      1.55+
+      settings.load*0.75+
+      settings.punch*0.60;
+
+    for(let i=0;i<length;i++){
+      l[i]=softClip(l[i],drive);
+      r[i]=softClip(r[i],drive);
+    }
+
+    applyLoopCrossfade(l,r,sampleRate,0.045);
+    const peak=normalizeStereo(l,r,0.91);
+
+    return {
+      left:l,right:r,sampleRate,
+      duration:actualDuration,
+      cycles,
+      fireHz,
+      peak,
+      renderMs:performance.now()-startedAt,
+      settings
+    };
+  }
+
+  function renderWankel(settings){
+    const startedAt=performance.now();
+    const sampleRate=44100;
+    const shaftHz=settings.rpm/60;
+
+    // 2-Rotor: zwei Verbrennungsereignisse je Exzenterwellenumdrehung.
+    const fireHz=shaftHz*2;
+    const cycleSeconds=1/shaftHz;
+    const cycles=Math.max(1,Math.round(settings.duration/cycleSeconds));
+    const actualDuration=cycles*cycleSeconds;
+    const length=Math.max(1,Math.round(actualDuration*sampleRate));
+    const left=new Float32Array(length);
+    const right=new Float32Array(length);
+    const rand=mulberry32(settings.seed);
+
+    const interval=1/fireHz;
+    const events=Math.ceil(actualDuration/interval)+8;
+
+    for(let e=-4;e<events;e++){
+      const start=
+        Math.round(
+          (
+            e*interval+
+            (rand()*2-1)*
+            interval*
+            settings.rough*
+            0.012
+          )*
+          sampleRate
+        );
+
+      if(start<0||start>=length) continue;
+
+      const rotor=e&1;
+
+      const amp=
+        (
+          0.27+
+          settings.load*0.31+
+          settings.punch*0.15
+        )*
+        (
+          0.96+
+          rand()*0.08
+        );
+
+      // Wankel: weniger tiefer "Kolbenpunch",
+      // dafür kurze resonante Pulse und sehr saubere Gleichmäßigkeit.
+      addDecayingTone(
+        rotor?right:left,
+        start,sampleRate,
+        Math.max(88,fireHz*0.42),
+        amp*(0.17+settings.bass*0.18),
+        0.024,
+        rotor?0.8:0.2
+      );
+
+      addDecayingTone(
+        rotor?left:right,
+        start,sampleRate,
+        fireHz*1.10,
+        amp*(0.26+settings.exhaust*0.22),
+        0.018,
+        rotor?0.28:1.0
+      );
+
+      addDecayingTone(
+        rotor?left:right,
+        start,sampleRate,
+        fireHz*2.35,
+        amp*(0.10+settings.intake*0.18),
+        0.009,
+        rotor?1.3:0.55
+      );
+    }
+
+    // Typisches helles, dichtes "BRAP"/Buzz-Fundament:
+    // harmonisch an die Verbrennungsfolge gekoppelt.
+    for(let i=0;i<length;i++){
+      const t=i/sampleRate;
+      const noise=rand()*2-1;
+
+      const buzz=
+        (
+          Math.sin(Math.PI*2*fireHz*t)*0.34+
+          Math.sin(Math.PI*2*fireHz*2*t+0.35)*0.28+
+          Math.sin(Math.PI*2*fireHz*3*t+0.75)*0.18+
+          Math.sin(Math.PI*2*fireHz*4*t+1.10)*0.09
+        )*
+        (0.022+settings.load*0.048);
+
+      const portNoise=
+        (
+          Math.sin(Math.PI*2*shaftHz*6*t+0.6)*0.58+
+          noise*0.42
+        )*
+        settings.intake*
+        (0.009+settings.load*0.026);
+
+      const mech=
+        Math.sin(
+          Math.PI*2*shaftHz*9*t+0.2
+        )*
+        settings.mechanical*
+        0.006;
+
+      left[i]+=buzz+portNoise+mech;
+      right[i]+=buzz*1.01+portNoise*0.98+mech;
+    }
+
+    let l=highpassOnePole(left,44,sampleRate);
+    let r=highpassOnePole(right,44,sampleRate);
+
+    const cutoff=
+      3600+
+      settings.load*4200+
+      settings.intake*1600;
+
+    l=lowpassOnePole(l,cutoff,sampleRate);
+    r=lowpassOnePole(r,cutoff,sampleRate);
+
+    const drive=
+      1.35+
+      settings.load*0.65+
+      settings.punch*0.30;
+
+    for(let i=0;i<length;i++){
+      l[i]=softClip(l[i],drive);
+      r[i]=softClip(r[i],drive);
+    }
+
+    applyLoopCrossfade(l,r,sampleRate,0.035);
+    const peak=normalizeStereo(l,r,0.89);
+
+    return {
+      left:l,right:r,sampleRate,
+      duration:actualDuration,
+      cycles,
+      fireHz,
+      peak,
+      renderMs:performance.now()-startedAt,
+      settings
+    };
   }
 
   function renderMuscle(settings){
@@ -1215,7 +1749,16 @@
 
     try{
       const settings=readSettings();
-      rendered=renderMuscle(settings);
+
+      if(settings.family==="v10"){
+        rendered=renderV10(settings);
+      }else if(settings.family==="rally"){
+        rendered=renderRally(settings);
+      }else if(settings.family==="wankel"){
+        rendered=renderWankel(settings);
+      }else{
+        rendered=renderMuscle(settings);
+      }
 
       drawWave(rendered);
       createAudioUrl();
@@ -1291,7 +1834,7 @@
     const link=document.createElement("a");
     link.href=url;
     link.download=
-      `voltune-muscle-${ui.preset.value}-${Math.round(s.rpm)}rpm-${Math.round(s.load*100)}load.wav`;
+      `voltune-${s.family}-${ui.preset.value}-${Math.round(s.rpm)}rpm-${Math.round(s.load*100)}load.wav`;
 
     document.body.appendChild(link);
     link.click();
