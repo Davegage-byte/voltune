@@ -521,14 +521,14 @@
   }
 
   function refreshLabels(){
-    ui.rpmValue.textContent = \`\${ui.rpm.value} RPM\`;
-    ui.loadValue.textContent = \`\${ui.load.value} %\`;
-    ui.roughValue.textContent = \`\${ui.rough.value} %\`;
-    ui.punchValue.textContent = \`\${ui.punch.value} %\`;
-    ui.exhaustValue.textContent = \`\${ui.exhaust.value} %\`;
-    ui.intakeValue.textContent = \`\${ui.intake.value} %\`;
-    ui.mechanicalValue.textContent = \`\${ui.mechanical.value} %\`;
-    ui.durationValue.textContent = \`\${Number(ui.duration.value).toFixed(1)} s\`;
+    ui.rpmValue.textContent = `${ui.rpm.value} RPM`;
+    ui.loadValue.textContent = `${ui.load.value} %`;
+    ui.roughValue.textContent = `${ui.rough.value} %`;
+    ui.punchValue.textContent = `${ui.punch.value} %`;
+    ui.exhaustValue.textContent = `${ui.exhaust.value} %`;
+    ui.intakeValue.textContent = `${ui.intake.value} %`;
+    ui.mechanicalValue.textContent = `${ui.mechanical.value} %`;
+    ui.durationValue.textContent = `${Number(ui.duration.value).toFixed(1)} s`;
   }
 
   function applyPreset(){
@@ -961,7 +961,7 @@
     ctx.fillStyle="#93a0b2";
     ctx.font="24px system-ui";
     ctx.fillText(
-      \`\${Math.round(result.settings.rpm)} RPM · \${Math.round(result.settings.load*100)} % Last\`,
+      `${Math.round(result.settings.rpm)} RPM · ${Math.round(result.settings.load*100)} % Last`,
       24,
       38
     );
@@ -1013,19 +1013,19 @@
       createAudioUrl();
 
       ui.fireHz.textContent=
-        \`\${rendered.fireHz.toFixed(1)} Hz\`;
+        `${rendered.fireHz.toFixed(1)} Hz`;
 
       ui.cycles.textContent=
         String(rendered.cycles);
 
       ui.peak.textContent=
-        \`\${(rendered.peak*100).toFixed(0)} %\`;
+        `${(rendered.peak*100).toFixed(0)} %`;
 
       ui.renderMs.textContent=
-        \`\${rendered.renderMs.toFixed(0)} ms\`;
+        `${rendered.renderMs.toFixed(0)} ms`;
 
       ui.renderInfo.textContent=
-        \`\${rendered.duration.toFixed(3)} s · Stereo · 44,1 kHz\`;
+        `${rendered.duration.toFixed(3)} s · Stereo · 44,1 kHz`;
 
       ui.status.textContent="fertig";
       ui.status.className="status ok";
@@ -1083,7 +1083,7 @@
     const link=document.createElement("a");
     link.href=url;
     link.download=
-      \`voltune-muscle-\${ui.preset.value}-\${Math.round(s.rpm)}rpm-\${Math.round(s.load*100)}load.wav\`;
+      `voltune-muscle-${ui.preset.value}-${Math.round(s.rpm)}rpm-${Math.round(s.load*100)}load.wav`;
 
     document.body.appendChild(link);
     link.click();
