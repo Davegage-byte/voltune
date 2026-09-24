@@ -313,7 +313,7 @@
             <option value="lopey">Lopey Cam · Near Stall</option>
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
-            <option value="rally">Rally Turbo · Sharp Cam</option>
+            <option value="rally">Rally Turbo · Dark Cam</option>
             <option value="wankel">Wankel JDM · Slow BRAP</option>
           </select>
         </div>
@@ -777,6 +777,41 @@
     }
   }
 
+  function addDarkNoiseBurst(
+    buffer,
+    start,
+    sampleRate,
+    amp,
+    duration,
+    decay,
+    rand
+  ){
+    const count=Math.min(
+      buffer.length-start,
+      Math.round(sampleRate*duration)
+    );
+
+    // Sehr einfache geglättete Zufallskomponente.
+    // Dadurch bleibt der Attack körperlich, ohne
+    // das helle "Zischen/Surren" von weißem Rauschen.
+    let smooth=0;
+
+    for(let n=0;n<count;n++){
+      const t=n/sampleRate;
+      const env=Math.exp(-t/decay);
+      const white=rand()*2-1;
+
+      smooth +=
+        (white-smooth)*
+        0.035;
+
+      buffer[start+n]+=
+        smooth*
+        env*
+        amp;
+    }
+  }
+
   function normalizeStereo(left,right,target=0.91){
     let peak=0;
 
@@ -1075,19 +1110,19 @@
 
       addDecayingTone(
         other,start,sampleRate,
-        240+settings.load*145,
-        amp*(0.055+settings.punch*0.075),
-        0.0075,
+        205+settings.load*95,
+        amp*(0.030+settings.punch*0.040),
+        0.0060,
         1.0
       );
 
-      addNoiseBurst(
+      addDarkNoiseBurst(
         side,
         start,
         sampleRate,
-        amp*(0.075+settings.punch*0.070),
-        0.010,
-        0.0028,
+        amp*(0.065+settings.punch*0.055),
+        0.014,
+        0.0045,
         rand
       );
 
@@ -1122,71 +1157,60 @@
             rand()*0.8
           );
 
-          addNoiseBurst(
+          addDarkNoiseBurst(
             side,
             afterStart,
             sampleRate,
-            amp*0.045,
-            0.007,
-            0.0022,
+            amp*0.030,
+            0.010,
+            0.0040,
             rand
           );
         }
       }
     }
 
-    // Turbo nur noch als leises, luftiges Rauschen,
-    // nicht als sinusförmige Pfeife.
+    // Keine kontinuierlich gepulste Turbo-Fläche mehr.
+    // Genau diese periodische Modulation wurde als
+    // künstliches Surren/Summen wahrgenommen.
+    // Nur eine minimale dunkle Hintergrundtextur bleibt.
+    let rallyTexture=0;
+
     for(let i=0;i<length;i++){
-      const t=i/sampleRate;
-      const noise=rand()*2-1;
+      const white=rand()*2-1;
 
-      const turboGate=
-        0.18+
-        0.82*
-        Math.pow(
-          Math.max(
-            0,
-            Math.sin(
-              Math.PI*2*
-              crankHz*2*
-              t
-            )
-          ),
-          1.7
-        );
+      rallyTexture +=
+        (white-rallyTexture)*
+        0.010;
 
-      const turboAir=
-        noise*
-        turboGate*
-        settings.load*
-        settings.intake*
-        0.0065;
-
-      const mech=
-        noise*
+      const texture=
+        rallyTexture*
         settings.mechanical*
-        0.0025;
+        0.0012;
 
-      left[i]+=turboAir+mech;
-      right[i]+=turboAir*0.96+mech;
+      left[i]+=texture;
+      right[i]+=texture*0.95;
     }
 
     let l=highpassOnePole(left,30,sampleRate);
     let r=highpassOnePole(right,30,sampleRate);
 
     const cutoff=
-      1550+
-      settings.load*1700+
-      settings.intake*520;
+      760+
+      settings.load*620+
+      settings.intake*180;
 
     l=lowpassOnePole(l,cutoff,sampleRate);
     r=lowpassOnePole(r,cutoff,sampleRate);
 
+    // Zweiter Pol: Höhen konsequent aus dem Rally-Kern nehmen.
+    l=lowpassOnePole(l,cutoff*0.82,sampleRate);
+    r=lowpassOnePole(r,cutoff*0.82,sampleRate);
+
     const drive=
-      1.55+
-      settings.load*0.72+
-      settings.punch*0.58;
+      1.12+
+      settings.load*0.28+
+      settings.punch*0.20;
 
     for(let i=0;i<length;i++){
       l[i]=softClip(l[i],drive);
