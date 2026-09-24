@@ -312,9 +312,9 @@
             <option value="bigblock">Big Block · tief & schwer</option>
             <option value="lopey">Lopey Cam · Near Stall</option>
             <option value="modern">Modern Muscle · härter & sauberer</option>
-            <option value="v10">V10 Exotic · Impulse</option>
+            <option value="v10">V10 Exotic · Dry Pulse</option>
             <option value="rally">Rally Turbo · Exhaust</option>
-            <option value="wankel">Wankel JDM · Port Pulse</option>
+            <option value="wankel">Wankel JDM · Slow BRAP</option>
           </select>
         </div>
 
@@ -424,7 +424,7 @@
 
         <div class="meters">
           <div class="meter">
-            <span>Zündfrequenz</span>
+            <span>Impulsfrequenz</span>
             <strong id="fireHz">–</strong>
           </div>
           <div class="meter">
@@ -506,7 +506,7 @@
     },
     v10:{
       family:"v10",
-      rpm:2800,load:58,rough:12,punch:66,exhaust:72,bass:52,intake:34,mechanical:14,seed:510
+      rpm:1800,load:48,rough:18,punch:72,exhaust:78,bass:60,intake:22,mechanical:10,seed:510
     },
     rally:{
       family:"rally",
@@ -514,7 +514,7 @@
     },
     wankel:{
       family:"wankel",
-      rpm:3200,load:52,rough:12,punch:58,exhaust:68,bass:42,intake:30,mechanical:12,seed:787
+      rpm:1150,load:32,rough:22,punch:78,exhaust:86,bass:58,intake:18,mechanical:8,seed:787
     }
   };
 
@@ -848,7 +848,7 @@
       const jitter=
         (rand()*2-1)*
         interval*
-        (0.004+settings.rough*0.020);
+        (0.010+settings.rough*0.030);
 
       const start=Math.round(
         (e*interval+jitter)*
@@ -858,114 +858,116 @@
       if(start<0||start>=length) continue;
 
       const bank=e&1;
+      const target=bank?right:left;
+      const other=bank?left:right;
+
+      const eventVariation=
+        0.84+
+        rand()*0.28;
+
       const amp=
         (
-          0.34+
+          0.38+
           settings.load*0.34+
-          settings.punch*0.18
+          settings.punch*0.20
         )*
-        (
-          0.94+
-          rand()*0.12
-        );
+        eventVariation;
 
-      const target=
-        bank?right:left;
-
-      const other=
-        bank?left:right;
-
-      // Tiefer kurzer Verbrennungskörper.
+      // V10 soll als Folge einzelner Druckstöße hörbar bleiben.
+      // Sehr kurze tiefe/mittlere Resonanzen statt eines
+      // überlappenden Dauertons.
       addDecayingTone(
         target,start,sampleRate,
-        72+settings.bass*34,
-        amp*(0.30+settings.bass*0.34),
-        0.038+settings.exhaust*0.020,
-        bank?0.6:0.18
+        74+rand()*24+settings.bass*16,
+        amp*(0.24+settings.bass*0.24),
+        0.010+settings.exhaust*0.006,
+        rand()*Math.PI
       );
 
-      // Mittlere Abgasresonanz. Nur als Nachschwingen,
-      // kein dauerhaftes "Singen".
       addDecayingTone(
         target,start,sampleRate,
-        160+settings.exhaust*95,
-        amp*(0.28+settings.exhaust*0.26),
-        0.022,
-        bank?0.95:0.35
+        138+rand()*70+settings.exhaust*28,
+        amp*(0.20+settings.exhaust*0.22),
+        0.0075,
+        rand()*Math.PI
       );
 
-      // Oberer metallischer Anteil sehr kurz.
       addDecayingTone(
         other,start,sampleRate,
-        420+settings.load*260,
-        amp*(0.07+settings.intake*0.07),
-        0.0065,
-        bank?0.3:1.0
+        290+rand()*180+settings.load*90,
+        amp*(0.035+settings.intake*0.045),
+        0.0035,
+        rand()*Math.PI
       );
 
+      // Der eigentliche Attack ist breitbandig.
       addNoiseBurst(
         target,
         start,
         sampleRate,
-        amp*(0.045+settings.punch*0.050),
+        amp*(0.085+settings.punch*0.090),
         0.010,
-        0.0027,
+        0.0022,
+        rand
+      );
+
+      addNoiseBurst(
+        other,
+        start,
+        sampleRate,
+        amp*(0.030+settings.intake*0.028),
+        0.006,
+        0.0016,
         rand
       );
     }
 
-    // Nur dezente Ansaug-/Mechaniktextur.
+    // Keine kontinuierliche harmonische V10-Fläche.
+    // Nur sehr leise, nicht-tonale Ansaug-/Mechaniktextur.
     for(let i=0;i<length;i++){
-      const t=i/sampleRate;
       const noise=rand()*2-1;
 
-      const intakePulse=
-        Math.max(
-          0,
-          Math.sin(
-            Math.PI*2*
-            crankHz*5*
-            t
-          )
+      const texture=
+        noise*
+        (
+          settings.intake*0.0018+
+          settings.mechanical*0.0012
+        )*
+        (
+          0.45+
+          settings.load*0.55
         );
 
-      const intake=
-        noise*
-        intakePulse*
-        settings.intake*
-        (0.002+settings.load*0.006);
-
-      const mech=
-        noise*
-        settings.mechanical*
-        0.0018;
-
-      left[i]+=intake+mech;
-      right[i]+=intake*0.97+mech;
+      left[i]+=texture;
+      right[i]+=texture*0.96;
     }
 
-    let l=highpassOnePole(left,42,sampleRate);
-    let r=highpassOnePole(right,42,sampleRate);
+    let l=highpassOnePole(left,38,sampleRate);
+    let r=highpassOnePole(right,38,sampleRate);
 
     const cutoff=
-      2200+
-      settings.load*2500+
-      settings.intake*900;
+      1500+
+      settings.load*1800+
+      settings.intake*500;
 
     l=lowpassOnePole(l,cutoff,sampleRate);
     r=lowpassOnePole(r,cutoff,sampleRate);
 
+    // Zweiter Lowpass reduziert die letzte Pfeifigkeit.
+    l=lowpassOnePole(l,cutoff*0.88,sampleRate);
+    r=lowpassOnePole(r,cutoff*0.88,sampleRate);
+
     const drive=
-      1.28+
-      settings.load*0.48+
-      settings.punch*0.30;
+      1.18+
+      settings.load*0.34+
+      settings.punch*0.26;
 
     for(let i=0;i<length;i++){
       l[i]=softClip(l[i],drive);
       r[i]=softClip(r[i],drive);
     }
 
-    applyLoopCrossfade(l,r,sampleRate,0.045);
+    applyLoopCrossfade(l,r,sampleRate,0.040);
     const peak=normalizeStereo(l,r,0.90);
 
     return {
@@ -1145,8 +1147,19 @@
     const startedAt=performance.now();
     const sampleRate=44100;
     const shaftHz=settings.rpm/60;
-    const fireHz=shaftHz*2;
-    const cycleSeconds=1/shaftHz;
+
+    // Für den gewünschten JDM-Leerlauf ist nicht jede
+    // einzelne Rotorzündung als eigener Ton interessant.
+    // Wir erzeugen stattdessen klar getrennte BRAP-Gruppen.
+    const brapHz=
+      clamp(
+        4.2+
+        shaftHz*0.18,
+        4.5,
+        10.5
+      );
+
+    const cycleSeconds=1/brapHz;
     const cycles=Math.max(1,Math.round(settings.duration/cycleSeconds));
     const actualDuration=cycles*cycleSeconds;
     const length=Math.max(1,Math.round(actualDuration*sampleRate));
@@ -1154,140 +1167,174 @@
     const right=new Float32Array(length);
     const rand=mulberry32(settings.seed);
 
-    const interval=1/fireHz;
-    const events=Math.ceil(actualDuration/interval)+10;
+    const eventCount=
+      Math.ceil(
+        actualDuration*
+        brapHz
+      )+4;
 
-    for(let e=-5;e<events;e++){
-      const rotor=e&1;
+    for(let e=-2;e<eventCount;e++){
+      const jitter=
+        (rand()*2-1)*
+        (0.008+settings.rough*0.020);
 
-      const start=Math.round(
-        (
-          e*interval+
-          (rand()*2-1)*
-          interval*
-          settings.rough*
-          0.018
-        )*
-        sampleRate
-      );
+      const brapTime=
+        e/brapHz+
+        jitter;
 
-      if(start<0||start>=length) continue;
-
-      const amp=
-        (
-          0.32+
-          settings.load*0.30+
-          settings.punch*0.18
-        )*
-        (
-          0.92+
-          rand()*0.16
+      const brapStart=
+        Math.round(
+          brapTime*
+          sampleRate
         );
 
-      const side=
-        rotor?right:left;
+      if(
+        brapStart<0||
+        brapStart>=length
+      ){
+        continue;
+      }
 
-      const other=
-        rotor?left:right;
+      const baseAmp=
+        (
+          0.46+
+          settings.load*0.22+
+          settings.punch*0.28
+        )*
+        (
+          0.88+
+          rand()*0.20
+        );
 
-      // Wankel: kurze, harte Port-/Abgasimpulse.
-      addDecayingTone(
-        side,start,sampleRate,
-        86+settings.bass*26,
-        amp*(0.22+settings.bass*0.22),
-        0.030,
-        rotor?0.8:0.2
-      );
+      // Ein "BRAP" besteht aus 2 bis 3 kurzen,
+      // sehr nahen Port-/Abgasimpulsen.
+      const microCount=
+        (e%3===0)
+          ? 3
+          : 2;
 
-      addDecayingTone(
-        side,start,sampleRate,
-        175+settings.exhaust*85,
-        amp*(0.30+settings.exhaust*0.26),
-        0.019,
-        rotor?0.3:1.0
-      );
+      for(let m=0;m<microCount;m++){
+        const microOffset=
+          (
+            m*
+            (
+              0.010+
+              settings.rough*0.004
+            )+
+            rand()*0.0018
+          );
 
-      addDecayingTone(
-        other,start,sampleRate,
-        390+settings.load*230,
-        amp*(0.10+settings.intake*0.10),
-        0.007,
-        rotor?1.2:0.5
-      );
+        const start=
+          brapStart+
+          Math.round(
+            microOffset*
+            sampleRate
+          );
 
-      addNoiseBurst(
-        side,
-        start,
-        sampleRate,
-        amp*(0.050+settings.punch*0.050),
-        0.009,
-        0.0025,
-        rand
-      );
+        if(start<0||start>=length) continue;
+
+        const side=
+          ((e+m)&1)
+            ? right
+            : left;
+
+        const other=
+          ((e+m)&1)
+            ? left
+            : right;
+
+        const microAmp=
+          baseAmp*
+          (
+            m===0
+              ? 1
+              : m===1
+                ? 0.72
+                : 0.48
+          );
+
+        addDecayingTone(
+          side,start,sampleRate,
+          74+settings.bass*24+rand()*9,
+          microAmp*(0.34+settings.bass*0.28),
+          0.040+settings.exhaust*0.018,
+          rand()*0.7
+        );
+
+        addDecayingTone(
+          side,start,sampleRate,
+          128+settings.exhaust*40+rand()*18,
+          microAmp*(0.34+settings.exhaust*0.26),
+          0.026,
+          rand()*1.2
+        );
+
+        addDecayingTone(
+          other,start,sampleRate,
+          240+rand()*90,
+          microAmp*(0.08+settings.intake*0.06),
+          0.008,
+          rand()*1.4
+        );
+
+        addNoiseBurst(
+          side,
+          start,
+          sampleRate,
+          microAmp*(0.10+settings.punch*0.10),
+          0.012,
+          0.0024,
+          rand
+        );
+      }
     }
 
-    // Port-/Ansaugrauschen nur getaktet.
+    // Zwischen den BRAPs bewusst fast Stille.
+    // Nur minimalste nicht-tonale Hintergrundtextur.
     for(let i=0;i<length;i++){
-      const t=i/sampleRate;
-      const noise=rand()*2-1;
-
-      const portGate=
-        Math.pow(
-          Math.max(
-            0,
-            Math.sin(
-              Math.PI*2*
-              fireHz*
-              t
-            )
-          ),
-          3
+      const texture=
+        (rand()*2-1)*
+        (
+          settings.intake*0.0009+
+          settings.mechanical*0.0007
         );
 
-      const port=
-        noise*
-        portGate*
-        settings.intake*
-        (0.004+settings.load*0.010);
-
-      const mech=
-        noise*
-        settings.mechanical*
-        0.0018;
-
-      left[i]+=port+mech;
-      right[i]+=port*1.02+mech;
+      left[i]+=texture;
+      right[i]+=texture*0.96;
     }
 
-    let l=highpassOnePole(left,38,sampleRate);
-    let r=highpassOnePole(right,38,sampleRate);
+    let l=highpassOnePole(left,34,sampleRate);
+    let r=highpassOnePole(right,34,sampleRate);
 
     const cutoff=
-      2300+
-      settings.load*2200+
-      settings.intake*700;
+      1250+
+      settings.load*900+
+      settings.intake*250;
 
     l=lowpassOnePole(l,cutoff,sampleRate);
     r=lowpassOnePole(r,cutoff,sampleRate);
 
+    l=lowpassOnePole(l,cutoff*0.90,sampleRate);
+    r=lowpassOnePole(r,cutoff*0.90,sampleRate);
+
     const drive=
-      1.35+
-      settings.load*0.55+
-      settings.punch*0.34;
+      1.46+
+      settings.load*0.45+
+      settings.punch*0.44;
 
     for(let i=0;i<length;i++){
       l[i]=softClip(l[i],drive);
       r[i]=softClip(r[i],drive);
     }
 
-    applyLoopCrossfade(l,r,sampleRate,0.040);
-    const peak=normalizeStereo(l,r,0.89);
+    applyLoopCrossfade(l,r,sampleRate,0.055);
+    const peak=normalizeStereo(l,r,0.90);
 
     return {
       left:l,right:r,sampleRate,
       duration:actualDuration,
       cycles,
-      fireHz,
+      fireHz:brapHz,
       peak,
       renderMs:performance.now()-startedAt,
       settings
