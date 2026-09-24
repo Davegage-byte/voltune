@@ -77,6 +77,11 @@
     overrunSound:$("overrunSound"),
     overrun:$("overrun"),
 
+    idleSoundProfile:$("idleSoundProfile"),
+    driveSoundProfile:$("driveSoundProfile"),
+    accelSoundProfile:$("accelSoundProfile"),
+    regenSoundProfile:$("regenSoundProfile"),
+
     volumeLabel:$("volumeLabel"), baseLabel:$("baseLabel"), maxBaseLabel:$("maxBaseLabel"), pitchLabel:$("pitchLabel"),
     cruiseDampingLabel:$("cruiseDampingLabel"),
     gearRangeLabel:$("gearRangeLabel"),
@@ -1624,6 +1629,81 @@ function setRpmMarker(
     "block";
 }
   
+  function populateSoundProfileSelects() {
+    if (
+      !window.VoltuneAudio ||
+      typeof VoltuneAudio.getSoundProfiles !==
+        "function"
+    ) {
+      return;
+    }
+
+    const profiles =
+      VoltuneAudio.getSoundProfiles();
+
+    const groups = [
+      [
+        ui.idleSoundProfile,
+        profiles.idle
+      ],
+      [
+        ui.driveSoundProfile,
+        profiles.drive
+      ],
+      [
+        ui.accelSoundProfile,
+        profiles.accel
+      ],
+      [
+        ui.regenSoundProfile,
+        profiles.regen
+      ]
+    ];
+
+    groups.forEach(
+      ([select, options]) => {
+        if (
+          !select ||
+          !Array.isArray(options) ||
+          options.length === 0
+        ) {
+          return;
+        }
+
+        const previousValue =
+          select.value;
+
+        select.innerHTML = "";
+
+        options.forEach(profile => {
+          const option =
+            document.createElement(
+              "option"
+            );
+
+          option.value =
+            profile.key;
+
+          option.textContent =
+            profile.label;
+
+          select.appendChild(option);
+        });
+
+        if (
+          options.some(
+            profile =>
+              profile.key ===
+              previousValue
+          )
+        ) {
+          select.value =
+            previousValue;
+        }
+      }
+    );
+  }
+
   function getAudioSettings() {
   return {
     masterVolume: Number(ui.volume.value),
@@ -1632,6 +1712,15 @@ function setRpmMarker(
     maxBaseFrequency: Number(ui.maxBase.value),
     pitch: Number(ui.pitch.value),
     cruiseDamping: Number(ui.cruiseDamping.value),
+
+    idleSoundProfile:
+      ui.idleSoundProfile.value,
+    driveSoundProfile:
+      ui.driveSoundProfile.value,
+    accelSoundProfile:
+      ui.accelSoundProfile.value,
+    regenSoundProfile:
+      ui.regenSoundProfile.value,
 
     baseVolume: Number(ui.baseVol.value),
     inverterVolume: Number(ui.inverter.value),
@@ -1653,6 +1742,15 @@ function getPersistentSettings() {
     maxBaseFrequency: Number(ui.maxBase.value),
     pitch: Number(ui.pitch.value),
     cruiseDamping: Number(ui.cruiseDamping.value),
+
+    idleSoundProfile:
+      ui.idleSoundProfile.value,
+    driveSoundProfile:
+      ui.driveSoundProfile.value,
+    accelSoundProfile:
+      ui.accelSoundProfile.value,
+    regenSoundProfile:
+      ui.regenSoundProfile.value,
 
     gearRange: Number(ui.gearRange.value),
     maxRpm: Number(ui.maxRpm.value),
@@ -1700,11 +1798,55 @@ function applyPersistentSettings(settings) {
     }
   };
 
+  const setProfile = (
+    element,
+    value
+  ) => {
+    if (
+      !element ||
+      typeof value !== "string"
+    ) {
+      return;
+    }
+
+    const exists =
+      Array.from(
+        element.options
+      ).some(
+        option =>
+          option.value === value
+      );
+
+    if (exists) {
+      element.value = value;
+    }
+  };
+
   setNumber(ui.volume, settings.volume);
   setNumber(ui.base, settings.baseFrequency);
   setNumber(ui.maxBase, settings.maxBaseFrequency);
   setNumber(ui.pitch, settings.pitch);
   setNumber(ui.cruiseDamping, settings.cruiseDamping);
+
+  setProfile(
+    ui.idleSoundProfile,
+    settings.idleSoundProfile
+  );
+
+  setProfile(
+    ui.driveSoundProfile,
+    settings.driveSoundProfile
+  );
+
+  setProfile(
+    ui.accelSoundProfile,
+    settings.accelSoundProfile
+  );
+
+  setProfile(
+    ui.regenSoundProfile,
+    settings.regenSoundProfile
+  );
 
   setNumber(ui.gearRange, settings.gearRange);
   setNumber(ui.maxRpm, settings.maxRpm);
@@ -3389,6 +3531,37 @@ ui.testOverrun.addEventListener(
   }
 );
 
+[
+  ui.idleSoundProfile,
+  ui.driveSoundProfile,
+  ui.accelSoundProfile,
+  ui.regenSoundProfile
+].forEach(select => {
+  select.addEventListener(
+    "change",
+    () => {
+      if (
+        soundActive &&
+        !demoActive
+      ) {
+        if (gpsActive) {
+          updateVoltuneSound(
+            gpsSpeedKmh,
+            gpsAccel
+          );
+        } else {
+          updateVoltuneSound(
+            manualSpeed,
+            manualAccel
+          );
+        }
+      }
+
+      scheduleSettingsSave();
+    }
+  );
+});
+
 ui.overrunSound.addEventListener(
   "change",
   async () => {
@@ -3660,6 +3833,8 @@ function restoreLastDriveMode() {
   }
 }
   
+populateSoundProfileSelects();
+
 const savedSettings =
   VoltuneStorage.loadSettings();
 
