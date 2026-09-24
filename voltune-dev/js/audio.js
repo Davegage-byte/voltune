@@ -1420,6 +1420,21 @@ async function setOverrunSound(
 
     ctx = new AudioCtx();
 
+    // Wichtig für Tesla-/Mobile-Browser:
+    // direkt im echten Benutzer-Gesture den
+    // AudioContext aktivieren, bevor asynchrone
+    // Sample-Ladevorgänge den Gesture-Kontext
+    // verlieren können.
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
+
+    if (ctx.state === "closed") {
+      throw new Error(
+        "AudioContext wurde vom Browser geschlossen."
+      );
+    }
+
     sharedNoiseBuffer =
       createNoiseBuffer(2);
 
@@ -2242,6 +2257,18 @@ async function setOverrunSound(
     );
 
     airSource.start();
+
+    // Nach dem Aufbau noch einmal sicherstellen,
+    // dass der Context wirklich läuft.
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
+
+    if (ctx.state !== "running") {
+      throw new Error(
+        `AudioContext nicht aktiv (Status: ${ctx.state}). Bitte Demo erneut antippen.`
+      );
+    }
 
     started = true;
     lastAccel = 0;
