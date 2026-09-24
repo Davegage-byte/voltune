@@ -290,7 +290,7 @@
       <p class="subtitle">
         Offline-Soundlabor für neue Voltune-Klangfamilien. Der erste Generator baut einen
         synthetischen V8-artigen Klang aus einzelnen Zündimpulsen, Abgasresonanzen,
-        Ansauganteil und mechanischer Textur statt nur aus dauerhaft laufenden Oszillatoren.
+        tiefem Sub-Körper, Ansauganteil und mechanischer Textur statt nur aus dauerhaft laufenden Oszillatoren.
       </p>
     </div>
     <div class="build">Generator v0.1 · 24.09.2026</div>
@@ -353,6 +353,14 @@
             <span id="exhaustValue" class="value">82 %</span>
           </div>
           <input id="exhaust" type="range" min="0" max="100" step="1" value="82">
+        </div>
+
+        <div class="control">
+          <div class="controlTop">
+            <span>Bass / Sub-Körper</span>
+            <span id="bassValue" class="value">88 %</span>
+          </div>
+          <input id="bass" type="range" min="0" max="100" step="1" value="88">
         </div>
 
         <div class="control">
@@ -463,6 +471,7 @@
     rough:$("rough"), roughValue:$("roughValue"),
     punch:$("punch"), punchValue:$("punchValue"),
     exhaust:$("exhaust"), exhaustValue:$("exhaustValue"),
+    bass:$("bass"), bassValue:$("bassValue"),
     intake:$("intake"), intakeValue:$("intakeValue"),
     mechanical:$("mechanical"), mechanicalValue:$("mechanicalValue"),
     duration:$("duration"), durationValue:$("durationValue"),
@@ -481,13 +490,13 @@
 
   const PRESETS = {
     bigblock:{
-      rpm:780,load:12,rough:72,punch:78,exhaust:82,intake:34,mechanical:16,seed:454
+      rpm:780,load:12,rough:72,punch:78,exhaust:82,bass:92,intake:34,mechanical:16,seed:454
     },
     lopey:{
-      rpm:720,load:10,rough:94,punch:84,exhaust:88,intake:24,mechanical:20,seed:427
+      rpm:720,load:10,rough:94,punch:84,exhaust:88,bass:96,intake:24,mechanical:20,seed:427
     },
     modern:{
-      rpm:900,load:16,rough:34,punch:72,exhaust:66,intake:50,mechanical:28,seed:502
+      rpm:900,load:16,rough:34,punch:72,exhaust:66,bass:78,intake:50,mechanical:28,seed:502
     }
   };
 
@@ -513,6 +522,7 @@
       rough:Number(ui.rough.value)/100,
       punch:Number(ui.punch.value)/100,
       exhaust:Number(ui.exhaust.value)/100,
+      bass:Number(ui.bass.value)/100,
       intake:Number(ui.intake.value)/100,
       mechanical:Number(ui.mechanical.value)/100,
       duration:Number(ui.duration.value),
@@ -526,6 +536,7 @@
     ui.roughValue.textContent = `${ui.rough.value} %`;
     ui.punchValue.textContent = `${ui.punch.value} %`;
     ui.exhaustValue.textContent = `${ui.exhaust.value} %`;
+    ui.bassValue.textContent = `${ui.bass.value} %`;
     ui.intakeValue.textContent = `${ui.intake.value} %`;
     ui.mechanicalValue.textContent = `${ui.mechanical.value} %`;
     ui.durationValue.textContent = `${Number(ui.duration.value).toFixed(1)} s`;
@@ -540,6 +551,7 @@
     ui.rough.value = p.rough;
     ui.punch.value = p.punch;
     ui.exhaust.value = p.exhaust;
+    ui.bass.value = p.bass;
     ui.intake.value = p.intake;
     ui.mechanical.value = p.mechanical;
     ui.seed.value = p.seed;
@@ -566,11 +578,32 @@
     const punch = settings.punch;
     const load = settings.load;
 
+    // Tiefer Auspuff-/Sub-Körper.
+    // Nicht einfach EQ: Jeder Zündimpuls regt
+    // echte tiefe Resonanzen mit längerer Abklingzeit an.
+    const bass = settings.bass;
+
+    addDecayingTone(
+      buffer,start,sampleRate,
+      34 + bass*10 + load*4,
+      amp*(0.30+bass*0.54),
+      0.090+bass*0.085,
+      bank?0.45:0.08
+    );
+
+    addDecayingTone(
+      buffer,start,sampleRate,
+      52 + bass*18 + load*7,
+      amp*(0.26+bass*0.44),
+      0.070+bass*0.060,
+      bank?0.82:0.22
+    );
+
     addDecayingTone(
       buffer,start,sampleRate,
       48 + exhaust*28 + load*10,
-      amp*(0.34+exhaust*0.32),
-      0.050+exhaust*0.045,
+      amp*(0.34+exhaust*0.32+bass*0.12),
+      0.050+exhaust*0.045+bass*0.018,
       bank?0.7:0.1
     );
 
@@ -781,7 +814,8 @@
     const drive=
       1.25+
       settings.punch*1.20+
-      settings.load*0.90;
+      settings.load*0.90+
+      settings.bass*0.28;
 
     let peak=0;
 
@@ -1092,7 +1126,7 @@
 
   [
     ui.rpm,ui.load,ui.rough,ui.punch,
-    ui.exhaust,ui.intake,ui.mechanical,
+    ui.exhaust,ui.bass,ui.intake,ui.mechanical,
     ui.duration
   ].forEach(el => {
     el.addEventListener("input",refreshLabels);
