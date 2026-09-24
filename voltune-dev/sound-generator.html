@@ -314,7 +314,7 @@
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
             <option value="rally">Rally Turbo · Dark Cam</option>
-            <option value="wankel">Wankel JDM · Split-Bus BRAP</option>
+            <option value="wankel">Wankel JDM · Dirty BRAP</option>
           </select>
         </div>
 
@@ -1645,8 +1645,8 @@
           245+
             rand()*35,
           edgeAmp*
-          0.22,
-          0.014,
+          0.25,
+          0.013,
           rand()*1.2
         );
 
@@ -1657,9 +1657,59 @@
           255+
             rand()*35,
           edgeAmp*
-          0.21,
-          0.014,
+          0.24,
+          0.013,
           rand()*1.2
+        );
+
+        // Freche, schmutzige BRAP-Kante:
+        // sehr kurz, damit daraus kein Dauersurren wird.
+        addDecayingTone(
+          brapLeft,
+          start,
+          sampleRate,
+          430+
+            rand()*70,
+          edgeAmp*
+          0.16,
+          0.0070,
+          rand()*1.5
+        );
+
+        addDecayingTone(
+          brapRight,
+          start,
+          sampleRate,
+          445+
+            rand()*75,
+          edgeAmp*
+          0.15,
+          0.0070,
+          rand()*1.5
+        );
+
+        addDecayingTone(
+          brapLeft,
+          start,
+          sampleRate,
+          690+
+            rand()*110,
+          edgeAmp*
+          0.075,
+          0.0040,
+          rand()*1.8
+        );
+
+        addDecayingTone(
+          brapRight,
+          start,
+          sampleRate,
+          710+
+            rand()*120,
+          edgeAmp*
+          0.070,
+          0.0040,
+          rand()*1.8
         );
 
         addDarkNoiseBurst(
@@ -1667,9 +1717,9 @@
           start,
           sampleRate,
           edgeAmp*
-          0.090,
-          0.018,
-          0.0045,
+          0.115,
+          0.014,
+          0.0036,
           rand
         );
 
@@ -1678,9 +1728,9 @@
           start,
           sampleRate,
           edgeAmp*
-          0.086,
-          0.018,
-          0.0045,
+          0.110,
+          0.014,
+          0.0036,
           rand
         );
       }
@@ -1772,12 +1822,12 @@
             rotorPhase*4+
             1.18
           )*
-          0.15+
+          0.18+
           Math.sin(
             rotorPhase*5+
             0.63
           )*
-          0.075
+          0.105
         );
 
       const roughBrap=
@@ -1818,28 +1868,28 @@
     brapL=
       lowpassOnePole(
         brapL,
-        720,
+        980,
         sampleRate
       );
 
     brapR=
       lowpassOnePole(
         brapR,
-        720,
+        980,
         sampleRate
       );
 
     brapL=
       lowpassOnePole(
         brapL,
-        620,
+        860,
         sampleRate
       );
 
     brapR=
       lowpassOnePole(
         brapR,
-        620,
+        860,
         sampleRate
       );
 
