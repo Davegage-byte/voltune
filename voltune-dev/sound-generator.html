@@ -313,7 +313,7 @@
             <option value="lopey">Lopey Cam · Near Stall</option>
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
-            <option value="rally">Rally Turbo · Exhaust</option>
+            <option value="rally">Rally Turbo · Sharp Cam</option>
             <option value="wankel">Wankel JDM · Slow BRAP</option>
           </select>
         </div>
@@ -510,7 +510,7 @@
     },
     rally:{
       family:"rally",
-      rpm:2400,load:64,rough:34,punch:84,exhaust:82,bass:76,intake:28,mechanical:18,seed:404
+      rpm:1750,load:42,rough:68,punch:88,exhaust:90,bass:80,intake:20,mechanical:22,seed:404
     },
     wankel:{
       family:"wankel",
@@ -1000,30 +1000,47 @@
     for(let e=-5;e<events;e++){
       const phase=((e%4)+4)%4;
 
+      // "Scharfe Nockenwelle":
+      // Ein wiederkehrendes 4er-Muster aus zu frühem,
+      // zu spätem und etwas schwächerem Takt erzeugt
+      // den rauen Wettbewerbs-Leerlauf.
+      const camTimingPattern=[
+        -0.070,
+         0.105,
+        -0.040,
+         0.035
+      ];
+
       const uneven=
-        (
-          phase===1
-            ? 0.055
-            : phase===2
-              ? -0.030
-              : 0
-        )*
+        camTimingPattern[phase]*
         settings.rough*
         interval;
+
+      const randomTiming=
+        (rand()*2-1)*
+        interval*
+        (
+          0.020+
+          settings.rough*0.055
+        );
 
       const start=Math.round(
         (
           e*interval+
           uneven+
-          (rand()*2-1)*
-          interval*
-          settings.rough*
-          0.025
+          randomTiming
         )*
         sampleRate
       );
 
       if(start<0||start>=length) continue;
+
+      const camStrengthPattern=[
+        1.10,
+        0.73,
+        1.18,
+        0.86
+      ];
 
       const amp=
         (
@@ -1031,9 +1048,10 @@
           settings.load*0.34+
           settings.punch*0.20
         )*
+        camStrengthPattern[phase]*
         (
-          0.88+
-          rand()*0.22
+          0.86+
+          rand()*0.26
         );
 
       const side=e&1 ? right : left;
@@ -1041,25 +1059,25 @@
 
       addDecayingTone(
         side,start,sampleRate,
-        66+settings.bass*32,
-        amp*(0.42+settings.bass*0.34),
-        0.060+settings.exhaust*0.035,
+        60+settings.bass*28,
+        amp*(0.46+settings.bass*0.36),
+        0.055+settings.exhaust*0.032,
         0.18
       );
 
       addDecayingTone(
         side,start,sampleRate,
-        118+settings.exhaust*48,
-        amp*(0.30+settings.exhaust*0.30),
-        0.034,
+        108+settings.exhaust*42,
+        amp*(0.34+settings.exhaust*0.32),
+        0.030,
         0.75
       );
 
       addDecayingTone(
         other,start,sampleRate,
-        260+settings.load*170,
-        amp*(0.08+settings.punch*0.10),
-        0.009,
+        240+settings.load*145,
+        amp*(0.055+settings.punch*0.075),
+        0.0075,
         1.0
       );
 
@@ -1067,11 +1085,54 @@
         side,
         start,
         sampleRate,
-        amp*(0.060+settings.punch*0.060),
-        0.012,
-        0.0032,
+        amp*(0.075+settings.punch*0.070),
+        0.010,
+        0.0028,
         rand
       );
+
+      // Kleine, trockene Nachverbrennung bei jedem
+      // zweiten Viererpaket. Kein Knall-Effekt,
+      // sondern nur etwas Rally-Rauheit im Auspuff.
+      if (
+        phase === 1 &&
+        (e & 4)
+      ) {
+        const afterStart=
+          start+
+          Math.round(
+            sampleRate*
+            (
+              0.018+
+              rand()*0.010
+            )
+          );
+
+        if (
+          afterStart >= 0 &&
+          afterStart < length
+        ) {
+          addDecayingTone(
+            side,
+            afterStart,
+            sampleRate,
+            82+rand()*18,
+            amp*0.19,
+            0.020,
+            rand()*0.8
+          );
+
+          addNoiseBurst(
+            side,
+            afterStart,
+            sampleRate,
+            amp*0.045,
+            0.007,
+            0.0022,
+            rand
+          );
+        }
+      }
     }
 
     // Turbo nur noch als leises, luftiges Rauschen,
@@ -1081,15 +1142,18 @@
       const noise=rand()*2-1;
 
       const turboGate=
-        0.35+
-        0.65*
-        Math.max(
-          0,
-          Math.sin(
-            Math.PI*2*
-            crankHz*2*
-            t
-          )
+        0.18+
+        0.82*
+        Math.pow(
+          Math.max(
+            0,
+            Math.sin(
+              Math.PI*2*
+              crankHz*2*
+              t
+            )
+          ),
+          1.7
         );
 
       const turboAir=
@@ -1112,9 +1176,9 @@
     let r=highpassOnePole(right,30,sampleRate);
 
     const cutoff=
-      1800+
-      settings.load*2000+
-      settings.intake*650;
+      1550+
+      settings.load*1700+
+      settings.intake*520;
 
     l=lowpassOnePole(l,cutoff,sampleRate);
     r=lowpassOnePole(r,cutoff,sampleRate);
