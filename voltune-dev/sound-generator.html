@@ -314,7 +314,7 @@
             <option value="modern">Modern Muscle · härter & sauberer</option>
             <option value="v10">V10 Exotic · Dry Pulse</option>
             <option value="rally">Rally Turbo · Dark Cam</option>
-            <option value="wankel">Wankel JDM · RX-7 Reference BRAP</option>
+            <option value="wankel">Wankel JDM · RX-7 Deep BRAP</option>
           </select>
         </div>
 
@@ -1351,11 +1351,11 @@
 
       const amp=
         (
-          0.42+
+          0.30+
           settings.load*
-          0.18+
+          0.13+
           settings.exhaust*
-          0.12
+          0.085
         )*
         variation*
         rotorAccent;
@@ -1394,16 +1394,16 @@
         side,
         start,
         sampleRate,
-        106+
-          settings.exhaust*10+
-          rand()*10,
+        104+
+          settings.exhaust*9+
+          rand()*8,
         amp*
           (
-            0.72+
+            0.68+
             settings.exhaust*
-            0.24
+            0.22
           ),
-        0.125,
+        0.110,
         rand()*1.0
       );
 
@@ -1451,36 +1451,53 @@
     }
 
     // =====================================================
-    // 2) Bridgeport-BRAP = Bewegung des ganzen Motors
+    // 2) Bridgeport-BRAP = deutliche Motor-Hüllkurve
     // =====================================================
     //
-    // Statt extra "Trommelschläge" hinzuzufügen,
-    // moduliert der BRAP-Rhythmus jetzt den bereits
-    // vorhandenen Motorkörper. So bleibt es Motor.
-    let brapPhase=
-      0;
+    // RX-7-Referenz:
+    // ca. 4,35 Hz und ungefähr Faktor 2,7 zwischen
+    // BRAP-Tal und BRAP-Spitze.
+    //
+    // Deshalb fällt der Motorkörper zwischen den BRAPs
+    // jetzt bewusst stark ab, ohne ganz zu verschwinden.
+    const brapPeriod=
+      1/brapHz;
 
-    let brapEnvelope=
-      1;
-
-    const brapPattern=[
-      1.00,
-      0.82,
-      1.08,
-      0.90,
-      0.74,
-      1.12,
-      0.88,
-      1.02
-    ];
-
-    let nextBrap=
+    let brapClock=
       0;
 
     let brapIndex=
       0;
 
-    let currentBrapGain=
+    let nextBrap=
+      0;
+
+    let currentPeriod=
+      brapPeriod;
+
+    const stumblePattern=[
+       0.00,
+       0.08,
+      -0.03,
+       0.03,
+       0.13,
+      -0.06,
+       0.02,
+      -0.02
+    ];
+
+    const strengthPattern=[
+      1.00,
+      0.88,
+      1.08,
+      0.92,
+      0.78,
+      1.10,
+      0.90,
+      1.02
+    ];
+
+    let currentStrength=
       1;
 
     for(
@@ -1496,23 +1513,12 @@
       ){
         const patternIndex=
           brapIndex%
-          brapPattern.length;
+          stumblePattern.length;
 
-        currentBrapGain=
-          brapPattern[
+        currentStrength=
+          strengthPattern[
             patternIndex
           ];
-
-        const stumble=[
-           0.00,
-           0.08,
-          -0.03,
-           0.03,
-           0.13,
-          -0.06,
-           0.02,
-          -0.02
-        ][patternIndex];
 
         const jitter=
           (
@@ -1521,84 +1527,71 @@
           0.010*
           settings.rough;
 
-        nextBrap +=
-          (
-            1/
-            brapHz
-          )*
+        currentPeriod=
+          brapPeriod*
           Math.max(
-            0.80,
+            0.82,
             1+
-            stumble*
+            stumblePattern[
+              patternIndex
+            ]*
             settings.rough+
             jitter
           );
 
+        brapClock=
+          t;
+
+        nextBrap=
+          t+
+          currentPeriod;
+
         brapIndex++;
-        brapPhase=0;
       }
 
-      brapPhase +=
-        brapHz/
-        sampleRate;
+      const localTime=
+        t-
+        brapClock;
 
-      // Kurzer, aber weicher BRAP-Punch:
-      // der ganze Motor wird kurz kräftiger/dunkler,
-      // statt dass ein separates "Klopfen" entsteht.
+      // Schneller Angriff, ca. 90-120 ms kräftiger Körper,
+      // danach deutliches Abfallen bis zum nächsten BRAP.
+      const attack=
+        clamp(
+          localTime/
+          0.012,
+          0,
+          1
+        );
+
+      const decay=
+        Math.exp(
+          -Math.max(
+            0,
+            localTime-
+            0.012
+          )/
+          0.070
+        );
+
       const pulse=
-        Math.exp(
-          -brapPhase*
-          8.8
-        );
+        attack*
+        decay;
 
-      // Kleine zweite Schulter im BRAP.
-      // Kein separater Klopfer, sondern nur
-      // eine zweite Verdichtung des Motorbetts.
-      const shoulder=
-        Math.exp(
-          -Math.pow(
-            (
-              brapPhase-
-              0.115
-            )/
-            0.060,
-            2
-          )
-        );
-
-      const target=
-        0.60+
-        currentBrapGain*
-        (
-          0.22+
-          settings.rough*
-          0.15
-        )+
+      // Floor ~0,34 / Peak ~1,0 entspricht ungefähr
+      // dem Dynamikverhältnis der hochgeladenen Referenz.
+      const envelope=
+        0.34+
         pulse*
         (
-          0.18+
-          settings.punch*
-          0.12
-        )+
-        shoulder*
-        (
-          0.055+
-          settings.exhaust*
-          0.035
+          0.66*
+          currentStrength
         );
 
-      brapEnvelope +=
-        (
-          target-
-          brapEnvelope
-        )*
-        0.060;
-
       left[i]*=
-        brapEnvelope;
+        envelope;
 
       right[i]*=
-        brapEnvelope;
+        envelope;
     }
 
     // =====================================================
@@ -1625,9 +1618,9 @@
         darkTexture*
         (
           settings.intake*
-          0.0007+
+          0.00045+
           settings.mechanical*
-          0.0005
+          0.00035
         );
 
       left[i]+=
