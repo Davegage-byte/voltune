@@ -311,6 +311,12 @@ window.VoltuneAudio = (() => {
   let sentinelFilter, sentinelBus;
   let sentinelFmOsc, sentinelFmDepth;
   let sentinelPulseOsc, sentinelPulseDepth, sentinelPulseGain;
+
+  // Klare Sägezahn-Pitchfahrt statt sinusförmigem
+  // Hoch-/Runtereiern.
+  let sentinelSweepPhase = 0;
+  let sentinelSweepMode = "idle";
+
   let lastSentinelImpulseAt = -9999;
 
   let airSource, airGain, airFilter;
@@ -576,12 +582,13 @@ window.VoltuneAudio = (() => {
       0.06
     );
 
+    // Keine sinusförmige Frequenzmodulation mehr.
+    // Der markante Pitch-Verlauf wird in der Runtime
+    // als reine Sägezahnfahrt erzeugt.
     setTarget(
       sentinelFmDepth.gain,
-      active
-        ? fmDepth
-        : 0,
-      0.06
+      0,
+      0.03
     );
 
     setTarget(
@@ -626,6 +633,80 @@ window.VoltuneAudio = (() => {
         : 0.0001,
       0.05
     );
+  }
+
+  function getSentinelSweepBase({
+    mode,
+    dt,
+    load,
+    speedN
+  }) {
+    const normalizedLoad =
+      clamp(
+        load,
+        0,
+        1
+      );
+
+    if (
+      sentinelSweepMode !== mode
+    ) {
+      sentinelSweepMode =
+        mode;
+
+      sentinelSweepPhase =
+        mode === "regen"
+          ? 0.98
+          : 0.02;
+    }
+
+    const rate =
+      0.22 +
+      normalizedLoad * 0.46 +
+      speedN * 0.16;
+
+    if (mode === "accel") {
+      sentinelSweepPhase =
+        (
+          sentinelSweepPhase +
+          dt * rate
+        ) % 1;
+
+      // Nur aufwärts. Am Ende springt die
+      // Frequenz direkt wieder nach unten.
+      return (
+        58 *
+        Math.pow(
+          2,
+          sentinelSweepPhase * 2.08
+        )
+      );
+    }
+
+    if (mode === "regen") {
+      sentinelSweepPhase -=
+        dt * rate * 0.82;
+
+      if (
+        sentinelSweepPhase < 0
+      ) {
+        sentinelSweepPhase += 1;
+      }
+
+      // Spiegelbild:
+      // nur abwärts, dann harter Sprung nach oben.
+      return (
+        52 *
+        Math.pow(
+          2,
+          sentinelSweepPhase * 1.82
+        )
+      );
+    }
+
+    sentinelSweepMode = mode;
+
+    return 42;
   }
 
   function triggerSentinelImpulse(
@@ -5117,12 +5198,18 @@ const invLevel =
       driveMix > 0.15;
 
     if (sentinelAccelActive) {
+      const sentinelAccelSweep =
+        getSentinelSweepBase({
+          mode: "accel",
+          dt,
+          load: pos,
+          speedN
+        });
+
       updateSentinelMachine({
         active: true,
         baseHz:
-          64 +
-          speedN * 86 +
-          pos * 42,
+          sentinelAccelSweep,
         level:
           driveAmount *
           (
@@ -5134,18 +5221,14 @@ const invLevel =
           speedN * 420 +
           pos * 220,
         pulseHz:
-          3.2 +
-          speedN * 3.5 +
-          pos * 7.2,
+          2.0 +
+          speedN * 1.4 +
+          pos * 2.2,
         pulseDepth:
-          0.10 +
-          pos * 0.20,
-        fmHz:
-          1.8 +
-          pos * 4.4,
-        fmDepth:
-          12 +
-          pos * 74,
+          0.018 +
+          pos * 0.025,
+        fmHz: 0.2,
+        fmDepth: 0,
         metal:
           0.85 +
           pos * 0.65
@@ -5166,12 +5249,18 @@ const invLevel =
       }
 
     } else if (sentinelRegenActive) {
+      const sentinelRegenSweep =
+        getSentinelSweepBase({
+          mode: "regen",
+          dt,
+          load: neg,
+          speedN
+        });
+
       updateSentinelMachine({
         active: true,
         baseHz:
-          54 +
-          speedN * 58 -
-          neg * 12,
+          sentinelRegenSweep,
         level:
           regenAmount *
           (
@@ -5182,18 +5271,14 @@ const invLevel =
           360 +
           speedN * 280,
         pulseHz:
-          2.4 +
-          speedN * 2.0 +
-          neg * 4.8,
+          1.8 +
+          speedN * 1.1 +
+          neg * 1.8,
         pulseDepth:
-          0.08 +
-          neg * 0.16,
-        fmHz:
-          1.1 +
-          neg * 3.2,
-        fmDepth:
-          8 +
-          neg * 46,
+          0.016 +
+          neg * 0.022,
+        fmHz: 0.2,
+        fmDepth: 0,
         metal:
           0.62 +
           neg * 0.44
@@ -5223,9 +5308,9 @@ const invLevel =
           0.050,
         filterHz: 360,
         pulseHz: 0.44,
-        pulseDepth: 0.055,
-        fmHz: 0.31,
-        fmDepth: 7,
+        pulseDepth: 0.018,
+        fmHz: 0.2,
+        fmDepth: 0,
         metal: 0.72
       });
 
@@ -5247,17 +5332,13 @@ const invLevel =
           390 +
           speedN * 340,
         pulseHz:
-          1.4 +
-          speedN * 2.8,
+          1.0 +
+          speedN * 1.4,
         pulseDepth:
-          0.06 +
-          speedN * 0.06,
-        fmHz:
-          0.8 +
-          speedN * 1.8,
-        fmDepth:
-          6 +
-          speedN * 28,
+          0.018 +
+          speedN * 0.015,
+        fmHz: 0.2,
+        fmDepth: 0,
         metal:
           0.65 +
           speedN * 0.30
