@@ -89,6 +89,20 @@ window.VoltuneAudio = (() => {
         toneDepth: 18,
         gainScale: 0.18,
         muscle: true
+      }),
+
+      voltune6: Object.freeze({
+        label: "Voltune 6 · Wankel JDM",
+        frequencies: [54, 108, 162],
+        highpass: 28,
+        lowpass: 520,
+        pulseHz: 0.72,
+        pulseDepth: 0.010,
+        textureGain: 0.006,
+        presenceGain: 0.003,
+        toneDepth: 8,
+        gainScale: 0.025,
+        wankel: true
       })
     }),
 
@@ -153,6 +167,19 @@ window.VoltuneAudio = (() => {
         inverterPitchScale: 0.70,
         airScale: 0.05,
         muscle: true
+      }),
+
+      voltune6: Object.freeze({
+        label: "Voltune 6 · Wankel JDM",
+        frequencyScale: 0.72,
+        harmonicRatio: 1.20,
+        filterScale: 0.48,
+        subScale: 1.05,
+        gainScale: 0.025,
+        inverterScale: 0.02,
+        inverterPitchScale: 0.70,
+        airScale: 0.02,
+        wankel: true
       })
     }),
 
@@ -208,6 +235,17 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.32,
         pulseDepthScale: 0.25,
         muscle: true
+      }),
+
+      voltune6: Object.freeze({
+        label: "Voltune 6 · Wankel JDM",
+        frequencyScale: 0.64,
+        filterScale: 0.46,
+        speedRiseScale: 0.18,
+        gainScale: 0.020,
+        pulseRateScale: 0.28,
+        pulseDepthScale: 0.18,
+        wankel: true
       })
     }),
 
@@ -263,6 +301,17 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.34,
         pulseDepthScale: 0.26,
         muscle: true
+      }),
+
+      voltune6: Object.freeze({
+        label: "Voltune 6 · Wankel JDM",
+        frequencyScale: 0.60,
+        harmonicRatio: 1.18,
+        filterScale: 0.46,
+        gainScale: 0.020,
+        pulseRateScale: 0.28,
+        pulseDepthScale: 0.18,
+        wankel: true
       })
     })
   });
@@ -378,6 +427,14 @@ window.VoltuneAudio = (() => {
   let muscleRumbleOsc, muscleRumbleDepth;
   let muscleIrregularOsc, muscleIrregularDepth;
   let muscleLastMode = "off";
+
+  // Voltune 6 · Wankel JDM
+  // Intern erzeugter Loop aus dem Sound-Generator-Ansatz.
+  let wankelSource = null;
+  let wankelGain = null;
+  let wankelFilter = null;
+  let wankelBuffer = null;
+  const wankelReferenceRpm = 1600;
 
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
@@ -1452,6 +1509,447 @@ async function setOverrunSound(
     }
   }
 
+  function createWankelTestBuffer() {
+    const sampleRate =
+      ctx.sampleRate;
+
+    const rpm =
+      wankelReferenceRpm;
+
+    const shaftHz =
+      rpm / 60;
+
+    const rotorFireHz =
+      shaftHz * 2;
+
+    const brapHz =
+      4.42;
+
+    // Ganze Anzahl BRAP-Zyklen für sauberen Loop.
+    const cycles =
+      18;
+
+    const duration =
+      cycles / brapHz;
+
+    const length =
+      Math.round(
+        duration * sampleRate
+      );
+
+    const buffer =
+      ctx.createBuffer(
+        2,
+        length,
+        sampleRate
+      );
+
+    const left =
+      buffer.getChannelData(0);
+
+    const right =
+      buffer.getChannelData(1);
+
+    let seed =
+      787;
+
+    const random = () => {
+      seed |= 0;
+      seed =
+        seed + 0x6D2B79F5 | 0;
+
+      let value =
+        Math.imul(
+          seed ^ seed >>> 15,
+          1 | seed
+        );
+
+      value =
+        value +
+        Math.imul(
+          value ^ value >>> 7,
+          61 | value
+        ) ^
+        value;
+
+      return (
+        (
+          value ^
+          value >>> 14
+        ) >>> 0
+      ) / 4294967296;
+    };
+
+    const addTone = (
+      channel,
+      start,
+      frequency,
+      amplitude,
+      decay,
+      phase = 0
+    ) => {
+      const count =
+        Math.min(
+          channel.length - start,
+          Math.ceil(
+            decay *
+            sampleRate *
+            6
+          )
+        );
+
+      const step =
+        Math.PI *
+        2 *
+        frequency /
+        sampleRate;
+
+      for (
+        let n = 0;
+        n < count;
+        n++
+      ) {
+        const time =
+          n /
+          sampleRate;
+
+        channel[start + n] +=
+          Math.sin(
+            step * n +
+            phase
+          ) *
+          Math.exp(
+            -time / decay
+          ) *
+          amplitude;
+      }
+    };
+
+    const addDarkBurst = (
+      channel,
+      start,
+      amplitude,
+      seconds,
+      decay
+    ) => {
+      const count =
+        Math.min(
+          channel.length - start,
+          Math.round(
+            sampleRate *
+            seconds
+          )
+        );
+
+      let smooth =
+        0;
+
+      for (
+        let n = 0;
+        n < count;
+        n++
+      ) {
+        const white =
+          random() * 2 - 1;
+
+        smooth +=
+          (
+            white -
+            smooth
+          ) *
+          0.035;
+
+        channel[start + n] +=
+          smooth *
+          Math.exp(
+            -(
+              n /
+              sampleRate
+            ) /
+            decay
+          ) *
+          amplitude;
+      }
+    };
+
+    // Tiefer Rotor-Motorkern.
+    const rotorInterval =
+      1 /
+      rotorFireHz;
+
+    const rotorEvents =
+      Math.ceil(
+        duration /
+        rotorInterval
+      ) +
+      16;
+
+    for (
+      let event = -8;
+      event < rotorEvents;
+      event++
+    ) {
+      const rotor =
+        (
+          (
+            event % 2
+          ) +
+          2
+        ) %
+        2;
+
+      const start =
+        Math.round(
+          (
+            event *
+            rotorInterval +
+            (
+              random() *
+              2 -
+              1
+            ) *
+            rotorInterval *
+            0.020
+          ) *
+          sampleRate
+        );
+
+      if (
+        start < 0 ||
+        start >= length
+      ) {
+        continue;
+      }
+
+      const side =
+        rotor
+          ? right
+          : left;
+
+      const other =
+        rotor
+          ? left
+          : right;
+
+      const amp =
+        0.39 *
+        (
+          0.90 +
+          random() *
+          0.20
+        );
+
+      addTone(
+        side,
+        start,
+        56 +
+          random() * 5,
+        amp * 0.52,
+        0.105,
+        random() * 0.6
+      );
+
+      addTone(
+        side,
+        start,
+        72 +
+          random() * 8,
+        amp * 0.43,
+        0.078,
+        random() * 0.9
+      );
+
+      addTone(
+        other,
+        start,
+        92 +
+          random() * 7,
+        amp * 0.18,
+        0.052,
+        random() * 1.1
+      );
+    }
+
+    // Separater BRAP-Bus direkt in die Loopdaten.
+    const brapPeriod =
+      1 /
+      brapHz;
+
+    const stumble = [
+       0.00,
+       0.08,
+      -0.03,
+       0.03,
+       0.13,
+      -0.06,
+       0.02,
+      -0.02
+    ];
+
+    const strength = [
+      1.00,
+      0.90,
+      1.08,
+      0.94,
+      0.80,
+      1.10,
+      0.91,
+      1.03
+    ];
+
+    let brapTime =
+      -2 *
+      brapPeriod;
+
+    let brapIndex =
+      0;
+
+    while (
+      brapTime <
+      duration +
+      brapPeriod
+    ) {
+      const phase =
+        (
+          (
+            brapIndex %
+            stumble.length
+          ) +
+          stumble.length
+        ) %
+        stumble.length;
+
+      brapTime +=
+        brapPeriod *
+        Math.max(
+          0.82,
+          1 +
+          stumble[phase] *
+          0.46 +
+          (
+            random() *
+            2 -
+            1
+          ) *
+          0.0046
+        );
+
+      const start =
+        Math.round(
+          brapTime *
+          sampleRate
+        );
+
+      if (
+        start >= 0 &&
+        start < length
+      ) {
+        const edgeAmp =
+          0.47 *
+          strength[phase];
+
+        const tones = [
+          [112, 0.68, 0.045],
+          [170, 0.42, 0.027],
+          [255, 0.26, 0.013],
+          [470, 0.16, 0.007],
+          [740, 0.075, 0.004]
+        ];
+
+        tones.forEach(
+          (
+            [
+              frequency,
+              amount,
+              decay
+            ]
+          ) => {
+            addTone(
+              left,
+              start,
+              frequency +
+                random() *
+                frequency *
+                0.06,
+              edgeAmp *
+                amount,
+              decay,
+              random() *
+                1.4
+            );
+
+            addTone(
+              right,
+              start,
+              frequency *
+                1.018 +
+                random() *
+                frequency *
+                0.06,
+              edgeAmp *
+                amount *
+                0.97,
+              decay,
+              random() *
+                1.4
+            );
+          }
+        );
+
+        addDarkBurst(
+          left,
+          start,
+          edgeAmp * 0.115,
+          0.014,
+          0.0036
+        );
+
+        addDarkBurst(
+          right,
+          start,
+          edgeAmp * 0.110,
+          0.014,
+          0.0036
+        );
+      }
+
+      brapIndex++;
+    }
+
+    // Sanft normalisieren.
+    let peak =
+      0;
+
+    for (
+      let i = 0;
+      i < length;
+      i++
+    ) {
+      peak =
+        Math.max(
+          peak,
+          Math.abs(left[i]),
+          Math.abs(right[i])
+        );
+    }
+
+    const gain =
+      peak > 0
+        ? 0.88 / peak
+        : 1;
+
+    for (
+      let i = 0;
+      i < length;
+      i++
+    ) {
+      left[i] *= gain;
+      right[i] *= gain;
+    }
+
+    return buffer;
+  }
+
   function createOsc(type) {
     const osc =
       ctx.createOscillator();
@@ -1621,6 +2119,45 @@ async function setOverrunSound(
       .connect(ctx.destination);
     overrunBus.connect(loudnessGain);
 
+
+    // =========================
+    // Voltune 6 · Wankel JDM
+    // =========================
+
+    wankelBuffer =
+      createWankelTestBuffer();
+
+    wankelSource =
+      ctx.createBufferSource();
+
+    wankelSource.buffer =
+      wankelBuffer;
+
+    wankelSource.loop =
+      true;
+
+    wankelGain =
+      ctx.createGain();
+
+    wankelGain.gain.value =
+      0.0001;
+
+    wankelFilter =
+      ctx.createBiquadFilter();
+
+    wankelFilter.type =
+      "lowpass";
+
+    wankelFilter.frequency.value =
+      780;
+
+    wankelFilter.Q.value =
+      0.65;
+
+    wankelSource
+      .connect(wankelFilter)
+      .connect(wankelGain)
+      .connect(master);
 
     // =========================
     // Grundsound
@@ -5716,7 +6253,9 @@ const invLevel =
       (
         driveProfile.muscle
           ? 0.25
-          : 1
+          : driveProfile.wankel
+            ? 0.08
+            : 1
       ) *
       (
         speedN * 0.004 +
@@ -5737,6 +6276,111 @@ const invLevel =
       0.1
     );
 
+
+    // =========================
+    // Voltune 6 · Wankel JDM Runtime
+    // =========================
+
+    const wankelActive =
+      Boolean(
+        idleProfile.wankel ||
+        driveProfile.wankel ||
+        accelProfile.wankel ||
+        regenProfile.wankel
+      );
+
+    if (
+      wankelSource &&
+      wankelGain &&
+      wankelFilter
+    ) {
+      if (wankelActive) {
+        const effectiveRpm =
+          Math.max(
+            900,
+            rpm ||
+              (
+                speedKmh < 2
+                  ? wankelReferenceRpm
+                  : wankelReferenceRpm +
+                    speedKmh * 38
+              )
+          );
+
+        const playbackRate =
+          clamp(
+            effectiveRpm /
+            wankelReferenceRpm,
+            0.62,
+            4.6
+          );
+
+        setTarget(
+          wankelSource.playbackRate,
+          playbackRate,
+          0.055
+        );
+
+        const wankelLoad =
+          Math.max(
+            0.10,
+            pos,
+            neg * 0.35
+          );
+
+        const wankelLevel =
+          (
+            baseAmount *
+            (
+              0.095 +
+              driveMix * 0.060
+            ) +
+            driveAmount *
+            pos *
+            0.095 +
+            regenAmount *
+            neg *
+            0.025
+          ) *
+          (
+            1 -
+            cruiseQuiet *
+            cruiseDamping *
+            0.22
+          );
+
+        setTarget(
+          wankelGain.gain,
+          clamp(
+            wankelLevel,
+            0.0001,
+            0.34
+          ),
+          0.060
+        );
+
+        setTarget(
+          wankelFilter.frequency,
+          clamp(
+            720 +
+            playbackRate *
+              180 +
+            wankelLoad *
+              900,
+            620,
+            2600
+          ),
+          0.070
+        );
+
+      } else {
+        setTarget(
+          wankelGain.gain,
+          0.0001,
+          0.080
+        );
+      }
+    }
 
     // =========================
     // Voltune 5 · Muscle Runtime
