@@ -310,7 +310,7 @@
           </div>
           <select id="preset">
             <option value="bigblock">Big Block · tief & schwer</option>
-            <option value="lopey">Lopey Cam · maximal unruhig</option>
+            <option value="lopey">Lopey Cam · dunkler Big Motor</option>
             <option value="modern">Modern Muscle · härter & sauberer</option>
           </select>
         </div>
@@ -493,7 +493,7 @@
       rpm:780,load:12,rough:72,punch:78,exhaust:82,bass:92,intake:34,mechanical:16,seed:454
     },
     lopey:{
-      rpm:720,load:10,rough:94,punch:84,exhaust:88,bass:96,intake:24,mechanical:20,seed:427
+      rpm:680,load:10,rough:90,punch:72,exhaust:96,bass:100,intake:8,mechanical:7,seed:427
     },
     modern:{
       rpm:900,load:16,rough:34,punch:72,exhaust:66,bass:78,intake:50,mechanical:28,seed:502
@@ -517,6 +517,7 @@
 
   function readSettings(){
     return {
+      preset:ui.preset.value,
       rpm:Number(ui.rpm.value),
       load:Number(ui.load.value)/100,
       rough:Number(ui.rough.value)/100,
@@ -578,6 +579,9 @@
     const punch = settings.punch;
     const load = settings.load;
 
+    const lopey =
+      settings.preset === "lopey";
+
     // Tiefer Auspuff-/Sub-Körper.
     // Nicht einfach EQ: Jeder Zündimpuls regt
     // echte tiefe Resonanzen mit längerer Abklingzeit an.
@@ -599,6 +603,27 @@
       bank?0.82:0.22
     );
 
+    if (lopey) {
+      // Breiter "Big Motor"-Körper statt zusätzlicher Höhen.
+      // Liegt absichtlich oberhalb des reinen Subs,
+      // damit er auch auf Kopfhörern und im Auto hörbar bleibt.
+      addDecayingTone(
+        buffer,start,sampleRate,
+        76 + load*12,
+        amp*(0.62+bass*0.28),
+        0.115,
+        bank?0.55:0.18
+      );
+
+      addDecayingTone(
+        buffer,start,sampleRate,
+        112 + exhaust*18,
+        amp*(0.34+exhaust*0.20),
+        0.072,
+        bank?0.96:0.34
+      );
+    }
+
     addDecayingTone(
       buffer,start,sampleRate,
       48 + exhaust*28 + load*10,
@@ -610,7 +635,9 @@
     addDecayingTone(
       buffer,start,sampleRate,
       92 + exhaust*55 + rand()*12,
-      amp*(0.20+punch*0.30),
+      amp*
+        (0.20+punch*0.30)*
+        (lopey ? 0.62 : 1),
       0.028+exhaust*0.024,
       bank?1.2:0.4
     );
@@ -618,7 +645,9 @@
     addDecayingTone(
       buffer,start,sampleRate,
       210 + load*170 + rand()*34,
-      amp*(0.08+punch*0.25+load*0.08),
+      amp*
+        (0.08+punch*0.25+load*0.08)*
+        (lopey ? 0.24 : 1),
       0.014+exhaust*0.012,
       bank?0.3:1.1
     );
@@ -632,7 +661,12 @@
       const t=n/sampleRate;
       const env=Math.exp(-t/(0.0035+punch*0.004));
       const noise=(rand()*2-1);
-      buffer[start+n]+=noise*env*amp*(0.035+punch*0.11);
+      buffer[start+n]+=
+        noise*
+        env*
+        amp*
+        (0.035+punch*0.11)*
+        (lopey ? 0.22 : 1);
     }
   }
 
@@ -776,6 +810,11 @@
       const intakeNoise=
         rand()*2-1;
 
+      const sideDetailScale =
+        settings.preset === "lopey"
+          ? 0.48
+          : 1;
+
       const intake=
         (
           intakeCarrier*0.34+
@@ -783,7 +822,8 @@
           intakeNoise*0.48
         )*
         settings.intake*
-        (0.010+settings.load*0.036);
+        (0.010+settings.load*0.036)*
+        sideDetailScale;
 
       const mech=
         (
@@ -794,19 +834,36 @@
           (rand()*2-1)*0.20
         )*
         settings.mechanical*
-        (0.008+settings.load*0.020);
+        (0.008+settings.load*0.020)*
+        sideDetailScale;
 
       left[i]+=intake+mech;
       right[i]+=intake*0.97+mech*1.03;
     }
 
-    let l=highpassOnePole(left,28,sampleRate);
-    let r=highpassOnePole(right,28,sampleRate);
+    const lopeyRender =
+      settings.preset === "lopey";
+
+    const highpass =
+      lopeyRender
+        ? 22
+        : 28;
+
+    let l=highpassOnePole(left,highpass,sampleRate);
+    let r=highpassOnePole(right,highpass,sampleRate);
 
     const lowpass=
-      1800+
-      settings.load*2600+
-      settings.intake*1600;
+      lopeyRender
+        ? (
+            920+
+            settings.load*900+
+            settings.intake*350
+          )
+        : (
+            1800+
+            settings.load*2600+
+            settings.intake*1600
+          );
 
     l=lowpassOnePole(l,lowpass,sampleRate);
     r=lowpassOnePole(r,lowpass,sampleRate);
