@@ -75,6 +75,20 @@ window.VoltuneAudio = (() => {
         toneDepth: 28,
         gainScale: 0.38,
         sentinel: true
+      }),
+
+      voltune5: Object.freeze({
+        label: "Voltune 5 · Muscle",
+        frequencies: [48, 103, 211],
+        highpass: 32,
+        lowpass: 430,
+        pulseHz: 0.72,
+        pulseDepth: 0.028,
+        textureGain: 0.025,
+        presenceGain: 0.008,
+        toneDepth: 18,
+        gainScale: 0.18,
+        muscle: true
       })
     }),
 
@@ -126,6 +140,19 @@ window.VoltuneAudio = (() => {
         inverterPitchScale: 0.74,
         airScale: 0.10,
         sentinel: true
+      }),
+
+      voltune5: Object.freeze({
+        label: "Voltune 5 · Muscle",
+        frequencyScale: 0.74,
+        harmonicRatio: 1.30,
+        filterScale: 0.58,
+        subScale: 1.35,
+        gainScale: 0.24,
+        inverterScale: 0.05,
+        inverterPitchScale: 0.70,
+        airScale: 0.05,
+        muscle: true
       })
     }),
 
@@ -170,6 +197,17 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.42,
         pulseDepthScale: 0.38,
         sentinel: true
+      }),
+
+      voltune5: Object.freeze({
+        label: "Voltune 5 · Muscle",
+        frequencyScale: 0.66,
+        filterScale: 0.48,
+        speedRiseScale: 0.20,
+        gainScale: 0.18,
+        pulseRateScale: 0.32,
+        pulseDepthScale: 0.25,
+        muscle: true
       })
     }),
 
@@ -214,6 +252,17 @@ window.VoltuneAudio = (() => {
         pulseRateScale: 0.44,
         pulseDepthScale: 0.42,
         sentinel: true
+      }),
+
+      voltune5: Object.freeze({
+        label: "Voltune 5 · Muscle",
+        frequencyScale: 0.62,
+        harmonicRatio: 1.24,
+        filterScale: 0.50,
+        gainScale: 0.16,
+        pulseRateScale: 0.34,
+        pulseDepthScale: 0.26,
+        muscle: true
       })
     })
   });
@@ -319,6 +368,16 @@ window.VoltuneAudio = (() => {
   let sentinelRampActive = false;
 
   let lastSentinelImpulseAt = -9999;
+
+  // Voltune 5 · Muscle
+  // Eigenständiger synthetischer V8-artiger Kern.
+  let muscle1, muscle2, muscle3;
+  let muscleGain1, muscleGain2, muscleGain3;
+  let muscleFilter, muscleBus, muscleDrive;
+  let musclePulseOsc, musclePulseDepth, musclePulseGain;
+  let muscleRumbleOsc, muscleRumbleDepth;
+  let muscleIrregularOsc, muscleIrregularDepth;
+  let muscleLastMode = "off";
 
   let airSource, airGain, airFilter;
   let sharedNoiseBuffer = null;
@@ -673,6 +732,240 @@ window.VoltuneAudio = (() => {
     return (
       sentinelRampPhase *
       depthHz
+    );
+  }
+
+  function updateMuscleMachine({
+    active,
+    mode,
+    rpmN,
+    speedN,
+    load,
+    level,
+    braking = 0
+  }) {
+    if (
+      !muscle1 ||
+      !muscleBus
+    ) {
+      return;
+    }
+
+    if (!active) {
+      muscleLastMode = "off";
+
+      setTarget(
+        muscleBus.gain,
+        0.0001,
+        0.08
+      );
+
+      return;
+    }
+
+    const safeRpmN =
+      clamp(
+        rpmN,
+        0,
+        1.08
+      );
+
+    const safeLoad =
+      clamp(
+        load,
+        0,
+        1
+      );
+
+    const safeBrake =
+      clamp(
+        braking,
+        0,
+        1
+      );
+
+    const idleAmount =
+      1 -
+      clamp(
+        speedN / 0.08,
+        0,
+        1
+      );
+
+    // Kein klassischer sauberer Synth-Grundton:
+    // wir simulieren eine niedrige Verbrennungs-/Abgasfrequenz,
+    // die mit virtueller Drehzahl dichter wird.
+    const firingHz =
+      46 +
+      safeRpmN * 245 +
+      safeLoad * 24;
+
+    // Sehr kleine Verstimmungen sorgen für das
+    // "unsaubere" Zusammenlaufen der Zylindergruppen.
+    const irregularity =
+      1 +
+      idleAmount * 0.020 +
+      safeLoad * 0.006;
+
+    setTarget(
+      muscle1.frequency,
+      firingHz,
+      0.035
+    );
+
+    setTarget(
+      muscle2.frequency,
+      firingHz *
+        (
+          0.502 *
+          irregularity
+        ),
+      0.045
+    );
+
+    setTarget(
+      muscle3.frequency,
+      firingHz *
+        (
+          1.49 -
+          idleAmount * 0.018
+        ),
+      0.045
+    );
+
+    // Im Leerlauf viel Körper und deutliches Blubbern.
+    // Unter Last wird der Klang härter und obertonreicher.
+    setTarget(
+      muscleGain1.gain,
+      0.46 +
+        idleAmount * 0.20 +
+        safeLoad * 0.10,
+      0.06
+    );
+
+    setTarget(
+      muscleGain2.gain,
+      0.38 +
+        idleAmount * 0.22 -
+        safeLoad * 0.08,
+      0.06
+    );
+
+    setTarget(
+      muscleGain3.gain,
+      0.10 +
+        safeLoad * 0.24 +
+        safeRpmN * 0.10,
+      0.06
+    );
+
+    // Dumpf im Stand, unter Last öffnet sich der Auspuffcharakter.
+    setTarget(
+      muscleFilter.frequency,
+      330 +
+        safeRpmN * 980 +
+        safeLoad * 620 -
+        safeBrake * 180,
+      0.065
+    );
+
+    // Sättigung: mehr Gas = rauer.
+    setTarget(
+      muscleDrive.gain,
+      0.82 +
+        safeLoad * 0.48 +
+        safeRpmN * 0.12,
+      0.05
+    );
+
+    // Der eigentliche "Blubber"-Puls.
+    // Leerlauf bewusst langsam und stark,
+    // mit steigender Drehzahl dichter und etwas flacher.
+    const pulseHz =
+      4.4 +
+      safeRpmN * 20 +
+      safeLoad * 5.5;
+
+    setTarget(
+      musclePulseOsc.frequency,
+      pulseHz,
+      0.08
+    );
+
+    const pulseDepth =
+      clamp(
+        0.30 -
+          safeRpmN * 0.15 +
+          idleAmount * 0.13 +
+          safeBrake * 0.06,
+        0.10,
+        0.43
+      );
+
+    setTarget(
+      musclePulseGain.gain,
+      1 - pulseDepth,
+      0.08
+    );
+
+    setTarget(
+      musclePulseDepth.gain,
+      pulseDepth,
+      0.08
+    );
+
+    // Langsame "Nockenwellen"-Unruhe.
+    // Zwei nicht zueinander passende Modulatoren,
+    // damit der Idle nicht periodisch sauber klingt.
+    setTarget(
+      muscleRumbleOsc.frequency,
+      0.83 +
+        safeRpmN * 0.75,
+      0.10
+    );
+
+    setTarget(
+      muscleRumbleDepth.gain,
+      idleAmount *
+        7.5 +
+        safeBrake * 2.0,
+      0.10
+    );
+
+    setTarget(
+      muscleIrregularOsc.frequency,
+      1.37 +
+        safeRpmN * 1.15,
+      0.10
+    );
+
+    setTarget(
+      muscleIrregularDepth.gain,
+      idleAmount *
+        5.0 +
+        safeLoad * 1.8,
+      0.10
+    );
+
+    // Reku/Schubbetrieb: etwas dumpferes Brabbeln,
+    // nicht wie ein elektrischer Generator.
+    const modeScale =
+      mode === "regen"
+        ? 0.82
+        : mode === "idle"
+          ? 0.94
+          : 1;
+
+    muscleLastMode =
+      mode;
+
+    setTarget(
+      muscleBus.gain,
+      Math.max(
+        0.0001,
+        level * modeScale
+      ),
+      0.065
     );
   }
 
@@ -1529,6 +1822,137 @@ async function setOverrunSound(
 
 
     // =========================
+    // Voltune 5 · Muscle Core
+    // =========================
+
+    muscle1 =
+      createOsc("sawtooth");
+
+    muscle2 =
+      createOsc("triangle");
+
+    muscle3 =
+      createOsc("square");
+
+    muscleGain1 =
+      ctx.createGain();
+
+    muscleGain2 =
+      ctx.createGain();
+
+    muscleGain3 =
+      ctx.createGain();
+
+    muscleGain1.gain.value =
+      0.0001;
+
+    muscleGain2.gain.value =
+      0.0001;
+
+    muscleGain3.gain.value =
+      0.0001;
+
+    muscleFilter =
+      ctx.createBiquadFilter();
+
+    muscleFilter.type =
+      "lowpass";
+
+    muscleFilter.frequency.value =
+      520;
+
+    muscleFilter.Q.value =
+      0.72;
+
+    muscleDrive =
+      ctx.createGain();
+
+    muscleDrive.gain.value =
+      0.9;
+
+    musclePulseGain =
+      ctx.createGain();
+
+    musclePulseGain.gain.value =
+      0.72;
+
+    muscleBus =
+      ctx.createGain();
+
+    muscleBus.gain.value =
+      0.0001;
+
+    muscle1
+      .connect(muscleGain1)
+      .connect(muscleFilter);
+
+    muscle2
+      .connect(muscleGain2)
+      .connect(muscleFilter);
+
+    muscle3
+      .connect(muscleGain3)
+      .connect(muscleFilter);
+
+    muscleFilter
+      .connect(muscleDrive)
+      .connect(musclePulseGain)
+      .connect(muscleBus)
+      .connect(master);
+
+    musclePulseOsc =
+      createOsc("triangle");
+
+    musclePulseOsc.frequency.value =
+      4.5;
+
+    musclePulseDepth =
+      ctx.createGain();
+
+    musclePulseDepth.gain.value =
+      0.28;
+
+    musclePulseOsc
+      .connect(musclePulseDepth)
+      .connect(musclePulseGain.gain);
+
+    // Beide LFOs modulieren leicht unterschiedliche
+    // Stellen. Das erzeugt das "unsaubere" Blubbern,
+    // ohne Zufallsklicks oder Rauschen.
+    muscleRumbleOsc =
+      createOsc("sine");
+
+    muscleRumbleOsc.frequency.value =
+      0.83;
+
+    muscleRumbleDepth =
+      ctx.createGain();
+
+    muscleRumbleDepth.gain.value =
+      6;
+
+    muscleRumbleOsc
+      .connect(muscleRumbleDepth)
+      .connect(muscle1.frequency);
+
+    muscleIrregularOsc =
+      createOsc("sine");
+
+    muscleIrregularOsc.frequency.value =
+      1.37;
+
+    muscleIrregularDepth =
+      ctx.createGain();
+
+    muscleIrregularDepth.gain.value =
+      4;
+
+    muscleIrregularOsc
+      .connect(muscleIrregularDepth)
+      .connect(muscle2.frequency);
+
+
+    // =========================
     // Voltune 4 · Sentinel Core
     // =========================
 
@@ -1801,7 +2225,13 @@ async function setOverrunSound(
       sentinel2,
       sentinel3,
       sentinelFmOsc,
-      sentinelPulseOsc
+      sentinelPulseOsc,
+      muscle1,
+      muscle2,
+      muscle3,
+      musclePulseOsc,
+      muscleRumbleOsc,
+      muscleIrregularOsc
     ].forEach(osc => osc.start());
 
     [
@@ -5112,6 +5542,11 @@ const invLevel =
       cruiseScale *
       driveProfile.airScale *
       (
+        driveProfile.muscle
+          ? 0.25
+          : 1
+      ) *
+      (
         speedN * 0.004 +
         pos * 0.016 +
         neg * 0.012
@@ -5129,6 +5564,128 @@ const invLevel =
         speedN * 1800,
       0.1
     );
+
+
+    // =========================
+    // Voltune 5 · Muscle Runtime
+    // =========================
+
+    const muscleAccelActive =
+      Boolean(
+        accelProfile.muscle
+      ) &&
+      pos > 0.035;
+
+    const muscleRegenActive =
+      Boolean(
+        regenProfile.muscle
+      ) &&
+      neg > 0.035;
+
+    const muscleIdleActive =
+      !muscleAccelActive &&
+      !muscleRegenActive &&
+      Boolean(
+        idleProfile.muscle
+      ) &&
+      idleMix > 0.30;
+
+    const muscleDriveActive =
+      !muscleAccelActive &&
+      !muscleRegenActive &&
+      !muscleIdleActive &&
+      Boolean(
+        driveProfile.muscle
+      ) &&
+      driveMix > 0.12;
+
+    if (muscleAccelActive) {
+      updateMuscleMachine({
+        active: true,
+        mode: "accel",
+        rpmN,
+        speedN,
+        load: pos,
+        level:
+          driveAmount *
+          (
+            0.050 +
+            pos * 0.155
+          ),
+        braking: 0
+      });
+
+    } else if (muscleRegenActive) {
+      updateMuscleMachine({
+        active: true,
+        mode: "regen",
+        rpmN,
+        speedN,
+        load:
+          Math.max(
+            0.12,
+            pos * 0.25
+          ),
+        level:
+          regenAmount *
+          (
+            0.040 +
+            neg * 0.090
+          ),
+        braking: neg
+      });
+
+    } else if (muscleIdleActive) {
+      updateMuscleMachine({
+        active: true,
+        mode: "idle",
+        rpmN:
+          Math.max(
+            0.06,
+            rpmN
+          ),
+        speedN,
+        load: 0.06,
+        level:
+          baseAmount *
+          idleMix *
+          0.072,
+        braking: 0
+      });
+
+    } else if (muscleDriveActive) {
+      updateMuscleMachine({
+        active: true,
+        mode: "drive",
+        rpmN,
+        speedN,
+        load:
+          Math.max(
+            0.08,
+            pos * 0.55
+          ),
+        level:
+          baseAmount *
+          driveMix *
+          cruiseScale *
+          (
+            0.045 +
+            speedN * 0.032
+          ),
+        braking: 0
+      });
+
+    } else {
+      updateMuscleMachine({
+        active: false,
+        mode: "off",
+        rpmN: 0,
+        speedN: 0,
+        load: 0,
+        level: 0,
+        braking: 0
+      });
+    }
 
 
     // =========================
