@@ -1242,10 +1242,10 @@
     // hörbarer Bridgeport-Puls ca. 4,3-4,6 Hz.
     const brapHz=
       clamp(
-        3.35+
-        shaftHz*0.040,
-        3.5,
-        5.4
+        3.55+
+        shaftHz*0.036,
+        4.0,
+        5.2
       );
 
     const cycleSeconds=
@@ -1548,22 +1548,43 @@
       const pulse=
         Math.exp(
           -brapPhase*
-          7.5
+          8.8
+        );
+
+      // Kleine zweite Schulter im BRAP.
+      // Kein separater Klopfer, sondern nur
+      // eine zweite Verdichtung des Motorbetts.
+      const shoulder=
+        Math.exp(
+          -Math.pow(
+            (
+              brapPhase-
+              0.115
+            )/
+            0.060,
+            2
+          )
         );
 
       const target=
-        0.76+
+        0.60+
         currentBrapGain*
         (
-          0.16+
+          0.22+
           settings.rough*
-          0.11
+          0.15
         )+
         pulse*
         (
-          0.11+
+          0.18+
           settings.punch*
-          0.08
+          0.12
+        )+
+        shoulder*
+        (
+          0.055+
+          settings.exhaust*
+          0.035
         );
 
       brapEnvelope +=
@@ -1571,7 +1592,7 @@
           target-
           brapEnvelope
         )*
-        0.050;
+        0.060;
 
       left[i]*=
         brapEnvelope;
