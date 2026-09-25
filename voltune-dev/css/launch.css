@@ -189,6 +189,48 @@ body.launchModeActive {
   line-height: 1.5;
 }
 
+.launchArmActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.launchTestButton {
+  min-width: 172px;
+  min-height: 62px;
+
+  padding: 0 24px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+
+  color: rgba(247,249,251,.88);
+  background: rgba(255,255,255,.045);
+
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.launchTestButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.28);
+  background: rgba(255,255,255,.075);
+}
+
+.launchTestButton:active {
+  transform: scale(.985);
+}
+
 .launchStartButton {
   min-width: 250px;
   min-height: 62px;
@@ -871,7 +913,8 @@ body.launchModeActive {
     border-left: 0;
   }
 
-  .launchStartButton {
+  .launchStartButton,
+  .launchTestButton {
     min-width: 220px;
   }
 }
