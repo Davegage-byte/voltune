@@ -609,30 +609,24 @@ body.launchModeActive {
 .launchMilestone {
   position: absolute;
   inset: 0;
-  z-index: 7;
 
-  display: grid;
-  place-items: center;
+  /* Hinter der normalen großen Speed-Anzeige */
+  z-index: 4;
 
   overflow: hidden;
   pointer-events: none;
 
   opacity: 0;
-
-  /* Absichtlich transparent:
-     Die laufende Launch-Ansicht bleibt sichtbar. */
   background: transparent;
 }
 
-/* Nur der bekannte Voltune-Energiering.
-   Er liegt hinter der 100/200-Schrift. */
+/* Ausschließlich der bekannte Voltune-Energiering */
 .launchMilestone::after {
   content: "";
 
   position: absolute;
   left: 50%;
   top: 50%;
-  z-index: 0;
 
   width: 48px;
   height: 48px;
@@ -657,7 +651,7 @@ body.launchModeActive {
 .launchMilestone.isFlash {
   animation:
     launchMilestoneVisible
-    1.05s
+    0.96s
     linear
     both;
 }
@@ -670,79 +664,21 @@ body.launchModeActive {
     forwards;
 }
 
-.launchMilestoneText {
-  position: relative;
-  z-index: 1;
-
-  color:
-    rgba(235, 245, 255, 0.98);
-
-  font-size:
-    clamp(30px, 5vw, 58px);
-
-  font-weight: 800;
-
-  letter-spacing:
-    0.16em;
-
-  text-shadow:
-    0 0 14px rgba(170, 215, 255, 0.65),
-    0 0 34px rgba(100, 170, 255, 0.30);
-
-  opacity: 0;
-
-  transform:
-    scale(0.97);
-
-  user-select: none;
-}
-
-.launchMilestone.isFlash
-.launchMilestoneText {
-  animation:
-    launchMilestoneText
-    0.95s
-    ease-out
-    both;
-}
-
 @keyframes launchMilestoneVisible {
   0% {
     opacity: 0;
   }
 
-  4% {
+  3% {
     opacity: 1;
   }
 
-  88% {
+  94% {
     opacity: 1;
   }
 
   100% {
     opacity: 0;
-  }
-}
-
-@keyframes launchMilestoneText {
-  0% {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-
-  12% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  76% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: scale(1.02);
   }
 }
 
