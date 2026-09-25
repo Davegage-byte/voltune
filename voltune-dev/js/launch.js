@@ -25,6 +25,7 @@ window.VoltuneLaunch = (() => {
   let resultStage = null;
   let closeButton = null;
   let startButton = null;
+  let testButton = null;
   let muteButton = null;
   let gpsState = null;
   let countNumber = null;
@@ -41,6 +42,9 @@ window.VoltuneLaunch = (() => {
   let latestGps = null;
   let run = null;
   let countdownToken = 0;
+
+  let simulationActive = false;
+  let simulationTimer = null;
 
   let audioContext = null;
   let countdownBuffer = null;
@@ -69,7 +73,10 @@ window.VoltuneLaunch = (() => {
           '<div class="launchEyebrow">VOLTUNE PERFORMANCE</div>',
           '<h2 class="launchArmTitle">LAUNCH</h2>',
           '<p class="launchArmSub">Fünf Sekunden Countdown. Bei GO beginnt die GPS-Messung.</p>',
-          '<button id="launchStartRun" class="launchStartButton" type="button">Launch starten</button>',
+          '<div class="launchArmActions">',
+            '<button id="launchStartRun" class="launchStartButton" type="button">Launch starten</button>',
+            '<button id="launchTestRun" class="launchTestButton" type="button">Launch Test</button>',
+          '</div>',
           '<div id="launchGpsState" class="launchGpsState">GPS wird geprüft …</div>',
         '</div>',
         '<button id="launchMute" class="launchMute" type="button" aria-label="Voltune Ton umschalten" title="Voltune Ton umschalten">🔊</button>',
@@ -173,6 +180,7 @@ window.VoltuneLaunch = (() => {
     resultStage = root.querySelector("#launchResultStage");
     closeButton = root.querySelector("#launchClose");
     startButton = root.querySelector("#launchStartRun");
+    testButton = root.querySelector("#launchTestRun");
     muteButton = root.querySelector("#launchMute");
     gpsState = root.querySelector("#launchGpsState");
     countNumber = root.querySelector("#launchCountNumber");
@@ -182,7 +190,25 @@ window.VoltuneLaunch = (() => {
     chartCanvas = root.querySelector("#launchChart");
 
     closeButton.addEventListener("click", close);
-    startButton.addEventListener("click", startCountdown);
+
+    startButton.addEventListener(
+      "click",
+      () => {
+        stopSimulation();
+        simulationActive = false;
+        startCountdown();
+      }
+    );
+
+    testButton.addEventListener(
+      "click",
+      () => {
+        stopSimulation();
+        simulationActive = true;
+        startCountdown();
+      }
+    );
+
     muteButton.addEventListener("click", toggleMute);
 
     createSpeedLines();
@@ -276,7 +302,7 @@ window.VoltuneLaunch = (() => {
     if (!fresh) {
       startButton.disabled = true;
       gpsState.className = "launchGpsState isWarn";
-      gpsState.textContent = "Warte auf frische GPS-Daten …";
+      gpsState.textContent = "Warte auf frische GPS-Daten · Launch Test jederzeit möglich";
       return;
     }
 
@@ -286,7 +312,7 @@ window.VoltuneLaunch = (() => {
       gpsState.textContent =
         "Für Launch zuerst anhalten · GPS " +
         rate.toFixed(1) +
-        " Hz";
+        " Hz · Launch Test möglich";
       return;
     }
 
@@ -594,12 +620,23 @@ window.VoltuneLaunch = (() => {
   async function startCountdown() {
     if (
       stage !== "arm" ||
-      startButton.disabled
+      (
+        !simulationActive &&
+        startButton.disabled
+      )
     ) {
       return;
     }
 
     await ensureAudioContext();
+
+    if (simulationActive) {
+      latestGps = {
+        speedKmh: 0,
+        timestamp: performance.now(),
+        rateHz: 10
+      };
+    }
 
     const token =
       ++countdownToken;
@@ -634,6 +671,10 @@ window.VoltuneLaunch = (() => {
     // GO ist der absolute Zeitnullpunkt der Messung.
     beginRun();
 
+    if (simulationActive) {
+      startSimulation();
+    }
+
     const valid =
       await showCount(
         "GO",
@@ -654,6 +695,7 @@ window.VoltuneLaunch = (() => {
   function createRunState() {
     return {
       goTime: performance.now(),
+      simulated: simulationActive,
       samples: [],
       previousSample: null,
       lastStationarySample: null,
@@ -973,7 +1015,158 @@ window.VoltuneLaunch = (() => {
     }
   }
 
+  function simulatedSpeedAt(seconds) {
+    const keyframes = [
+      [0.0, 0],
+      [0.4, 0],
+      [0.5, 3],
+      [1.0, 15],
+      [1.5, 29],
+      [2.0, 45],
+      [2.5, 59],
+      [3.0, 72],
+      [3.5, 84],
+      [4.0, 96],
+      [4.2, 101],
+      [5.0, 121],
+      [6.0, 142],
+      [7.0, 159],
+      [8.0, 175],
+      [9.0, 188],
+      [9.8, 198],
+      [10.0, 201],
+      [10.8, 210],
+      [11.4, 216],
+      [12.0, 216],
+      [12.5, 210],
+      [13.0, 203],
+      [13.3, 199],
+      [13.6, 195]
+    ];
+
+    for (
+      let index = 0;
+      index < keyframes.length - 1;
+      index += 1
+    ) {
+      const current =
+        keyframes[index];
+
+      const next =
+        keyframes[index + 1];
+
+      if (seconds <= next[0]) {
+        const duration =
+          next[0] - current[0];
+
+        const progress =
+          duration > 0
+            ? clamp(
+                (
+                  seconds -
+                  current[0]
+                ) /
+                duration,
+                0,
+                1
+              )
+            : 1;
+
+        return (
+          current[1] +
+          (
+            next[1] -
+            current[1]
+          ) *
+          progress
+        );
+      }
+    }
+
+    return keyframes[
+      keyframes.length - 1
+    ][1];
+  }
+
+  function stopSimulation() {
+    if (simulationTimer != null) {
+      window.clearInterval(
+        simulationTimer
+      );
+    }
+
+    simulationTimer = null;
+  }
+
+  function startSimulation() {
+    stopSimulation();
+
+    if (!run) return;
+
+    const simulatedRun =
+      run;
+
+    const emit = () => {
+      if (
+        !simulationActive ||
+        run !== simulatedRun ||
+        run.finished ||
+        (
+          stage !== "countdown" &&
+          stage !== "run"
+        )
+      ) {
+        stopSimulation();
+        return;
+      }
+
+      const now =
+        performance.now();
+
+      const elapsed =
+        Math.max(
+          0,
+          (
+            now -
+            run.goTime
+          ) /
+          1000
+        );
+
+      feedGps({
+        speedKmh:
+          Math.round(
+            simulatedSpeedAt(
+              elapsed
+            )
+          ),
+        timestamp: now,
+        rateHz: 10,
+        simulated: true
+      });
+
+      if (elapsed > 14.5) {
+        stopSimulation();
+      }
+    };
+
+    emit();
+
+    simulationTimer =
+      window.setInterval(
+        emit,
+        100
+      );
+  }
+
   function feedGps(data = {}) {
+    if (
+      simulationActive &&
+      !data.simulated
+    ) {
+      return;
+    }
+
     const speedKmh =
       finite(data.speedKmh)
         ? Math.max(
@@ -1453,12 +1646,20 @@ window.VoltuneLaunch = (() => {
         "#launchResultSub"
       );
 
+    const resultPrefix =
+      run.simulated
+        ? "Testlauf · "
+        : "";
+
     resultSub.textContent =
-      incomplete
-        ? "Run beendet · Zielgeschwindigkeit nicht erreicht"
-        : run.reached200
-          ? "200-km/h-Run abgeschlossen"
-          : "100-km/h-Run abgeschlossen";
+      resultPrefix +
+      (
+        incomplete
+          ? "Run beendet · Zielgeschwindigkeit nicht erreicht"
+          : run.reached200
+            ? "200-km/h-Run abgeschlossen"
+            : "100-km/h-Run abgeschlossen"
+      );
 
     window.requestAnimationFrame(
       () => {
@@ -1478,6 +1679,7 @@ window.VoltuneLaunch = (() => {
     }
 
     run.finished = true;
+    stopSimulation();
     setStage("result");
     populateResult(incomplete);
   }
@@ -1906,6 +2108,8 @@ window.VoltuneLaunch = (() => {
     ensureMarkup();
 
     countdownToken += 1;
+    stopSimulation();
+    simulationActive = false;
     run = null;
 
     launchMuted =
@@ -1976,6 +2180,8 @@ window.VoltuneLaunch = (() => {
     if (!root) return;
 
     countdownToken += 1;
+    stopSimulation();
+    simulationActive = false;
     run = null;
 
     root.classList.remove(
@@ -2020,6 +2226,8 @@ window.VoltuneLaunch = (() => {
       stage,
       muted:
         launchMuted,
+      simulated:
+        simulationActive,
       gps:
         latestGps
           ? { ...latestGps }
