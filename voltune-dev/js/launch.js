@@ -8,7 +8,7 @@ window.VoltuneLaunch = (() => {
 
   // Bei jeder Launch-bezogenen Änderung hochzählen.
   // Die Nummer wird direkt auf dem Launch-Test-Button angezeigt.
-  const LAUNCH_TEST_VERSION = 3;
+  const LAUNCH_TEST_VERSION = 4;
 
   // Vorläufige Fahrzeugdaten für die Leistungsabschätzung.
   // Später können diese Werte als Fahrzeugprofil konfigurierbar werden.
@@ -36,6 +36,10 @@ window.VoltuneLaunch = (() => {
   let speedElement = null;
   let milestone = null;
   let chartCanvas = null;
+  let chartReadout = null;
+
+  let chartSeries = [];
+  let chartSelectedIndex = null;
 
   let stage = "closed";
   let launchMuted = false;
@@ -165,6 +169,15 @@ window.VoltuneLaunch = (() => {
             '<div class="launchChartWrap">',
               '<canvas id="launchChart"></canvas>',
             '</div>',
+            '<div id="launchChartReadout" class="launchChartReadout" aria-live="polite">',
+              '<div class="launchChartReadoutItem"><div class="launchChartReadoutLabel">Zeit</div><div id="launchReadoutTime" class="launchChartReadoutValue">—</div></div>',
+              '<div class="launchChartReadoutItem"><div class="launchChartReadoutLabel">Speed</div><div id="launchReadoutSpeed" class="launchChartReadoutValue">—</div></div>',
+              '<div class="launchChartReadoutItem"><div class="launchChartReadoutLabel">Leistung</div><div id="launchReadoutKw" class="launchChartReadoutValue">—</div></div>',
+              '<div class="launchChartReadoutItem"><div class="launchChartReadoutLabel">Leistung</div><div id="launchReadoutPs" class="launchChartReadoutValue">—</div></div>',
+              '<div class="launchChartReadoutItem"><div class="launchChartReadoutLabel">Beschleunigung</div><div id="launchReadoutG" class="launchChartReadoutValue">—</div></div>',
+              '<div class="launchChartReadoutItem"><div class="launchChartReadoutLabel">Beschleunigung</div><div id="launchReadoutMs2" class="launchChartReadoutValue">—</div></div>',
+            '</div>',
+            '<div class="launchChartHint">Diagramm anklicken oder antippen, um den nächstgelegenen Messpunkt anzuzeigen.</div>',
           '</div>',
 
           '<div class="launchResultFoot">',
@@ -190,6 +203,7 @@ window.VoltuneLaunch = (() => {
     speedElement = root.querySelector("#launchSpeed");
     milestone = root.querySelector("#launchMilestone");
     chartCanvas = root.querySelector("#launchChart");
+    chartReadout = root.querySelector("#launchChartReadout");
 
     closeButton.addEventListener("click", close);
 
@@ -212,6 +226,11 @@ window.VoltuneLaunch = (() => {
     );
 
     muteButton.addEventListener("click", toggleMute);
+
+    chartCanvas.addEventListener(
+      "pointerdown",
+      handleChartPointer
+    );
 
     createSpeedLines();
   }
@@ -1515,6 +1534,15 @@ window.VoltuneLaunch = (() => {
   function populateResult(
     incomplete
   ) {
+    chartSelectedIndex = null;
+    chartSeries = [];
+
+    if (chartReadout) {
+      chartReadout.classList.remove(
+        "isVisible"
+      );
+    }
+
     const series =
       buildPerformanceSeries();
 
@@ -1729,10 +1757,166 @@ window.VoltuneLaunch = (() => {
     };
   }
 
+  function updateChartReadout(point) {
+    if (
+      !chartReadout ||
+      !point
+    ) {
+      return;
+    }
+
+    const powerPs =
+      point.powerKw *
+      1.3596216173;
+
+    root.querySelector(
+      "#launchReadoutTime"
+    ).textContent =
+      point.timeSeconds
+        .toFixed(2)
+        .replace(".", ",") +
+      " s";
+
+    root.querySelector(
+      "#launchReadoutSpeed"
+    ).textContent =
+      Math.round(
+        point.speedKmh
+      ) +
+      " km/h";
+
+    root.querySelector(
+      "#launchReadoutKw"
+    ).textContent =
+      Math.round(
+        point.powerKw
+      ) +
+      " kW";
+
+    root.querySelector(
+      "#launchReadoutPs"
+    ).textContent =
+      Math.round(
+        powerPs
+      ) +
+      " PS";
+
+    root.querySelector(
+      "#launchReadoutG"
+    ).textContent =
+      point.accelerationG
+        .toFixed(2)
+        .replace(".", ",") +
+      " g";
+
+    root.querySelector(
+      "#launchReadoutMs2"
+    ).textContent =
+      point.acceleration
+        .toFixed(2)
+        .replace(".", ",") +
+      " m/s²";
+
+    chartReadout.classList.add(
+      "isVisible"
+    );
+  }
+
+  function handleChartPointer(event) {
+    if (
+      stage !== "result" ||
+      !chartCanvas ||
+      chartSeries.length < 1
+    ) {
+      return;
+    }
+
+    const rect =
+      chartCanvas.getBoundingClientRect();
+
+    const plotLeft = 48;
+    const plotRight = 44;
+
+    const plotWidth =
+      Math.max(
+        1,
+        rect.width -
+        plotLeft -
+        plotRight
+      );
+
+    const x =
+      clamp(
+        event.clientX -
+        rect.left -
+        plotLeft,
+        0,
+        plotWidth
+      );
+
+    const maxTime =
+      Math.max(
+        1,
+        chartSeries[
+          chartSeries.length - 1
+        ].timeSeconds
+      );
+
+    const targetTime =
+      (
+        x /
+        plotWidth
+      ) *
+      maxTime;
+
+    let nearestIndex = 0;
+    let nearestDistance =
+      Infinity;
+
+    chartSeries.forEach(
+      (point, index) => {
+        const distance =
+          Math.abs(
+            point.timeSeconds -
+            targetTime
+          );
+
+        if (
+          distance <
+          nearestDistance
+        ) {
+          nearestDistance =
+            distance;
+
+          nearestIndex =
+            index;
+        }
+      }
+    );
+
+    chartSelectedIndex =
+      nearestIndex;
+
+    updateChartReadout(
+      chartSeries[
+        nearestIndex
+      ]
+    );
+
+    drawResultChart(
+      chartSeries
+    );
+  }
+
   function drawResultChart(series) {
+    chartSeries =
+      Array.isArray(series)
+        ? series
+        : [];
+
     if (
       !chartCanvas ||
-      !series.length
+      !chartSeries.length
     ) {
       return;
     }
@@ -1794,7 +1978,7 @@ window.VoltuneLaunch = (() => {
     const maxTime =
       Math.max(
         1,
-        series[
+        chartSeries[
           series.length - 1
         ].timeSeconds
       );
@@ -1802,7 +1986,7 @@ window.VoltuneLaunch = (() => {
     const maxPower =
       Math.max(
         50,
-        ...series.map(
+        ...chartSeries.map(
           point =>
             point.powerKw
         )
@@ -1811,7 +1995,7 @@ window.VoltuneLaunch = (() => {
     const maxAbsG =
       Math.max(
         0.5,
-        ...series.map(
+        ...chartSeries.map(
           point =>
             Math.abs(
               point.accelerationG
@@ -2044,7 +2228,7 @@ window.VoltuneLaunch = (() => {
     ) {
       context.beginPath();
 
-      series.forEach(
+      chartSeries.forEach(
         (point, index) => {
           const x =
             xForTime(
@@ -2101,6 +2285,85 @@ window.VoltuneLaunch = (() => {
       "rgba(238,243,248,.88)",
       1.7
     );
+
+    if (
+      chartSelectedIndex != null &&
+      chartSeries[
+        chartSelectedIndex
+      ]
+    ) {
+      const selected =
+        chartSeries[
+          chartSelectedIndex
+        ];
+
+      const x =
+        xForTime(
+          selected.timeSeconds
+        );
+
+      const powerY =
+        yForPower(
+          selected.powerKw
+        );
+
+      const accelY =
+        yForG(
+          selected.accelerationG
+        );
+
+      context.save();
+
+      context.strokeStyle =
+        "rgba(255,255,255,.72)";
+
+      context.lineWidth =
+        1 * ratio;
+
+      context.beginPath();
+      context.moveTo(
+        x,
+        padTop
+      );
+
+      context.lineTo(
+        x,
+        padTop +
+        plotHeight
+      );
+
+      context.stroke();
+
+      context.fillStyle =
+        "rgba(255,105,79,1)";
+
+      context.beginPath();
+      context.arc(
+        x,
+        powerY,
+        4.5 * ratio,
+        0,
+        Math.PI * 2
+      );
+
+      context.fill();
+
+      context.fillStyle =
+        "rgba(238,243,248,1)";
+
+      context.beginPath();
+      context.arc(
+        x,
+        accelY,
+        4.2 * ratio,
+        0,
+        Math.PI * 2
+      );
+
+      context.fill();
+
+      context.restore();
+    }
   }
 
   function open(options = {}) {
@@ -2181,6 +2444,15 @@ window.VoltuneLaunch = (() => {
     countdownToken += 1;
     stopSimulation();
     simulationActive = false;
+    chartSelectedIndex = null;
+    chartSeries = [];
+
+    if (chartReadout) {
+      chartReadout.classList.remove(
+        "isVisible"
+      );
+    }
+
     run = null;
 
     root.classList.remove(
