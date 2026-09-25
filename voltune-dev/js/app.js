@@ -27,7 +27,7 @@
     runStatus:$("runStatus"),
     runStatusText:$("runStatusText"),
 
-    start:$("start"), gps:$("gps"), controller:$("controller"), stop:$("stop"), mute:$("mute"), debug:$("debug"),
+    start:$("start"), gps:$("gps"), controller:$("controller"), stop:$("stop"), mute:$("mute"), launch:$("launch"), debug:$("debug"),
     easyBov:$("easyBov"),
     gears:$("gears"),
     dynamicShift:$("dynamicShift"),
@@ -2355,6 +2355,16 @@ lastTransmissionGear =
       gpsSpeedKmh = data.speedKmh;
       gpsAccel = data.acceleration;
       lastGpsTs = Date.now();
+
+      // Launch Mode bekommt bewusst die ungeglättete GPS-Geschwindigkeit.
+      // Die normale Voltune-Anzeige darf weiterhin separat weich rendern.
+      if (window.VoltuneLaunch) {
+        VoltuneLaunch.feedGps({
+          speedKmh: Number(data.rawSpeedKmh ?? data.speedKmh ?? 0),
+          timestamp: Number(data.timestamp ?? performance.now()),
+          rateHz: Number(data.rateHz ?? 0)
+        });
+      }
         // Beim allerersten GPS-Wert nicht erst
         // von 0 km/h hochglätten.
           if (!gpsHasRenderValue) {
@@ -3329,6 +3339,81 @@ ui.gps.addEventListener("click", async () => {
       "GPS · warte …"
     );
   }
+});
+
+ui.launch.addEventListener("click", async () => {
+  startupDriveModeClaimed = true;
+
+  const hadActiveAudio =
+    soundActive &&
+    VoltuneAudio.isStarted();
+
+  const wasMuted =
+    hadActiveAudio &&
+    VoltuneAudio.isMuted();
+
+  if (!hadActiveAudio) {
+    if (!await ensureVoltuneAudio()) {
+      return;
+    }
+  }
+
+  if (wasMuted) {
+    VoltuneAudio.setMuted(
+      true,
+      Number(ui.volume.value)
+    );
+  }
+
+  demoActive = false;
+  controllerActive = false;
+  lastState = "idle";
+
+  saveLastDriveMode("gps");
+
+  if (!gpsActive) {
+    VoltuneAudio.resetDrivingState();
+    startGps();
+    dockGpsStartButton();
+    setGpsButtonActive(true);
+    setRunStatus("waiting", "GPS WARTET");
+  }
+
+  VoltuneLaunch.open({
+    initialMuted: VoltuneAudio.isMuted(),
+    gpsReady:
+      gpsHasRenderValue &&
+      lastGpsTs != null &&
+      Date.now() - lastGpsTs < 2000,
+    speedKmh: gpsSpeedKmh,
+    rateHz:
+      Number.parseFloat(
+        ui.gpsHz.textContent
+      ) || 0,
+    setMuted: muted => {
+      VoltuneAudio.setMuted(
+        muted,
+        Number(ui.volume.value)
+      );
+
+      ui.mute.textContent =
+        muted
+          ? "Ton an"
+          : "Stumm";
+    },
+    onClose: () => {
+      if (soundActive && gpsActive) {
+        setRunStatus(
+          gpsHasRenderValue
+            ? "active"
+            : "waiting",
+          gpsHasRenderValue
+            ? "GPS AKTIV"
+            : "GPS WARTET"
+        );
+      }
+    }
+  });
 });
 
 ui.controller.addEventListener(
