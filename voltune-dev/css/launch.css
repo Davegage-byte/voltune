@@ -616,11 +616,14 @@ body.launchModeActive {
   overflow: hidden;
   pointer-events: none;
 
-  opacity: 0;
+  /* Der Container selbst bleibt immer neutral.
+     Nur der Ring wird animiert. */
+  opacity: 1;
   background: transparent;
 }
 
-/* Ausschließlich der bekannte Voltune-Energiering */
+/* Eigene Launch-Animation statt der Boot-Keyframes:
+   gleichmäßiger, weniger Compositing-Aufwand, kein sichtbares Abbremsen. */
 .launchMilestone::after {
   content: "";
 
@@ -633,52 +636,54 @@ body.launchModeActive {
 
   border:
     2px solid
-    rgba(190, 225, 255, 0.85);
+    rgba(190, 225, 255, 0.88);
 
   border-radius: 50%;
 
   opacity: 0;
 
   box-shadow:
-    0 0 10px rgba(170, 215, 255, 0.75),
-    0 0 28px rgba(100, 175, 255, 0.45);
+    0 0 10px rgba(170, 215, 255, 0.72),
+    0 0 24px rgba(100, 175, 255, 0.38);
 
   transform:
-    translate(-50%, -50%)
+    translate3d(-50%, -50%, 0)
     scale(0.15);
-}
 
-.launchMilestone.isFlash {
-  animation:
-    launchMilestoneVisible
-    0.96s
-    linear
-    both;
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 .launchMilestone.isFlash::after {
   animation:
-    voltuneStartupRing
-    0.90s
-    ease-out
-    forwards;
+    launchMilestoneRing
+    0.82s
+    linear
+    both;
 }
 
-@keyframes launchMilestoneVisible {
+@keyframes launchMilestoneRing {
   0% {
     opacity: 0;
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(0.15);
   }
 
-  3% {
-    opacity: 1;
+  8% {
+    opacity: 0.95;
   }
 
-  94% {
-    opacity: 1;
+  72% {
+    opacity: 0.82;
   }
 
   100% {
     opacity: 0;
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(30);
   }
 }
 
