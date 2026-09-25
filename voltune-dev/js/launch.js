@@ -658,6 +658,7 @@ window.VoltuneLaunch = (() => {
       previousSample: null,
       lastStationarySample: null,
       movementStartTime: null,
+      movementStartGpsTime: null,
       reactionSeconds: null,
       crossings: {
         50: null,
@@ -805,24 +806,30 @@ window.VoltuneLaunch = (() => {
         0.5;
     }
 
-    estimated -=
-      GPS_START_CORRECTION_MS;
+    // Für reine GPS-Zeitintervalle bleibt der unkorrigierte
+    // GPS-Zeitpunkt erhalten. Dadurch kürzt sich eine konstante
+    // GPS-Latenz bei 0–100, 0–200 usw. automatisch heraus.
+    run.movementStartGpsTime =
+      estimated;
 
-    estimated =
+    const correctedStart =
       clamp(
-        estimated,
+        estimated -
+          GPS_START_CORRECTION_MS,
         run.goTime,
         current.t
       );
 
+    // Nur die Reaktionszeit bezieht GPS auf den lokalen GO-Zeitpunkt
+    // und erhält deshalb die angenommene Startlatenz-Korrektur.
     run.movementStartTime =
-      estimated;
+      correctedStart;
 
     run.reactionSeconds =
       Math.max(
         0,
         (
-          estimated -
+          correctedStart -
           run.goTime
         ) /
         1000
@@ -1254,7 +1261,7 @@ window.VoltuneLaunch = (() => {
   function runTimeTo(threshold) {
     if (
       !run ||
-      run.movementStartTime == null ||
+      run.movementStartGpsTime == null ||
       run.crossings[threshold] == null
     ) {
       return null;
@@ -1264,7 +1271,7 @@ window.VoltuneLaunch = (() => {
       0,
       (
         run.crossings[threshold] -
-        run.movementStartTime
+        run.movementStartGpsTime
       ) /
       1000
     );
