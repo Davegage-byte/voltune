@@ -6,6 +6,10 @@ window.VoltuneLaunch = (() => {
   const NO_START_TIMEOUT_MS = 15000;
   const START_SPEED_EPSILON_KMH = 0.1;
 
+  // Bei jeder Launch-bezogenen Änderung hochzählen.
+  // Die Nummer wird direkt auf dem Launch-Test-Button angezeigt.
+  const LAUNCH_TEST_VERSION = 1;
+
   // Vorläufige Fahrzeugdaten für die Leistungsabschätzung.
   // Später können diese Werte als Fahrzeugprofil konfigurierbar werden.
   const VEHICLE_MASS_KG = 1920;
@@ -75,7 +79,9 @@ window.VoltuneLaunch = (() => {
           '<p class="launchArmSub">Fünf Sekunden Countdown. Bei GO beginnt die GPS-Messung.</p>',
           '<div class="launchArmActions">',
             '<button id="launchStartRun" class="launchStartButton" type="button">Launch starten</button>',
-            '<button id="launchTestRun" class="launchTestButton" type="button">Launch Test</button>',
+            '<button id="launchTestRun" class="launchTestButton" type="button">Launch Test ' +
+            String(LAUNCH_TEST_VERSION).padStart(3, "0") +
+          '</button>',
           '</div>',
           '<div id="launchGpsState" class="launchGpsState">GPS wird geprüft …</div>',
         '</div>',
