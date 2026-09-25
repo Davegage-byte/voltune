@@ -694,7 +694,7 @@ body.launchModeActive {
 .launchMilestone.isFlash::after {
   animation:
     launchMilestoneRing
-    0.82s
+    0.58s
     linear
     both;
 }
@@ -707,12 +707,12 @@ body.launchModeActive {
       scale(0.15);
   }
 
-  8% {
-    opacity: 0.95;
+  6% {
+    opacity: 0.98;
   }
 
-  72% {
-    opacity: 0.82;
+  58% {
+    opacity: 0.78;
   }
 
   100% {
