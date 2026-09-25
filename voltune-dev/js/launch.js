@@ -582,7 +582,7 @@ window.VoltuneLaunch = (() => {
     void playCountdownAudio(isGo);
 
     await wait(
-      isGo ? 760 : 900
+      isGo ? 360 : 1000
     );
 
     return (
@@ -677,6 +677,30 @@ window.VoltuneLaunch = (() => {
   function beginRun() {
     run =
       createRunState();
+
+    const armedRun = run;
+
+    // Sicherheitsnetz: Sollte GPS während des Runs komplett ausfallen,
+    // bleibt der Vollbildmodus nicht dauerhaft hängen.
+    window.setTimeout(
+      () => {
+        if (
+          run === armedRun &&
+          !run.finished &&
+          (
+            stage === "countdown" ||
+            stage === "run"
+          )
+        ) {
+          run = null;
+          setStage("arm");
+          gpsState.className = "launchGpsState isWarn";
+          gpsState.textContent = "Run abgebrochen · GPS prüfen";
+          updateArmState();
+        }
+      },
+      60000
+    );
 
     speedElement.textContent = "0";
 
@@ -2030,7 +2054,7 @@ window.VoltuneLaunch = (() => {
       if (
         stage === "result" &&
         run &&
-        !run.finished === false
+        run.finished
       ) {
         drawResultChart(
           buildPerformanceSeries()
