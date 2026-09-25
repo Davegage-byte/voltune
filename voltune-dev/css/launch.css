@@ -619,52 +619,20 @@ body.launchModeActive {
 
   opacity: 0;
 
-  background:
-    rgba(5, 7, 10, 0.92);
-
-  backdrop-filter:
-    blur(16px);
-
-  -webkit-backdrop-filter:
-    blur(16px);
+  /* Absichtlich transparent:
+     Die laufende Launch-Ansicht bleibt sichtbar. */
+  background: transparent;
 }
 
-/* Gleicher zentraler Glow wie beim Voltune-Intro */
-.launchMilestone::before {
-  content: "";
-
-  position: absolute;
-  left: 50%;
-  top: 50%;
-
-  width: 100px;
-  height: 100px;
-
-  border-radius: 50%;
-
-  opacity: 0;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(190, 225, 255, 0.32) 0%,
-      rgba(120, 190, 255, 0.16) 32%,
-      rgba(80, 150, 255, 0.06) 52%,
-      rgba(80, 150, 255, 0) 72%
-    );
-
-  transform:
-    translate(-50%, -50%)
-    scale(0.2);
-}
-
-/* Gleicher expandierender Energiering wie beim Voltune-Intro */
+/* Nur der bekannte Voltune-Energiering.
+   Er liegt hinter der 100/200-Schrift. */
 .launchMilestone::after {
   content: "";
 
   position: absolute;
   left: 50%;
   top: 50%;
+  z-index: 0;
 
   width: 48px;
   height: 48px;
@@ -688,18 +656,10 @@ body.launchModeActive {
 
 .launchMilestone.isFlash {
   animation:
-    launchMilestoneOverlay
-    1.38s
-    ease
+    launchMilestoneVisible
+    1.05s
+    linear
     both;
-}
-
-.launchMilestone.isFlash::before {
-  animation:
-    voltuneStartupGlow
-    0.85s
-    ease-out
-    forwards;
 }
 
 .launchMilestone.isFlash::after {
@@ -707,7 +667,6 @@ body.launchModeActive {
     voltuneStartupRing
     0.90s
     ease-out
-    0.22s
     forwards;
 }
 
@@ -721,7 +680,7 @@ body.launchModeActive {
   font-size:
     clamp(30px, 5vw, 58px);
 
-  font-weight: 700;
+  font-weight: 800;
 
   letter-spacing:
     0.16em;
@@ -733,7 +692,7 @@ body.launchModeActive {
   opacity: 0;
 
   transform:
-    scale(0.94);
+    scale(0.97);
 
   user-select: none;
 }
@@ -741,28 +700,49 @@ body.launchModeActive {
 .launchMilestone.isFlash
 .launchMilestoneText {
   animation:
-    voltuneStartupLogo
-    1.15s
-    ease
-    0.16s
-    forwards;
+    launchMilestoneText
+    0.95s
+    ease-out
+    both;
 }
 
-@keyframes launchMilestoneOverlay {
+@keyframes launchMilestoneVisible {
   0% {
     opacity: 0;
   }
 
-  8% {
+  4% {
     opacity: 1;
   }
 
-  70% {
+  88% {
     opacity: 1;
   }
 
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes launchMilestoneText {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  12% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  76% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
   }
 }
 
