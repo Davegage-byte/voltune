@@ -8,7 +8,7 @@ window.VoltuneLaunch = (() => {
 
   // Bei jeder Launch-bezogenen Änderung hochzählen.
   // Die Nummer wird direkt auf dem Launch-Test-Button angezeigt.
-  const LAUNCH_TEST_VERSION = 7;
+  const LAUNCH_TEST_VERSION = 8;
 
   // Vorläufige Fahrzeugdaten für die Leistungsabschätzung.
   // Später können diese Werte als Fahrzeugprofil konfigurierbar werden.
@@ -939,6 +939,9 @@ window.VoltuneLaunch = (() => {
 
   function flashMilestone(value) {
     if (!milestone) return;
+
+    // Aktuellen GO-Beep auch bei 100 und 200 km/h verwenden.
+    void playSyntheticCount(true);
 
     milestone.classList.remove(
       "isFlash"
