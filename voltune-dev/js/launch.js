@@ -8,7 +8,7 @@ window.VoltuneLaunch = (() => {
 
   // Bei jeder Launch-bezogenen Änderung hochzählen.
   // Die Nummer wird direkt auf dem Launch-Test-Button angezeigt.
-  const LAUNCH_TEST_VERSION = 4;
+  const LAUNCH_TEST_VERSION = 5;
 
   // Vorläufige Fahrzeugdaten für die Leistungsabschätzung.
   // Später können diese Werte als Fahrzeugprofil konfigurierbar werden.
