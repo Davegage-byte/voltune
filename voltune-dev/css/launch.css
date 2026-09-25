@@ -1,0 +1,890 @@
+/* =========================================================
+   Voltune Launch Mode
+   Vollbild-Overlay für Countdown, Performance-Run und Result
+   ========================================================= */
+
+body.launchModeActive {
+  overflow: hidden;
+}
+
+#launch {
+  border-color: rgba(255, 102, 64, 0.48);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 82, 52, 0.15),
+      rgba(255, 82, 52, 0.06)
+    );
+}
+
+#launch:hover {
+  border-color: rgba(255, 116, 82, 0.72);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 82, 52, 0.22),
+      rgba(255, 82, 52, 0.10)
+    );
+}
+
+.voltuneLaunch {
+  --launch-bg: #050608;
+  --launch-panel: rgba(15, 18, 23, 0.90);
+  --launch-line: rgba(255, 255, 255, 0.10);
+  --launch-muted: rgba(238, 243, 248, 0.58);
+  --launch-text: #f7f9fb;
+  --launch-hot: #ff4938;
+  --launch-hot-2: #ff8a22;
+
+  position: fixed;
+  inset: 0;
+  z-index: 18000;
+
+  display: none;
+  overflow: hidden;
+
+  color: var(--launch-text);
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(255, 73, 56, 0.11),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      #080a0d 0%,
+      var(--launch-bg) 100%
+    );
+
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.voltuneLaunch.isOpen {
+  display: block;
+}
+
+.voltuneLaunch *,
+.voltuneLaunch *::before,
+.voltuneLaunch *::after {
+  box-sizing: border-box;
+}
+
+.launchNoise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,.10) 0 1px,
+      transparent 1px 3px
+    );
+  mix-blend-mode: screen;
+}
+
+.launchStage {
+  position: absolute;
+  inset: 0;
+
+  display: grid;
+  place-items: center;
+
+  padding:
+    max(24px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(1.015);
+
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 220ms linear;
+}
+
+.launchStage.isActive {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.launchEyebrow {
+  margin-bottom: 12px;
+
+  color: var(--launch-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+}
+
+.launchClose {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  right: max(18px, env(safe-area-inset-right));
+  z-index: 8;
+
+  width: 46px;
+  height: 46px;
+  min-height: 0;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  border: 1px solid var(--launch-line);
+  border-radius: 50%;
+
+  color: var(--launch-text);
+  background: rgba(255,255,255,.045);
+
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.launchClose:hover {
+  background: rgba(255,255,255,.09);
+}
+
+.launchClose[hidden] {
+  display: none;
+}
+
+/* ---------- Vor dem Countdown ---------- */
+
+.launchArmContent {
+  width: min(660px, 92vw);
+  text-align: center;
+}
+
+.launchArmTitle {
+  margin: 0;
+
+  font-size: clamp(54px, 10vw, 104px);
+  font-weight: 900;
+  line-height: .90;
+  letter-spacing: -.065em;
+}
+
+.launchArmSub {
+  max-width: 540px;
+  margin: 18px auto 30px;
+
+  color: var(--launch-muted);
+  font-size: clamp(14px, 1.8vw, 18px);
+  line-height: 1.5;
+}
+
+.launchStartButton {
+  min-width: 250px;
+  min-height: 62px;
+
+  padding: 0 36px;
+  border: 1px solid rgba(255, 107, 73, .48);
+  border-radius: 999px;
+
+  color: #fff;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 73, 56, .25),
+      rgba(255, 73, 56, .10)
+    );
+
+  font-size: 17px;
+  font-weight: 850;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.launchStartButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(255, 120, 89, .82);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 73, 56, .35),
+      rgba(255, 73, 56, .14)
+    );
+}
+
+.launchStartButton:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+.launchStartButton:disabled {
+  opacity: .44;
+  cursor: default;
+}
+
+.launchGpsState {
+  min-height: 20px;
+  margin-top: 16px;
+
+  color: var(--launch-muted);
+  font-size: 12px;
+  letter-spacing: .05em;
+}
+
+.launchGpsState.isReady {
+  color: rgba(154, 235, 179, .92);
+}
+
+.launchGpsState.isWarn {
+  color: rgba(255, 204, 112, .95);
+}
+
+.launchMute {
+  position: absolute;
+  left: max(22px, env(safe-area-inset-left));
+  bottom: max(22px, env(safe-area-inset-bottom));
+
+  width: 56px;
+  height: 56px;
+  min-height: 0;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  border: 1px solid var(--launch-line);
+  border-radius: 13px;
+
+  color: #fff;
+  background: rgba(255,255,255,.05);
+
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.launchMute.isMuted {
+  background: rgba(255, 73, 56, .10);
+  border-color: rgba(255, 100, 76, .36);
+}
+
+/* ---------- Countdown ---------- */
+
+.launchCountdownStage {
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 73, 56, .15),
+      transparent 35%
+    ),
+    #050608;
+}
+
+.launchCount {
+  color: #fff;
+
+  font-size: clamp(145px, 35vw, 380px);
+  font-weight: 950;
+  line-height: .78;
+  letter-spacing: -.085em;
+
+  opacity: 0;
+  transform: scale(.62);
+
+  text-shadow:
+    0 0 55px rgba(255, 73, 56, .34);
+}
+
+.launchCount.isPop {
+  animation:
+    launchCountPop 760ms
+    cubic-bezier(.20,.84,.22,1)
+    both;
+}
+
+.launchCount.isGo {
+  text-shadow:
+    0 0 34px rgba(255, 73, 56, .88),
+    0 0 100px rgba(255, 73, 56, .52);
+}
+
+@keyframes launchCountPop {
+  0% {
+    opacity: 0;
+    transform: scale(.54);
+    filter: blur(10px);
+  }
+
+  18% {
+    opacity: 1;
+    transform: scale(1.07);
+    filter: blur(0);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.20);
+    filter: blur(3px);
+  }
+}
+
+/* ---------- Aktiver Run ---------- */
+
+.launchRunStage {
+  background: #050608;
+}
+
+.launchSpeedTunnel {
+  position: absolute;
+  inset: -28%;
+
+  opacity: 0;
+
+  background:
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(255,255,255,.95) 0deg .11deg,
+      transparent .11deg 7deg
+    );
+
+  -webkit-mask-image:
+    radial-gradient(
+      circle at center,
+      transparent 0 8%,
+      #000 18% 100%
+    );
+
+  mask-image:
+    radial-gradient(
+      circle at center,
+      transparent 0 8%,
+      #000 18% 100%
+    );
+
+  filter: blur(.35px);
+}
+
+.launchRunStage.isActive .launchSpeedTunnel {
+  opacity: .17;
+  animation:
+    launchTunnel 920ms
+    linear
+    infinite;
+}
+
+@keyframes launchTunnel {
+  from {
+    transform:
+      scale(.58)
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      scale(1.16)
+      rotate(3deg);
+  }
+}
+
+.launchRunPulse {
+  position: absolute;
+  inset: 0;
+
+  opacity: 0;
+
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 21%,
+      rgba(255, 73, 56, .09) 45%,
+      rgba(255, 73, 56, .28) 100%
+    );
+}
+
+.launchRunStage.isActive .launchRunPulse {
+  animation:
+    launchPulse 520ms
+    ease-in-out
+    infinite
+    alternate;
+}
+
+@keyframes launchPulse {
+  from {
+    opacity: .24;
+    transform: scale(.985);
+  }
+
+  to {
+    opacity: .82;
+    transform: scale(1.025);
+  }
+}
+
+.launchSpeedLines {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.launchSpeedLine {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 2px;
+  height: var(--launch-line-length);
+
+  opacity: var(--launch-line-opacity);
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      rgba(255,255,255,.90)
+    );
+
+  transform-origin: 50% 0;
+
+  animation:
+    launchRush
+    var(--launch-line-duration)
+    linear
+    infinite;
+
+  animation-delay:
+    var(--launch-line-delay);
+}
+
+@keyframes launchRush {
+  from {
+    transform:
+      rotate(var(--launch-line-rotation))
+      translateY(35px)
+      scaleY(.15);
+
+    opacity: 0;
+  }
+
+  20% {
+    opacity:
+      var(--launch-line-opacity);
+  }
+
+  to {
+    transform:
+      rotate(var(--launch-line-rotation))
+      translateY(76vh)
+      scaleY(2.25);
+
+    opacity: 0;
+  }
+}
+
+.launchRunTop {
+  position: absolute;
+  top: max(28px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 4;
+
+  transform: translateX(-50%);
+
+  color: rgba(255,255,255,.50);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.launchSpeedWrap {
+  position: relative;
+  z-index: 5;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.launchSpeedLabel {
+  margin-bottom: 8px;
+
+  color: rgba(255,255,255,.52);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .42em;
+  text-transform: uppercase;
+}
+
+.launchSpeed {
+  font-size: clamp(126px, 29vw, 300px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  line-height: .80;
+  letter-spacing: -.085em;
+
+  text-shadow:
+    0 0 54px rgba(255, 73, 56, .23);
+}
+
+.launchSpeedUnit {
+  margin-top: 14px;
+
+  color: rgba(255,255,255,.52);
+  font-size: clamp(13px, 1.8vw, 18px);
+  font-weight: 650;
+  letter-spacing: .30em;
+  text-transform: uppercase;
+}
+
+.launchMilestone {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+
+  display: grid;
+  place-items: center;
+
+  pointer-events: none;
+
+  opacity: 0;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255,255,255,.82) 0,
+      rgba(255, 118, 80, .40) 24%,
+      rgba(255, 73, 56, .14) 48%,
+      transparent 72%
+    );
+}
+
+.launchMilestone.isFlash {
+  animation:
+    launchMilestoneFlash
+    560ms
+    ease-out
+    both;
+}
+
+.launchMilestoneText {
+  padding-top: 34vh;
+
+  color: rgba(255,255,255,.94);
+  font-size: clamp(22px, 4vw, 42px);
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+
+@keyframes launchMilestoneFlash {
+  0% {
+    opacity: 0;
+    transform: scale(.93);
+  }
+
+  15% {
+    opacity: .95;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+}
+
+/* ---------- Result ---------- */
+
+.launchResultStage {
+  align-items: start;
+  overflow-y: auto;
+
+  background:
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(255, 73, 56, .12),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      #080a0d 0%,
+      #030405 100%
+    );
+}
+
+.launchResultCard {
+  width: min(900px, 94vw);
+  margin: max(22px, env(safe-area-inset-top)) auto max(30px, env(safe-area-inset-bottom));
+
+  padding: clamp(25px, 4.2vw, 46px);
+
+  border: 1px solid var(--launch-line);
+  border-radius: 28px;
+
+  background: var(--launch-panel);
+  backdrop-filter: blur(18px);
+}
+
+.launchResultTitle {
+  margin: 0 0 7px;
+
+  font-size: clamp(34px, 6vw, 58px);
+  font-weight: 900;
+  line-height: .95;
+  letter-spacing: -.05em;
+}
+
+.launchResultSub {
+  margin-bottom: 28px;
+  color: var(--launch-muted);
+  font-size: 14px;
+}
+
+.launchHero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 26px;
+
+  padding: 24px 0;
+
+  border-top: 1px solid var(--launch-line);
+  border-bottom: 1px solid var(--launch-line);
+}
+
+.launchMetricLabel {
+  color: var(--launch-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.launchHeroValue {
+  font-size: clamp(48px, 9vw, 82px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  line-height: .85;
+  letter-spacing: -.06em;
+  white-space: nowrap;
+}
+
+.launchHeroValue small {
+  margin-left: 7px;
+  color: var(--launch-muted);
+  font-size: .26em;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.launchMetrics {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  margin-bottom: 28px;
+}
+
+.launchMetric {
+  min-width: 0;
+  padding: 19px 18px 18px 0;
+  border-bottom: 1px solid var(--launch-line);
+}
+
+.launchMetric:nth-child(3n + 2),
+.launchMetric:nth-child(3n + 3) {
+  padding-left: 18px;
+  border-left: 1px solid var(--launch-line);
+}
+
+.launchMetricValue {
+  margin-top: 6px;
+
+  font-size: clamp(25px, 4vw, 38px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 820;
+  letter-spacing: -.035em;
+  white-space: nowrap;
+}
+
+.launchMetricValue small {
+  margin-left: 4px;
+  color: var(--launch-muted);
+  font-size: .46em;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.launchPowerMetric .launchMetricValue {
+  color: #fff;
+}
+
+.launchChartSection {
+  padding-top: 6px;
+}
+
+.launchChartHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  margin-bottom: 10px;
+}
+
+.launchChartTitle {
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.launchChartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 13px;
+
+  color: var(--launch-muted);
+  font-size: 11px;
+}
+
+.launchLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.launchLegendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.launchLegendPower {
+  background: #ff694f;
+}
+
+.launchLegendAccel {
+  background: #eef3f8;
+}
+
+.launchChartWrap {
+  width: 100%;
+  height: clamp(220px, 32vw, 330px);
+
+  overflow: hidden;
+
+  border: 1px solid var(--launch-line);
+  border-radius: 18px;
+
+  background:
+    rgba(255,255,255,.025);
+}
+
+#launchChart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.launchResultFoot {
+  margin-top: 14px;
+
+  color: rgba(255,255,255,.34);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: .08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .launchMetrics {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .launchMetric:nth-child(n) {
+    padding:
+      17px
+      14px
+      17px
+      0;
+
+    border-left: 0;
+  }
+
+  .launchMetric:nth-child(even) {
+    padding-left: 14px;
+    border-left:
+      1px solid
+      var(--launch-line);
+  }
+
+  .launchHero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .launchChartHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .launchChartLegend {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 460px) {
+  .launchResultCard {
+    border-radius: 21px;
+  }
+
+  .launchMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .launchMetric:nth-child(n) {
+    padding: 15px 0;
+    border-left: 0;
+  }
+
+  .launchStartButton {
+    min-width: 220px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launchStage,
+  .launchStartButton {
+    transition: none;
+  }
+
+  .launchRunStage.isActive .launchSpeedTunnel,
+  .launchRunStage.isActive .launchRunPulse,
+  .launchSpeedLine {
+    animation-duration: 1.8s;
+  }
+}
