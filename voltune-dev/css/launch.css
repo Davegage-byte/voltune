@@ -875,7 +875,78 @@ body.launchModeActive {
   display: block;
   width: 100%;
   height: 100%;
+
+  cursor: crosshair;
+  touch-action: manipulation;
 }
+
+.launchChartReadout {
+  display: none;
+
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+
+  gap: 8px;
+
+  margin-top: 10px;
+}
+
+.launchChartReadout.isVisible {
+  display: grid;
+}
+
+.launchChartReadoutItem {
+  min-width: 0;
+
+  padding: 10px 11px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.09);
+
+  border-radius: 12px;
+
+  background:
+    rgba(255,255,255,.035);
+}
+
+.launchChartReadoutLabel {
+  color:
+    var(--launch-muted);
+
+  font-size: 9px;
+  font-weight: 750;
+
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.launchChartReadoutValue {
+  margin-top: 4px;
+
+  font-size:
+    clamp(16px, 2.4vw, 23px);
+
+  font-variant-numeric:
+    tabular-nums;
+
+  font-weight: 820;
+
+  white-space: nowrap;
+}
+
+.launchChartHint {
+  margin-top: 8px;
+
+  color:
+    rgba(255,255,255,.34);
+
+  font-size: 10px;
+  line-height: 1.35;
+
+  text-align: center;
+}
+
 
 .launchResultFoot {
   margin-top: 14px;
@@ -889,6 +960,11 @@ body.launchModeActive {
 }
 
 @media (max-width: 720px) {
+  .launchChartReadout {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
   .launchMetrics {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
@@ -927,6 +1003,11 @@ body.launchModeActive {
 }
 
 @media (max-width: 460px) {
+  .launchChartReadout {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
   .launchResultCard {
     border-radius: 21px;
   }
