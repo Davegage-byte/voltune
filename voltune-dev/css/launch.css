@@ -365,6 +365,42 @@ body.launchModeActive {
     0 0 100px rgba(255, 73, 56, .52);
 }
 
+/* GO schlägt sofort mit voller Sichtbarkeit ein.
+   Kein Fade-In, nur das bisherige weiche Ausblenden bleibt. */
+.launchCount.isPop.isGo {
+  animation:
+    launchCountGo
+    360ms
+    ease-out
+    both;
+}
+
+@keyframes launchCountGo {
+  0% {
+    opacity: 1;
+    transform: scale(1.08);
+    filter: blur(0);
+  }
+
+  52% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  76% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+    filter: blur(7px);
+  }
+}
+
 @keyframes launchCountPop {
   0% {
     opacity: 0;
