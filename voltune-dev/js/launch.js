@@ -8,7 +8,7 @@ window.VoltuneLaunch = (() => {
 
   // Bei jeder Launch-bezogenen Änderung hochzählen.
   // Die Nummer wird direkt auf dem Launch-Test-Button angezeigt.
-  const LAUNCH_TEST_VERSION = 2;
+  const LAUNCH_TEST_VERSION = 3;
 
   // Vorläufige Fahrzeugdaten für die Leistungsabschätzung.
   // Später können diese Werte als Fahrzeugprofil konfigurierbar werden.
@@ -35,7 +35,6 @@ window.VoltuneLaunch = (() => {
   let countNumber = null;
   let speedElement = null;
   let milestone = null;
-  let milestoneText = null;
   let chartCanvas = null;
 
   let stage = "closed";
@@ -102,9 +101,7 @@ window.VoltuneLaunch = (() => {
           '<div id="launchSpeed" class="launchSpeed">0</div>',
           '<div class="launchSpeedUnit">km/h</div>',
         '</div>',
-        '<div id="launchMilestone" class="launchMilestone" aria-hidden="true">',
-          '<div id="launchMilestoneText" class="launchMilestoneText">100 KM/H</div>',
-        '</div>',
+        '<div id="launchMilestone" class="launchMilestone" aria-hidden="true"></div>',
       '</section>',
 
       '<section id="launchResultStage" class="launchStage launchResultStage">',
@@ -192,7 +189,6 @@ window.VoltuneLaunch = (() => {
     countNumber = root.querySelector("#launchCountNumber");
     speedElement = root.querySelector("#launchSpeed");
     milestone = root.querySelector("#launchMilestone");
-    milestoneText = root.querySelector("#launchMilestoneText");
     chartCanvas = root.querySelector("#launchChart");
 
     closeButton.addEventListener("click", close);
@@ -924,9 +920,6 @@ window.VoltuneLaunch = (() => {
 
   function flashMilestone(value) {
     if (!milestone) return;
-
-    milestoneText.textContent =
-      value + " KM/H";
 
     milestone.classList.remove(
       "isFlash"
