@@ -52,6 +52,12 @@ jobs:
           echo "AVEX Abruf nach 3 Versuchen fehlgeschlagen"
           exit 1
 
+      - name: Update Tesla dashboard data
+        shell: bash
+        run: |
+          set -e
+          python update_tesla_dashboard.py
+
       - name: Commit
         shell: bash
         run: |
@@ -60,14 +66,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add avex-data.json avex-history.json
+          git add avex-data.json avex-history.json tesla-dashboard-data.json
 
           if git diff --cached --quiet; then
             echo "Keine Änderungen"
             exit 0
           fi
 
-          git commit -m "Update AVEX"
+          git commit -m "Update AVEX and Tesla dashboard data"
 
           # Falls zwischen Checkout und Push bereits ein anderer Lauf
           # committed hat, zuerst sauber auf den aktuellen Stand setzen.
