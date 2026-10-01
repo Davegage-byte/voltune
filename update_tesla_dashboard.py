@@ -17,8 +17,11 @@ SUPERCHARGERS_URL = "https://raw.githubusercontent.com/Niek/tesla-superchargers/
 NEWS_URL = "https://www.notateslaapp.com/rss"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
-MAX_SUPERCHARGERS = 12
-DATA_VERSION = 4
+# Keep a compact Europe-wide pool so the browser can pick the 12 nearest sites
+# from the user's live GPS position without calling a third-party API client-side.
+EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
+MAX_SUPERCHARGERS = 2500
+DATA_VERSION = 5
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.2"
 
 PUBLIC_PRICE_SOURCES = {
@@ -152,6 +155,12 @@ def fetch_superchargers(now):
             lat = float(location["latitude"])
             lon = float(location["longitude"])
         except (KeyError, TypeError, ValueError):
+            continue
+
+        if not (
+            EUROPE_BOUNDS["min_lat"] <= lat <= EUROPE_BOUNDS["max_lat"]
+            and EUROPE_BOUNDS["min_lon"] <= lon <= EUROPE_BOUNDS["max_lon"]
+        ):
             continue
 
         distance = haversine_km(
