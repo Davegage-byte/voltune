@@ -2,7 +2,9 @@
 
 import json
 import math
+import re
 import urllib.request
+from html import unescape
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
@@ -16,7 +18,13 @@ NEWS_URL = "https://www.notateslaapp.com/rss"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 MAX_SUPERCHARGERS = 12
-USER_AGENT = "Voltune-Tesla-Dashboard/1.0"
+USER_AGENT = "Voltune-Tesla-Dashboard/1.1"
+
+PUBLIC_PRICE_SOURCES = {
+    "Bonn, Germany": "https://ladestau.de/bonn/tesla-am-bonner-bogen-1/",
+    "Frechen, Germany": "https://ladestau.de/frechen/tesla-europaallee-8/",
+    "Kerpen, Germany": "https://ladestau.de/sindorf/tesla-kerpener-strasse-150/",
+}
 
 
 def load_json(path, default):
@@ -87,7 +95,58 @@ def normalize_rates(block):
     }
 
 
-def fetch_superchargers():
+def fetch_public_price(site_name, now):
+    url = PUBLIC_PRICE_SOURCES.get(site_name)
+    if not url:
+        return None
+
+    raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
+    text = unescape(re.sub(r"<[^>]+>", " ", raw))
+    text = " ".join(text.split())
+
+    rates = re.findall(
+        r"DE\*TSL\*[A-Z0-9]+.{0,180}?(\d+[,.]\d+)\s*€\s*/\s*kWh",
+        text,
+        flags=re.I,
+    )
+    if not rates:
+        rates = re.findall(
+            r"Ad-hoc-Preise\s+prüfen.{0,300}?ab\s+(\d+[,.]\d+)\s*€\s*/\s*kWh",
+            text,
+            flags=re.I,
+        )
+
+    parsed = []
+    for value in rates:
+        try:
+            number = float(value.replace(",", "."))
+        except ValueError:
+            continue
+        if 0.05 <= number <= 3:
+            parsed.append(round(number, 4))
+
+    unique = sorted(set(parsed))
+    if not unique:
+        return None
+
+    # Die Tesla-EVSEs eines Standorts sollten denselben veröffentlichten
+    # Ad-hoc-/öffentlichen Tarif tragen. Bei widersprüchlichen Werten
+    # lieber nichts anzeigen als einen falschen Preis auswählen.
+    if len(unique) != 1:
+        return None
+
+    return {
+        "rate": unique[0],
+        "currency": "EUR",
+        "metric": "kWh",
+        "source": "ladestau.de / Mobilithek",
+        "url": url,
+        "checked_at": now.isoformat(timespec="seconds"),
+        "kind": "public",
+    }
+
+
+def fetch_superchargers(now):
     payload = json.loads(download_bytes(SUPERCHARGERS_URL).decode("utf-8"))
     nearby = []
 
@@ -110,6 +169,13 @@ def fetch_superchargers():
         member = normalize_rates(prices.get("member"))
         user = normalize_rates(prices.get("user"))
 
+        public_price = None
+        if site.get("name") in PUBLIC_PRICE_SOURCES:
+            try:
+                public_price = fetch_public_price(site.get("name"), now)
+            except Exception:
+                public_price = None
+
         nearby.append(
             {
                 "id": site_id,
@@ -122,6 +188,7 @@ def fetch_superchargers():
                 "access": site.get("access"),
                 "member_price": member,
                 "other_price": user,
+                "public_price": public_price,
             }
         )
 
@@ -194,7 +261,7 @@ def build_data(old, now):
     }
 
     try:
-        data["superchargers"] = fetch_superchargers()
+        data["superchargers"] = fetch_superchargers(now)
         data["superchargers_updated_at"] = now.isoformat(timespec="seconds")
     except Exception as exc:
         data["errors"]["superchargers"] = str(exc)
