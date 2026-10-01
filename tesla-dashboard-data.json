@@ -1,5 +1,6 @@
 {
-  "checked_at": "2026-10-01T13:42:48+02:00",
+  "data_version": 2,
+  "checked_at": "2026-10-01T13:46:51+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -25,7 +26,8 @@
       "stalls": 28,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "e48748f2-290d-4680-872e-eed3bfceed8e",
@@ -37,7 +39,8 @@
       "stalls": 12,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "955675b5-5546-46cb-8b3e-0c1576632903",
@@ -49,7 +52,8 @@
       "stalls": 20,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "c4852a76-94c4-4bf5-ac22-d768fc0fb359",
@@ -61,7 +65,8 @@
       "stalls": 16,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "1a2ece43-a380-4bde-b7a0-105ebba1c42e",
@@ -73,7 +78,8 @@
       "stalls": 19,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "4bc3d36a-f0f9-4a3c-a785-62fe4daf7b3a",
@@ -85,7 +91,8 @@
       "stalls": 4,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "6c1c7553-32eb-4249-9999-8fdbb3baad5b",
@@ -97,7 +104,8 @@
       "stalls": 40,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "6b56a075-7f71-4c3b-b650-b7f8be1b0d83",
@@ -109,7 +117,8 @@
       "stalls": 8,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "97ec6967-1779-46c8-b7d7-0fa95210fadb",
@@ -121,7 +130,8 @@
       "stalls": 40,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "2b94fda0-67e5-4d2d-bb3a-9df0d9100c04",
@@ -133,7 +143,8 @@
       "stalls": 12,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "4c54cc6c-3215-499b-a06a-29a3487791a9",
@@ -145,7 +156,8 @@
       "stalls": 12,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     },
     {
       "id": "b3f09776-d4e9-478f-ad51-3c99a8ffaae8",
@@ -157,7 +169,8 @@
       "stalls": 20,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "public_price": null
     }
   ],
   "news": [
@@ -203,6 +216,6 @@
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-01T13:42:48+02:00",
-  "news_updated_at": "2026-10-01T13:42:48+02:00"
+  "superchargers_updated_at": "2026-10-01T13:46:51+02:00",
+  "news_updated_at": "2026-10-01T13:46:51+02:00"
 }
