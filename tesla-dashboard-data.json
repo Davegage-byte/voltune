@@ -1,6 +1,6 @@
 {
   "data_version": 5,
-  "checked_at": "2026-10-01T14:13:27+02:00",
+  "checked_at": "2026-10-01T15:04:30+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -10304,6 +10304,6 @@
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-01T14:13:27+02:00",
-  "news_updated_at": "2026-10-01T14:13:27+02:00"
+  "superchargers_updated_at": "2026-10-01T15:04:30+02:00",
+  "news_updated_at": "2026-10-01T15:04:30+02:00"
 }
