@@ -1,6 +1,6 @@
 {
   "data_version": 5,
-  "checked_at": "2026-10-01T20:48:47+02:00",
+  "checked_at": "2026-10-02T00:55:57+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -10263,6 +10263,16 @@
   ],
   "news": [
     {
+      "title": "Tesla Quietly Rolls Out New 'Dynamic Headlight Leveling' to Select Cars",
+      "url": "https://www.notateslaapp.com/news/4757/tesla-quietly-rolls-out-new-dynamic-headlight-leveling-to-select-cars",
+      "published_at": "2026-10-01T23:09:00+02:00"
+    },
+    {
+      "title": "Tesla Updates China-Made Model 3/Y With V2L, Zen Gray, 16\" Screen, and More",
+      "url": "https://www.notateslaapp.com/news/4756/tesla-updates-china-made-model-3y-with-v2l-zen-gray-16-screen-and-more",
+      "published_at": "2026-10-01T21:38:00+02:00"
+    },
+    {
       "title": "Tesla Discontinues White Interior in Some Regions, Replaced With Zen Gray",
       "url": "https://www.notateslaapp.com/news/4755/tesla-discontinues-white-interior-in-some-regions-replaced-with-zen-gray",
       "published_at": "2026-10-01T18:59:00+02:00"
@@ -10291,19 +10301,9 @@
       "title": "Tesla Update 2026.38 Release Notes",
       "url": "https://www.notateslaapp.com/software-updates/version/2026.38/release-notes",
       "published_at": "2026-09-30T07:45:09+02:00"
-    },
-    {
-      "title": "Germany Confirms December EU Vote on Tesla FSD Approval",
-      "url": "https://www.notateslaapp.com/news/4749/germany-says-it-is-open-to-tesla-fsd-approval-confirms-eu-wide-vote-in-december",
-      "published_at": "2026-09-29T21:46:00+02:00"
-    },
-    {
-      "title": "All of Tesla's Robotaxi Markets and Their Actual Sizes",
-      "url": "https://www.notateslaapp.com/news/4748/teslas-active-robotaxi-markets-and-their-sizes",
-      "published_at": "2026-09-29T20:31:00+02:00"
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-01T20:48:47+02:00",
-  "news_updated_at": "2026-10-01T20:48:47+02:00"
+  "superchargers_updated_at": "2026-10-02T00:55:57+02:00",
+  "news_updated_at": "2026-10-02T00:55:57+02:00"
 }
