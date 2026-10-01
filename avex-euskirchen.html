@@ -660,7 +660,7 @@ button,a.button{
                     <div class="empty">Supercharger-Daten werden geladen…</div>
                 </div>
                 <div class="source-note">
-                    ⭐ Favoriten bleiben auf diesem Browser gespeichert. „Tesla/Mitglied“ stammt – sofern verfügbar – aus dem täglich aktualisierten Tesla-App-Datensatz. „Öffentlich“ stammt aus einer separaten öffentlichen Tarifquelle (Mobilithek/ladestau.de). Maßgeblich für deinen Tesla ist immer der Preis im Fahrzeug bzw. in der Tesla-App.
+                    ⭐ Favoriten bleiben auf diesem Browser gespeichert. „Tesla/Mitglied“ stammt – sofern verfügbar – aus dem täglich aktualisierten Tesla-App-Datensatz. „Öffentlich“ stammt aus einer separaten öffentlichen Tarifquelle (Mobilithek/adhoccharging.eu). Maßgeblich für deinen Tesla ist immer der Preis im Fahrzeug bzw. in der Tesla-App.
                 </div>
             </div>
         </section>
@@ -1286,6 +1286,15 @@ document.getElementById("refreshBtn").addEventListener("click", loadAll);
 
 document.getElementById("locationBtn").addEventListener("click", function(){
     const button = this;
+
+    if(distanceOrigin.name === "Mein Standort"){
+        distanceOrigin = Object.assign({}, AVEX_ORIGIN);
+        document.getElementById("originLabel").textContent = "Entfernung ab AVEX Euskirchen";
+        button.textContent = "📍 Mein Standort";
+        renderSuperchargers();
+        return;
+    }
+
     if(!navigator.geolocation){
         button.textContent = "Standort nicht verfügbar";
         return;
@@ -1304,12 +1313,6 @@ document.getElementById("locationBtn").addEventListener("click", function(){
             document.getElementById("originLabel").textContent = "Entfernung ab meinem Standort";
             button.textContent = "📍 AVEX als Start";
             button.disabled = false;
-            button.onclick = function(){
-                distanceOrigin = Object.assign({}, AVEX_ORIGIN);
-                document.getElementById("originLabel").textContent = "Entfernung ab AVEX Euskirchen";
-                renderSuperchargers();
-                location.reload();
-            };
             renderSuperchargers();
         },
         function(){
