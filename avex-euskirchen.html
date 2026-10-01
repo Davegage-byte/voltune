@@ -660,7 +660,7 @@ button,a.button{
                     <div class="empty">Supercharger-Daten werden geladen…</div>
                 </div>
                 <div class="source-note">
-                    ⭐ Favoriten bleiben auf diesem Browser gespeichert. Tesla-/Mitgliedspreise stammen aus einem inoffiziellen, täglich aktualisierten Tesla-App-Datensatz; maßgeblich ist immer der Preis in deinem Fahrzeug bzw. der Tesla-App.
+                    ⭐ Favoriten bleiben auf diesem Browser gespeichert. „Tesla/Mitglied“ stammt – sofern verfügbar – aus dem täglich aktualisierten Tesla-App-Datensatz. „Öffentlich“ stammt aus einer separaten öffentlichen Tarifquelle (Mobilithek/ladestau.de). Maßgeblich für deinen Tesla ist immer der Preis im Fahrzeug bzw. in der Tesla-App.
                 </div>
             </div>
         </section>
@@ -1133,6 +1133,9 @@ function renderSuperchargers(){
 
         const member = formatRate(site.member_price);
         const other = formatRate(site.other_price);
+        const publicRate = site.public_price && Number.isFinite(Number(site.public_price.rate))
+            ? Number(site.public_price.rate).toFixed(2).replace(".", ",") + " €/kWh"
+            : null;
         const lat = Number(site.latitude);
         const lon = Number(site.longitude);
         const maps = "https://www.google.com/maps/search/?api=1&query=" +
@@ -1141,6 +1144,11 @@ function renderSuperchargers(){
         let prices = "";
         if(member){
             prices += '<span class="price-chip"><span>Tesla/Mitglied</span><strong>' + member + '</strong></span>';
+        }
+        if(publicRate){
+            prices += '<span class="price-chip" title="Öffentlicher Tarif aus ' +
+                escapeHtml(site.public_price.source || "externer Quelle") +
+                '"><span>Öffentlich</span><strong>' + publicRate + '</strong></span>';
         }
         if(other){
             prices += '<span class="price-chip"><span>Andere</span><strong>' + other + '</strong></span>';
