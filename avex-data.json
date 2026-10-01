@@ -1,21 +1,21 @@
 {
-  "price": "0,60",
+  "price": "0,54",
   "free": 7,
   "occupied": 1,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-01T08:07:09+02:00",
-  "status_checked_at": "2026-10-01T08:07:09+02:00",
-  "price_changed_at": "2026-10-01T08:07:09+02:00",
-  "updated": "08:07",
-  "checked_at": "2026-10-01T08:07:09+02:00",
+  "price_checked_at": "2026-10-01T13:42:48+02:00",
+  "status_checked_at": "2026-10-01T13:42:48+02:00",
+  "price_changed_at": "2026-10-01T13:42:48+02:00",
+  "updated": "13:42",
+  "checked_at": "2026-10-01T13:42:48+02:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-01T04:30:00+00:00",
-  "price_valid_to": "2026-10-01T07:45:00+00:00",
+  "price_valid_from": "2026-10-01T08:45:00+00:00",
+  "price_valid_to": "2026-10-01T12:15:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-09-30T22:00:00+00:00",
@@ -160,49 +160,49 @@
         "evses": {
           "DE*AVX*E262452": {
             "status": "free",
-            "status_at": "2026-09-30T06:17:00+02:00",
+            "status_at": "2026-10-01T06:15:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-04"
           },
           "DE*AVX*E262430": {
             "status": "free",
-            "status_at": "2026-09-30T06:15:00+02:00",
+            "status_at": "2026-10-01T06:14:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262415": {
             "status": "occupied",
-            "status_at": "2026-10-01T03:41:00+02:00",
+            "status_at": "2026-10-01T07:24:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262427": {
             "status": "free",
-            "status_at": "2026-09-30T06:15:00+02:00",
+            "status_at": "2026-10-01T07:47:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262451": {
             "status": "free",
-            "status_at": "2026-09-30T11:55:00+02:00",
+            "status_at": "2026-10-01T06:15:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-04"
           },
           "DE*AVX*E262426": {
             "status": "free",
-            "status_at": "2026-09-30T06:15:00+02:00",
+            "status_at": "2026-10-01T07:25:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262431": {
             "status": "free",
-            "status_at": "2026-09-30T06:15:00+02:00",
+            "status_at": "2026-10-01T07:23:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262414": {
             "status": "free",
-            "status_at": "2026-09-30T06:15:00+02:00",
+            "status_at": "2026-10-01T06:29:00+02:00",
             "price": 0.53,
             "data_since": "2026-07-03"
           }

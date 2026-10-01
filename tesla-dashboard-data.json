@@ -1,0 +1,208 @@
+{
+  "checked_at": "2026-10-01T13:42:48+02:00",
+  "origin": {
+    "name": "AVEX Euskirchen",
+    "latitude": 50.686726020023045,
+    "longitude": 6.838122769536388
+  },
+  "supercharger_source": {
+    "name": "Niek/tesla-superchargers",
+    "url": "https://github.com/Niek/tesla-superchargers",
+    "note": "Unofficial daily Tesla-app pricing dataset"
+  },
+  "news_source": {
+    "name": "Not a Tesla App",
+    "url": "https://www.notateslaapp.com/"
+  },
+  "superchargers": [
+    {
+      "id": "27a84873-7584-4b02-8c3f-f22818a24f0d",
+      "name": "Erftstadt, Germany",
+      "latitude": 50.796377,
+      "longitude": 6.780047,
+      "distance_km": 12.9,
+      "power_kw": 250,
+      "stalls": 28,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "e48748f2-290d-4680-872e-eed3bfceed8e",
+      "name": "Bonn, Germany",
+      "latitude": 50.718395,
+      "longitude": 7.151974,
+      "distance_km": 22.4,
+      "power_kw": 250,
+      "stalls": 12,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "955675b5-5546-46cb-8b3e-0c1576632903",
+      "name": "Troisdorf, Germany",
+      "latitude": 50.81373,
+      "longitude": 7.107211,
+      "distance_km": 23.6,
+      "power_kw": 250,
+      "stalls": 20,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "c4852a76-94c4-4bf5-ac22-d768fc0fb359",
+      "name": "Frechen, Germany",
+      "latitude": 50.917924,
+      "longitude": 6.83319,
+      "distance_km": 25.7,
+      "power_kw": 250,
+      "stalls": 16,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "1a2ece43-a380-4bde-b7a0-105ebba1c42e",
+      "name": "Kerpen, Germany",
+      "latitude": 50.897865,
+      "longitude": 6.682388,
+      "distance_km": 25.9,
+      "power_kw": 250,
+      "stalls": 19,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "4bc3d36a-f0f9-4a3c-a785-62fe4daf7b3a",
+      "name": "Nürburgring, Germany",
+      "latitude": 50.33102,
+      "longitude": 6.945609,
+      "distance_km": 40.3,
+      "power_kw": 250,
+      "stalls": 4,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "6c1c7553-32eb-4249-9999-8fdbb3baad5b",
+      "name": "Oberhonnefeld, Germany",
+      "latitude": 50.562501,
+      "longitude": 7.525532,
+      "distance_km": 50.4,
+      "power_kw": 250,
+      "stalls": 40,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "6b56a075-7f71-4c3b-b650-b7f8be1b0d83",
+      "name": "Solingen, Germany",
+      "latitude": 51.130132,
+      "longitude": 6.995978,
+      "distance_km": 50.5,
+      "power_kw": 250,
+      "stalls": 8,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "97ec6967-1779-46c8-b7d7-0fa95210fadb",
+      "name": "Hilden, Germany",
+      "latitude": 51.19186,
+      "longitude": 6.93621,
+      "distance_km": 56.6,
+      "power_kw": 250,
+      "stalls": 40,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "2b94fda0-67e5-4d2d-bb3a-9df0d9100c04",
+      "name": "Mogendorf, Germany",
+      "latitude": 50.48272,
+      "longitude": 7.750214,
+      "distance_km": 68.3,
+      "power_kw": 150,
+      "stalls": 12,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "4c54cc6c-3215-499b-a06a-29a3487791a9",
+      "name": "Verviers, Belgium",
+      "latitude": 50.592323,
+      "longitude": 5.848511,
+      "distance_km": 70.6,
+      "power_kw": 250,
+      "stalls": 12,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    },
+    {
+      "id": "b3f09776-d4e9-478f-ad51-3c99a8ffaae8",
+      "name": "Wuppertal, Germany",
+      "latitude": 51.282505,
+      "longitude": 7.256382,
+      "distance_km": 72.4,
+      "power_kw": 250,
+      "stalls": 20,
+      "access": "ACCESS_TYPE_PUBLIC",
+      "member_price": null,
+      "other_price": null
+    }
+  ],
+  "news": [
+    {
+      "title": "Did We Just Figure Out Tesla’s 'Unforgettable' Roadster Surprise?",
+      "url": "https://www.notateslaapp.com/news/4753/did-we-just-figure-out-teslas-unforgettable-roadster-surprise",
+      "published_at": "2026-09-30T21:25:00+02:00"
+    },
+    {
+      "title": "Tesla Adds Supercharger Site Maps to Intel Vehicles With Update 2026.38",
+      "url": "https://www.notateslaapp.com/news/4752/tesla-adds-supercharger-site-maps-to-intel-vehicles-with-update-202638",
+      "published_at": "2026-09-30T18:48:00+02:00"
+    },
+    {
+      "title": "Tesla Shares Q3 2026 Analyst Delivery Consensus",
+      "url": "https://www.notateslaapp.com/news/4751/tesla-shares-q3-2026-analyst-delivery-consensus",
+      "published_at": "2026-09-30T16:40:00+02:00"
+    },
+    {
+      "title": "Tesla Secures $30 Billion in Loans to Fund Future Projects",
+      "url": "https://www.notateslaapp.com/news/4750/tesla-secures-30-billion-in-loans-to-fund-future-projects",
+      "published_at": "2026-09-30T15:35:00+02:00"
+    },
+    {
+      "title": "Tesla Update 2026.38 Release Notes",
+      "url": "https://www.notateslaapp.com/software-updates/version/2026.38/release-notes",
+      "published_at": "2026-09-30T07:45:09+02:00"
+    },
+    {
+      "title": "Germany Confirms December EU Vote on Tesla FSD Approval",
+      "url": "https://www.notateslaapp.com/news/4749/germany-says-it-is-open-to-tesla-fsd-approval-confirms-eu-wide-vote-in-december",
+      "published_at": "2026-09-29T21:46:00+02:00"
+    },
+    {
+      "title": "All of Tesla's Robotaxi Markets and Their Actual Sizes",
+      "url": "https://www.notateslaapp.com/news/4748/teslas-active-robotaxi-markets-and-their-sizes",
+      "published_at": "2026-09-29T20:31:00+02:00"
+    },
+    {
+      "title": "Tesla Wins Approval to Launch FSD (Supervised) in Croatia",
+      "url": "https://www.notateslaapp.com/news/4747/tesla-wins-approval-to-launch-fsd-supervised-in-croatia",
+      "published_at": "2026-09-29T17:21:00+02:00"
+    }
+  ],
+  "errors": {},
+  "superchargers_updated_at": "2026-10-01T13:42:48+02:00",
+  "news_updated_at": "2026-10-01T13:42:48+02:00"
+}
