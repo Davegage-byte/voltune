@@ -18,7 +18,7 @@ NEWS_URL = "https://www.notateslaapp.com/rss"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 MAX_SUPERCHARGERS = 12
-DATA_VERSION = 3
+DATA_VERSION = 4
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.2"
 
 PUBLIC_PRICE_SOURCES = {
@@ -123,8 +123,10 @@ def fetch_public_price(site_name, now):
             break
 
     unique = sorted(set(parsed))
+    if not unique:
+        raise ValueError("no public tariff found in response")
     if len(unique) != 1:
-        return None
+        raise ValueError(f"ambiguous public tariffs: {unique}")
 
     return {
         "rate": unique[0],
@@ -164,7 +166,8 @@ def fetch_superchargers(now):
         if site.get("name") in PUBLIC_PRICE_SOURCES:
             try:
                 public_price = fetch_public_price(site.get("name"), now)
-            except Exception:
+            except Exception as exc:
+                print(f"Public price unavailable for {site.get('name')}: {exc}")
                 public_price = None
 
         nearby.append(
