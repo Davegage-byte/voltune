@@ -1,6 +1,6 @@
 {
   "data_version": 5,
-  "checked_at": "2026-10-01T15:04:30+02:00",
+  "checked_at": "2026-10-01T20:48:47+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -10263,6 +10263,11 @@
   ],
   "news": [
     {
+      "title": "Tesla Discontinues White Interior in Some Regions, Replaced With Zen Gray",
+      "url": "https://www.notateslaapp.com/news/4755/tesla-discontinues-white-interior-in-some-regions-replaced-with-zen-gray",
+      "published_at": "2026-10-01T18:59:00+02:00"
+    },
+    {
       "title": "Did We Just Figure Out Tesla’s 'Unforgettable' Roadster Surprise?",
       "url": "https://www.notateslaapp.com/news/4753/did-we-just-figure-out-teslas-unforgettable-roadster-surprise",
       "published_at": "2026-09-30T21:25:00+02:00"
@@ -10296,14 +10301,9 @@
       "title": "All of Tesla's Robotaxi Markets and Their Actual Sizes",
       "url": "https://www.notateslaapp.com/news/4748/teslas-active-robotaxi-markets-and-their-sizes",
       "published_at": "2026-09-29T20:31:00+02:00"
-    },
-    {
-      "title": "Tesla Wins Approval to Launch FSD (Supervised) in Croatia",
-      "url": "https://www.notateslaapp.com/news/4747/tesla-wins-approval-to-launch-fsd-supervised-in-croatia",
-      "published_at": "2026-09-29T17:21:00+02:00"
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-01T15:04:30+02:00",
-  "news_updated_at": "2026-10-01T15:04:30+02:00"
+  "superchargers_updated_at": "2026-10-01T20:48:47+02:00",
+  "news_updated_at": "2026-10-01T20:48:47+02:00"
 }
