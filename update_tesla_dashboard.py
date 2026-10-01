@@ -18,6 +18,7 @@ NEWS_URL = "https://www.notateslaapp.com/rss"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 MAX_SUPERCHARGERS = 12
+DATA_VERSION = 2
 USER_AGENT = "Voltune-Tesla-Dashboard/1.1"
 
 PUBLIC_PRICE_SOURCES = {
@@ -236,6 +237,7 @@ def build_data(old, now):
     old_checked = timestamp(old.get("checked_at"))
     if (
         old_checked
+        and old.get("data_version") == DATA_VERSION
         and now - old_checked < REFRESH_AFTER
         and old.get("superchargers")
         and old.get("news")
@@ -244,6 +246,7 @@ def build_data(old, now):
         return None
 
     data = {
+        "data_version": DATA_VERSION,
         "checked_at": now.isoformat(timespec="seconds"),
         "origin": AVEX,
         "supercharger_source": {
