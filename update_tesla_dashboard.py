@@ -18,13 +18,13 @@ NEWS_URL = "https://www.notateslaapp.com/rss"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 MAX_SUPERCHARGERS = 12
-DATA_VERSION = 2
-USER_AGENT = "Voltune-Tesla-Dashboard/1.1"
+DATA_VERSION = 3
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.2"
 
 PUBLIC_PRICE_SOURCES = {
-    "Bonn, Germany": "https://ladestau.de/bonn/tesla-am-bonner-bogen-1/",
-    "Frechen, Germany": "https://ladestau.de/frechen/tesla-europaallee-8/",
-    "Kerpen, Germany": "https://ladestau.de/sindorf/tesla-kerpener-strasse-150/",
+    "Bonn, Germany": "https://adhoccharging.eu/de/city/bonn/tesla-am-bonner-bogen-1/",
+    "Frechen, Germany": "https://adhoccharging.eu/de/city/frechen/tesla-europaallee-8/",
+    "Kerpen, Germany": "https://adhoccharging.eu/de/city/sindorf/tesla-kerpener-strasse-150/",
 }
 
 
@@ -105,34 +105,24 @@ def fetch_public_price(site_name, now):
     text = unescape(re.sub(r"<[^>]+>", " ", raw))
     text = " ".join(text.split())
 
-    rates = re.findall(
-        r"DE\*TSL\*[A-Z0-9]+.{0,180}?(\d+[,.]\d+)\s*€\s*/\s*kWh",
-        text,
-        flags=re.I,
+    patterns = (
+        r"Ad-hoc\s+(?:ab|from)\s+€?\s*(\d+[,.]\d+)\s*€?\s*/\s*kWh",
+        r"(?:Energiepreis|Energy rate)\s+(\d+[,.]\d+)\s*EUR\s*/\s*kWh",
     )
-    if not rates:
-        rates = re.findall(
-            r"Ad-hoc-Preise\s+prüfen.{0,300}?ab\s+(\d+[,.]\d+)\s*€\s*/\s*kWh",
-            text,
-            flags=re.I,
-        )
 
     parsed = []
-    for value in rates:
-        try:
-            number = float(value.replace(",", "."))
-        except ValueError:
-            continue
-        if 0.05 <= number <= 3:
-            parsed.append(round(number, 4))
+    for pattern in patterns:
+        for value in re.findall(pattern, text, flags=re.I):
+            try:
+                number = float(value.replace(",", "."))
+            except ValueError:
+                continue
+            if 0.05 <= number <= 3:
+                parsed.append(round(number, 4))
+        if parsed:
+            break
 
     unique = sorted(set(parsed))
-    if not unique:
-        return None
-
-    # Die Tesla-EVSEs eines Standorts sollten denselben veröffentlichten
-    # Ad-hoc-/öffentlichen Tarif tragen. Bei widersprüchlichen Werten
-    # lieber nichts anzeigen als einen falschen Preis auswählen.
     if len(unique) != 1:
         return None
 
@@ -140,7 +130,7 @@ def fetch_public_price(site_name, now):
         "rate": unique[0],
         "currency": "EUR",
         "metric": "kWh",
-        "source": "ladestau.de / Mobilithek",
+        "source": "adhoccharging.eu / Mobilithek",
         "url": url,
         "checked_at": now.isoformat(timespec="seconds"),
         "kind": "public",
