@@ -3,7 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0b0b0d">
+<meta id="themeColorMeta" name="theme-color" content="#0b0b0d">
+<script>
+(() => {
+    const THEME_MODE_KEY = "voltune.themeMode";
+    const VALID_THEME_MODES = ["auto", "dark", "light"];
+    let mode = "auto";
+    try{
+        const saved = localStorage.getItem(THEME_MODE_KEY);
+        if(VALID_THEME_MODES.includes(saved)) mode = saved;
+    }catch(_){}
+    const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+    const resolved = mode === "auto" ? (media && media.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.themeMode = mode;
+    document.documentElement.dataset.theme = resolved;
+})();
+</script>
 <title>Tesla Hub · AVEX Euskirchen</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -659,6 +674,117 @@ body.video-active::before{
     .vehicle-controls button{grid-column:auto}
 }
 
+
+/* Tesla Hub theme system – shared with Voltune */
+html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="light"]{
+    color-scheme:light;
+    --bg:#eef1f5;
+    --panel:#f7f9fb;
+    --panel2:#ffffff;
+    --line:#ccd5df;
+    --muted:#687587;
+    --text:#17202a;
+    --green:#299d66;
+    --yellow:#b98200;
+    --red:#d24d53;
+    --blue:#2f7fca;
+    --shadow:0 12px 34px rgba(29,42,56,.10);
+}
+body{
+    transition:filter .42s ease,opacity .42s ease,background-color .42s ease,color .42s ease;
+}
+html.themeChanging body{
+    transition-duration:.24s;
+    filter:blur(3px);
+    opacity:.68;
+}
+html[data-theme="light"] body{
+    background:
+        radial-gradient(circle at 75% -10%,rgba(232,33,39,.075),transparent 30rem),
+        radial-gradient(circle at 5% 25%,rgba(47,127,202,.07),transparent 28rem),
+        var(--bg);
+}
+html[data-theme="light"] .card,
+html[data-theme="light"] .quicklink,
+html[data-theme="light"] .hub-panel{
+    background:rgba(255,255,255,.72)!important;
+    border-color:var(--line);
+    box-shadow:var(--shadow);
+}
+html[data-theme="light"] .quicklink:hover,
+html[data-theme="light"] .news-item:hover{
+    background:rgba(255,255,255,.94);
+    border-color:#aeb9c5;
+}
+html[data-theme="light"] .status{color:#394756}
+html[data-theme="light"] .button,
+html[data-theme="light"] .icon-btn,
+html[data-theme="light"] .map-link{
+    background:#ffffff;
+    color:#17202a;
+    border-color:#c7d1dc;
+}
+html[data-theme="light"] .button:hover,
+html[data-theme="light"] .icon-btn:hover,
+html[data-theme="light"] .map-link:hover{
+    background:#f0f4f8;
+    border-color:#aeb9c5;
+}
+html[data-theme="light"] .button.primary{
+    background:var(--tesla);
+    color:#fff;
+    border-color:var(--tesla);
+}
+html[data-theme="light"] .chart-wrap{
+    background:rgba(255,255,255,.72);
+    border-color:#d1d9e2;
+}
+html[data-theme="light"] .super-item,
+html[data-theme="light"] .news-item,
+html[data-theme="light"] .mini-link{
+    background:rgba(255,255,255,.68);
+}
+html[data-theme="light"] .super-item.favorite{
+    background:linear-gradient(90deg,rgba(232,33,39,.075),rgba(255,255,255,.72) 35%);
+}
+html[data-theme="light"] .price-chip{
+    background:#f1f4f7;
+    border-color:#d3dbe4;
+}
+html[data-theme="light"] .icon-btn.active{
+    color:#9d7600;
+    border-color:#d8c16a;
+    background:#fff8d7;
+}
+html[data-theme="light"] .software-copy{color:#4b5968}
+html[data-theme="light"] .source-note,
+html[data-theme="light"] .footer{color:#6e7b89}
+html[data-theme="light"] .top-action{
+    background:rgba(255,255,255,.68);
+    color:var(--text);
+}
+html[data-theme="light"] .vehicle-controls select{
+    background:rgba(255,255,255,.82);
+    color:var(--text);
+}
+html[data-theme="light"] .motion-rail{background:#d8dfe7}
+html[data-theme="light"] .startup{background:#eef1f5}
+html[data-theme="light"] .startup-line{background:#d7dfe7}
+html[data-theme="light"] .startup-line::after{
+    background:linear-gradient(90deg,transparent,#17202a,transparent)
+}
+html[data-theme="light"] body.video-active::before{
+    background:linear-gradient(180deg,rgba(238,241,245,.48),rgba(238,241,245,.72));
+}
+#themeBtn[data-theme-mode="auto"]{border-color:rgba(98,168,255,.62)}
+#themeBtn[data-theme-mode="dark"]{border-color:#596779}
+#themeBtn[data-theme-mode="light"]{border-color:#aeb9c5}
+@media (prefers-reduced-motion:reduce){
+    body,.card,.quicklink,.hub-panel,.top-action,.button{transition:none!important}
+    html.themeChanging body{filter:none;opacity:1}
+}
+
 </style>
 </head>
 <body>
@@ -680,6 +806,7 @@ body.video-active::before{
             </div>
         </div>
         <div class="top-actions">
+            <button id="themeBtn" class="top-action" type="button" data-theme-mode="auto">Theme: Auto</button>
             <button id="dataSaverBtn" class="top-action" type="button" title="Videohintergrund nicht laden">Datensparmodus</button>
             <button id="fullscreenBtn" class="top-action" type="button">⛶ Vollbild</button>
             <div class="clock">
@@ -890,6 +1017,10 @@ const AVEX_ORIGIN = {
 const FAVORITES_KEY = "tesla-hub-supercharger-favorites-v1";
 const VEHICLE_KEY = "tesla-hub-vehicle-v1";
 const DATA_SAVER_KEY = "tesla-hub-data-saver-v1";
+const THEME_MODE_KEY = "voltune.themeMode";
+const VALID_THEME_MODES = ["auto", "dark", "light"];
+const browserThemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+let themeMode = VALID_THEME_MODES.includes(document.documentElement.dataset.themeMode) ? document.documentElement.dataset.themeMode : "auto";
 const SUPERCHARGER_LIMIT = 12;
 // Video später hier oder per Repo-Datei eintragen. Solange leer, wird garantiert nichts geladen.
 const BACKGROUND_VIDEO_URL = "";
@@ -1087,7 +1218,8 @@ const currentTimePlugin = {
         ctx.setLineDash([6,5]);
         ctx.moveTo(x, area.top);
         ctx.lineTo(x, area.bottom);
-        ctx.strokeStyle = "rgba(255,255,255,.78)";
+        const lightTheme = document.documentElement.dataset.theme === "light";
+        ctx.strokeStyle = lightTheme ? "rgba(23,32,42,.72)" : "rgba(255,255,255,.78)";
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.setLineDash([]);
@@ -1099,16 +1231,34 @@ const currentTimePlugin = {
         if(bx < area.left) bx = area.left;
         if(bx + width > area.right) bx = area.right - width;
 
-        ctx.fillStyle = "rgba(11,11,13,.93)";
+        ctx.fillStyle = lightTheme ? "rgba(255,255,255,.95)" : "rgba(11,11,13,.93)";
         ctx.fillRect(bx, area.top + 5, width, 22);
-        ctx.strokeStyle = "rgba(255,255,255,.25)";
+        ctx.strokeStyle = lightTheme ? "rgba(23,32,42,.20)" : "rgba(255,255,255,.25)";
         ctx.strokeRect(bx, area.top + 5, width, 22);
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = lightTheme ? "#17202a" : "#fff";
         ctx.textBaseline = "middle";
         ctx.fillText(text, bx + px, area.top + 16);
         ctx.restore();
     }
 };
+
+function chartThemeColors(){
+    const light = document.documentElement.dataset.theme === "light";
+    return {
+        grid:light ? "rgba(23,32,42,.09)" : "rgba(255,255,255,.06)",
+        tick:light ? "#687587" : "#888890"
+    };
+}
+
+function updateChartTheme(){
+    if(!priceChart) return;
+    const colors = chartThemeColors();
+    priceChart.options.scales.x.grid.color = colors.grid;
+    priceChart.options.scales.y.grid.color = colors.grid;
+    priceChart.options.scales.x.ticks.color = colors.tick;
+    priceChart.options.scales.y.ticks.color = colors.tick;
+    priceChart.update("none");
+}
 
 function renderChart(){
     const schedule = todaysSchedule();
@@ -1132,6 +1282,8 @@ function renderChart(){
         priceChart.update();
         return;
     }
+
+    const themeColors = chartThemeColors();
 
     priceChart = new Chart(ctx, {
         type:"line",
@@ -1177,9 +1329,9 @@ function renderChart(){
                     type:"linear",
                     min:minX,
                     max:maxX,
-                    grid:{color:"rgba(255,255,255,.06)"},
+                    grid:{color:themeColors.grid},
                     ticks:{
-                        color:"#888890",
+                        color:themeColors.tick,
                         maxTicksLimit:7,
                         callback:function(value){
                             return new Date(value).toLocaleTimeString("de-DE", {
@@ -1191,9 +1343,9 @@ function renderChart(){
                     }
                 },
                 y:{
-                    grid:{color:"rgba(255,255,255,.06)"},
+                    grid:{color:themeColors.grid},
                     ticks:{
-                        color:"#888890",
+                        color:themeColors.tick,
                         callback:function(value){
                             return Number(value).toFixed(2).replace(".", ",") + " €";
                         }
@@ -1561,6 +1713,89 @@ function navigateToSupercharger(site){
     }
     window.location.href = maps;
 }
+
+
+function resolveTheme(){
+    if(themeMode === "dark" || themeMode === "light") return themeMode;
+    return browserThemeMedia.matches ? "dark" : "light";
+}
+
+function updateThemeButton(){
+    const button = document.getElementById("themeBtn");
+    if(!button) return;
+    const labels = {auto:"Auto",dark:"Dark",light:"Light"};
+    button.textContent = "Theme: " + labels[themeMode];
+    button.dataset.themeMode = themeMode;
+    document.documentElement.dataset.themeMode = themeMode;
+}
+
+function updateThemeMeta(){
+    const meta = document.getElementById("themeColorMeta");
+    if(meta) meta.content = document.documentElement.dataset.theme === "light" ? "#eef1f5" : "#0b0b0d";
+}
+
+let themeSwitchTimer = null;
+let themeTransitionEndTimer = null;
+
+function applyTheme(animate){
+    const root = document.documentElement;
+    const resolved = resolveTheme();
+    const current = root.dataset.theme;
+
+    updateThemeButton();
+    clearTimeout(themeSwitchTimer);
+    clearTimeout(themeTransitionEndTimer);
+    root.classList.remove("themeChanging");
+
+    const setResolved = function(){
+        root.dataset.theme = resolved;
+        updateThemeMeta();
+        updateChartTheme();
+    };
+
+    if(!animate || !current || current === resolved){
+        setResolved();
+        return;
+    }
+
+    requestAnimationFrame(function(){
+        root.classList.add("themeChanging");
+        themeSwitchTimer = setTimeout(function(){
+            setResolved();
+            themeTransitionEndTimer = setTimeout(function(){
+                root.classList.remove("themeChanging");
+            },430);
+        },240);
+    });
+}
+
+function setThemeMode(nextMode,animate){
+    if(!VALID_THEME_MODES.includes(nextMode)) return;
+    themeMode = nextMode;
+    try{
+        localStorage.setItem(THEME_MODE_KEY,themeMode);
+    }catch(error){
+        console.warn("Theme-Modus konnte nicht gespeichert werden:",error);
+    }
+    applyTheme(animate !== false);
+}
+
+function cycleThemeMode(){
+    const currentIndex = VALID_THEME_MODES.indexOf(themeMode);
+    setThemeMode(VALID_THEME_MODES[(currentIndex + 1) % VALID_THEME_MODES.length],true);
+}
+
+document.getElementById("themeBtn").addEventListener("click",cycleThemeMode);
+
+function handleBrowserThemeChange(){
+    if(themeMode === "auto") applyTheme(true);
+}
+if(browserThemeMedia.addEventListener){
+    browserThemeMedia.addEventListener("change",handleBrowserThemeChange);
+}else if(browserThemeMedia.addListener){
+    browserThemeMedia.addListener(handleBrowserThemeChange);
+}
+applyTheme(false);
 
 function fillVehicleYears(){
     const select = document.getElementById("vehicleYear");
