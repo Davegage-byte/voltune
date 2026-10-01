@@ -550,9 +550,125 @@ button,a.button{
     .super-item{grid-template-columns:1fr}
     .super-actions{justify-content:flex-start}
 }
+
+/* Tesla Hub shell enhancements */
+.background-video{
+    position:fixed; inset:0; width:100%; height:100%; object-fit:cover;
+    z-index:-3; opacity:.46; pointer-events:none;
+}
+body.video-active::before{
+    content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:linear-gradient(180deg,rgba(5,6,8,.55),rgba(5,6,8,.82));
+}
+.card,.quicklink,.hub-panel{
+    background:rgba(18,18,22,.66)!important;
+    -webkit-backdrop-filter:blur(20px) saturate(135%);
+    backdrop-filter:blur(20px) saturate(135%);
+}
+.card,.quicklink,.hub-panel{
+    box-shadow:0 18px 48px rgba(0,0,0,.28);
+}
+.startup{
+    position:fixed; inset:0; z-index:9999; display:grid; place-items:center;
+    background:#050506; transition:opacity .48s cubic-bezier(.22,.61,.36,1), visibility .48s;
+}
+.startup.done{opacity:0;visibility:hidden}
+.startup-core{display:grid;place-items:center;gap:18px}
+.startup-t{
+    width:78px;height:78px;border-radius:24px;display:grid;place-items:center;
+    font-size:43px;font-weight:900;background:linear-gradient(145deg,#ef3b40,#9b070b);
+    box-shadow:0 0 0 1px rgba(255,255,255,.1),0 24px 70px rgba(232,33,39,.32);
+    animation:hubLaunch 1.15s cubic-bezier(.16,1,.3,1) both;
+}
+.startup-line{
+    width:190px;height:3px;border-radius:999px;overflow:hidden;background:#202024;
+}
+.startup-line::after{
+    content:"";display:block;height:100%;width:100%;transform:translateX(-100%);
+    background:linear-gradient(90deg,transparent,#fff,transparent);
+    animation:hubSweep .92s cubic-bezier(.65,0,.35,1) .12s both;
+}
+@keyframes hubLaunch{
+    0%{transform:scale(.45);filter:blur(12px);opacity:0}
+    58%{transform:scale(1.08);filter:blur(0);opacity:1}
+    100%{transform:scale(1)}
+}
+@keyframes hubSweep{to{transform:translateX(100%)}}
+.shell{animation:shellIn .85s cubic-bezier(.16,1,.3,1) .42s both}
+@keyframes shellIn{
+    from{opacity:0;transform:translateY(30px) scale(.985)}
+    to{opacity:1;transform:none}
+}
+.card,.quicklink,.hub-panel{
+    transition:transform .34s cubic-bezier(.16,1,.3,1), border-color .34s ease, background .34s ease;
+}
+.card:hover,.hub-panel:hover{transform:translateY(-2px)}
+.top-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.top-action{
+    border:1px solid var(--line);background:rgba(16,16,19,.7);color:var(--text);
+    border-radius:12px;padding:9px 11px;cursor:pointer;min-height:38px;
+}
+.top-action.active{border-color:rgba(98,168,255,.65);background:rgba(98,168,255,.12)}
+.settings-row{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-bottom:18px;
+}
+.hub-panel{
+    border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
+}
+.panel-title{font-weight:800;font-size:16px;margin-bottom:10px}
+.vehicle-controls{display:grid;grid-template-columns:1fr 1fr auto;gap:9px}
+.vehicle-controls select{
+    width:100%;min-height:44px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(12,12,15,.78);color:var(--text);padding:0 12px;font:inherit;
+}
+.vehicle-state{color:var(--muted);font-size:12px;margin-top:9px}
+.voltune-strip{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.voltune-mark{font-size:25px;font-weight:900;letter-spacing:.06em}
+.voltune-copy{color:var(--muted);font-size:12px;margin-top:3px}
+.motion-rail{
+    height:4px;border-radius:99px;margin-top:12px;overflow:hidden;background:#27272d;position:relative
+}
+.motion-rail::after{
+    content:"";position:absolute;inset:0;width:45%;transform:translateX(-110%);
+    background:linear-gradient(90deg,transparent,#e82127,#fff);
+    animation:motionEase 3.2s cubic-bezier(.16,1,.3,1) infinite;
+}
+@keyframes motionEase{
+    0%{transform:translateX(-110%);opacity:.2}
+    38%{transform:translateX(95%);opacity:1}
+    68%{transform:translateX(145%);opacity:.75}
+    100%{transform:translateX(235%);opacity:0}
+}
+.super-item{cursor:pointer}
+.super-item:active{transform:scale(.992)}
+.nav-hint{font-size:10px;color:var(--muted);margin-top:5px}
+.gps-state{display:inline-flex;gap:6px;align-items:center}
+.gps-dot{width:7px;height:7px;border-radius:50%;background:var(--yellow)}
+.gps-state.live .gps-dot{background:var(--green);box-shadow:0 0 12px rgba(52,209,123,.6)}
+.gps-state.fallback .gps-dot{background:var(--yellow)}
+@media(max-width:900px){
+    .settings-row{grid-template-columns:1fr}
+    .vehicle-controls{grid-template-columns:1fr 1fr}
+    .vehicle-controls button{grid-column:1/-1}
+}
+@media(max-width:640px){
+    .topbar{align-items:flex-start}
+    .top-actions{max-width:52%}
+    .clock{width:100%}
+    .vehicle-controls{grid-template-columns:1fr}
+    .vehicle-controls button{grid-column:auto}
+}
+
 </style>
 </head>
 <body>
+<video id="backgroundVideo" class="background-video" muted loop playsinline preload="none" aria-hidden="true"></video>
+<div id="startup" class="startup" aria-hidden="true">
+    <div class="startup-core">
+        <div class="startup-t">T</div>
+        <div class="startup-line"></div>
+    </div>
+</div>
 
 <div class="shell">
     <header class="topbar">
@@ -563,9 +679,13 @@ button,a.button{
                 <div class="brand-sub">AVEX Euskirchen · Supercharger · Updates</div>
             </div>
         </div>
-        <div class="clock">
-            <div id="clockTime" class="clock-time">--:--</div>
-            <div id="clockDate" class="clock-date">--</div>
+        <div class="top-actions">
+            <button id="dataSaverBtn" class="top-action" type="button" title="Videohintergrund nicht laden">Datensparmodus</button>
+            <button id="fullscreenBtn" class="top-action" type="button">⛶ Vollbild</button>
+            <div class="clock">
+                <div id="clockTime" class="clock-time">--:--</div>
+                <div id="clockDate" class="clock-date">--</div>
+            </div>
         </div>
     </header>
 
@@ -595,6 +715,37 @@ button,a.button{
             <span>Trip Planner</span>
         </a>
     </nav>
+
+    <section class="settings-row">
+        <div class="hub-panel">
+            <div class="eyebrow">Mein Tesla</div>
+            <div class="panel-title">Fahrzeugprofil für Update-News</div>
+            <div class="vehicle-controls">
+                <select id="vehicleModel" aria-label="Tesla Modell">
+                    <option value="Model 3">Model 3</option>
+                    <option value="Model Y">Model Y</option>
+                    <option value="Model S">Model S</option>
+                    <option value="Model X">Model X</option>
+                    <option value="Cybertruck">Cybertruck</option>
+                </select>
+                <select id="vehicleYear" aria-label="Baujahr"></select>
+                <button id="saveVehicleBtn" class="button primary" type="button">Speichern</button>
+            </div>
+            <div id="vehicleState" class="vehicle-state">Noch kein Fahrzeug gespeichert.</div>
+        </div>
+
+        <div class="hub-panel">
+            <div class="voltune-strip">
+                <div>
+                    <div class="eyebrow">Voltune</div>
+                    <div class="voltune-mark">LAUNCH</div>
+                    <div class="voltune-copy">Beschleunigung / Verzögerung mit weicher Ein- und Endbeschleunigung</div>
+                </div>
+                <a class="button primary" href="index.html">Voltune starten</a>
+            </div>
+            <div class="motion-rail" aria-hidden="true"></div>
+        </div>
+    </section>
 
     <main class="grid-main">
         <section class="card">
@@ -653,14 +804,17 @@ button,a.button{
 
             <div class="super-body">
                 <div class="super-controls">
-                    <div id="originLabel" class="origin-label">Entfernung ab AVEX Euskirchen</div>
-                    <button id="locationBtn" class="button" type="button">📍 Mein Standort</button>
+                    <div>
+                        <div id="originLabel" class="origin-label">Standort wird angefragt…</div>
+                        <div id="gpsState" class="gps-state fallback"><span class="gps-dot"></span><span>AVEX-Fallback bereit</span></div>
+                    </div>
+                    <button id="locationBtn" class="button" type="button">📍 Standort neu anfragen</button>
                 </div>
                 <div id="superList" class="super-list">
                     <div class="empty">Supercharger-Daten werden geladen…</div>
                 </div>
                 <div class="source-note">
-                    ⭐ Favoriten bleiben auf diesem Browser gespeichert. „Tesla/Mitglied“ stammt – sofern verfügbar – aus dem täglich aktualisierten Tesla-App-Datensatz. „Öffentlich“ stammt aus einer separaten öffentlichen Tarifquelle (Mobilithek/adhoccharging.eu). Maßgeblich für deinen Tesla ist immer der Preis im Fahrzeug bzw. in der Tesla-App.
+                    Es werden immer die 12 nächstgelegenen Supercharger zum aktuellen GPS-Standort gezeigt; wird GPS abgelehnt, dient AVEX Euskirchen als Startpunkt. ⭐ Favoriten bleiben lokal im Browser gespeichert. Ein Klick auf einen Standort öffnet die Navigations-/Teilen-Funktion. Maßgeblich für Preise bleibt der Tesla im Fahrzeug bzw. die Tesla-App.
                 </div>
             </div>
         </section>
@@ -734,6 +888,11 @@ const AVEX_ORIGIN = {
 };
 
 const FAVORITES_KEY = "tesla-hub-supercharger-favorites-v1";
+const VEHICLE_KEY = "tesla-hub-vehicle-v1";
+const DATA_SAVER_KEY = "tesla-hub-data-saver-v1";
+const SUPERCHARGER_LIMIT = 12;
+// Video später hier oder per Repo-Datei eintragen. Solange leer, wird garantiert nichts geladen.
+const BACKGROUND_VIDEO_URL = "";
 let avexData = null;
 let dashboardData = null;
 let priceChart = null;
@@ -1121,13 +1280,18 @@ function renderSuperchargers(){
     });
 
     sites.sort(function(a,b){
+        return a.live_distance_km - b.live_distance_km;
+    });
+
+    const nearestSites = sites.slice(0, SUPERCHARGER_LIMIT);
+    nearestSites.sort(function(a,b){
         if(a.is_favorite !== b.is_favorite) return a.is_favorite ? -1 : 1;
         return a.live_distance_km - b.live_distance_km;
     });
 
     list.innerHTML = "";
 
-    sites.forEach(function(site){
+    nearestSites.forEach(function(site){
         const item = document.createElement("div");
         item.className = "super-item" + (site.is_favorite ? " favorite" : "");
 
@@ -1176,11 +1340,21 @@ function renderSuperchargers(){
             '</div>' +
             '<div class="super-actions">' +
                 '<button class="icon-btn ' + (site.is_favorite ? 'active' : '') + '" type="button" title="Favorit umschalten">★</button>' +
-                '<a class="map-link" href="' + maps + '" target="_blank" rel="noopener noreferrer">Route</a>' +
+                '<button class="map-link nav-btn" type="button">Navigation</button>' +
+                '<div class="nav-hint">Tesla / Handy / PC</div>' +
             '</div>';
 
-        item.querySelector("button").addEventListener("click", function(){
+        item.querySelector(".icon-btn").addEventListener("click", function(event){
+            event.stopPropagation();
             toggleFavorite(site.id);
+        });
+        item.querySelector(".nav-btn").addEventListener("click", function(event){
+            event.stopPropagation();
+            navigateToSupercharger(site);
+        });
+        item.addEventListener("click", function(event){
+            if(event.target.closest("button,a")) return;
+            navigateToSupercharger(site);
         });
 
         list.appendChild(item);
@@ -1200,6 +1374,38 @@ function escapeHtml(value){
         .replace(/'/g, "&#039;");
 }
 
+function getVehicle(){
+    try{
+        return JSON.parse(localStorage.getItem(VEHICLE_KEY) || "null");
+    }catch(_){
+        return null;
+    }
+}
+
+function vehicleNewsScore(item){
+    const vehicle = getVehicle();
+    const title = String(item && item.title || "").toLowerCase();
+    let score = /software|update|release notes|firmware/.test(title) ? 20 : 0;
+    if(!vehicle) return score;
+
+    const selected = vehicle.model.toLowerCase();
+    const modelTerms = {
+        "model 3":["model 3","highland"],
+        "model y":["model y","juniper"],
+        "model s":["model s"],
+        "model x":["model x"],
+        "cybertruck":["cybertruck"]
+    };
+    const ownTerms = modelTerms[selected] || [selected];
+    if(ownTerms.some(function(term){ return title.includes(term); })) score += 40;
+
+    Object.keys(modelTerms).forEach(function(model){
+        if(model === selected) return;
+        if(modelTerms[model].some(function(term){ return title.includes(term); })) score -= 15;
+    });
+    return score;
+}
+
 function renderNews(){
     const list = document.getElementById("newsList");
     if(!dashboardData || !Array.isArray(dashboardData.news) || !dashboardData.news.length){
@@ -1209,7 +1415,10 @@ function renderNews(){
 
     list.innerHTML = "";
 
-    dashboardData.news.slice(0,6).forEach(function(item){
+    const rankedNews = dashboardData.news.slice().sort(function(a,b){
+        return vehicleNewsScore(b) - vehicleNewsScore(a);
+    });
+    rankedNews.slice(0,6).forEach(function(item){
         const link = document.createElement("a");
         link.className = "news-item";
         link.href = item.url;
@@ -1226,7 +1435,7 @@ function renderNews(){
     document.getElementById("newsChecked").textContent =
         "Feed " + formatRelative(dashboardData.news_updated_at || dashboardData.checked_at);
 
-    const softwareItem = dashboardData.news.find(function(item){
+    const softwareItem = rankedNews.find(function(item){
         return /software|update|release notes|firmware/i.test(item.title || "");
     });
 
@@ -1284,24 +1493,29 @@ function tickRefresh(){
 
 document.getElementById("refreshBtn").addEventListener("click", loadAll);
 
-document.getElementById("locationBtn").addEventListener("click", function(){
-    const button = this;
+function setGpsUi(mode, text){
+    const gps = document.getElementById("gpsState");
+    gps.className = "gps-state " + mode;
+    gps.querySelector("span:last-child").textContent = text;
+}
 
-    if(distanceOrigin.name === "Mein Standort"){
-        distanceOrigin = Object.assign({}, AVEX_ORIGIN);
-        document.getElementById("originLabel").textContent = "Entfernung ab AVEX Euskirchen";
-        button.textContent = "📍 Mein Standort";
-        renderSuperchargers();
-        return;
-    }
+function useAvexOrigin(reason){
+    distanceOrigin = Object.assign({}, AVEX_ORIGIN);
+    document.getElementById("originLabel").textContent = "Entfernung ab AVEX Euskirchen";
+    document.getElementById("locationBtn").textContent = "📍 Standort neu anfragen";
+    setGpsUi("fallback", reason || "AVEX-Fallback aktiv");
+    renderSuperchargers();
+}
 
+function requestLocation(){
+    const button = document.getElementById("locationBtn");
     if(!navigator.geolocation){
-        button.textContent = "Standort nicht verfügbar";
+        useAvexOrigin("GPS im Browser nicht verfügbar");
         return;
     }
-
     button.disabled = true;
     button.textContent = "Standort wird ermittelt…";
+    document.getElementById("originLabel").textContent = "GPS-Standort wird angefragt…";
 
     navigator.geolocation.getCurrentPosition(
         function(position){
@@ -1310,18 +1524,130 @@ document.getElementById("locationBtn").addEventListener("click", function(){
                 latitude:position.coords.latitude,
                 longitude:position.coords.longitude
             };
-            document.getElementById("originLabel").textContent = "Entfernung ab meinem Standort";
-            button.textContent = "📍 AVEX als Start";
+            document.getElementById("originLabel").textContent = "12 nächste Supercharger ab meinem Standort";
+            button.textContent = "📍 Standort aktualisieren";
             button.disabled = false;
+            setGpsUi("live", "GPS aktiv");
             renderSuperchargers();
         },
-        function(){
-            button.textContent = "Standort nicht freigegeben";
+        function(error){
             button.disabled = false;
+            const denied = error && error.code === 1;
+            useAvexOrigin(denied ? "Standort abgelehnt · AVEX-Fallback" : "GPS nicht verfügbar · AVEX-Fallback");
         },
-        {enableHighAccuracy:false, timeout:8000, maximumAge:300000}
+        {enableHighAccuracy:true, timeout:9000, maximumAge:180000}
     );
+}
+
+document.getElementById("locationBtn").addEventListener("click", requestLocation);
+
+
+function navigateToSupercharger(site){
+    const lat = Number(site.latitude);
+    const lon = Number(site.longitude);
+    const name = cleanSuperName(site.name);
+    const maps = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(lat + "," + lon);
+
+    // Auf Mobilgeräten kann im Share-Sheet direkt die Tesla-App gewählt werden.
+    // Im Tesla-Browser gibt es keinen dokumentierten Web-Deep-Link in die Fahrzeugnavigation;
+    // bis ein sicherer Fleet-API-Proxy angebunden ist, fällt die Seite auf Kartenrouting zurück.
+    if(navigator.share && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)){
+        navigator.share({
+            title:name,
+            text:"Tesla Supercharger " + name + " · " + lat + "," + lon,
+            url:maps
+        }).catch(function(){ window.location.href = maps; });
+        return;
+    }
+    window.location.href = maps;
+}
+
+function fillVehicleYears(){
+    const select = document.getElementById("vehicleYear");
+    const nowYear = new Date().getFullYear();
+    select.innerHTML = "";
+    for(let year = nowYear; year >= 2012; year--){
+        const option = document.createElement("option");
+        option.value = String(year);
+        option.textContent = String(year);
+        select.appendChild(option);
+    }
+}
+
+function loadVehicleUi(){
+    fillVehicleYears();
+    const saved = getVehicle() || {model:"Model 3", year:"2022"};
+    document.getElementById("vehicleModel").value = saved.model;
+    document.getElementById("vehicleYear").value = saved.year;
+    document.getElementById("vehicleState").textContent =
+        saved.model + " · Baujahr " + saved.year + " · Update-News werden danach priorisiert";
+}
+
+document.getElementById("saveVehicleBtn").addEventListener("click", function(){
+    const vehicle = {
+        model:document.getElementById("vehicleModel").value,
+        year:document.getElementById("vehicleYear").value
+    };
+    localStorage.setItem(VEHICLE_KEY, JSON.stringify(vehicle));
+    document.getElementById("vehicleState").textContent =
+        vehicle.model + " · Baujahr " + vehicle.year + " · gespeichert";
+    if(dashboardData) renderNews();
 });
+
+function isDataSaver(){
+    return localStorage.getItem(DATA_SAVER_KEY) === "1";
+}
+
+function applyVideoPreference(){
+    const video = document.getElementById("backgroundVideo");
+    const button = document.getElementById("dataSaverBtn");
+    const saver = isDataSaver();
+    button.classList.toggle("active", saver);
+    button.textContent = saver ? "Datensparmodus AN" : "Datensparmodus AUS";
+
+    if(saver || !BACKGROUND_VIDEO_URL){
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+        document.body.classList.remove("video-active");
+        return;
+    }
+    if(video.getAttribute("src") !== BACKGROUND_VIDEO_URL) video.src = BACKGROUND_VIDEO_URL;
+    video.play().then(function(){
+        document.body.classList.add("video-active");
+    }).catch(function(){});
+}
+
+document.getElementById("dataSaverBtn").addEventListener("click", function(){
+    localStorage.setItem(DATA_SAVER_KEY, isDataSaver() ? "0" : "1");
+    applyVideoPreference();
+});
+
+function teslaFullscreenFallback(){
+    const target = location.href.split("#")[0];
+    location.href = "https://www.youtube.com/redirect?q=" + encodeURIComponent(target);
+}
+
+document.getElementById("fullscreenBtn").addEventListener("click", function(){
+    const root = document.documentElement;
+    const request = root.requestFullscreen || root.webkitRequestFullscreen;
+    if(request){
+        try{
+            const result = request.call(root);
+            if(result && result.catch) result.catch(teslaFullscreenFallback);
+        }catch(_){
+            teslaFullscreenFallback();
+        }
+    }else{
+        teslaFullscreenFallback();
+    }
+});
+
+loadVehicleUi();
+applyVideoPreference();
+setTimeout(function(){
+    document.getElementById("startup").classList.add("done");
+}, 1450);
 
 tickClock();
 setInterval(tickClock, 1000);
@@ -1330,7 +1656,7 @@ setInterval(function(){
     if(priceChart) priceChart.draw();
 }, 60000);
 
-loadAll();
+loadAll().then(function(){ requestLocation(); });
 </script>
 </body>
 </html>
