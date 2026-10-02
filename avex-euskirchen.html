@@ -509,6 +509,12 @@ button,a.button{
     max-width:680px;
 }
 
+.software-meta{
+    color:var(--muted);
+    font-size:11px;
+    margin-top:7px;
+}
+
 .mini-links{
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
@@ -858,14 +864,15 @@ html[data-theme="light"] body.video-active::before{
             <div class="card-head">
                 <div>
                     <div class="eyebrow">Software Spotlight</div>
-                    <h2>Neu bei Tesla</h2>
+                    <h2>Aktuelles OTA-Update</h2>
                 </div>
             </div>
             <div class="software-body">
                 <div id="softwareVersion" class="software-version">Tesla OTA</div>
                 <div id="softwareCopy" class="software-copy">
-                    Tesla verteilt Software-Updates schrittweise. Nicht jedes Fahrzeug bekommt eine Version am selben Tag.
+                    Suche nach einer eindeutig erkennbaren OTA-/Firmware-Meldung…
                 </div>
+                <div id="softwareMeta" class="software-meta">--</div>
                 <div class="actions">
                     <a id="softwareStoryLink" class="button primary" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">Aktuelle Updates öffnen</a>
                     <a class="button" href="https://www.tesla.com/de_de/support/software-updates" target="_blank" rel="noopener noreferrer">Tesla Update-Hilfe</a>
@@ -1853,18 +1860,42 @@ function renderNews(){
     document.getElementById("newsChecked").textContent =
         "Feed " + formatRelative(dashboardData.news_updated_at || dashboardData.checked_at);
 
-    const softwareItem = rankedNews.find(function(item){
-        return /software|update|release notes|firmware/i.test(item.title || "");
-    });
+    function isTrueSoftwareUpdate(item){
+        const title = String(item && item.title || "");
+        const hasVersion = /\b20\d{2}\.\d+(?:\.\d+){0,3}\b/.test(title);
+        const explicitOta = /\bsoftware[- ]update\b|\bfirmware\b|\brelease notes?\b|\bota\b/i.test(title);
+        return hasVersion || explicitOta;
+    }
+
+    const softwareCandidates = dashboardData.news
+        .filter(isTrueSoftwareUpdate)
+        .sort(function(a,b){
+            return Date.parse(b.published_at || 0) - Date.parse(a.published_at || 0);
+        });
+
+    const softwareItem = softwareCandidates[0] || null;
+    const versionEl = document.getElementById("softwareVersion");
+    const copyEl = document.getElementById("softwareCopy");
+    const metaEl = document.getElementById("softwareMeta");
+    const story = document.getElementById("softwareStoryLink");
 
     if(softwareItem){
         const versionMatch = String(softwareItem.title).match(/\b20\d{2}\.\d+(?:\.\d+){0,3}\b/);
-        document.getElementById("softwareVersion").textContent =
-            versionMatch ? versionMatch[0] : "Neues Software-Update";
-        document.getElementById("softwareCopy").textContent = softwareItem.title;
-        const story = document.getElementById("softwareStoryLink");
+        versionEl.textContent = versionMatch ? "Tesla " + versionMatch[0] : "Tesla OTA";
+        copyEl.textContent = softwareItem.title;
+        metaEl.textContent = softwareItem.published_at
+            ? "Veröffentlicht " + formatRelative(softwareItem.published_at) + " · Not a Tesla App"
+            : "Quelle: Not a Tesla App";
         story.href = softwareItem.url;
-        story.textContent = "Meldung öffnen";
+        story.textContent = versionMatch ? "Update-Meldung öffnen" : "Meldung öffnen";
+    }else{
+        versionEl.textContent = "Kein neues OTA im Feed";
+        copyEl.textContent =
+            "Der aktuelle News-Feed enthält derzeit keine eindeutig erkennbare OTA-, Firmware- oder Release-Notes-Meldung.";
+        metaEl.textContent =
+            "Feed " + formatRelative(dashboardData.news_updated_at || dashboardData.checked_at);
+        story.href = "https://www.notateslaapp.com/de/software-updates/";
+        story.textContent = "Alle Software-Updates";
     }
 }
 
