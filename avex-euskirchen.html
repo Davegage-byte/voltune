@@ -644,7 +644,25 @@ body.video-active::before{
     border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
 }
 .panel-title{font-weight:800;font-size:16px;margin-bottom:10px}
-.vehicle-controls{display:grid;grid-template-columns:1fr 1fr auto;gap:9px}
+.vehicle-controls{
+    display:grid;
+    grid-template-columns:1.05fr 1.15fr 1.25fr .75fr auto;
+    gap:9px;
+    align-items:end;
+}
+.vehicle-field{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    min-width:0;
+}
+.vehicle-field > span{
+    color:var(--muted);
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.55px;
+}
 .vehicle-controls select{
     width:100%;min-height:44px;border-radius:11px;border:1px solid var(--line);
     background:rgba(12,12,15,.78);color:var(--text);padding:0 12px;font:inherit;
@@ -657,7 +675,7 @@ body.video-active::before{
 .gps-state.live .gps-dot{background:var(--green);box-shadow:0 0 12px rgba(52,209,123,.6)}
 .gps-state.fallback .gps-dot{background:var(--yellow)}
 @media(max-width:900px){
-        .vehicle-controls{grid-template-columns:1fr 1fr}
+    .vehicle-controls{grid-template-columns:1fr 1fr}
     .vehicle-controls button{grid-column:1/-1}
 }
 @media(max-width:640px){
@@ -673,6 +691,106 @@ body.video-active::before{
 }
 .software-spotlight-top > .card{
     width:100%;
+}
+
+.software-spotlight-card{
+    position:relative;
+    min-height:318px;
+}
+.spotlight-vehicle{
+    --vehicle-color:#f4f4f4;
+    position:absolute;
+    z-index:1;
+    right:18px;
+    top:36px;
+    width:min(39%, 520px);
+    height:190px;
+    pointer-events:none;
+    opacity:.62;
+}
+.spotlight-vehicle-image,
+.spotlight-vehicle-tint{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+}
+.spotlight-vehicle-image{
+    object-fit:contain;
+    opacity:.55;
+    filter:grayscale(.8) contrast(1.08) brightness(1.05);
+    mix-blend-mode:luminosity;
+}
+.spotlight-vehicle-tint{
+    background:
+        radial-gradient(circle at 50% 55%, color-mix(in srgb,var(--vehicle-color) 86%,white 14%), transparent 68%);
+    opacity:.86;
+    -webkit-mask-repeat:no-repeat;
+    -webkit-mask-position:center;
+    -webkit-mask-size:contain;
+    mask-repeat:no-repeat;
+    mask-position:center;
+    mask-size:contain;
+    mix-blend-mode:color;
+}
+.spotlight-vehicle-badge{
+    position:absolute;
+    right:2px;
+    bottom:0;
+    max-width:100%;
+    padding:5px 9px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(9,9,11,.42);
+    -webkit-backdrop-filter:blur(10px);
+    backdrop-filter:blur(10px);
+    border-radius:999px;
+    color:rgba(255,255,255,.78);
+    font-size:10px;
+    font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.software-spotlight-card .software-body > .software-version,
+.software-spotlight-card .software-body > .software-copy,
+.software-spotlight-card .software-body > .software-meta,
+.software-spotlight-card .software-body > .actions{
+    position:relative;
+    z-index:2;
+    max-width:59%;
+}
+.software-spotlight-card .mini-links{
+    position:relative;
+    z-index:2;
+}
+
+@media(max-width:900px){
+    .spotlight-vehicle{
+        width:43%;
+        opacity:.45;
+    }
+    .software-spotlight-card .software-body > .software-version,
+    .software-spotlight-card .software-body > .software-copy,
+    .software-spotlight-card .software-body > .software-meta,
+    .software-spotlight-card .software-body > .actions{
+        max-width:62%;
+    }
+}
+@media(max-width:650px){
+    .spotlight-vehicle{
+        top:44px;
+        right:8px;
+        width:48%;
+        height:120px;
+        opacity:.27;
+    }
+    .spotlight-vehicle-badge{display:none}
+    .software-spotlight-card .software-body > .software-version,
+    .software-spotlight-card .software-body > .software-copy,
+    .software-spotlight-card .software-body > .software-meta,
+    .software-spotlight-card .software-body > .actions{
+        max-width:100%;
+    }
 }
 
 .fun-fact-body{
@@ -803,6 +921,11 @@ html[data-theme="light"] .vehicle-controls select{
     background:rgba(255,255,255,.82);
     color:var(--text);
 }
+html[data-theme="light"] .spotlight-vehicle-badge{
+    background:rgba(255,255,255,.48);
+    color:rgba(23,32,42,.82);
+    border-color:rgba(23,32,42,.10);
+}
 html[data-theme="light"] html[data-theme="light"] .startup{background:#eef1f5}
 html[data-theme="light"] .startup-line{background:#d7dfe7}
 html[data-theme="light"] .startup-line::after{
@@ -863,9 +986,9 @@ html[data-theme="light"] body.video-active::before{
             <strong>⚡ SuC Tracker</strong>
             <span>Supercharger Preise</span>
         </a>
-        <a class="quicklink fuel-link" href="https://benzinpreise.de/statistik/bundeslaender/super-e10" target="_blank" rel="noopener noreferrer">
+        <a class="quicklink fuel-link" href="https://benzinpreise.de/statistik/bundeslaender/super-e5" target="_blank" rel="noopener noreferrer">
             <strong>⛽ Benzin</strong>
-            <span id="fuelE10Price" class="fuel-value">NRW Ø heute · -- €/L</span>
+            <span id="fuelE5Price" class="fuel-value">NRW Ø heute · -- €/L</span>
         </a>
         <a class="quicklink fuel-link" href="https://benzinpreise.de/statistik/bundeslaender/diesel" target="_blank" rel="noopener noreferrer">
             <strong>🛢 Diesel</strong>
@@ -874,12 +997,17 @@ html[data-theme="light"] body.video-active::before{
     </nav>
 
     <section class="software-spotlight-top">
-        <div class="card">
+        <div class="card software-spotlight-card">
             <div class="card-head">
                 <div>
                     <div class="eyebrow">Software Spotlight</div>
                     <h2>Aktuelles OTA-Update</h2>
                 </div>
+            </div>
+            <div id="spotlightVehicle" class="spotlight-vehicle" aria-hidden="true">
+                <div id="spotlightVehicleTint" class="spotlight-vehicle-tint"></div>
+                <img id="spotlightVehicleImage" class="spotlight-vehicle-image" alt="">
+                <div id="spotlightVehicleBadge" class="spotlight-vehicle-badge"></div>
             </div>
             <div class="software-body">
                 <div id="softwareVersion" class="software-version">Tesla OTA</div>
@@ -1026,14 +1154,28 @@ html[data-theme="light"] body.video-active::before{
             <div class="eyebrow">Mein Tesla</div>
             <div class="panel-title">Fahrzeugprofil für Update-News</div>
             <div class="vehicle-controls">
-                <select id="vehicleModel" aria-label="Tesla Modell">
-                    <option value="Model 3">Model 3</option>
-                    <option value="Model Y">Model Y</option>
-                    <option value="Model S">Model S</option>
-                    <option value="Model X">Model X</option>
-                    <option value="Cybertruck">Cybertruck</option>
-                </select>
-                <select id="vehicleYear" aria-label="Baujahr"></select>
+                <label class="vehicle-field">
+                    <span>Modell</span>
+                    <select id="vehicleModel" aria-label="Tesla Modell">
+                        <option value="Model 3">Model 3</option>
+                        <option value="Model Y">Model Y</option>
+                        <option value="Model S">Model S</option>
+                        <option value="Model X">Model X</option>
+                        <option value="Cybertruck">Cybertruck</option>
+                    </select>
+                </label>
+                <label class="vehicle-field">
+                    <span>Variante</span>
+                    <select id="vehicleVariant" aria-label="Tesla Variante"></select>
+                </label>
+                <label class="vehicle-field">
+                    <span>Farbe</span>
+                    <select id="vehicleColor" aria-label="Tesla Farbe"></select>
+                </label>
+                <label class="vehicle-field">
+                    <span>Baujahr</span>
+                    <select id="vehicleYear" aria-label="Baujahr"></select>
+                </label>
                 <button id="saveVehicleBtn" class="button primary" type="button">Speichern</button>
             </div>
             <div id="vehicleState" class="vehicle-state">Noch kein Fahrzeug gespeichert.</div>
@@ -1085,6 +1227,32 @@ let themeMode = VALID_THEME_MODES.includes(document.documentElement.dataset.them
 const SUPERCHARGER_LIMIT = 6;
 // Video später hier oder per Repo-Datei eintragen. Solange leer, wird garantiert nichts geladen.
 const BACKGROUND_VIDEO_URL = "";
+const VEHICLE_IMAGE_BASE = "https://raw.githubusercontent.com/teslamotors/custom-wraps/master/";
+
+const VEHICLE_VARIANTS = {
+    "Model 3":["RWD","Long Range AWD","Performance"],
+    "Model Y":["RWD","Long Range AWD","Performance"],
+    "Model S":["Dual Motor","Plaid"],
+    "Model X":["Dual Motor","Plaid"],
+    "Cybertruck":["AWD","Cyberbeast"]
+};
+
+const VEHICLE_COLOR_HEX = {
+    "Pearl White Multi-Coat":"#f1f2f2",
+    "Solid Black":"#17181a",
+    "Diamond Black":"#202123",
+    "Midnight Silver Metallic":"#5b6066",
+    "Stealth Gray":"#4d5257",
+    "Deep Blue Metallic":"#173c6b",
+    "Frost Blue Metallic":"#7293b6",
+    "Glacier Blue":"#6f8fa9",
+    "Ultra Red":"#951522",
+    "Red Multi-Coat":"#9e1821",
+    "Quicksilver":"#aeb4b7",
+    "Midnight Cherry Red":"#5b1521",
+    "Stainless Steel":"#aeb4b5",
+    "Satin Stealth Black":"#232426"
+};
 let avexData = null;
 let dashboardData = null;
 let priceChart = null;
@@ -1788,6 +1956,7 @@ function vehicleNewsScore(item){
     if(!vehicle) return score;
 
     const selected = vehicle.model.toLowerCase();
+    const selectedVariant = String(vehicle.variant || "").toLowerCase();
     const modelTerms = {
         "model 3":["model 3","highland"],
         "model y":["model y","juniper"],
@@ -1802,6 +1971,10 @@ function vehicleNewsScore(item){
         if(model === selected) return;
         if(modelTerms[model].some(function(term){ return title.includes(term); })) score -= 15;
     });
+    if(selectedVariant.includes("performance") && title.includes("performance")) score += 18;
+    if(selectedVariant.includes("plaid") && title.includes("plaid")) score += 18;
+    if(selectedVariant.includes("cyberbeast") && title.includes("cyberbeast")) score += 18;
+
     return score;
 }
 
@@ -1835,28 +2008,28 @@ function fuelTimeInfo(value){
 }
 
 function renderFuelPrices(){
-    const e10El = document.getElementById("fuelE10Price");
+    const e5El = document.getElementById("fuelE5Price");
     const dieselEl = document.getElementById("fuelDieselPrice");
-    if(!e10El || !dieselEl) return;
+    if(!e5El || !dieselEl) return;
 
     const fuel = dashboardData && dashboardData.fuel_prices;
     const source = dashboardData && dashboardData.fuel_price_source;
 
     if(!fuel){
-        e10El.textContent = "NRW Ø · -- €/L";
+        e5El.textContent = "NRW Ø · -- €/L";
         dieselEl.textContent = "NRW Ø · -- €/L";
         return;
     }
 
-    const e10Time = fuelTimeInfo(fuel.e10_updated_at);
+    const e5Time = fuelTimeInfo(fuel.e5_updated_at);
     const dieselTime = fuelTimeInfo(fuel.diesel_updated_at);
 
-    e10El.textContent = e10Time.label + " · " + formatFuelPrice(fuel.e10);
+    e5El.textContent = e5Time.label + " · " + formatFuelPrice(fuel.e5);
     dieselEl.textContent = dieselTime.label + " · " + formatFuelPrice(fuel.diesel);
 
     const sourceName = source && source.name ? source.name : "benzinpreise.de";
-    e10El.parentElement.title =
-        "Super E10 · Durchschnitt NRW · " + sourceName + " · Stand " + e10Time.detail;
+    e5El.parentElement.title =
+        "Super E5 · Durchschnitt NRW · " + sourceName + " · Stand " + e5Time.detail;
     dieselEl.parentElement.title =
         "Diesel · Durchschnitt NRW · " + sourceName + " · Stand " + dieselTime.detail;
 }
@@ -2165,6 +2338,187 @@ if(browserThemeMedia.addEventListener){
 }
 applyTheme(false);
 
+function defaultVehicleProfile(){
+    return {
+        model:"Model 3",
+        variant:"Performance",
+        color:"Pearl White Multi-Coat",
+        year:"2022"
+    };
+}
+
+function vehicleColorsFor(model, year){
+    const y = Number(year) || new Date().getFullYear();
+
+    if(model === "Cybertruck"){
+        return ["Stainless Steel","Satin Stealth Black"];
+    }
+
+    if(model === "Model 3" && y >= 2024){
+        return [
+            "Pearl White Multi-Coat",
+            "Stealth Gray",
+            "Diamond Black",
+            "Frost Blue Metallic",
+            "Ultra Red",
+            "Quicksilver"
+        ];
+    }
+
+    if(model === "Model Y" && y >= 2025){
+        return [
+            "Pearl White Multi-Coat",
+            "Stealth Gray",
+            "Diamond Black",
+            "Glacier Blue",
+            "Ultra Red",
+            "Quicksilver"
+        ];
+    }
+
+    if(model === "Model Y"){
+        return [
+            "Pearl White Multi-Coat",
+            "Solid Black",
+            "Midnight Silver Metallic",
+            "Deep Blue Metallic",
+            "Ultra Red",
+            "Quicksilver",
+            "Midnight Cherry Red"
+        ];
+    }
+
+    if(model === "Model S" || model === "Model X"){
+        return [
+            "Pearl White Multi-Coat",
+            "Solid Black",
+            "Stealth Gray",
+            "Deep Blue Metallic",
+            "Ultra Red"
+        ];
+    }
+
+    return [
+        "Pearl White Multi-Coat",
+        "Solid Black",
+        "Midnight Silver Metallic",
+        "Deep Blue Metallic",
+        "Red Multi-Coat"
+    ];
+}
+
+function vehicleImageDirectory(vehicle){
+    const model = vehicle.model;
+    const year = Number(vehicle.year) || 0;
+    const variant = vehicle.variant || "";
+
+    if(model === "Model 3"){
+        if(year >= 2024){
+            return variant === "Performance"
+                ? "model3-2024-performance"
+                : "model3-2024-base";
+        }
+        return "model3";
+    }
+
+    if(model === "Model Y"){
+        if(year >= 2025){
+            if(variant === "Performance") return "modely-2025-performance";
+            if(variant === "Long Range AWD") return "modely-2025-premium";
+            return "modely-2025-base";
+        }
+        return "modely";
+    }
+
+    if(model === "Model S"){
+        return year >= 2025 && variant === "Plaid"
+            ? "models-2025-plaid"
+            : "models-2021";
+    }
+
+    if(model === "Model X") return "modelx-2021";
+    if(model === "Cybertruck") return "cybertruck";
+    return "model3";
+}
+
+function normalizedVehicle(vehicle){
+    const defaults = defaultVehicleProfile();
+    const profile = Object.assign({}, defaults, vehicle || {});
+    const variants = VEHICLE_VARIANTS[profile.model] || ["RWD"];
+    if(!variants.includes(profile.variant)) profile.variant = variants[0];
+
+    const colors = vehicleColorsFor(profile.model, profile.year);
+    if(!colors.includes(profile.color)) profile.color = colors[0];
+    return profile;
+}
+
+function fillVehicleVariants(preferred){
+    const model = document.getElementById("vehicleModel").value;
+    const select = document.getElementById("vehicleVariant");
+    const variants = VEHICLE_VARIANTS[model] || ["RWD"];
+    const previous = preferred || select.value;
+    select.innerHTML = "";
+    variants.forEach(function(variant){
+        const option = document.createElement("option");
+        option.value = variant;
+        option.textContent = variant;
+        select.appendChild(option);
+    });
+    select.value = variants.includes(previous) ? previous : variants[0];
+}
+
+function fillVehicleColors(preferred){
+    const model = document.getElementById("vehicleModel").value;
+    const year = document.getElementById("vehicleYear").value;
+    const select = document.getElementById("vehicleColor");
+    const colors = vehicleColorsFor(model, year);
+    const previous = preferred || select.value;
+    select.innerHTML = "";
+    colors.forEach(function(color){
+        const option = document.createElement("option");
+        option.value = color;
+        option.textContent = color;
+        select.appendChild(option);
+    });
+    select.value = colors.includes(previous) ? previous : colors[0];
+}
+
+function getVehicleFromControls(){
+    return normalizedVehicle({
+        model:document.getElementById("vehicleModel").value,
+        variant:document.getElementById("vehicleVariant").value,
+        color:document.getElementById("vehicleColor").value,
+        year:document.getElementById("vehicleYear").value
+    });
+}
+
+function renderSpotlightVehicle(vehicle){
+    const profile = normalizedVehicle(vehicle || getVehicle() || defaultVehicleProfile());
+    const root = document.getElementById("spotlightVehicle");
+    const image = document.getElementById("spotlightVehicleImage");
+    const tint = document.getElementById("spotlightVehicleTint");
+    const badge = document.getElementById("spotlightVehicleBadge");
+    if(!root || !image || !tint || !badge) return;
+
+    const imageUrl = VEHICLE_IMAGE_BASE + vehicleImageDirectory(profile) + "/vehicle_image.png";
+    const color = VEHICLE_COLOR_HEX[profile.color] || "#d8d8d8";
+
+    root.style.setProperty("--vehicle-color", color);
+    image.src = imageUrl;
+    tint.style.webkitMaskImage = 'url("' + imageUrl + '")';
+    tint.style.maskImage = 'url("' + imageUrl + '")';
+    badge.textContent =
+        profile.model + " " + profile.variant + " · " + profile.color;
+}
+
+function previewVehicleSelection(rebuildLists){
+    if(rebuildLists){
+        fillVehicleVariants();
+        fillVehicleColors();
+    }
+    renderSpotlightVehicle(getVehicleFromControls());
+}
+
 function fillVehicleYears(){
     const select = document.getElementById("vehicleYear");
     const nowYear = new Date().getFullYear();
@@ -2179,22 +2533,48 @@ function fillVehicleYears(){
 
 function loadVehicleUi(){
     fillVehicleYears();
-    const saved = getVehicle() || {model:"Model 3", year:"2022"};
+    const saved = normalizedVehicle(getVehicle() || defaultVehicleProfile());
+
     document.getElementById("vehicleModel").value = saved.model;
     document.getElementById("vehicleYear").value = saved.year;
+    fillVehicleVariants(saved.variant);
+    fillVehicleColors(saved.color);
+
     document.getElementById("vehicleState").textContent =
-        saved.model + " · Baujahr " + saved.year + " · Update-News werden danach priorisiert";
+        saved.model + " " + saved.variant + " · " + saved.color +
+        " · Baujahr " + saved.year + " · Update-News werden danach priorisiert";
+
+    renderSpotlightVehicle(saved);
 }
 
+document.getElementById("vehicleModel").addEventListener("change", function(){
+    fillVehicleVariants();
+    fillVehicleColors();
+    previewVehicleSelection(false);
+});
+document.getElementById("vehicleYear").addEventListener("change", function(){
+    fillVehicleColors();
+    previewVehicleSelection(false);
+});
+document.getElementById("vehicleVariant").addEventListener("change", function(){
+    previewVehicleSelection(false);
+});
+document.getElementById("vehicleColor").addEventListener("change", function(){
+    previewVehicleSelection(false);
+});
+
 document.getElementById("saveVehicleBtn").addEventListener("click", function(){
-    const vehicle = {
-        model:document.getElementById("vehicleModel").value,
-        year:document.getElementById("vehicleYear").value
-    };
+    const vehicle = getVehicleFromControls();
     localStorage.setItem(VEHICLE_KEY, JSON.stringify(vehicle));
     document.getElementById("vehicleState").textContent =
-        vehicle.model + " · Baujahr " + vehicle.year + " · gespeichert";
-    if(dashboardData) renderNews();
+        vehicle.model + " " + vehicle.variant + " · " + vehicle.color +
+        " · Baujahr " + vehicle.year + " · gespeichert";
+
+    renderSpotlightVehicle(vehicle);
+    if(dashboardData){
+        renderNews();
+        renderRegionalNews();
+    }
 });
 
 function isDataSaver(){
