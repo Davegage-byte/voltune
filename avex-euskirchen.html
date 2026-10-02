@@ -444,16 +444,6 @@ button,a.button{
     background:#2b281c;
 }
 
-.map-link{
-    text-decoration:none;
-    border:1px solid #393940;
-    background:#222227;
-    border-radius:11px;
-    padding:10px 11px;
-    font-size:12px;
-    font-weight:650;
-}
-
 .section{
     margin-top:18px;
 }
@@ -723,15 +713,13 @@ html[data-theme="light"] .news-item:hover{
 }
 html[data-theme="light"] .status{color:#394756}
 html[data-theme="light"] .button,
-html[data-theme="light"] .icon-btn,
-html[data-theme="light"] .map-link{
+html[data-theme="light"] .icon-btn{
     background:#ffffff;
     color:#17202a;
     border-color:#c7d1dc;
 }
 html[data-theme="light"] .button:hover,
-html[data-theme="light"] .icon-btn:hover,
-html[data-theme="light"] .map-link:hover{
+html[data-theme="light"] .icon-btn:hover{
     background:#f0f4f8;
     border-color:#aeb9c5;
 }
@@ -827,10 +815,6 @@ html[data-theme="light"] body.video-active::before{
         <a class="quicklink" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">
             <strong>🧩 Release Notes</strong>
             <span>Aktuelle Versionen</span>
-        </a>
-        <a class="quicklink" href="https://www.tesla.com/de_de/support" target="_blank" rel="noopener noreferrer">
-            <strong>🛠 Support</strong>
-            <span>Tesla Hilfe</span>
         </a>
     </nav>
 
@@ -1576,16 +1560,11 @@ function renderSuperchargers(){
             '</div>' +
             '<div class="super-actions">' +
                 '<button class="icon-btn ' + (site.is_favorite ? 'active' : '') + '" type="button" title="Favorit umschalten">★</button>' +
-                '<button class="map-link nav-btn" type="button">Navigation</button>' +
             '</div>';
 
         item.querySelector(".icon-btn").addEventListener("click", function(event){
             event.stopPropagation();
             toggleFavorite(site.id);
-        });
-        item.querySelector(".nav-btn").addEventListener("click", function(event){
-            event.stopPropagation();
-            navigateToSupercharger(site);
         });
         item.addEventListener("click", function(event){
             if(event.target.closest("button,a")) return;
