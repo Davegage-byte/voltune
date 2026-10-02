@@ -207,31 +207,37 @@ button,a.button{
     padding:16px 20px 20px;
 }
 
-.price-row{
+.avex-price-row{
     display:flex;
-    align-items:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin:8px 0 12px;
+}
+
+.avex-info-row{
+    display:flex;
     justify-content:space-between;
-    gap:22px;
-    margin:8px 0 16px;
+    align-items:flex-start;
+    gap:18px;
+    margin-bottom:6px;
 }
 
-.price-big{
-    font-size:64px;
-    line-height:.98;
-    font-weight:850;
-    letter-spacing:-2px;
-}
-
-.price-big small{
-    font-size:20px;
+.avex-window{
     color:var(--muted);
-    letter-spacing:0;
+    font-size:12px;
+    line-height:1.5;
+}
+
+.avex-window strong{
+    color:var(--text);
+    font-weight:700;
 }
 
 .status{
     text-align:right;
     color:#d9d9dc;
-    font-size:14px;
+    font-size:12px;
     line-height:1.5;
 }
 
@@ -248,32 +254,6 @@ button,a.button{
 .status-dot.green{background:var(--green)}
 .status-dot.yellow{background:var(--yellow)}
 .status-dot.red{background:var(--red)}
-
-.stats{
-    display:grid;
-    grid-template-columns:repeat(3, minmax(0,1fr));
-    gap:10px;
-    margin:16px 0;
-}
-
-.stat{
-    background:var(--panel2);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:13px 14px;
-}
-
-.stat-label{
-    color:var(--muted);
-    font-size:11px;
-    margin-bottom:5px;
-}
-
-.stat-value{
-    font-size:15px;
-    font-weight:750;
-    line-height:1.35;
-}
 
 .actions{
     display:flex;
@@ -569,10 +549,8 @@ button,a.button{
     .brand-mark{width:42px;height:42px}
     .clock-time{font-size:17px}
     .quicklinks .quicklink{width:calc(50% - 5px);flex-basis:calc(50% - 5px)}
-    .price-row{display:block}
-    .price-big{font-size:52px}
-    .status{text-align:left;margin-top:15px}
-    .stats{grid-template-columns:1fr}
+    .avex-info-row{display:block}
+    .status{text-align:left;margin-top:8px}
     .card-head{padding:16px 16px 0}
     .avex-body,.software-body{padding-left:16px;padding-right:16px}
     .super-main{padding-right:48px}
@@ -1047,24 +1025,21 @@ html[data-theme="light"] body.video-active::before{
             </div>
 
             <div class="avex-body">
-                <div class="price-row">
-                    <div id="avexPrice" class="price-big">-- <small>€/kWh</small></div>
-                    <div id="avexStatus" class="status">Belegung wird geladen…</div>
+                <div class="avex-price-row">
+                    <span class="price-chip price-now" title="Aktueller AVEX-Tarif">
+                        <span>Now:</span><strong id="avexPrice">-- €/kWh</strong>
+                    </span>
+                    <span id="avexHighChip" class="price-chip price-high" title="Tageshoch">
+                        <span class="price-arrow-up">↑</span><strong id="dayHigh">-- €/kWh</strong>
+                    </span>
+                    <span id="avexLowChip" class="price-chip price-low" title="Tagestief">
+                        <span class="price-arrow-down">↓</span><strong id="dayLow">-- €/kWh</strong>
+                    </span>
                 </div>
 
-                <div class="stats">
-                    <div class="stat">
-                        <div class="stat-label">Tagestief</div>
-                        <div id="dayLow" class="stat-value">--</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Tageshoch</div>
-                        <div id="dayHigh" class="stat-value">--</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Aktuelles Preisfenster</div>
-                        <div id="priceWindow" class="stat-value">--</div>
-                    </div>
+                <div class="avex-info-row">
+                    <div class="avex-window">Aktuelles Preisfenster · <strong id="priceWindow">--</strong></div>
+                    <div id="avexStatus" class="status">Belegung wird geladen…</div>
                 </div>
 
                 <div class="actions">
@@ -1360,8 +1335,8 @@ function renderAvex(){
     const value = current ? Number(current.price) : Number(String(avexData.price || "").replace(",", "."));
     const priceText = Number.isFinite(value) ? value.toFixed(2).replace(".", ",") : "--";
 
-    document.getElementById("avexPrice").innerHTML =
-        priceText + ' <small>€/kWh</small>';
+    document.getElementById("avexPrice").textContent =
+        priceText + " €/kWh";
 
     const known = ["free","occupied","offline"].every(function(key){
         return Number.isInteger(avexData[key]);
@@ -1404,13 +1379,20 @@ function renderAvex(){
         const low = schedule.find(function(entry){ return Number(entry.price) === min; });
         const high = schedule.find(function(entry){ return Number(entry.price) === max; });
 
-        document.getElementById("dayLow").textContent =
-            formatEuro(min) + "/kWh · " + formatRange(low);
         document.getElementById("dayHigh").textContent =
-            formatEuro(max) + "/kWh · " + formatRange(high);
+            formatEuro(max) + "/kWh";
+        document.getElementById("dayLow").textContent =
+            formatEuro(min) + "/kWh";
+
+        document.getElementById("avexHighChip").title =
+            "Tageshoch · " + formatRange(high) + " Uhr";
+        document.getElementById("avexLowChip").title =
+            "Tagestief · " + formatRange(low) + " Uhr";
     }else{
-        document.getElementById("dayLow").textContent = "--";
-        document.getElementById("dayHigh").textContent = "--";
+        document.getElementById("dayHigh").textContent = "-- €/kWh";
+        document.getElementById("dayLow").textContent = "-- €/kWh";
+        document.getElementById("avexHighChip").title = "Tageshoch";
+        document.getElementById("avexLowChip").title = "Tagestief";
     }
 
     document.getElementById("priceWindow").textContent =
