@@ -1,6 +1,6 @@
 {
   "data_version": 10,
-  "checked_at": "2026-10-02T09:23:35+02:00",
+  "checked_at": "2026-10-02T09:24:12+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -30,8 +30,22 @@
     "url": "https://teslamag.de/",
     "rss_url": "https://teslamag.de/feed"
   },
-  "fuel_price_source": {},
-  "fuel_prices": {},
+  "fuel_price_source": {
+    "name": "WDR / SWR",
+    "page_url": "https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html",
+    "dataset_url": "https://datawrapper.dwcdn.net/dkS5c/16/dataset.csv",
+    "chart_version": 16,
+    "checked_at": "2026-10-02T09:24:12+02:00",
+    "note": "NRW-Tagesmittel aus bereinigten Tankstellen-Preisdaten"
+  },
+  "fuel_prices": {
+    "date": "2026-06-28",
+    "e10": 1.8224,
+    "diesel": 1.7412,
+    "currency": "EUR",
+    "unit": "l",
+    "retrieved_at": "2026-06-28T10:40:07+02:00"
+  },
   "superchargers": [
     {
       "id": "27a84873-7584-4b02-8c3f-f22818a24f0d",
@@ -24516,11 +24530,9 @@
       "source": "TeslaMag.de"
     }
   ],
-  "errors": {
-    "fuel_prices": "WDR fuel dataset has no complete E10/Diesel day"
-  },
-  "superchargers_updated_at": "2026-10-02T09:23:35+02:00",
-  "news_updated_at": "2026-10-02T09:23:35+02:00",
-  "regional_news_updated_at": "2026-10-02T09:23:35+02:00",
-  "fuel_prices_updated_at": null
+  "errors": {},
+  "superchargers_updated_at": "2026-10-02T09:24:12+02:00",
+  "news_updated_at": "2026-10-02T09:24:12+02:00",
+  "regional_news_updated_at": "2026-10-02T09:24:12+02:00",
+  "fuel_prices_updated_at": "2026-10-02T09:24:12+02:00"
 }
