@@ -704,13 +704,7 @@ body.video-active::before{
     background:#050506; transition:opacity .48s cubic-bezier(.22,.61,.36,1), visibility .48s;
 }
 .startup.done{opacity:0;visibility:hidden}
-.startup-core{display:grid;place-items:center;gap:18px}
-.startup-t{
-    width:78px;height:78px;border-radius:24px;display:grid;place-items:center;
-    font-size:43px;font-weight:900;background:linear-gradient(145deg,#ef3b40,#9b070b);
-    box-shadow:0 0 0 1px rgba(255,255,255,.1),0 24px 70px rgba(232,33,39,.32);
-    animation:hubLaunch 1.15s cubic-bezier(.16,1,.3,1) both;
-}
+.startup-core{display:grid;place-items:center}
 .startup-line{
     width:190px;height:3px;border-radius:999px;overflow:hidden;background:#202024;
 }
@@ -718,11 +712,6 @@ body.video-active::before{
     content:"";display:block;height:100%;width:100%;transform:translateX(-100%);
     background:linear-gradient(90deg,transparent,#fff,transparent);
     animation:hubSweep .92s cubic-bezier(.65,0,.35,1) .12s both;
-}
-@keyframes hubLaunch{
-    0%{transform:scale(.45);filter:blur(12px);opacity:0}
-    58%{transform:scale(1.08);filter:blur(0);opacity:1}
-    100%{transform:scale(1)}
 }
 @keyframes hubSweep{to{transform:translateX(100%)}}
 .shell{animation:shellIn .85s cubic-bezier(.16,1,.3,1) .42s both}
@@ -742,7 +731,6 @@ body.video-active::before{
 .top-action.active{border-color:rgba(98,168,255,.65);background:rgba(98,168,255,.12)}
 
 body.data-saver-on .brand-mark,
-body.data-saver-on .startup-t,
 body.data-saver-on .startup-line::after,
 body.data-saver-on .shell{
     animation:none!important;
@@ -1131,7 +1119,6 @@ body.data-saver-on .celebration-banner{
 <div id="celebrationBanner" class="celebration-banner" aria-live="polite" hidden></div>
 <div id="startup" class="startup" aria-hidden="true">
     <div class="startup-core">
-        <div class="startup-t">T</div>
         <div class="startup-line"></div>
     </div>
 </div>
