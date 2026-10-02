@@ -952,7 +952,7 @@ html[data-theme="light"] body.video-active::before{
                     <div class="empty">Supercharger-Daten werden geladen…</div>
                 </div>
                 <div class="source-note">
-                    Es werden immer die 12 nächstgelegenen Supercharger zum aktuellen GPS-Standort gezeigt; wird GPS abgelehnt, dient AVEX Euskirchen als Startpunkt. ⭐ Favoriten bleiben lokal im Browser gespeichert. Ein Klick auf einen Standort öffnet die Navigations-/Teilen-Funktion. Maßgeblich für Preise bleibt der Tesla im Fahrzeug bzw. die Tesla-App.
+                    Es werden immer die 12 nächstgelegenen Supercharger zum aktuellen GPS-Standort gezeigt; wird GPS abgelehnt, dient AVEX Euskirchen als Startpunkt. Aktueller Tarif und Tagestief stammen aus dem öffentlichen <a href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer">SuC-Tracker</a>-Datensatz; ein ⚠ beim Datenstand bedeutet, dass dessen Tarifdaten älter als 48 Stunden sind. ⭐ Favoriten bleiben lokal gespeichert. Maßgeblich für die Abrechnung bleibt Tesla im Fahrzeug bzw. in der Tesla-App.
                 </div>
             </div>
         </section>
@@ -1416,6 +1416,71 @@ function formatRate(block){
         rates[rates.length - 1].toFixed(2).replace(".", ",") + " " + currency + "/kWh";
 }
 
+function pricingWindowsForToday(pricing, now){
+    if(!pricing || pricing.status !== "available" || pricing.unit !== "kwh" || !Array.isArray(pricing.windows)){
+        return [];
+    }
+    const date = now || new Date();
+    const mondayIndex = (date.getDay() + 6) % 7;
+    const dayBit = 1 << mondayIndex;
+    const matching = pricing.windows.filter(function(window){
+        const days = Number(window.days);
+        return !Number.isFinite(days) || days === 0 || (days & dayBit) !== 0;
+    });
+    return matching.length ? matching : pricing.windows.slice();
+}
+
+function currentSucPrice(pricing, now){
+    const date = now || new Date();
+    const minutes = date.getHours() * 60 + date.getMinutes();
+    const windows = pricingWindowsForToday(pricing, date);
+    const active = windows.find(function(window){
+        return Number(window.start) <= minutes && minutes < Number(window.end);
+    });
+    return active && Number.isFinite(Number(active.rate)) ? Number(active.rate) : null;
+}
+
+function dailyLowSucPrice(pricing, now){
+    const windows = pricingWindowsForToday(pricing, now || new Date());
+    const rates = windows.map(function(window){ return Number(window.rate); }).filter(Number.isFinite);
+    return rates.length ? Math.min.apply(null, rates) : null;
+}
+
+function formatSucRate(rate, currency){
+    if(!Number.isFinite(Number(rate))) return null;
+    const symbol = currency === "EUR" ? "€" : (currency || "");
+    return Number(rate).toFixed(2).replace(".", ",") + " " + symbol + "/kWh";
+}
+
+function formatMinuteOfDay(value){
+    const minutes = Math.max(0, Math.min(1440, Number(value) || 0));
+    if(minutes === 1440) return "24:00";
+    return pad(Math.floor(minutes / 60)) + ":" + pad(minutes % 60);
+}
+
+function dailyLowWindowsText(pricing, low, now){
+    if(!Number.isFinite(Number(low))) return "";
+    return pricingWindowsForToday(pricing, now || new Date())
+        .filter(function(window){ return Math.abs(Number(window.rate) - Number(low)) < 0.00001; })
+        .map(function(window){
+            return formatMinuteOfDay(window.start) + "–" + formatMinuteOfDay(window.end);
+        })
+        .join(" · ");
+}
+
+function pricingSourceState(){
+    const source = dashboardData && dashboardData.suc_tracker_source;
+    if(!source || !source.generated_at) return null;
+    const generated = new Date(source.generated_at);
+    if(Number.isNaN(generated.getTime())) return null;
+    const ageHours = Math.max(0, (Date.now() - generated.getTime()) / 3600000);
+    return {
+        generated:generated,
+        ageHours:ageHours,
+        stale:ageHours > 48
+    };
+}
+
 function cleanSuperName(name){
     if(!name) return "Tesla Supercharger";
     return name.replace(", Germany", "").replace("Germany - ", "");
@@ -1460,24 +1525,32 @@ function renderSuperchargers(){
 
         const member = formatRate(site.member_price);
         const other = formatRate(site.other_price);
-        const publicRate = site.public_price && Number.isFinite(Number(site.public_price.rate))
-            ? Number(site.public_price.rate).toFixed(2).replace(".", ",") + " €/kWh"
-            : null;
+        const pricing = site.suc_pricing || null;
+        const currentRate = currentSucPrice(pricing, new Date());
+        const dailyLow = dailyLowSucPrice(pricing, new Date());
+        const lowWindows = dailyLowWindowsText(pricing, dailyLow, new Date());
+        const currency = pricing && pricing.currency ? pricing.currency : "EUR";
+        const currentText = formatSucRate(currentRate, currency);
+        const lowText = formatSucRate(dailyLow, currency);
         const lat = Number(site.latitude);
         const lon = Number(site.longitude);
         const maps = "https://www.google.com/maps/search/?api=1&query=" +
             encodeURIComponent(lat + "," + lon);
 
         let prices = "";
-        if(member){
+        if(currentText){
+            prices += '<span class="price-chip" title="Aktuell gültiges Tarifzeitfenster laut SuC-Tracker"><span>Aktuell</span><strong>' +
+                escapeHtml(currentText) + '</strong></span>';
+        }
+        if(lowText){
+            prices += '<span class="price-chip" title="' +
+                escapeHtml(lowWindows ? "Günstigste Zeit heute: " + lowWindows : "Tagestief laut SuC-Tracker") +
+                '"><span>Tagestief</span><strong>' + escapeHtml(lowText) + '</strong></span>';
+        }
+        if(!currentText && member){
             prices += '<span class="price-chip"><span>Tesla/Mitglied</span><strong>' + member + '</strong></span>';
         }
-        if(publicRate){
-            prices += '<span class="price-chip" title="Öffentlicher Tarif aus ' +
-                escapeHtml(site.public_price.source || "externer Quelle") +
-                '"><span>Öffentlich</span><strong>' + publicRate + '</strong></span>';
-        }
-        if(other){
+        if(!currentText && other){
             prices += '<span class="price-chip"><span>Andere</span><strong>' + other + '</strong></span>';
         }
         if(!prices){
@@ -1524,8 +1597,20 @@ function renderSuperchargers(){
     });
 
     const checked = dashboardData.superchargers_updated_at || dashboardData.checked_at;
-    document.getElementById("superChecked").textContent =
-        "Quelle aktualisiert " + formatRelative(checked);
+    const sourceState = pricingSourceState();
+    const source = dashboardData.suc_tracker_source || {};
+    let sourceText = "Standorte " + formatRelative(checked);
+    if(sourceState){
+        const exact = sourceState.generated.toLocaleString("de-DE", {
+            day:"2-digit", month:"2-digit", year:"numeric",
+            hour:"2-digit", minute:"2-digit"
+        });
+        sourceText = (sourceState.stale ? "⚠ Tarife " : "Tarife ") +
+            formatRelative(source.generated_at) + " · Standorte " + formatRelative(checked);
+        document.getElementById("superChecked").title =
+            "SuC-Tracker Datenstand: " + exact + " Uhr";
+    }
+    document.getElementById("superChecked").textContent = sourceText;
 }
 
 function escapeHtml(value){
