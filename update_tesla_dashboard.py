@@ -199,6 +199,49 @@ def fetch_superchargers(now):
     return nearby[:MAX_SUPERCHARGERS]
 
 
+def probe_suc_tracker():
+    """One-run-safe diagnostics for discovering SuC-Tracker's public browser data path."""
+    base = "https://suc-tracker.eu/"
+    try:
+        html = download_bytes(base, max_bytes=2_000_000).decode("utf-8", errors="replace")
+    except Exception as exc:
+        print(f"SuC-Tracker probe homepage failed: {exc}")
+        return
+
+    script_srcs = re.findall(r'<script[^>]+src=["\\\']([^"\\\']+)["\\\']', html, flags=re.I)
+    links = re.findall(r'(?:href|src)=["\\\']([^"\\\']+)["\\\']', html, flags=re.I)
+    print("SuC-Tracker scripts:", script_srcs[:20])
+    print("SuC-Tracker asset links:", [x for x in links if "asset" in x.lower()][:20])
+
+    for src in script_srcs[:8]:
+        if src.startswith("//"):
+            url = "https:" + src
+        elif src.startswith("http://") or src.startswith("https://"):
+            url = src
+        else:
+            url = base.rstrip("/") + "/" + src.lstrip("/")
+
+        try:
+            js = download_bytes(url, max_bytes=5_000_000).decode("utf-8", errors="replace")
+        except Exception as exc:
+            print(f"SuC-Tracker asset failed {url}: {exc}")
+            continue
+
+        candidates = set()
+        for match in re.findall(r'["\\\']([^"\\\']{3,240})["\\\']', js):
+            low = match.lower()
+            if (
+                "/api/" in low
+                or low.endswith(".json")
+                or "supercharger" in low
+                or "pricing" in low
+                or "price" in low and ("/" in match or "http" in low)
+            ):
+                if len(match) <= 220:
+                    candidates.add(match)
+        print(f"SuC-Tracker candidates from {url}:", sorted(candidates)[:120])
+
+
 def fetch_news():
     root = ET.fromstring(download_bytes(NEWS_URL, max_bytes=3_000_000))
     items = []
@@ -283,6 +326,7 @@ def build_data(old, now):
 
 
 def main():
+    probe_suc_tracker()
     now = datetime.now(TIMEZONE)
     old = load_json(OUTPUT, {})
     data = build_data(old, now)
