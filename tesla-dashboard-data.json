@@ -1,6 +1,6 @@
 {
-  "data_version": 8,
-  "checked_at": "2026-10-02T08:59:09+02:00",
+  "data_version": 9,
+  "checked_at": "2026-10-02T09:00:08+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -25,14 +25,10 @@
     "name": "Not a Tesla App",
     "url": "https://www.notateslaapp.com/"
   },
-  "social_news_source": {
-    "name": "Tesla Social",
-    "accounts": [
-      "Tesla",
-      "teslaeurope",
-      "TeslaCharging"
-    ],
-    "url": "https://x.com/Tesla"
+  "regional_news_source": {
+    "name": "TeslaMag.de",
+    "url": "https://teslamag.de/",
+    "rss_url": "https://teslamag.de/feed"
   },
   "superchargers": [
     {
@@ -24444,11 +24440,82 @@
       "published_at": "2026-09-30T15:35:00+02:00"
     }
   ],
-  "social_news": [],
-  "errors": {
-    "social_news": "No X social posts available; @Tesla: HTTP Error 429: Too Many Requests; @teslaeurope: HTTP Error 429: Too Many Requests; @TeslaCharging: HTTP Error 429: Too Many Requests"
-  },
-  "superchargers_updated_at": "2026-10-02T08:59:09+02:00",
-  "news_updated_at": "2026-10-02T08:59:09+02:00",
-  "social_news_updated_at": null
+  "regional_news": [
+    {
+      "title": "Vorschau: Tesla meldet Verkäufe in Q3 2026 – Analysten-Schätzungen mit großer Bandbreite",
+      "url": "https://teslamag.de/news/tesla-verkaeufe-q3-2026-analysten-schaetzungen-grosse-bandbreite-67394",
+      "published_at": "2026-10-01T07:19:59+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla verschiebt Neuvorstellung von Roadster erneut – wirklich ein fliegendes Auto?",
+      "url": "https://teslamag.de/news/roadster-vorstellung-diese-woche-tesla-wirklich-fliegendes-auto-67381",
+      "published_at": "2026-09-29T11:11:03+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Tesla-Woche 39/26: Semi-Start, EU-FSD später, Büro brennt, Optimus-Leak, Laden mit 2,2 MW",
+      "url": "https://teslamag.de/news/39-26-tesla-semi-start-eu-fsd-spaeter-buero-brennt-optimus-leak-laden-2-mw-67373",
+      "published_at": "2026-09-27T06:57:35+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla startet mit Event in Nevada Auslieferungen von Serien-Semi an Kunden",
+      "url": "https://teslamag.de/news/tesla-event-nevada-auslieferungen-neuer-semi-kunden-67366",
+      "published_at": "2026-09-25T07:36:36+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla mit Semi wichtigster Lieferant bei Rekord-Bestellung elektrischer Lkw in USA",
+      "url": "https://teslamag.de/news/tesla-semi-hauptlieferant-rekord-bestellung-elektrische-lkw-usa-67355",
+      "published_at": "2026-09-23T09:54:51+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Tesla-Woche 38/26: Semi auf IAA, Roadster reservierbar, Optimus-Einkauf, 4680 verbessert",
+      "url": "https://teslamag.de/news/38-26-tesla-semi-iaa-roadster-reservierbar-optimus-einkauf-4680-verbessert-67349",
+      "published_at": "2026-09-20T07:40:07+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla soll unter Eid NHTSA-Fragen zu Regel-Konformität von Cybercab beantworten",
+      "url": "https://teslamag.de/news/tesla-unter-eid-nhtsa-fragen-regel-konformitaet-cybercab-beantworten-67344",
+      "published_at": "2026-09-17T11:43:55+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla kündigt zu Europa-Start von Semi Ladenetz mit mehr als 100 Megachargern an",
+      "url": "https://teslamag.de/news/tesla-manager-europa-start-semi-mehr-als-100-megacharger-67333",
+      "published_at": "2026-09-16T06:50:56+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla zeigt Semi zum 2. Mal auf Messe in Hannover, Long Range für Europa möglich",
+      "url": "https://teslamag.de/news/tesla-semi-zweites-mal-deutsche-messe-long-range-europa-moeglich-67324",
+      "published_at": "2026-09-14T10:25:24+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla nennt Termin für Neuvorstellung von Roadster – Vorbereitungen bei SpaceX?",
+      "url": "https://teslamag.de/news/tesla-teaser-neugier-neuvorstellung-roadster-anfang-oktober-67314",
+      "published_at": "2026-09-14T06:45:28+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Tesla-Woche 37/26: Supercharger billiger, Euro-Semi ab 2027, FSD passt auf, Cybercab-Kosten",
+      "url": "https://teslamag.de/news/tesla-37-26-supercharger-billiger-euro-semi-2027-fsd-passt-auf-cybercab-kosten-67303",
+      "published_at": "2026-09-13T08:08:14+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla senkt Preise an vielen deutschen Superchargern, Nachtladen ab 20 Cent pro kWh",
+      "url": "https://teslamag.de/news/tesla-senkt-deutsche-supercharger-preise-breite-front-ab-20-cent-kwh-67295",
+      "published_at": "2026-09-11T12:27:51+02:00",
+      "source": "TeslaMag.de"
+    }
+  ],
+  "errors": {},
+  "superchargers_updated_at": "2026-10-02T09:00:08+02:00",
+  "news_updated_at": "2026-10-02T09:00:08+02:00",
+  "regional_news_updated_at": "2026-10-02T09:00:08+02:00"
 }
