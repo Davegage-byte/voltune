@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from html import unescape
+from html.parser import HTMLParser
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -17,12 +18,13 @@ SUPERCHARGERS_URL = "https://raw.githubusercontent.com/Niek/tesla-superchargers/
 SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
 SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
+TESLA_LEARN_URL = "https://www.tesla.com/learn"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 6
+DATA_VERSION = 7
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -263,6 +265,94 @@ def fetch_superchargers():
     return nearby[:MAX_SUPERCHARGERS]
 
 
+
+class TeslaLearnParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.current_href = None
+        self.current_text = []
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() != "a":
+            return
+        href = dict(attrs).get("href")
+        if not href:
+            return
+        if href.startswith("/learn/") or href.startswith("https://www.tesla.com/learn/"):
+            self.current_href = href
+            self.current_text = []
+
+    def handle_data(self, data):
+        if self.current_href:
+            self.current_text.append(data)
+
+    def handle_endtag(self, tag):
+        if tag.lower() == "a" and self.current_href:
+            text = " ".join(" ".join(self.current_text).split())
+            self.links.append((self.current_href, text))
+            self.current_href = None
+            self.current_text = []
+
+
+def fetch_tesla_official_news():
+    raw = download_bytes(TESLA_LEARN_URL, max_bytes=6_000_000).decode("utf-8", errors="replace")
+    parser = TeslaLearnParser()
+    parser.feed(raw)
+
+    month_names = (
+        "January|February|March|April|May|June|July|August|"
+        "September|October|November|December"
+    )
+    date_pattern = re.compile(
+        rf"\\b({month_names})\\s+(\\d{{1,2}}),\\s+(20\\d{{2}})\\b",
+        flags=re.I,
+    )
+
+    items = []
+    seen = set()
+
+    for href, text in parser.links:
+        if not text:
+            continue
+
+        url = href if href.startswith("http") else "https://www.tesla.com" + href
+        if url in seen:
+            continue
+
+        date_match = date_pattern.search(text)
+        title = text[: date_match.start()].strip(" ·|-") if date_match else text.strip()
+
+        if len(title) < 8 or title.lower() in {"learn", "read more"}:
+            continue
+
+        published_at = None
+        if date_match:
+            try:
+                parsed = datetime.strptime(date_match.group(0), "%B %d, %Y")
+                parsed = parsed.replace(hour=12, tzinfo=ZoneInfo("UTC"))
+                published_at = parsed.astimezone(TIMEZONE).isoformat(timespec="seconds")
+            except ValueError:
+                pass
+
+        items.append(
+            {
+                "title": title,
+                "url": url,
+                "published_at": published_at,
+            }
+        )
+        seen.add(url)
+
+        if len(items) >= 16:
+            break
+
+    if not items:
+        raise ValueError("no Tesla Learn articles found")
+
+    return items
+
+
 def fetch_news():
     root = ET.fromstring(download_bytes(NEWS_URL, max_bytes=3_000_000))
     items = []
@@ -306,6 +396,7 @@ def build_data(old, now):
         and now - old_checked < REFRESH_AFTER
         and old.get("superchargers")
         and old.get("news")
+        and old.get("official_news")
     ):
         print("Tesla dashboard cache is fresh")
         return None
@@ -324,8 +415,13 @@ def build_data(old, now):
             "name": "Not a Tesla App",
             "url": "https://www.notateslaapp.com/",
         },
+        "official_news_source": {
+            "name": "Tesla Learn",
+            "url": TESLA_LEARN_URL,
+        },
         "superchargers": old.get("superchargers", []),
         "news": old.get("news", []),
+        "official_news": old.get("official_news", []),
         "errors": {},
     }
 
@@ -366,6 +462,13 @@ def build_data(old, now):
         data["errors"]["news"] = str(exc)
         data["news_updated_at"] = old.get("news_updated_at")
 
+    try:
+        data["official_news"] = fetch_tesla_official_news()
+        data["official_news_updated_at"] = now.isoformat(timespec="seconds")
+    except Exception as exc:
+        data["errors"]["official_news"] = str(exc)
+        data["official_news_updated_at"] = old.get("official_news_updated_at")
+
     return data
 
 
@@ -393,6 +496,7 @@ def main():
                 "suc_prices_matched": source.get("matched_stations"),
                 "suc_prices_generated_at": source.get("generated_at"),
                 "news": len(data.get("news", [])),
+                "official_news": len(data.get("official_news", [])),
                 "errors": data.get("errors", {}),
             },
             ensure_ascii=False,
