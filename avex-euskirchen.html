@@ -706,12 +706,30 @@ body.video-active::before{
     background:#050506; transition:opacity .48s cubic-bezier(.22,.61,.36,1), visibility .48s;
 }
 .startup.done{opacity:0;visibility:hidden}
-.startup-core{display:grid;place-items:center;gap:18px}
+.startup-core{
+    display:grid;
+    place-items:center;
+    gap:18px;
+    transform:scale(1);
+    transform-origin:center;
+    transition:transform .48s cubic-bezier(.22,.61,.36,1);
+    will-change:transform;
+}
+.startup.done .startup-core{
+    transform:scale(1.28);
+}
 .startup-t{
     width:78px;height:78px;border-radius:24px;display:grid;place-items:center;
-    font-size:43px;background:linear-gradient(145deg,#ef3b40,#9b070b);
-    box-shadow:0 0 0 1px rgba(255,255,255,.1),0 24px 70px rgba(232,33,39,.32);
-    animation:hubLaunch 1.15s cubic-bezier(.16,1,.3,1) both;
+    font-size:43px;
+    background:
+        linear-gradient(135deg,#ff5a5f 0%,#e82127 30%,#8f0b10 62%,#e82127 82%,#ff777b 100%);
+    background-size:220% 220%;
+    background-position:0% 50%;
+    box-shadow:0 10px 28px rgba(232,33,39,.28);
+    animation:
+        hubLaunch 1.15s cubic-bezier(.16,1,.3,1) both,
+        brandGradientShift 9s ease-in-out infinite,
+        brandGlowPulse 3.8s ease-in-out infinite;
 }
 .startup-line{
     width:190px;height:3px;border-radius:999px;overflow:hidden;background:#202024;
@@ -1058,7 +1076,9 @@ html[data-theme="light"] body.video-active::before{
 @media (prefers-reduced-motion:reduce){
     body,.card,.quicklink,.hub-panel,.top-action,.button{transition:none!important}
     html.themeChanging body{filter:none;opacity:1}
-    .brand-mark{animation:none!important;background-position:50% 50%}
+    .brand-mark,.startup-t{animation:none!important;background-position:50% 50%}
+    .startup-core{transition:none!important}
+    .startup.done .startup-core{transform:none}
 }
 
 .celebration-canvas{
