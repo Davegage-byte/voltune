@@ -8,7 +8,6 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from html import unescape
-from html.parser import HTMLParser
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -18,13 +17,15 @@ SUPERCHARGERS_URL = "https://raw.githubusercontent.com/Niek/tesla-superchargers/
 SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
 SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
-TESLA_LEARN_URL = "https://www.tesla.com/learn"
+X_SOCIAL_ACCOUNTS = ("Tesla", "teslaeurope", "TeslaCharging")
+X_SYNDICATION_URL = "https://syndication.twitter.com/srv/timeline-profile/screen-name/{}"
+SOCIAL_REFRESH_AFTER = timedelta(hours=2)
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 7
+DATA_VERSION = 8
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -266,91 +267,106 @@ def fetch_superchargers():
 
 
 
-class TeslaLearnParser(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.current_href = None
-        self.current_text = []
-        self.links = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag.lower() != "a":
-            return
-        href = dict(attrs).get("href")
-        if not href:
-            return
-        if href.startswith("/learn/") or href.startswith("https://www.tesla.com/learn/"):
-            self.current_href = href
-            self.current_text = []
-
-    def handle_data(self, data):
-        if self.current_href:
-            self.current_text.append(data)
-
-    def handle_endtag(self, tag):
-        if tag.lower() == "a" and self.current_href:
-            text = " ".join(" ".join(self.current_text).split())
-            self.links.append((self.current_href, text))
-            self.current_href = None
-            self.current_text = []
-
-
-def fetch_tesla_official_news():
-    raw = download_bytes(TESLA_LEARN_URL, max_bytes=6_000_000).decode("utf-8", errors="replace")
-    parser = TeslaLearnParser()
-    parser.feed(raw)
-
-    month_names = (
-        "January|February|March|April|May|June|July|August|"
-        "September|October|November|December"
+def fetch_x_timeline(handle):
+    url = X_SYNDICATION_URL.format(handle)
+    raw = download_bytes(url, max_bytes=10_000_000).decode("utf-8", errors="replace")
+    match = re.search(
+        r'<script[^>]+id=["\\\']__NEXT_DATA__["\\\'][^>]*>(.*?)</script>',
+        raw,
+        flags=re.I | re.S,
     )
-    date_pattern = re.compile(
-        rf"\\b({month_names})\\s+(\\d{{1,2}}),\\s+(20\\d{{2}})\\b",
-        flags=re.I,
+    if not match:
+        raise ValueError(f"X syndication payload missing for @{handle}")
+
+    payload = json.loads(unescape(match.group(1)))
+    entries = (
+        payload.get("props", {})
+        .get("pageProps", {})
+        .get("timeline", {})
+        .get("entries", [])
     )
+    if not isinstance(entries, list):
+        raise ValueError(f"X timeline entries missing for @{handle}")
 
     items = []
-    seen = set()
-
-    for href, text in parser.links:
-        if not text:
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        tweet = (entry.get("content") or {}).get("tweet")
+        if not isinstance(tweet, dict):
             continue
 
-        url = href if href.startswith("http") else "https://www.tesla.com" + href
-        if url in seen:
+        user = tweet.get("user") or {}
+        screen_name = str(user.get("screen_name") or handle)
+        text = str(tweet.get("full_text") or tweet.get("text") or "").strip()
+        if not text or text.startswith("@") or tweet.get("retweeted"):
             continue
 
-        date_match = date_pattern.search(text)
-        title = text[: date_match.start()].strip(" ·|-") if date_match else text.strip()
-
-        if len(title) < 8 or title.lower() in {"learn", "read more"}:
+        tweet_id = str(tweet.get("id_str") or tweet.get("id") or "")
+        permalink = str(tweet.get("permalink") or "")
+        if permalink.startswith("/"):
+            permalink = "https://x.com" + permalink
+        if not permalink and tweet_id:
+            permalink = f"https://x.com/{screen_name}/status/{tweet_id}"
+        if not permalink:
             continue
 
         published_at = None
-        if date_match:
+        created_at = tweet.get("created_at")
+        if created_at:
             try:
-                parsed = datetime.strptime(date_match.group(0), "%B %d, %Y")
-                parsed = parsed.replace(hour=12, tzinfo=ZoneInfo("UTC"))
-                published_at = parsed.astimezone(TIMEZONE).isoformat(timespec="seconds")
-            except ValueError:
+                dt = parsedate_to_datetime(str(created_at))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+                published_at = dt.astimezone(TIMEZONE).isoformat(timespec="seconds")
+            except (TypeError, ValueError, OverflowError):
                 pass
+
+        clean_text = re.sub(r"https://t\\.co/\\S+", "", text)
+        clean_text = " ".join(clean_text.split()).strip()
+        if not clean_text:
+            clean_text = text
 
         items.append(
             {
-                "title": title,
-                "url": url,
+                "title": clean_text,
+                "url": permalink,
                 "published_at": published_at,
+                "source": "@" + screen_name,
             }
         )
-        seen.add(url)
-
-        if len(items) >= 16:
-            break
-
-    if not items:
-        raise ValueError("no Tesla Learn articles found")
 
     return items
+
+
+def fetch_social_news():
+    merged = []
+    errors = []
+
+    for handle in X_SOCIAL_ACCOUNTS:
+        try:
+            merged.extend(fetch_x_timeline(handle))
+        except Exception as exc:
+            errors.append(f"@{handle}: {exc}")
+
+    if not merged:
+        raise ValueError("No X social posts available; " + "; ".join(errors))
+
+    seen = set()
+    unique = []
+    for item in merged:
+        url = item.get("url")
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        unique.append(item)
+
+    unique.sort(
+        key=lambda item: timestamp(item.get("published_at"))
+        or datetime.min.replace(tzinfo=TIMEZONE),
+        reverse=True,
+    )
+    return unique[:18], errors
 
 
 def fetch_news():
@@ -396,7 +412,7 @@ def build_data(old, now):
         and now - old_checked < REFRESH_AFTER
         and old.get("superchargers")
         and old.get("news")
-        and old.get("official_news")
+        and old.get("social_news")
     ):
         print("Tesla dashboard cache is fresh")
         return None
@@ -415,13 +431,14 @@ def build_data(old, now):
             "name": "Not a Tesla App",
             "url": "https://www.notateslaapp.com/",
         },
-        "official_news_source": {
-            "name": "Tesla Learn",
-            "url": TESLA_LEARN_URL,
+        "social_news_source": {
+            "name": "Tesla Social",
+            "accounts": list(X_SOCIAL_ACCOUNTS),
+            "url": "https://x.com/Tesla",
         },
         "superchargers": old.get("superchargers", []),
         "news": old.get("news", []),
-        "official_news": old.get("official_news", []),
+        "social_news": old.get("social_news", []),
         "errors": {},
     }
 
@@ -462,12 +479,23 @@ def build_data(old, now):
         data["errors"]["news"] = str(exc)
         data["news_updated_at"] = old.get("news_updated_at")
 
-    try:
-        data["official_news"] = fetch_tesla_official_news()
-        data["official_news_updated_at"] = now.isoformat(timespec="seconds")
-    except Exception as exc:
-        data["errors"]["official_news"] = str(exc)
-        data["official_news_updated_at"] = old.get("official_news_updated_at")
+    social_checked = timestamp(old.get("social_news_updated_at"))
+    should_refresh_social = not social_checked or now - social_checked >= SOCIAL_REFRESH_AFTER
+
+    if should_refresh_social:
+        try:
+            social_news, social_errors = fetch_social_news()
+            data["social_news"] = social_news
+            data["social_news_updated_at"] = now.isoformat(timespec="seconds")
+            if social_errors:
+                data["social_news_source"]["partial_errors"] = social_errors
+        except Exception as exc:
+            data["errors"]["social_news"] = str(exc)
+            data["social_news"] = old.get("social_news", [])
+            data["social_news_updated_at"] = old.get("social_news_updated_at")
+    else:
+        data["social_news"] = old.get("social_news", [])
+        data["social_news_updated_at"] = old.get("social_news_updated_at")
 
     return data
 
@@ -496,7 +524,7 @@ def main():
                 "suc_prices_matched": source.get("matched_stations"),
                 "suc_prices_generated_at": source.get("generated_at"),
                 "news": len(data.get("news", [])),
-                "official_news": len(data.get("official_news", [])),
+                "social_news": len(data.get("social_news", [])),
                 "errors": data.get("errors", {}),
             },
             ensure_ascii=False,
