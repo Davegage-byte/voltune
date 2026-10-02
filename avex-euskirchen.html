@@ -863,11 +863,11 @@ html[data-theme="light"] body.video-active::before{
             <strong>⚡ SuC Tracker</strong>
             <span>Supercharger Preise</span>
         </a>
-        <a class="quicklink fuel-link" href="https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html" target="_blank" rel="noopener noreferrer">
+        <a class="quicklink fuel-link" href="https://derspritfuchs.de/bundesland/nordrhein-westfalen" target="_blank" rel="noopener noreferrer">
             <strong>⛽ Benzin</strong>
             <span id="fuelE10Price" class="fuel-value">NRW Ø heute · -- €/L</span>
         </a>
-        <a class="quicklink fuel-link" href="https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html" target="_blank" rel="noopener noreferrer">
+        <a class="quicklink fuel-link" href="https://derspritfuchs.de/bundesland/nordrhein-westfalen" target="_blank" rel="noopener noreferrer">
             <strong>🛢 Diesel</strong>
             <span id="fuelDieselPrice" class="fuel-value">NRW Ø heute · -- €/L</span>
         </a>
@@ -1837,10 +1837,13 @@ function renderFuelPrices(){
     e10El.textContent = label + " · " + formatFuelPrice(fuel.e10);
     dieselEl.textContent = label + " · " + formatFuelPrice(fuel.diesel);
 
-    const sourceName = source && source.name ? source.name : "WDR / SWR";
-    const updated = fuel.retrieved_at ? formatTime(fuel.retrieved_at, true) : "--";
-    e10El.parentElement.title = "Super E10 · Tagesmittel NRW · " + sourceName + " · Datenstand " + updated;
-    dieselEl.parentElement.title = "Diesel · Tagesmittel NRW · " + sourceName + " · Datenstand " + updated;
+    const sourceName = source && source.name ? source.name : "SpritFuchs";
+    const dateParts = String(fuel.date || "").split("-");
+    const dataDate = dateParts.length === 3
+        ? dateParts[2] + "." + dateParts[1] + "." + dateParts[0]
+        : "--";
+    e10El.parentElement.title = "Super E10 · Tagesmittel NRW · " + sourceName + " · Datenstand " + dataDate;
+    dieselEl.parentElement.title = "Diesel · Tagesmittel NRW · " + sourceName + " · Datenstand " + dataDate;
 }
 
 function renderRegionalNews(){
