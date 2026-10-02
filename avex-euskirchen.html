@@ -1453,7 +1453,7 @@ body.data-saver-on .celebration-banner{
         <div class="footer-controls" aria-label="Tesla Hub Einstellungen">
             <button id="themeBtn" class="top-action" type="button" data-theme-mode="auto">Theme: Auto</button>
             <button id="dataSaverBtn" class="top-action" type="button" title="Bei AN werden Video, Celebration-Effekte und automatische GPS-Updates reduziert">Datensparmodus</button>
-            <button id="fullscreenBtn" class="top-action" type="button">⛶ Vollbild</button>
+            <button id="fullscreenBtn" class="top-action" type="button" title="Im Tesla über YouTube-Redirect in den Theater-Vollbildmodus wechseln">⛶ Vollbild</button>
         </div>
     </div>
 </div>
@@ -3443,23 +3443,32 @@ document.getElementById("dataSaverBtn").addEventListener("click", function(){
     if(!isDataSaver()) maybeStartCelebration();
 });
 
-function teslaFullscreenFallback(){
+function openTeslaTheaterFullscreen(){
     const target = location.href.split("#")[0];
     location.href = "https://www.youtube.com/redirect?q=" + encodeURIComponent(target);
 }
 
+function isTeslaBrowser(){
+    return /Tesla(?:Browser)?\//i.test(navigator.userAgent || "");
+}
+
 document.getElementById("fullscreenBtn").addEventListener("click", function(){
+    if(isTeslaBrowser()){
+        openTeslaTheaterFullscreen();
+        return;
+    }
+
     const root = document.documentElement;
     const request = root.requestFullscreen || root.webkitRequestFullscreen;
     if(request){
         try{
             const result = request.call(root);
-            if(result && result.catch) result.catch(teslaFullscreenFallback);
+            if(result && result.catch) result.catch(openTeslaTheaterFullscreen);
         }catch(_){
-            teslaFullscreenFallback();
+            openTeslaTheaterFullscreen();
         }
     }else{
-        teslaFullscreenFallback();
+        openTeslaTheaterFullscreen();
     }
 });
 
