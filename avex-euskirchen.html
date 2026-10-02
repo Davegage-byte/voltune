@@ -1241,6 +1241,10 @@ body.data-saver-on .celebration-banner{
             <strong>⚡ SuC Tracker</strong>
             <span>Supercharger Preise</span>
         </a>
+        <a class="quicklink" href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer" title="Aktueller Durchschnitt der Supercharger-Preise in Nordrhein-Westfalen">
+            <strong>⚡ SuC NRW</strong>
+            <span id="nrwSucAverage">NRW Ø jetzt · -- €/kWh</span>
+        </a>
         <a class="quicklink fuel-link" href="https://benzinpreise.de/statistik/bundeslaender/super-e5" target="_blank" rel="noopener noreferrer">
             <strong>⛽ Benzin</strong>
             <span id="fuelE5Price" class="fuel-value">NRW Ø heute · -- €/L</span>
@@ -2838,6 +2842,51 @@ function renderTeslaStock(){
         " · Stand " + marketTime;
 }
 
+function renderNrwSuperchargerAverage(){
+    const element = document.getElementById("nrwSucAverage");
+    if(!element) return;
+
+    const summary = dashboardData && dashboardData.nrw_supercharger_prices;
+    const source = dashboardData && dashboardData.nrw_supercharger_price_source;
+
+    if(!summary || !Number.isFinite(Number(summary.average))){
+        element.textContent = "NRW Ø jetzt · -- €/kWh";
+        element.parentElement.title = "Aktueller Durchschnitt der Supercharger-Preise in NRW · derzeit nicht verfügbar";
+        return;
+    }
+
+    const average = Number(summary.average);
+    element.textContent =
+        "NRW Ø jetzt · " + average.toFixed(2).replace(".", ",") + " €/kWh";
+
+    const priced = Number(summary.priced_sites) || 0;
+    const total = Number(summary.total_sites) || 0;
+    const min = Number(summary.min);
+    const max = Number(summary.max);
+    const calculatedAt = summary.calculated_at
+        ? new Date(summary.calculated_at).toLocaleString("de-DE", {
+            timeZone:"Europe/Berlin",
+            day:"2-digit",
+            month:"2-digit",
+            year:"numeric",
+            hour:"2-digit",
+            minute:"2-digit"
+        }) + " Uhr"
+        : "--";
+
+    const sourceName = source && source.name
+        ? source.name
+        : "SuC Tracker";
+
+    element.parentElement.title =
+        "Supercharger NRW · aktueller ungewichteter Standort-Durchschnitt" +
+        " · " + priced + (total ? "/" + total : "") + " Standorte mit Preis" +
+        (Number.isFinite(min) ? " · Tief " + min.toFixed(2).replace(".", ",") + " €/kWh" : "") +
+        (Number.isFinite(max) ? " · Hoch " + max.toFixed(2).replace(".", ",") + " €/kWh" : "") +
+        " · " + sourceName +
+        " · Stand " + calculatedAt;
+}
+
 function renderFuelPrices(){
     const e5El = document.getElementById("fuelE5Price");
     const dieselEl = document.getElementById("fuelDieselPrice");
@@ -2987,6 +3036,7 @@ async function loadDashboard(){
     renderNews();
     renderRegionalNews();
     renderFuelPrices();
+    renderNrwSuperchargerAverage();
     renderTeslaStock();
 }
 
