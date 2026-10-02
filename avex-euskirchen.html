@@ -996,10 +996,76 @@ html[data-theme="light"] body.video-active::before{
     .brand-mark{animation:none!important;background-position:50% 50%}
 }
 
+.celebration-canvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:9400;
+    pointer-events:none;
+}
+
+.celebration-banner{
+    position:fixed;
+    top:22px;
+    left:50%;
+    z-index:9450;
+    transform:translateX(-50%) translateY(-8px);
+    pointer-events:none;
+    padding:10px 16px;
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:999px;
+    background:rgba(16,16,20,.72);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+    backdrop-filter:blur(16px) saturate(140%);
+    box-shadow:0 12px 38px rgba(0,0,0,.28);
+    color:#fff;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.15px;
+    opacity:0;
+    transition:opacity .45s ease, transform .45s ease;
+}
+
+.celebration-banner.visible{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+}
+
+.celebration-banner.fading{
+    opacity:0;
+    transform:translateX(-50%) translateY(-6px);
+}
+
+body.data-saver-on .celebration-canvas,
+body.data-saver-on .celebration-banner{
+    display:none!important;
+}
+
+@media(max-width:650px){
+    .celebration-banner{
+        top:12px;
+        max-width:calc(100% - 24px);
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        font-size:12px;
+    }
+}
+
+@media (prefers-reduced-motion:reduce){
+    .celebration-canvas,
+    .celebration-banner{
+        display:none!important;
+    }
+}
+
 </style>
 </head>
 <body>
 <video id="backgroundVideo" class="background-video" muted loop playsinline preload="none" aria-hidden="true"></video>
+<canvas id="celebrationCanvas" class="celebration-canvas" aria-hidden="true" hidden></canvas>
+<div id="celebrationBanner" class="celebration-banner" aria-live="polite" hidden></div>
 <div id="startup" class="startup" aria-hidden="true">
     <div class="startup-core">
         <div class="startup-t">T</div>
@@ -1284,6 +1350,14 @@ const BACKGROUND_VIDEO_URL = "";
 const VEHICLE_IMAGE_BASE = "https://raw.githubusercontent.com/teslamotors/custom-wraps/master/";
 const VEHICLE_ART_ENABLED = false; // Später mit eigenen PNGs wieder aktivieren.
 
+const CELEBRATION_EVENTS = [
+    {date:"02.10", visibility:"private"},
+    {date:"12.02", visibility:"private"},
+    {date:"26.04", visibility:"private"}
+];
+// Öffentliche Ereignisse können zusätzlich visibility:"public" und reason:"..." erhalten.
+
+
 const VEHICLE_VARIANTS = {
     "Model 3":["RWD","Long Range AWD","Performance"],
     "Model Y":["RWD","Long Range AWD","Performance"],
@@ -1315,6 +1389,180 @@ let distanceOrigin = Object.assign({}, AVEX_ORIGIN);
 let refreshSeconds = 300;
 const AUTO_LOCATION_INTERVAL_MS = 60 * 1000;
 let autoLocationTimer = null;
+let celebrationPlayed = false;
+let celebrationFrame = null;
+
+function celebrationDateKey(){
+    const parts = new Intl.DateTimeFormat("de-DE", {
+        timeZone:"Europe/Berlin",
+        day:"2-digit",
+        month:"2-digit"
+    }).formatToParts(new Date());
+
+    const day = parts.find(function(part){ return part.type === "day"; });
+    const month = parts.find(function(part){ return part.type === "month"; });
+    return day && month ? day.value + "." + month.value : "";
+}
+
+function currentCelebrationEvent(){
+    const key = celebrationDateKey();
+    return CELEBRATION_EVENTS.find(function(event){
+        return event.date === key;
+    }) || null;
+}
+
+function celebrationMotionAllowed(){
+    if(isDataSaver()) return false;
+    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function hideCelebrationOverlay(){
+    const canvas = document.getElementById("celebrationCanvas");
+    const banner = document.getElementById("celebrationBanner");
+
+    if(celebrationFrame){
+        cancelAnimationFrame(celebrationFrame);
+        celebrationFrame = null;
+    }
+
+    if(canvas){
+        const ctx = canvas.getContext("2d");
+        if(ctx) ctx.clearRect(0,0,canvas.width,canvas.height);
+        canvas.hidden = true;
+    }
+
+    if(banner){
+        banner.classList.remove("visible","fading");
+        banner.hidden = true;
+        banner.textContent = "";
+    }
+}
+
+function runCelebration(event){
+    const canvas = document.getElementById("celebrationCanvas");
+    const banner = document.getElementById("celebrationBanner");
+    if(!canvas || !event || !celebrationMotionAllowed()) return;
+
+    celebrationPlayed = true;
+    canvas.hidden = false;
+
+    if(event.visibility === "public" && event.reason){
+        banner.textContent = event.date + " · " + event.reason;
+        banner.hidden = false;
+        requestAnimationFrame(function(){
+            banner.classList.add("visible");
+        });
+    }
+
+    const ctx = canvas.getContext("2d");
+    if(!ctx) return;
+
+    const colors = ["#e82127","#ffcc3d","#4aa8ff","#45d483","#ffffff","#b978ff","#ff7a45"];
+    const particles = [];
+    const start = performance.now();
+    const duration = 6200;
+    const fadeStart = 4300;
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let last = start;
+
+    function resize(){
+        dpr = Math.min(2, window.devicePixelRatio || 1);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+
+    resize();
+
+    const perSide = width < 650 ? 52 : 72;
+    [-1,1].forEach(function(side){
+        for(let i=0;i<perSide;i++){
+            const fromLeft = side === -1;
+            particles.push({
+                x:fromLeft ? -12 : width + 12,
+                y:height * (.32 + Math.random() * .22),
+                vx:(fromLeft ? 1 : -1) * (330 + Math.random() * 330),
+                vy:-250 - Math.random() * 330,
+                gravity:520 + Math.random() * 250,
+                drag:.985 + Math.random() * .008,
+                size:4 + Math.random() * 7,
+                stretch:.55 + Math.random() * 1.15,
+                rotation:Math.random() * Math.PI * 2,
+                spin:(Math.random() - .5) * 9,
+                color:colors[Math.floor(Math.random() * colors.length)],
+                alpha:.78 + Math.random() * .22,
+                wave:Math.random() * Math.PI * 2,
+                waveSpeed:1.4 + Math.random() * 2.2
+            });
+        }
+    });
+
+    function draw(now){
+        const elapsed = now - start;
+        const dt = Math.min(.034, Math.max(.001, (now - last) / 1000));
+        last = now;
+
+        ctx.clearRect(0,0,width,height);
+
+        const fade = elapsed <= fadeStart
+            ? 1
+            : Math.max(0, 1 - (elapsed - fadeStart) / (duration - fadeStart));
+
+        particles.forEach(function(p){
+            p.vx *= Math.pow(p.drag, dt * 60);
+            p.vy += p.gravity * dt;
+            p.x += p.vx * dt + Math.sin(elapsed / 1000 * p.waveSpeed + p.wave) * 12 * dt;
+            p.y += p.vy * dt;
+            p.rotation += p.spin * dt;
+
+            ctx.save();
+            ctx.globalAlpha = p.alpha * fade;
+            ctx.translate(p.x,p.y);
+            ctx.rotate(p.rotation);
+            ctx.fillStyle = p.color;
+
+            if(p.size > 8){
+                ctx.beginPath();
+                ctx.arc(0,0,p.size * .48,0,Math.PI * 2);
+                ctx.fill();
+            }else{
+                ctx.fillRect(
+                    -p.size / 2,
+                    -(p.size * p.stretch) / 2,
+                    p.size,
+                    p.size * p.stretch
+                );
+            }
+            ctx.restore();
+        });
+
+        if(elapsed > fadeStart && banner && !banner.hidden){
+            banner.classList.add("fading");
+        }
+
+        if(elapsed < duration){
+            celebrationFrame = requestAnimationFrame(draw);
+        }else{
+            window.removeEventListener("resize",resize);
+            hideCelebrationOverlay();
+        }
+    }
+
+    window.addEventListener("resize",resize);
+    celebrationFrame = requestAnimationFrame(draw);
+}
+
+function maybeStartCelebration(){
+    if(celebrationPlayed || !celebrationMotionAllowed()) return;
+    const event = currentCelebrationEvent();
+    if(event) runCelebration(event);
+}
 
 function pad(value){
     return String(value).padStart(2, "0");
@@ -2745,6 +2993,7 @@ document.getElementById("dataSaverBtn").addEventListener("click", function(){
     localStorage.setItem(DATA_SAVER_KEY, isDataSaver() ? "0" : "1");
     applyVideoPreference();
     applyPerformanceMode({refreshLocation:!isDataSaver()});
+    if(!isDataSaver()) maybeStartCelebration();
 });
 
 function teslaFullscreenFallback(){
@@ -2773,6 +3022,7 @@ applyPerformanceMode({refreshLocation:false});
 loadFacts();
 setTimeout(function(){
     document.getElementById("startup").classList.add("done");
+    maybeStartCelebration();
 }, 1450);
 
 tickClock();
