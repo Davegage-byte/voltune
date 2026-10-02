@@ -368,6 +368,7 @@ def fetch_nrw_fuel_prices(now):
     dataset_url = f"https://datawrapper.dwcdn.net/dkS5c/{chart_version}/dataset.csv"
 
     raw_csv = download_bytes(dataset_url, max_bytes=2_000_000).decode("utf-8-sig")
+    print("WDR fuel dataset debug", dataset_url, repr(raw_csv[:4000]))
     rows = list(csv.DictReader(io.StringIO(raw_csv)))
 
     wanted = {"Super E10": "e10", "Diesel": "diesel"}
