@@ -20,12 +20,13 @@ NEWS_URL = "https://www.notateslaapp.com/rss"
 TESLAMAG_RSS_URL = "https://teslamag.de/feed"
 BENZINPREISE_E5_URL = "https://benzinpreise.de/statistik/bundeslaender/super-e5"
 BENZINPREISE_DIESEL_URL = "https://benzinpreise.de/statistik/bundeslaender/diesel"
+YAHOO_TSLA_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 13
+DATA_VERSION = 14
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -415,6 +416,46 @@ def fetch_nrw_fuel_prices(now):
     return fuel_prices, source
 
 
+def fetch_tesla_stock(now):
+    payload = json.loads(download_bytes(YAHOO_TSLA_CHART_URL, max_bytes=2_000_000).decode("utf-8"))
+    chart = payload.get("chart") if isinstance(payload, dict) else None
+    result = chart.get("result") if isinstance(chart, dict) else None
+    if not isinstance(result, list) or not result:
+        raise ValueError("Yahoo Finance TSLA result missing")
+
+    meta = result[0].get("meta") if isinstance(result[0], dict) else None
+    if not isinstance(meta, dict):
+        raise ValueError("Yahoo Finance TSLA metadata missing")
+
+    price = float(meta.get("regularMarketPrice"))
+    if not math.isfinite(price) or not (1 <= price <= 10_000):
+        raise ValueError("Yahoo Finance TSLA price invalid")
+
+    market_time_raw = meta.get("regularMarketTime")
+    market_time = None
+    if market_time_raw is not None:
+        try:
+            market_time = datetime.fromtimestamp(int(market_time_raw), tz=TIMEZONE)
+        except (TypeError, ValueError, OSError):
+            market_time = None
+
+    stock = {
+        "symbol": "TSLA",
+        "price": round(price, 2),
+        "currency": meta.get("currency") or "USD",
+        "market_time": market_time.isoformat(timespec="seconds") if market_time else None,
+        "exchange": meta.get("exchangeName") or meta.get("fullExchangeName"),
+    }
+    source = {
+        "name": "Yahoo Finance",
+        "url": "https://finance.yahoo.com/quote/TSLA/",
+        "api_url": YAHOO_TSLA_CHART_URL,
+        "checked_at": now.isoformat(timespec="seconds"),
+        "note": "TSLA regular market price from Yahoo Finance chart metadata",
+    }
+    return stock, source
+
+
 def build_data(old, now):
     old_checked = timestamp(old.get("checked_at"))
     if (
@@ -425,6 +466,7 @@ def build_data(old, now):
         and old.get("news")
         and old.get("regional_news")
         and old.get("fuel_prices")
+        and old.get("tesla_stock")
         and (old.get("fuel_price_source") or {}).get("name") == "benzinpreise.de"
         and not (old.get("errors") or {}).get("fuel_prices")
     ):
@@ -452,6 +494,8 @@ def build_data(old, now):
         },
         "fuel_price_source": old.get("fuel_price_source", {}),
         "fuel_prices": old.get("fuel_prices", {}),
+        "tesla_stock_source": old.get("tesla_stock_source", {}),
+        "tesla_stock": old.get("tesla_stock", {}),
         "superchargers": old.get("superchargers", []),
         "news": old.get("news", []),
         "regional_news": old.get("regional_news", []),
@@ -514,6 +558,17 @@ def build_data(old, now):
         data["fuel_price_source"] = old.get("fuel_price_source", {})
         data["fuel_prices_updated_at"] = old.get("fuel_prices_updated_at")
 
+    try:
+        stock, stock_source = fetch_tesla_stock(now)
+        data["tesla_stock"] = stock
+        data["tesla_stock_source"] = stock_source
+        data["tesla_stock_updated_at"] = now.isoformat(timespec="seconds")
+    except Exception as exc:
+        data["errors"]["tesla_stock"] = str(exc)
+        data["tesla_stock"] = old.get("tesla_stock", {})
+        data["tesla_stock_source"] = old.get("tesla_stock_source", {})
+        data["tesla_stock_updated_at"] = old.get("tesla_stock_updated_at")
+
     return data
 
 
@@ -543,6 +598,7 @@ def main():
                 "news": len(data.get("news", [])),
                 "regional_news": len(data.get("regional_news", [])),
                 "fuel_prices": data.get("fuel_prices", {}),
+                "tesla_stock": data.get("tesla_stock", {}),
                 "errors": data.get("errors", {}),
             },
             ensure_ascii=False,
