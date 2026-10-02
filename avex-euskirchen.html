@@ -575,6 +575,16 @@ button,a.button{
     line-height:1.5;
 }
 
+.footer-note{
+    max-width:1100px;
+    margin:0 auto;
+}
+
+.footer-private{
+    margin-top:8px;
+    opacity:.72;
+}
+
 @media(max-width:1050px){
     .grid-main,.lower-grid{grid-template-columns:1fr}
 }
@@ -1143,9 +1153,6 @@ html[data-theme="light"] body.video-active::before{
                 <div id="superList" class="super-list">
                     <div class="empty">Supercharger-Daten werden geladen…</div>
                 </div>
-                <div class="source-note">
-                    Es werden immer die 6 nächstgelegenen Supercharger zum aktuellen GPS-Standort gezeigt; bei ausgeschaltetem Datensparmodus wird der Standort automatisch jede Minute neu ausgewertet und die Liste neu sortiert. Wird GPS abgelehnt, dient AVEX Euskirchen als Startpunkt. Aktueller Tarif und Tagestief stammen aus dem öffentlichen <a href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer">SuC-Tracker</a>-Datensatz; ein ⚠ beim Datenstand bedeutet, dass dessen Tarifdaten älter als 48 Stunden sind. ⭐ Favoriten bleiben lokal gespeichert. Maßgeblich für die Abrechnung bleibt Tesla im Fahrzeug bzw. in der Tesla-App.
-                </div>
             </div>
         </section>
     </main>
@@ -1240,7 +1247,12 @@ html[data-theme="light"] body.video-active::before{
     </section>
 
     <div class="footer">
-        Tesla Hub ist eine private Übersichtsseite. Supercharger-Preise außerhalb der Tesla-App sind als Zusatzinformation zu verstehen und können abweichen.
+        <div class="footer-note">
+            Es werden immer die 6 nächstgelegenen Supercharger zum aktuellen GPS-Standort gezeigt; bei ausgeschaltetem Datensparmodus wird der Standort automatisch jede Minute neu ausgewertet und die Liste neu sortiert. Wird GPS abgelehnt, dient AVEX Euskirchen als Startpunkt. Aktueller Tarif und Tagestief stammen aus dem öffentlichen <a href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer">SuC-Tracker</a>-Datensatz; ein ⚠ beim Datenstand bedeutet, dass dessen Tarifdaten älter als 48 Stunden sind. ⭐ Favoriten bleiben lokal gespeichert. Maßgeblich für die Abrechnung bleibt Tesla im Fahrzeug bzw. in der Tesla-App.
+        </div>
+        <div class="footer-private">
+            Tesla Hub ist eine private Übersichtsseite. Supercharger-Preise außerhalb der Tesla-App sind als Zusatzinformation zu verstehen und können abweichen.
+        </div>
     </div>
 </div>
 
