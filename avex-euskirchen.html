@@ -757,7 +757,7 @@ body.video-active::before{
 .software-spotlight-card .software-body > .actions{
     position:relative;
     z-index:2;
-    max-width:59%;
+    max-width:100%;
 }
 .software-spotlight-card .mini-links{
     position:relative;
@@ -769,12 +769,7 @@ body.video-active::before{
         width:43%;
         opacity:.45;
     }
-    .software-spotlight-card .software-body > .software-version,
-    .software-spotlight-card .software-body > .software-copy,
-    .software-spotlight-card .software-body > .software-meta,
-    .software-spotlight-card .software-body > .actions{
-        max-width:62%;
-    }
+
 }
 @media(max-width:650px){
     .spotlight-vehicle{
@@ -1004,7 +999,7 @@ html[data-theme="light"] body.video-active::before{
                     <h2>Aktuelles OTA-Update</h2>
                 </div>
             </div>
-            <div id="spotlightVehicle" class="spotlight-vehicle" aria-hidden="true">
+            <div id="spotlightVehicle" class="spotlight-vehicle" aria-hidden="true" hidden>
                 <div id="spotlightVehicleTint" class="spotlight-vehicle-tint"></div>
                 <img id="spotlightVehicleImage" class="spotlight-vehicle-image" alt="">
                 <div id="spotlightVehicleBadge" class="spotlight-vehicle-badge"></div>
@@ -1228,6 +1223,7 @@ const SUPERCHARGER_LIMIT = 6;
 // Video später hier oder per Repo-Datei eintragen. Solange leer, wird garantiert nichts geladen.
 const BACKGROUND_VIDEO_URL = "";
 const VEHICLE_IMAGE_BASE = "https://raw.githubusercontent.com/teslamotors/custom-wraps/master/";
+const VEHICLE_ART_ENABLED = false; // Später mit eigenen PNGs wieder aktivieren.
 
 const VEHICLE_VARIANTS = {
     "Model 3":["RWD","Long Range AWD","Performance"],
@@ -2500,6 +2496,16 @@ function renderSpotlightVehicle(vehicle){
     const badge = document.getElementById("spotlightVehicleBadge");
     if(!root || !image || !tint || !badge) return;
 
+    if(!VEHICLE_ART_ENABLED){
+        root.hidden = true;
+        image.removeAttribute("src");
+        tint.style.webkitMaskImage = "none";
+        tint.style.maskImage = "none";
+        badge.textContent = "";
+        return;
+    }
+
+    root.hidden = false;
     const imageUrl = VEHICLE_IMAGE_BASE + vehicleImageDirectory(profile) + "/vehicle_image.png";
     const color = VEHICLE_COLOR_HEX[profile.color] || "#d8d8d8";
 
