@@ -1,6 +1,6 @@
 {
-  "data_version": 14,
-  "checked_at": "2026-10-02T13:11:15+02:00",
+  "data_version": 15,
+  "checked_at": "2026-10-02T15:40:04+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -16,10 +16,10 @@
     "page_url": "https://suc-tracker.eu/",
     "dataset_url": "https://suc-tracker.eu/data/europe.json",
     "schema_version": 2,
-    "generated_at": "2026-09-24T20:21:19.429Z",
-    "checked_at": "2026-10-02T13:11:15+02:00",
-    "station_count": 1783,
-    "matched_stations": 614
+    "generated_at": "2026-10-02T13:02:45.599Z",
+    "checked_at": "2026-10-02T15:40:04+02:00",
+    "station_count": 1784,
+    "matched_stations": 616
   },
   "news_source": {
     "name": "Not a Tesla App",
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-02T13:11:15+02:00",
+    "checked_at": "2026-10-02T15:40:04+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.3,
-    "diesel": 2.381,
-    "e5_updated_at": "2026-10-02T12:40+02:00",
-    "diesel_updated_at": "2026-10-02T12:40+02:00",
+    "e5": 2.182,
+    "diesel": 2.292,
+    "e5_updated_at": "2026-10-02T15:10+02:00",
+    "diesel_updated_at": "2026-10-02T15:10+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,15 +51,36 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-02T13:11:15+02:00",
+    "checked_at": "2026-10-02T15:40:04+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 354.11,
+    "price": 369.42,
     "currency": "USD",
-    "market_time": "2026-10-01T22:00:00+02:00",
+    "market_time": "2026-10-02T15:40:08+02:00",
     "exchange": "NMS"
+  },
+  "nrw_supercharger_price_source": {
+    "name": "SuC Tracker + deutschlandGeoJSON",
+    "pricing_url": "https://suc-tracker.eu/",
+    "pricing_dataset_url": "https://suc-tracker.eu/data/europe.json",
+    "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
+    "boundary_state": "Nordrhein-Westfalen",
+    "boundary_state_id": "DE-NW",
+    "checked_at": "2026-10-02T15:40:04+02:00",
+    "note": "Unweighted average of currently active Supercharger site prices in NRW",
+    "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
+  },
+  "nrw_supercharger_prices": {
+    "average": 0.4175,
+    "min": 0.35,
+    "max": 0.45,
+    "priced_sites": 16,
+    "total_sites": 19,
+    "currency": "EUR",
+    "unit": "kwh",
+    "calculated_at": "2026-10-02T15:40:04+02:00"
   },
   "superchargers": [
     {
@@ -8174,28 +8195,22 @@
             "days": 127,
             "start": 0,
             "end": 240,
-            "rate": 0.29
+            "rate": 0.32
           },
           {
             "days": 127,
             "start": 240,
-            "end": 540,
-            "rate": 0.34
-          },
-          {
-            "days": 127,
-            "start": 540,
             "end": 1320,
-            "rate": 0.39
+            "rate": 0.36
           },
           {
             "days": 127,
             "start": 1320,
             "end": 1440,
-            "rate": 0.29
+            "rate": 0.32
           }
         ],
-        "price_changed_at": "2026-09-24T18:54:43.236Z"
+        "price_changed_at": "2026-10-02T11:58:53.045Z"
       }
     },
     {
@@ -9462,7 +9477,22 @@
       "stalls": 4,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "suc_tracker_id": "lermoossupercharger",
+      "suc_pricing": {
+        "currency": "EUR",
+        "unit": "kwh",
+        "status": "available",
+        "windows": [
+          {
+            "days": 127,
+            "start": 0,
+            "end": 1440,
+            "rate": 0.37
+          }
+        ],
+        "price_changed_at": "2026-10-02T11:59:48.857Z"
+      }
     },
     {
       "id": "56719727-9594-42a0-8793-039f474ad75c",
@@ -10770,7 +10800,22 @@
       "stalls": 6,
       "access": "ACCESS_TYPE_PUBLIC",
       "member_price": null,
-      "other_price": null
+      "other_price": null,
+      "suc_tracker_id": "innsbrucksupercharger",
+      "suc_pricing": {
+        "currency": "EUR",
+        "unit": "kwh",
+        "status": "available",
+        "windows": [
+          {
+            "days": 127,
+            "start": 0,
+            "end": 1440,
+            "rate": 0.36
+          }
+        ],
+        "price_changed_at": "2026-10-02T11:59:39.204Z"
+      }
     },
     {
       "id": "ff00c569-db9c-420f-afc7-0d42da72ad92",
@@ -10832,34 +10877,34 @@
             "days": 127,
             "start": 0,
             "end": 480,
-            "rate": 0.32
+            "rate": 0.3
           },
           {
             "days": 127,
             "start": 480,
             "end": 720,
-            "rate": 0.39
+            "rate": 0.37
           },
           {
             "days": 127,
             "start": 720,
             "end": 960,
-            "rate": 0.44
+            "rate": 0.42
           },
           {
             "days": 127,
             "start": 960,
             "end": 1200,
-            "rate": 0.39
+            "rate": 0.37
           },
           {
             "days": 127,
             "start": 1200,
             "end": 1440,
-            "rate": 0.32
+            "rate": 0.3
           }
         ],
-        "price_changed_at": "2026-09-24T18:55:53.527Z"
+        "price_changed_at": "2026-10-02T11:59:37.417Z"
       }
     },
     {
@@ -11108,22 +11153,22 @@
             "days": 127,
             "start": 0,
             "end": 600,
-            "rate": 0.34
+            "rate": 0.32
           },
           {
             "days": 127,
             "start": 600,
             "end": 1140,
-            "rate": 0.42
+            "rate": 0.4
           },
           {
             "days": 127,
             "start": 1140,
             "end": 1440,
-            "rate": 0.34
+            "rate": 0.32
           }
         ],
-        "price_changed_at": "2026-09-24T18:54:45.983Z"
+        "price_changed_at": "2026-10-02T11:58:56.384Z"
       }
     },
     {
@@ -11420,17 +11465,11 @@
             "days": 127,
             "start": 0,
             "end": 540,
-            "rate": 0.27
+            "rate": 0.29
           },
           {
             "days": 127,
             "start": 540,
-            "end": 1080,
-            "rate": 0.45
-          },
-          {
-            "days": 127,
-            "start": 1080,
             "end": 1320,
             "rate": 0.41
           },
@@ -11438,10 +11477,10 @@
             "days": 127,
             "start": 1320,
             "end": 1440,
-            "rate": 0.27
+            "rate": 0.29
           }
         ],
-        "price_changed_at": "2026-09-24T18:56:02.123Z"
+        "price_changed_at": "2026-10-02T11:59:47.513Z"
       }
     },
     {
@@ -12371,22 +12410,22 @@
             "days": 127,
             "start": 0,
             "end": 480,
-            "rate": 0.27
+            "rate": 0.29
           },
           {
             "days": 127,
             "start": 480,
             "end": 1320,
-            "rate": 0.44
+            "rate": 0.4
           },
           {
             "days": 127,
             "start": 1320,
             "end": 1440,
-            "rate": 0.27
+            "rate": 0.29
           }
         ],
-        "price_changed_at": "2026-09-24T18:56:11.046Z"
+        "price_changed_at": "2026-10-02T11:59:55.362Z"
       }
     },
     {
@@ -13322,22 +13361,22 @@
             "days": 127,
             "start": 0,
             "end": 540,
-            "rate": 0.3
+            "rate": 0.32
           },
           {
             "days": 127,
             "start": 540,
             "end": 1200,
-            "rate": 0.39
+            "rate": 0.36
           },
           {
             "days": 127,
             "start": 1200,
             "end": 1440,
-            "rate": 0.3
+            "rate": 0.32
           }
         ],
-        "price_changed_at": "2026-09-24T18:56:15.326Z"
+        "price_changed_at": "2026-10-02T12:00:01.589Z"
       }
     },
     {
@@ -14113,23 +14152,11 @@
           {
             "days": 127,
             "start": 0,
-            "end": 600,
-            "rate": 0.34
-          },
-          {
-            "days": 127,
-            "start": 600,
-            "end": 1200,
-            "rate": 0.38
-          },
-          {
-            "days": 127,
-            "start": 1200,
             "end": 1440,
-            "rate": 0.34
+            "rate": 0.35
           }
         ],
-        "price_changed_at": "2026-09-24T18:55:50.693Z"
+        "price_changed_at": "2026-10-02T11:59:34.352Z"
       }
     },
     {
@@ -14578,23 +14605,11 @@
           {
             "days": 127,
             "start": 0,
-            "end": 600,
-            "rate": 0.34
-          },
-          {
-            "days": 127,
-            "start": 600,
-            "end": 1140,
-            "rate": 0.38
-          },
-          {
-            "days": 127,
-            "start": 1140,
             "end": 1440,
-            "rate": 0.34
+            "rate": 0.35
           }
         ],
-        "price_changed_at": "2026-09-24T18:55:46.856Z"
+        "price_changed_at": "2026-10-02T11:59:31.359Z"
       }
     },
     {
@@ -15710,10 +15725,10 @@
             "days": 127,
             "start": 0,
             "end": 1440,
-            "rate": 0.39
+            "rate": 0.37
           }
         ],
-        "price_changed_at": "2026-09-24T18:56:12.425Z"
+        "price_changed_at": "2026-10-02T11:59:56.575Z"
       }
     },
     {
@@ -16670,10 +16685,10 @@
             "days": 127,
             "start": 0,
             "end": 1440,
-            "rate": 0.39
+            "rate": 0.37
           }
         ],
-        "price_changed_at": "2026-09-24T18:55:56.405Z"
+        "price_changed_at": "2026-10-02T11:59:40.265Z"
       }
     },
     {
@@ -17198,10 +17213,10 @@
             "days": 127,
             "start": 0,
             "end": 1440,
-            "rate": 0.36
+            "rate": 0.34
           }
         ],
-        "price_changed_at": "2026-09-24T18:55:45.309Z"
+        "price_changed_at": "2026-10-02T11:59:29.727Z"
       }
     },
     {
@@ -17702,22 +17717,22 @@
             "days": 127,
             "start": 0,
             "end": 600,
-            "rate": 0.33
+            "rate": 0.31
           },
           {
             "days": 127,
             "start": 600,
             "end": 1200,
-            "rate": 0.38
+            "rate": 0.36
           },
           {
             "days": 127,
             "start": 1200,
             "end": 1440,
-            "rate": 0.33
+            "rate": 0.31
           }
         ],
-        "price_changed_at": "2026-09-24T18:56:19.620Z"
+        "price_changed_at": "2026-10-02T12:00:05.345Z"
       }
     },
     {
@@ -24473,7 +24488,13 @@
   ],
   "regional_news": [
     {
-      "title": "Aktuell: Tesla führt Funktion zur Flucht von Superchargern in gefährlichen Situationen ein",
+      "title": "Aktuell: Tesla übertrifft Börsen-Erwartungen für Elektroauto-Auslieferungen in Q3 2026 deutlich",
+      "url": "https://teslamag.de/news/tesla-uebertrifft-boersen-erwartungen-elektroauto-auslieferungen-q3-2026-deutlich-67409",
+      "published_at": "2026-10-02T15:30:32+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
+      "title": "Aktuell: Tesla führt Funktion für (teure) Flucht vom Supercharger bei heiklen Situationen ein",
       "url": "https://teslamag.de/news/tesla-funktion-flucht-von-superchargern-in-gefaehrlichen-situationen-67398",
       "published_at": "2026-10-02T09:44:18+02:00",
       "source": "TeslaMag.de"
@@ -24537,18 +24558,13 @@
       "url": "https://teslamag.de/news/tesla-teaser-neugier-neuvorstellung-roadster-anfang-oktober-67314",
       "published_at": "2026-09-14T06:45:28+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Tesla-Woche 37/26: Supercharger billiger, Euro-Semi ab 2027, FSD passt auf, Cybercab-Kosten",
-      "url": "https://teslamag.de/news/tesla-37-26-supercharger-billiger-euro-semi-2027-fsd-passt-auf-cybercab-kosten-67303",
-      "published_at": "2026-09-13T08:08:14+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-02T13:11:15+02:00",
-  "news_updated_at": "2026-10-02T13:11:15+02:00",
-  "regional_news_updated_at": "2026-10-02T13:11:15+02:00",
-  "fuel_prices_updated_at": "2026-10-02T13:11:15+02:00",
-  "tesla_stock_updated_at": "2026-10-02T13:11:15+02:00"
+  "superchargers_updated_at": "2026-10-02T15:40:04+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-02T15:40:04+02:00",
+  "news_updated_at": "2026-10-02T15:40:04+02:00",
+  "regional_news_updated_at": "2026-10-02T15:40:04+02:00",
+  "fuel_prices_updated_at": "2026-10-02T15:40:04+02:00",
+  "tesla_stock_updated_at": "2026-10-02T15:40:04+02:00"
 }
