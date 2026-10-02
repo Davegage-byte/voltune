@@ -1351,11 +1351,27 @@ const VEHICLE_IMAGE_BASE = "https://raw.githubusercontent.com/teslamotors/custom
 const VEHICLE_ART_ENABLED = false; // Später mit eigenen PNGs wieder aktivieren.
 
 const CELEBRATION_EVENTS = [
-    {date:"02.10", visibility:"private"},
-    {date:"12.02", visibility:"private"},
-    {date:"26.04", visibility:"private"}
+    {date:"02.10", visibility:"private", effect:"confetti"},
+    {date:"12.02", visibility:"private", effect:"confetti"},
+    {date:"26.04", visibility:"private", effect:"confetti"},
+    {
+        start:"24.12",
+        end:"31.12",
+        label:"24.–31.12",
+        visibility:"public",
+        reason:"Frohe Weihnachten! 🎄",
+        effect:"snow"
+    },
+    {
+        date:"01.01",
+        label:"01.01",
+        visibility:"public",
+        reason:"Frohes Neues Jahr! 🥂",
+        effect:"confetti",
+        palette:["#d4af37","#f5d76e","#c0c0c0","#f4f4f4"]
+    }
 ];
-// Öffentliche Ereignisse können zusätzlich visibility:"public" und reason:"..." erhalten.
+// Öffentliche Ereignisse können visibility:"public", reason:"..." und eigene Effekte/Farben erhalten.
 
 
 const VEHICLE_VARIANTS = {
@@ -1404,10 +1420,26 @@ function celebrationDateKey(){
     return day && month ? day.value + "." + month.value : "";
 }
 
+function celebrationKeyNumber(key){
+    const parts = String(key || "").split(".");
+    if(parts.length !== 2) return NaN;
+    const day = Number(parts[0]);
+    const month = Number(parts[1]);
+    if(!Number.isFinite(day) || !Number.isFinite(month)) return NaN;
+    return month * 100 + day;
+}
+
 function currentCelebrationEvent(){
     const key = celebrationDateKey();
+    const current = celebrationKeyNumber(key);
+
     return CELEBRATION_EVENTS.find(function(event){
-        return event.date === key;
+        if(event.date) return event.date === key;
+        if(!event.start || !event.end) return false;
+
+        const start = celebrationKeyNumber(event.start);
+        const end = celebrationKeyNumber(event.end);
+        return Number.isFinite(current) && current >= start && current <= end;
     }) || null;
 }
 
@@ -1438,7 +1470,7 @@ function hideCelebrationOverlay(){
     }
 }
 
-function runCelebration(event){
+function runSnowCelebration(event){
     const canvas = document.getElementById("celebrationCanvas");
     const banner = document.getElementById("celebrationBanner");
     if(!canvas || !event || !celebrationMotionAllowed()) return;
@@ -1447,7 +1479,8 @@ function runCelebration(event){
     canvas.hidden = false;
 
     if(event.visibility === "public" && event.reason){
-        banner.textContent = event.date + " · " + event.reason;
+        const eventLabel = event.label || event.date || "";
+        banner.textContent = (eventLabel ? eventLabel + " · " : "") + event.reason;
         banner.hidden = false;
         requestAnimationFrame(function(){
             banner.classList.add("visible");
@@ -1457,7 +1490,120 @@ function runCelebration(event){
     const ctx = canvas.getContext("2d");
     if(!ctx) return;
 
-    const colors = ["#e82127","#ffcc3d","#4aa8ff","#45d483","#ffffff","#b978ff","#ff7a45"];
+    const flakes = [];
+    const start = performance.now();
+    const fadeStart = 10000;
+    const duration = 12500;
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let last = start;
+
+    function makeFlake(initial){
+        return {
+            x:Math.random() * width,
+            y:initial ? Math.random() * height : -10 - Math.random() * 90,
+            size:2.2 + Math.random() * 5.8,
+            vy:28 + Math.random() * 48,
+            drift:(Math.random() - .5) * 22,
+            sway:8 + Math.random() * 20,
+            phase:Math.random() * Math.PI * 2,
+            alpha:.45 + Math.random() * .55
+        };
+    }
+
+    function resize(){
+        dpr = Math.min(2, window.devicePixelRatio || 1);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+
+    resize();
+
+    const count = width < 650 ? 82 : 130;
+    for(let i=0;i<count;i++) flakes.push(makeFlake(true));
+
+    function draw(now){
+        const elapsed = now - start;
+        const dt = Math.min(.034, Math.max(.001, (now - last) / 1000));
+        last = now;
+
+        ctx.clearRect(0,0,width,height);
+
+        const fade = elapsed <= fadeStart
+            ? 1
+            : Math.max(0, 1 - (elapsed - fadeStart) / (duration - fadeStart));
+
+        flakes.forEach(function(flake,index){
+            flake.y += flake.vy * dt;
+            flake.x += flake.drift * dt +
+                Math.sin(elapsed / 1000 * .9 + flake.phase) * flake.sway * dt;
+
+            if(flake.x < -20) flake.x = width + 20;
+            if(flake.x > width + 20) flake.x = -20;
+
+            if(flake.y > height + 16 && elapsed < fadeStart){
+                flakes[index] = makeFlake(false);
+                flake = flakes[index];
+            }
+
+            if(flake.y <= height + 20){
+                ctx.save();
+                ctx.globalAlpha = flake.alpha * fade;
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "rgba(255,255,255,.28)";
+                ctx.shadowBlur = flake.size * 1.4;
+                ctx.beginPath();
+                ctx.arc(flake.x,flake.y,flake.size,0,Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        });
+
+        if(elapsed > fadeStart && banner && !banner.hidden){
+            banner.classList.add("fading");
+        }
+
+        if(elapsed < duration){
+            celebrationFrame = requestAnimationFrame(draw);
+        }else{
+            window.removeEventListener("resize",resize);
+            hideCelebrationOverlay();
+        }
+    }
+
+    window.addEventListener("resize",resize);
+    celebrationFrame = requestAnimationFrame(draw);
+}
+
+function runCelebration(event){
+    const canvas = document.getElementById("celebrationCanvas");
+    const banner = document.getElementById("celebrationBanner");
+    if(!canvas || !event || !celebrationMotionAllowed()) return;
+
+    celebrationPlayed = true;
+    canvas.hidden = false;
+
+    if(event.visibility === "public" && event.reason){
+        const eventLabel = event.label || event.date || "";
+        banner.textContent = (eventLabel ? eventLabel + " · " : "") + event.reason;
+        banner.hidden = false;
+        requestAnimationFrame(function(){
+            banner.classList.add("visible");
+        });
+    }
+
+    const ctx = canvas.getContext("2d");
+    if(!ctx) return;
+
+    const colors = Array.isArray(event.palette) && event.palette.length
+        ? event.palette
+        : ["#e82127","#ffcc3d","#4aa8ff","#45d483","#ffffff","#b978ff","#ff7a45"];
     const particles = [];
     const start = performance.now();
     const duration = 6200;
@@ -1561,7 +1707,13 @@ function runCelebration(event){
 function maybeStartCelebration(){
     if(celebrationPlayed || !celebrationMotionAllowed()) return;
     const event = currentCelebrationEvent();
-    if(event) runCelebration(event);
+    if(!event) return;
+
+    if(event.effect === "snow"){
+        runSnowCelebration(event);
+    }else{
+        runCelebration(event);
+    }
 }
 
 function pad(value){
