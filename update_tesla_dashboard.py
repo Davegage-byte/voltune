@@ -17,15 +17,13 @@ SUPERCHARGERS_URL = "https://raw.githubusercontent.com/Niek/tesla-superchargers/
 SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
 SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
-X_SOCIAL_ACCOUNTS = ("Tesla", "teslaeurope", "TeslaCharging")
-X_SYNDICATION_URL = "https://syndication.twitter.com/srv/timeline-profile/screen-name/{}"
-SOCIAL_REFRESH_AFTER = timedelta(hours=2)
+TESLAMAG_RSS_URL = "https://teslamag.de/feed"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 8
+DATA_VERSION = 9
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -267,108 +265,6 @@ def fetch_superchargers():
 
 
 
-def fetch_x_timeline(handle):
-    url = X_SYNDICATION_URL.format(handle)
-    raw = download_bytes(url, max_bytes=10_000_000).decode("utf-8", errors="replace")
-    match = re.search(
-        r'<script[^>]+id=["\\\']__NEXT_DATA__["\\\'][^>]*>(.*?)</script>',
-        raw,
-        flags=re.I | re.S,
-    )
-    if not match:
-        raise ValueError(f"X syndication payload missing for @{handle}")
-
-    payload = json.loads(unescape(match.group(1)))
-    entries = (
-        payload.get("props", {})
-        .get("pageProps", {})
-        .get("timeline", {})
-        .get("entries", [])
-    )
-    if not isinstance(entries, list):
-        raise ValueError(f"X timeline entries missing for @{handle}")
-
-    items = []
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        tweet = (entry.get("content") or {}).get("tweet")
-        if not isinstance(tweet, dict):
-            continue
-
-        user = tweet.get("user") or {}
-        screen_name = str(user.get("screen_name") or handle)
-        text = str(tweet.get("full_text") or tweet.get("text") or "").strip()
-        if not text or text.startswith("@") or tweet.get("retweeted"):
-            continue
-
-        tweet_id = str(tweet.get("id_str") or tweet.get("id") or "")
-        permalink = str(tweet.get("permalink") or "")
-        if permalink.startswith("/"):
-            permalink = "https://x.com" + permalink
-        if not permalink and tweet_id:
-            permalink = f"https://x.com/{screen_name}/status/{tweet_id}"
-        if not permalink:
-            continue
-
-        published_at = None
-        created_at = tweet.get("created_at")
-        if created_at:
-            try:
-                dt = parsedate_to_datetime(str(created_at))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=ZoneInfo("UTC"))
-                published_at = dt.astimezone(TIMEZONE).isoformat(timespec="seconds")
-            except (TypeError, ValueError, OverflowError):
-                pass
-
-        clean_text = re.sub(r"https://t\\.co/\\S+", "", text)
-        clean_text = " ".join(clean_text.split()).strip()
-        if not clean_text:
-            clean_text = text
-
-        items.append(
-            {
-                "title": clean_text,
-                "url": permalink,
-                "published_at": published_at,
-                "source": "@" + screen_name,
-            }
-        )
-
-    return items
-
-
-def fetch_social_news():
-    merged = []
-    errors = []
-
-    for handle in X_SOCIAL_ACCOUNTS:
-        try:
-            merged.extend(fetch_x_timeline(handle))
-        except Exception as exc:
-            errors.append(f"@{handle}: {exc}")
-
-    if not merged:
-        raise ValueError("No X social posts available; " + "; ".join(errors))
-
-    seen = set()
-    unique = []
-    for item in merged:
-        url = item.get("url")
-        if not url or url in seen:
-            continue
-        seen.add(url)
-        unique.append(item)
-
-    unique.sort(
-        key=lambda item: timestamp(item.get("published_at"))
-        or datetime.min.replace(tzinfo=TIMEZONE),
-        reverse=True,
-    )
-    return unique[:18], errors
-
-
 def fetch_news():
     root = ET.fromstring(download_bytes(NEWS_URL, max_bytes=3_000_000))
     items = []
@@ -404,6 +300,45 @@ def fetch_news():
     return items
 
 
+def fetch_regional_news():
+    root = ET.fromstring(download_bytes(TESLAMAG_RSS_URL, max_bytes=3_000_000))
+    items = []
+
+    for item in root.findall(".//item"):
+        title = (item.findtext("title") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        pub_date = (item.findtext("pubDate") or "").strip()
+
+        if not title or not link:
+            continue
+
+        published_at = None
+        if pub_date:
+            try:
+                dt = parsedate_to_datetime(pub_date)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=TIMEZONE)
+                published_at = dt.astimezone(TIMEZONE).isoformat(timespec="seconds")
+            except (TypeError, ValueError, OverflowError):
+                pass
+
+        items.append(
+            {
+                "title": unescape(title),
+                "url": link,
+                "published_at": published_at,
+                "source": "TeslaMag.de",
+            }
+        )
+        if len(items) >= 12:
+            break
+
+    if not items:
+        raise ValueError("no TeslaMag RSS items found")
+
+    return items
+
+
 def build_data(old, now):
     old_checked = timestamp(old.get("checked_at"))
     if (
@@ -412,7 +347,7 @@ def build_data(old, now):
         and now - old_checked < REFRESH_AFTER
         and old.get("superchargers")
         and old.get("news")
-        and old.get("social_news")
+        and old.get("regional_news")
     ):
         print("Tesla dashboard cache is fresh")
         return None
@@ -431,14 +366,14 @@ def build_data(old, now):
             "name": "Not a Tesla App",
             "url": "https://www.notateslaapp.com/",
         },
-        "social_news_source": {
-            "name": "Tesla Social",
-            "accounts": list(X_SOCIAL_ACCOUNTS),
-            "url": "https://x.com/Tesla",
+        "regional_news_source": {
+            "name": "TeslaMag.de",
+            "url": "https://teslamag.de/",
+            "rss_url": TESLAMAG_RSS_URL,
         },
         "superchargers": old.get("superchargers", []),
         "news": old.get("news", []),
-        "social_news": old.get("social_news", []),
+        "regional_news": old.get("regional_news", []),
         "errors": {},
     }
 
@@ -479,23 +414,13 @@ def build_data(old, now):
         data["errors"]["news"] = str(exc)
         data["news_updated_at"] = old.get("news_updated_at")
 
-    social_checked = timestamp(old.get("social_news_updated_at"))
-    should_refresh_social = not social_checked or now - social_checked >= SOCIAL_REFRESH_AFTER
-
-    if should_refresh_social:
-        try:
-            social_news, social_errors = fetch_social_news()
-            data["social_news"] = social_news
-            data["social_news_updated_at"] = now.isoformat(timespec="seconds")
-            if social_errors:
-                data["social_news_source"]["partial_errors"] = social_errors
-        except Exception as exc:
-            data["errors"]["social_news"] = str(exc)
-            data["social_news"] = old.get("social_news", [])
-            data["social_news_updated_at"] = old.get("social_news_updated_at")
-    else:
-        data["social_news"] = old.get("social_news", [])
-        data["social_news_updated_at"] = old.get("social_news_updated_at")
+    try:
+        data["regional_news"] = fetch_regional_news()
+        data["regional_news_updated_at"] = now.isoformat(timespec="seconds")
+    except Exception as exc:
+        data["errors"]["regional_news"] = str(exc)
+        data["regional_news"] = old.get("regional_news", [])
+        data["regional_news_updated_at"] = old.get("regional_news_updated_at")
 
     return data
 
@@ -524,7 +449,7 @@ def main():
                 "suc_prices_matched": source.get("matched_stations"),
                 "suc_prices_generated_at": source.get("generated_at"),
                 "news": len(data.get("news", [])),
-                "social_news": len(data.get("social_news", [])),
+                "regional_news": len(data.get("regional_news", [])),
                 "errors": data.get("errors", {}),
             },
             ensure_ascii=False,
