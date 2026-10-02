@@ -644,15 +644,26 @@ body.video-active::before{
     height:4px;border-radius:99px;margin-top:12px;overflow:hidden;background:#27272d;position:relative
 }
 .motion-rail::after{
-    content:"";position:absolute;inset:0;width:45%;transform:translateX(-110%);
-    background:linear-gradient(90deg,transparent,#e82127,#fff);
-    animation:motionEase 3.2s cubic-bezier(.16,1,.3,1) infinite;
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 28%,
+        rgba(232,33,39,.18) 39%,
+        #e82127 47%,
+        #fff 50%,
+        #e82127 53%,
+        rgba(232,33,39,.18) 61%,
+        transparent 72%,
+        transparent 100%
+    );
+    background-size:220% 100%;
+    animation:motionSweep 2.35s linear infinite;
+    will-change:background-position;
 }
-@keyframes motionEase{
-    0%{transform:translateX(-110%);opacity:.2}
-    38%{transform:translateX(95%);opacity:1}
-    68%{transform:translateX(145%);opacity:.75}
-    100%{transform:translateX(235%);opacity:0}
+@keyframes motionSweep{
+    from{background-position:145% 0}
+    to{background-position:-145% 0}
 }
 .super-item{cursor:pointer}
 .super-item:active{transform:scale(.992)}
