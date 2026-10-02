@@ -460,7 +460,7 @@ button,a.button{
 
 .lower-grid{
     display:grid;
-    grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+    grid-template-columns:repeat(2,minmax(0,1fr));
     gap:18px;
 }
 
@@ -903,7 +903,7 @@ html[data-theme="light"] body.video-active::before{
                     <div class="empty">Supercharger-Daten werden geladen…</div>
                 </div>
                 <div class="source-note">
-                    Es werden immer die 12 nächstgelegenen Supercharger zum aktuellen GPS-Standort gezeigt; wird GPS abgelehnt, dient AVEX Euskirchen als Startpunkt. Aktueller Tarif und Tagestief stammen aus dem öffentlichen <a href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer">SuC-Tracker</a>-Datensatz; ein ⚠ beim Datenstand bedeutet, dass dessen Tarifdaten älter als 48 Stunden sind. ⭐ Favoriten bleiben lokal gespeichert. Maßgeblich für die Abrechnung bleibt Tesla im Fahrzeug bzw. in der Tesla-App.
+                    Es werden immer die 6 nächstgelegenen Supercharger zum aktuellen GPS-Standort gezeigt; wird GPS abgelehnt, dient AVEX Euskirchen als Startpunkt. Aktueller Tarif und Tagestief stammen aus dem öffentlichen <a href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer">SuC-Tracker</a>-Datensatz; ein ⚠ beim Datenstand bedeutet, dass dessen Tarifdaten älter als 48 Stunden sind. ⭐ Favoriten bleiben lokal gespeichert. Maßgeblich für die Abrechnung bleibt Tesla im Fahrzeug bzw. in der Tesla-App.
                 </div>
             </div>
         </section>
@@ -1017,7 +1017,7 @@ const THEME_MODE_KEY = "voltune.themeMode";
 const VALID_THEME_MODES = ["auto", "dark", "light"];
 const browserThemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 let themeMode = VALID_THEME_MODES.includes(document.documentElement.dataset.themeMode) ? document.documentElement.dataset.themeMode : "auto";
-const SUPERCHARGER_LIMIT = 12;
+const SUPERCHARGER_LIMIT = 6;
 // Video später hier oder per Repo-Datei eintragen. Solange leer, wird garantiert nichts geladen.
 const BACKGROUND_VIDEO_URL = "";
 let avexData = null;
@@ -1811,7 +1811,7 @@ function requestLocation(){
                 latitude:position.coords.latitude,
                 longitude:position.coords.longitude
             };
-            document.getElementById("originLabel").textContent = "12 nächste Supercharger ab meinem Standort";
+            document.getElementById("originLabel").textContent = "6 nächste Supercharger ab meinem Standort";
             button.textContent = "📍 Standort aktualisieren";
             button.disabled = false;
             setGpsUi("live", "GPS aktiv");
