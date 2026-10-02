@@ -360,10 +360,11 @@ button,a.button{
     background:#19191d;
     border-radius:14px;
     padding:13px 14px;
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    gap:12px;
-    align-items:center;
+}
+
+.super-main{
+    min-width:0;
+    padding-right:52px;
 }
 
 .super-item.favorite{
@@ -422,9 +423,11 @@ button,a.button{
 }
 
 .super-actions{
+    position:absolute;
+    top:13px;
+    right:14px;
     display:flex;
     align-items:center;
-    gap:7px;
 }
 
 .icon-btn{
@@ -572,8 +575,9 @@ button,a.button{
     .stats{grid-template-columns:1fr}
     .card-head{padding:16px 16px 0}
     .avex-body,.software-body{padding-left:16px;padding-right:16px}
-    .super-item{grid-template-columns:1fr}
-    .super-actions{justify-content:flex-start}
+    .super-main{padding-right:48px}
+    .super-actions{top:12px;right:12px}
+    .super-actions .icon-btn{width:36px;height:36px}
 }
 
 /* Tesla Hub shell enhancements */
@@ -1785,7 +1789,7 @@ function renderSuperchargers(){
         const dist = site.live_distance_km.toFixed(1).replace(".", ",") + " km";
 
         item.innerHTML =
-            '<div>' +
+            '<div class="super-main">' +
                 '<div class="super-title">' +
                     (site.is_favorite ? '<span title="Favorit">⭐</span>' : '') +
                     '<span>' + escapeHtml(cleanSuperName(site.name)) + '</span>' +
