@@ -531,10 +531,19 @@ def probe_spritexperte():
     try:
         raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
         print("SpritExperte bytes", len(raw))
-        for needle in ("Super E10", "Diesel", "Live ·", "Schnitt Nordrhein-Westfalen"):
-            pos = raw.find(needle)
-            if pos >= 0:
-                print("SpritExperte snippet", needle, repr(raw[max(0, pos-500):pos+1800]))
+        for needle in ("Super E10", "Diesel", "Live ·", "Schnitt Nordrhein-Westfalen", "fetch(", "/api/", "axios", "XMLHttpRequest"):
+            start = 0
+            hits = 0
+            while hits < 12:
+                pos = raw.find(needle, start)
+                if pos < 0:
+                    break
+                print("SpritExperte snippet", needle, repr(raw[max(0, pos-700):pos+2200]))
+                start = pos + len(needle)
+                hits += 1
+
+        urls = sorted(set(re.findall(r'https?://[^"\\\'\\s<>]+', raw)))
+        print("SpritExperte URLs", urls[:120])
     except Exception as exc:
         print("SpritExperte probe failed", repr(exc))
 
