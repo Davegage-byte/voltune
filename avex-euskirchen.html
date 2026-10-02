@@ -161,6 +161,12 @@ button,a.button{
     margin-top:4px;
 }
 
+.quicklink .fuel-value{
+    color:var(--text);
+    font-size:12px;
+    font-weight:750;
+}
+
 .grid-main{
     display:grid;
     grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
@@ -857,6 +863,14 @@ html[data-theme="light"] body.video-active::before{
             <strong>⚡ SuC Tracker</strong>
             <span>Supercharger Preise</span>
         </a>
+        <a class="quicklink fuel-link" href="https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html" target="_blank" rel="noopener noreferrer">
+            <strong>⛽ Benzin</strong>
+            <span id="fuelE10Price" class="fuel-value">NRW Ø heute · -- €/L</span>
+        </a>
+        <a class="quicklink fuel-link" href="https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html" target="_blank" rel="noopener noreferrer">
+            <strong>🛢 Diesel</strong>
+            <span id="fuelDieselPrice" class="fuel-value">NRW Ø heute · -- €/L</span>
+        </a>
     </nav>
 
     <section class="software-spotlight-top">
@@ -875,7 +889,6 @@ html[data-theme="light"] body.video-active::before{
                 <div id="softwareMeta" class="software-meta">--</div>
                 <div class="actions">
                     <a id="softwareStoryLink" class="button primary" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">Aktuelle Updates öffnen</a>
-                    <a class="button" href="https://www.tesla.com/de_de/support/software-updates" target="_blank" rel="noopener noreferrer">Tesla Update-Hilfe</a>
                 </div>
 
                 <div class="mini-links">
@@ -1792,6 +1805,44 @@ function vehicleNewsScore(item){
     return score;
 }
 
+function formatFuelPrice(value){
+    const price = Number(value);
+    if(!Number.isFinite(price) || price <= 0) return "--";
+    return price.toFixed(3).replace(".", ",") + " €/L";
+}
+
+function fuelDayLabel(value){
+    const day = String(value || "");
+    if(!/^20\d{2}-\d{2}-\d{2}$/.test(day)) return "NRW";
+    if(day === dayKey(new Date())) return "NRW Ø heute";
+    const parts = day.split("-");
+    return "NRW Ø " + parts[2] + "." + parts[1] + ".";
+}
+
+function renderFuelPrices(){
+    const e10El = document.getElementById("fuelE10Price");
+    const dieselEl = document.getElementById("fuelDieselPrice");
+    if(!e10El || !dieselEl) return;
+
+    const fuel = dashboardData && dashboardData.fuel_prices;
+    const source = dashboardData && dashboardData.fuel_price_source;
+
+    if(!fuel){
+        e10El.textContent = "NRW Ø · -- €/L";
+        dieselEl.textContent = "NRW Ø · -- €/L";
+        return;
+    }
+
+    const label = fuelDayLabel(fuel.date);
+    e10El.textContent = label + " · " + formatFuelPrice(fuel.e10);
+    dieselEl.textContent = label + " · " + formatFuelPrice(fuel.diesel);
+
+    const sourceName = source && source.name ? source.name : "WDR / SWR";
+    const updated = fuel.retrieved_at ? formatTime(fuel.retrieved_at, true) : "--";
+    e10El.parentElement.title = "Super E10 · Tagesmittel NRW · " + sourceName + " · Datenstand " + updated;
+    dieselEl.parentElement.title = "Diesel · Tagesmittel NRW · " + sourceName + " · Datenstand " + updated;
+}
+
 function renderRegionalNews(){
     const list = document.getElementById("regionalNewsList");
     if(!list) return;
@@ -1913,6 +1964,7 @@ async function loadDashboard(){
     renderSuperchargers();
     renderNews();
     renderRegionalNews();
+    renderFuelPrices();
 }
 
 async function loadAll(){
