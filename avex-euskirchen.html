@@ -411,6 +411,16 @@ button,a.button{
     font-size:12px;
 }
 
+.price-arrow-up{
+    color:var(--red);
+    font-weight:900;
+}
+
+.price-arrow-down{
+    color:var(--green);
+    font-weight:900;
+}
+
 .super-actions{
     display:flex;
     align-items:center;
@@ -810,7 +820,7 @@ html[data-theme="light"] body.video-active::before{
     </header>
 
     <nav class="quicklinks" aria-label="Tesla Schnellzugriff">
-        <a class="quicklink" href="index.html">
+        <a class="quicklink" href="voltune-dev/index.html">
             <strong>⚡ Voltune</strong>
             <span>Sound & Launch</span>
         </a>
@@ -1427,6 +1437,16 @@ function dailyLowSucPrice(pricing, now){
     return rates.length ? Math.min.apply(null, rates) : null;
 }
 
+function dailyHighSucPrice(pricing, now){
+    const windows = pricingWindowsForToday(pricing, now || new Date());
+    const rates = windows
+        .map(function(window){ return window && window.rate; })
+        .filter(function(rate){ return rate !== null && rate !== undefined && rate !== ""; })
+        .map(Number)
+        .filter(function(rate){ return Number.isFinite(rate) && rate > 0; });
+    return rates.length ? Math.max.apply(null, rates) : null;
+}
+
 function formatSucRate(rate, currency){
     if(rate === null || rate === undefined || rate === "") return null;
     const numericRate = Number(rate);
@@ -1510,10 +1530,12 @@ function renderSuperchargers(){
         const other = formatRate(site.other_price);
         const pricing = site.suc_pricing || null;
         const currentRate = currentSucPrice(pricing, new Date());
+        const dailyHigh = dailyHighSucPrice(pricing, new Date());
         const dailyLow = dailyLowSucPrice(pricing, new Date());
         const lowWindows = dailyLowWindowsText(pricing, dailyLow, new Date());
         const currency = pricing && pricing.currency ? pricing.currency : "EUR";
         const currentText = formatSucRate(currentRate, currency);
+        const highText = formatSucRate(dailyHigh, currency);
         const lowText = formatSucRate(dailyLow, currency);
         const lat = Number(site.latitude);
         const lon = Number(site.longitude);
@@ -1522,22 +1544,17 @@ function renderSuperchargers(){
 
         let prices = "";
         if(currentText){
-            prices += '<span class="price-chip" title="Aktuell gültiges Tarifzeitfenster laut SuC-Tracker"><span>Aktuell</span><strong>' +
+            prices += '<span class="price-chip price-now" title="Aktuell gültiges Tarifzeitfenster laut SuC-Tracker"><span>Now:</span><strong>' +
                 escapeHtml(currentText) + '</strong></span>';
         }
+        if(highText){
+            prices += '<span class="price-chip price-high" title="Tageshoch laut SuC-Tracker"><span class="price-arrow-up">↑</span><strong>' +
+                escapeHtml(highText) + '</strong></span>';
+        }
         if(lowText){
-            prices += '<span class="price-chip" title="' +
+            prices += '<span class="price-chip price-low" title="' +
                 escapeHtml(lowWindows ? "Günstigste Zeit heute: " + lowWindows : "Tagestief laut SuC-Tracker") +
-                '"><span>Tagestief</span><strong>' + escapeHtml(lowText) + '</strong></span>';
-        }
-        if(!currentText && member){
-            prices += '<span class="price-chip"><span>Tesla/Mitglied</span><strong>' + member + '</strong></span>';
-        }
-        if(!currentText && other){
-            prices += '<span class="price-chip"><span>Andere</span><strong>' + other + '</strong></span>';
-        }
-        if(!prices){
-            prices = '<span class="price-chip"><span>Preis</span><strong>in Tesla-App prüfen</strong></span>';
+                '"><span class="price-arrow-down">↓</span><strong>' + escapeHtml(lowText) + '</strong></span>';
         }
 
         const power = Number.isFinite(Number(site.power_kw)) ? site.power_kw + " kW" : "Leistung --";
@@ -1555,7 +1572,7 @@ function renderSuperchargers(){
                     '<span>⚡ ' + escapeHtml(power) + '</span>' +
                     '<span>🔌 ' + escapeHtml(stalls) + '</span>' +
                 '</div>' +
-                '<div class="super-price">' + prices + '</div>' +
+                (prices ? '<div class="super-price">' + prices + '</div>' : '') +
             '</div>' +
             '<div class="super-actions">' +
                 '<button class="icon-btn ' + (site.is_favorite ? 'active' : '') + '" type="button" title="Favorit umschalten">★</button>' +
