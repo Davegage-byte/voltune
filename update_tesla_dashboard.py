@@ -526,7 +526,21 @@ def build_data(old, now):
     return data
 
 
+def probe_spritexperte():
+    url = "https://sprit-experte.de/statistiken/bundesland/nordrhein-westfalen"
+    try:
+        raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
+        print("SpritExperte bytes", len(raw))
+        for needle in ("Super E10", "Diesel", "Live ·", "Schnitt Nordrhein-Westfalen"):
+            pos = raw.find(needle)
+            if pos >= 0:
+                print("SpritExperte snippet", needle, repr(raw[max(0, pos-500):pos+1800]))
+    except Exception as exc:
+        print("SpritExperte probe failed", repr(exc))
+
+
 def main():
+    probe_spritexperte()
     now = datetime.now(TIMEZONE)
     old = load_json(OUTPUT, {})
     data = build_data(old, now)
