@@ -18,14 +18,14 @@ SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
 SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
 TESLAMAG_RSS_URL = "https://teslamag.de/feed"
-BENZINPREISE_E10_URL = "https://benzinpreise.de/statistik/bundeslaender/super-e10"
+BENZINPREISE_E5_URL = "https://benzinpreise.de/statistik/bundeslaender/super-e5"
 BENZINPREISE_DIESEL_URL = "https://benzinpreise.de/statistik/bundeslaender/diesel"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 12
+DATA_VERSION = 13
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -386,9 +386,9 @@ def fetch_bundesland_average(url, expected_heading):
 
 
 def fetch_nrw_fuel_prices(now):
-    e10, e10_at = fetch_bundesland_average(
-        BENZINPREISE_E10_URL,
-        "Durchschnitt: Super E10",
+    e5, e5_at = fetch_bundesland_average(
+        BENZINPREISE_E5_URL,
+        "Durchschnitt: Super E5",
     )
     diesel, diesel_at = fetch_bundesland_average(
         BENZINPREISE_DIESEL_URL,
@@ -396,9 +396,9 @@ def fetch_nrw_fuel_prices(now):
     )
 
     fuel_prices = {
-        "e10": e10,
+        "e5": e5,
         "diesel": diesel,
-        "e10_updated_at": e10_at.isoformat(timespec="minutes"),
+        "e5_updated_at": e5_at.isoformat(timespec="minutes"),
         "diesel_updated_at": diesel_at.isoformat(timespec="minutes"),
         "currency": "EUR",
         "unit": "l",
@@ -406,7 +406,7 @@ def fetch_nrw_fuel_prices(now):
     source = {
         "name": "benzinpreise.de",
         "page_url": "https://benzinpreise.de/statistik/bundeslaender",
-        "e10_url": BENZINPREISE_E10_URL,
+        "e5_url": BENZINPREISE_E5_URL,
         "diesel_url": BENZINPREISE_DIESEL_URL,
         "checked_at": now.isoformat(timespec="seconds"),
         "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
