@@ -1,6 +1,6 @@
 {
-  "data_version": 12,
-  "checked_at": "2026-10-02T09:34:14+02:00",
+  "data_version": 13,
+  "checked_at": "2026-10-02T09:46:55+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -33,17 +33,17 @@
   "fuel_price_source": {
     "name": "benzinpreise.de",
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
-    "e10_url": "https://benzinpreise.de/statistik/bundeslaender/super-e10",
+    "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-02T09:34:14+02:00",
+    "checked_at": "2026-10-02T09:46:55+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e10": 2.084,
-    "diesel": 2.261,
-    "e10_updated_at": "2026-10-02T09:00+02:00",
-    "diesel_updated_at": "2026-10-02T09:00+02:00",
+    "e5": 2.141,
+    "diesel": 2.257,
+    "e5_updated_at": "2026-10-02T09:20+02:00",
+    "diesel_updated_at": "2026-10-02T09:20+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -24459,6 +24459,12 @@
   ],
   "regional_news": [
     {
+      "title": "Aktuell: Tesla führt Funktion zur Flucht von Superchargern in gefährlichen Situationen ein",
+      "url": "https://teslamag.de/news/tesla-funktion-flucht-von-superchargern-in-gefaehrlichen-situationen-67398",
+      "published_at": "2026-10-02T09:44:18+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
       "title": "Vorschau: Tesla meldet Verkäufe in Q3 2026 – Analysten-Schätzungen mit großer Bandbreite",
       "url": "https://teslamag.de/news/tesla-verkaeufe-q3-2026-analysten-schaetzungen-grosse-bandbreite-67394",
       "published_at": "2026-10-01T07:19:59+02:00",
@@ -24523,17 +24529,11 @@
       "url": "https://teslamag.de/news/tesla-37-26-supercharger-billiger-euro-semi-2027-fsd-passt-auf-cybercab-kosten-67303",
       "published_at": "2026-09-13T08:08:14+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Aktuell: Tesla senkt Preise an vielen deutschen Superchargern, Nachtladen ab 20 Cent pro kWh",
-      "url": "https://teslamag.de/news/tesla-senkt-deutsche-supercharger-preise-breite-front-ab-20-cent-kwh-67295",
-      "published_at": "2026-09-11T12:27:51+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-02T09:34:14+02:00",
-  "news_updated_at": "2026-10-02T09:34:14+02:00",
-  "regional_news_updated_at": "2026-10-02T09:34:14+02:00",
-  "fuel_prices_updated_at": "2026-10-02T09:34:14+02:00"
+  "superchargers_updated_at": "2026-10-02T09:46:55+02:00",
+  "news_updated_at": "2026-10-02T09:46:55+02:00",
+  "regional_news_updated_at": "2026-10-02T09:46:55+02:00",
+  "fuel_prices_updated_at": "2026-10-02T09:46:55+02:00"
 }
