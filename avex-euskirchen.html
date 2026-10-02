@@ -1137,7 +1137,8 @@ body.data-saver-on .celebration-banner{
 <div class="shell">
     <div class="debug-celebration-bar" aria-label="Celebration Debug">
         <span class="debug-celebration-label">DEBUG · Celebration</span>
-        <button class="debug-celebration-btn" type="button" data-celebration-debug="birthday">🎂 02.10 Geburtstag</button>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="birthday">🎂 Geburtstag anonym</button>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="elon">🚀 Elon Musk</button>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="christmas">❄ 24.12 Weihnachten</button>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="newyear">🥂 01.01 Neujahr</button>
         <button id="celebrationDebugStop" class="debug-celebration-btn stop" type="button">■ Stop</button>
@@ -1420,14 +1421,41 @@ const VEHICLE_IMAGE_BASE = "https://raw.githubusercontent.com/teslamotors/custom
 const VEHICLE_ART_ENABLED = false; // Später mit eigenen PNGs wieder aktivieren.
 
 const CELEBRATION_EVENTS = [
-    {date:"02.10", visibility:"private", effect:"confetti"},
-    {date:"12.02", visibility:"private", effect:"confetti"},
-    {date:"26.04", visibility:"private", effect:"confetti"},
+    {
+        date:"02.10",
+        visibility:"private",
+        showMessage:true,
+        reason:"Alles Gute zum Geburtstag! 🎂",
+        effect:"confetti"
+    },
+    {
+        date:"12.02",
+        visibility:"private",
+        showMessage:true,
+        reason:"Alles Gute zum Geburtstag! 🎂",
+        effect:"confetti"
+    },
+    {
+        date:"26.04",
+        visibility:"private",
+        showMessage:true,
+        reason:"Alles Gute zum Geburtstag! 🎂",
+        effect:"confetti"
+    },
+    {
+        date:"28.06",
+        label:"28.06",
+        visibility:"public",
+        showMessage:true,
+        reason:"Happy Birthday Elon Musk! 🎂",
+        effect:"confetti"
+    },
     {
         start:"24.12",
         end:"31.12",
         label:"24.–31.12",
         visibility:"public",
+        showMessage:true,
         reason:"Frohe Weihnachten! 🎄",
         effect:"snow"
     },
@@ -1435,6 +1463,7 @@ const CELEBRATION_EVENTS = [
         date:"01.01",
         label:"01.01",
         visibility:"public",
+        showMessage:true,
         reason:"Frohes Neues Jahr! 🥂",
         effect:"confetti",
         palette:["#d4af37","#f5d76e","#c0c0c0","#f4f4f4"]
@@ -1547,7 +1576,7 @@ function runSnowCelebration(event){
     celebrationPlayed = true;
     canvas.hidden = false;
 
-    if(event.visibility === "public" && event.reason){
+    if(event.showMessage && event.reason){
         const eventLabel = event.label || event.date || "";
         banner.textContent = (eventLabel ? eventLabel + " · " : "") + event.reason;
         banner.hidden = false;
@@ -1658,7 +1687,7 @@ function runCelebration(event){
     celebrationPlayed = true;
     canvas.hidden = false;
 
-    if(event.visibility === "public" && event.reason){
+    if(event.showMessage && event.reason){
         const eventLabel = event.label || event.date || "";
         banner.textContent = (eventLabel ? eventLabel + " · " : "") + event.reason;
         banner.hidden = false;
@@ -1792,6 +1821,10 @@ function triggerCelebrationDebug(type){
     if(type === "birthday"){
         event = CELEBRATION_EVENTS.find(function(item){
             return item.date === "02.10";
+        });
+    }else if(type === "elon"){
+        event = CELEBRATION_EVENTS.find(function(item){
+            return item.date === "28.06";
         });
     }else if(type === "christmas"){
         event = CELEBRATION_EVENTS.find(function(item){
