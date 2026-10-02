@@ -1135,7 +1135,7 @@ body.data-saver-on .celebration-banner{
 </div>
 
 <div class="shell">
-    <div class="debug-celebration-bar" aria-label="Celebration Debug">
+    <div id="celebrationDebugBar" class="debug-celebration-bar" aria-label="Celebration Debug" hidden>
         <span class="debug-celebration-label">DEBUG · Celebration</span>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="birthday">🎂 Geburtstag anonym</button>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="elon">🚀 Elon Musk</button>
@@ -1422,6 +1422,7 @@ const SUPERCHARGER_LIMIT = 6;
 const BACKGROUND_VIDEO_URL = "";
 const VEHICLE_IMAGE_BASE = "https://raw.githubusercontent.com/teslamotors/custom-wraps/master/";
 const VEHICLE_ART_ENABLED = false; // Später mit eigenen PNGs wieder aktivieren.
+const CELEBRATION_DEBUG_ENABLED = false; // Später für manuelle Effekt-Tests wieder auf true setzen.
 
 const CELEBRATION_EVENTS = [
     {
@@ -1548,6 +1549,11 @@ const AUTO_LOCATION_INTERVAL_MS = 60 * 1000;
 let autoLocationTimer = null;
 let celebrationPlayed = false;
 let celebrationFrame = null;
+
+function applyCelebrationDebugVisibility(){
+    const bar = document.getElementById("celebrationDebugBar");
+    if(bar) bar.hidden = !CELEBRATION_DEBUG_ENABLED;
+}
 
 function celebrationDateKey(){
     const parts = new Intl.DateTimeFormat("de-DE", {
@@ -3402,6 +3408,7 @@ document.getElementById("fullscreenBtn").addEventListener("click", function(){
     }
 });
 
+applyCelebrationDebugVisibility();
 loadVehicleUi();
 applyVideoPreference();
 applyPerformanceMode({refreshLocation:false});
