@@ -21,12 +21,14 @@ TESLAMAG_RSS_URL = "https://teslamag.de/feed"
 BENZINPREISE_E5_URL = "https://benzinpreise.de/statistik/bundeslaender/super-e5"
 BENZINPREISE_DIESEL_URL = "https://benzinpreise.de/statistik/bundeslaender/diesel"
 YAHOO_TSLA_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false"
+GERMANY_STATES_GEOJSON_URL = "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json"
+NRW_STATE_ID = "DE-NW"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 14
+DATA_VERSION = 15
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -204,6 +206,170 @@ def merge_suc_pricing(superchargers, pricing_by_name):
         site["suc_pricing"] = match.get("pricing")
         matched += 1
     return matched
+
+
+def point_in_ring(lon, lat, ring):
+    inside = False
+    if not isinstance(ring, list) or len(ring) < 3:
+        return False
+
+    j = len(ring) - 1
+    for i in range(len(ring)):
+        try:
+            xi, yi = float(ring[i][0]), float(ring[i][1])
+            xj, yj = float(ring[j][0]), float(ring[j][1])
+        except (TypeError, ValueError, IndexError):
+            j = i
+            continue
+
+        intersects = ((yi > lat) != (yj > lat)) and (
+            lon < (xj - xi) * (lat - yi) / ((yj - yi) or 1e-12) + xi
+        )
+        if intersects:
+            inside = not inside
+        j = i
+
+    return inside
+
+
+def point_in_polygon(lon, lat, polygon):
+    if not isinstance(polygon, list) or not polygon:
+        return False
+    if not point_in_ring(lon, lat, polygon[0]):
+        return False
+    for hole in polygon[1:]:
+        if point_in_ring(lon, lat, hole):
+            return False
+    return True
+
+
+def geometry_contains_point(geometry, lon, lat):
+    if not isinstance(geometry, dict):
+        return False
+
+    geometry_type = geometry.get("type")
+    coordinates = geometry.get("coordinates")
+
+    if geometry_type == "Polygon":
+        return point_in_polygon(lon, lat, coordinates)
+
+    if geometry_type == "MultiPolygon" and isinstance(coordinates, list):
+        return any(point_in_polygon(lon, lat, polygon) for polygon in coordinates)
+
+    return False
+
+
+def fetch_nrw_geometry():
+    payload = json.loads(
+        download_bytes(GERMANY_STATES_GEOJSON_URL, max_bytes=500_000).decode("utf-8")
+    )
+    features = payload.get("features") if isinstance(payload, dict) else None
+    if not isinstance(features, list):
+        raise ValueError("German state GeoJSON features missing")
+
+    for feature in features:
+        if not isinstance(feature, dict):
+            continue
+        properties = feature.get("properties") or {}
+        if properties.get("id") == NRW_STATE_ID:
+            geometry = feature.get("geometry")
+            if not isinstance(geometry, dict):
+                break
+            return geometry
+
+    raise ValueError("Nordrhein-Westfalen boundary missing")
+
+
+def pricing_windows_for_day(pricing, now):
+    if (
+        not isinstance(pricing, dict)
+        or pricing.get("status") != "available"
+        or pricing.get("unit") != "kwh"
+        or not isinstance(pricing.get("windows"), list)
+    ):
+        return []
+
+    day_bit = 1 << now.weekday()
+    matching = []
+    for window in pricing["windows"]:
+        if not isinstance(window, dict):
+            continue
+        try:
+            days = int(window.get("days", 0))
+        except (TypeError, ValueError):
+            days = 0
+        if days == 0 or (days & day_bit):
+            matching.append(window)
+
+    return matching or pricing["windows"][:]
+
+
+def current_suc_rate(pricing, now):
+    minutes = now.hour * 60 + now.minute
+    for window in pricing_windows_for_day(pricing, now):
+        try:
+            start = int(window["start"])
+            end = int(window["end"])
+            rate = float(window["rate"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if start <= minutes < end and math.isfinite(rate) and rate > 0:
+            return rate
+    return None
+
+
+def calculate_nrw_supercharger_prices(superchargers, now):
+    geometry = fetch_nrw_geometry()
+    rates = []
+    total_sites = 0
+
+    for site in superchargers:
+        if not isinstance(site, dict):
+            continue
+        try:
+            lat = float(site["latitude"])
+            lon = float(site["longitude"])
+        except (KeyError, TypeError, ValueError):
+            continue
+
+        if not geometry_contains_point(geometry, lon, lat):
+            continue
+
+        total_sites += 1
+        pricing = site.get("suc_pricing") or {}
+        currency = pricing.get("currency") or "EUR"
+        if currency != "EUR":
+            continue
+
+        rate = current_suc_rate(pricing, now)
+        if rate is not None:
+            rates.append(rate)
+
+    if not rates:
+        raise ValueError("No current NRW Supercharger prices available")
+
+    summary = {
+        "average": round(sum(rates) / len(rates), 4),
+        "min": round(min(rates), 4),
+        "max": round(max(rates), 4),
+        "priced_sites": len(rates),
+        "total_sites": total_sites,
+        "currency": "EUR",
+        "unit": "kwh",
+        "calculated_at": now.isoformat(timespec="seconds"),
+    }
+    source = {
+        "name": "SuC Tracker + deutschlandGeoJSON",
+        "pricing_url": SUC_TRACKER_PAGE,
+        "pricing_dataset_url": SUC_TRACKER_URL,
+        "boundary_url": GERMANY_STATES_GEOJSON_URL,
+        "boundary_state": "Nordrhein-Westfalen",
+        "boundary_state_id": NRW_STATE_ID,
+        "checked_at": now.isoformat(timespec="seconds"),
+        "note": "Unweighted average of currently active Supercharger site prices in NRW",
+        "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON",
+    }
+    return summary, source
 
 
 def copy_cached_suc_pricing(superchargers, old_superchargers):
@@ -467,6 +633,7 @@ def build_data(old, now):
         and old.get("regional_news")
         and old.get("fuel_prices")
         and old.get("tesla_stock")
+        and old.get("nrw_supercharger_prices")
         and (old.get("fuel_price_source") or {}).get("name") == "benzinpreise.de"
         and not (old.get("errors") or {}).get("fuel_prices")
     ):
@@ -496,6 +663,8 @@ def build_data(old, now):
         "fuel_prices": old.get("fuel_prices", {}),
         "tesla_stock_source": old.get("tesla_stock_source", {}),
         "tesla_stock": old.get("tesla_stock", {}),
+        "nrw_supercharger_price_source": old.get("nrw_supercharger_price_source", {}),
+        "nrw_supercharger_prices": old.get("nrw_supercharger_prices", {}),
         "superchargers": old.get("superchargers", []),
         "news": old.get("news", []),
         "regional_news": old.get("regional_news", []),
@@ -531,6 +700,23 @@ def build_data(old, now):
                 data["superchargers"], old.get("superchargers", [])
             )
             print(f"SuC-Tracker cache reused for {matched} station prices")
+
+    try:
+        nrw_prices, nrw_source = calculate_nrw_supercharger_prices(
+            data.get("superchargers", []), now
+        )
+        data["nrw_supercharger_prices"] = nrw_prices
+        data["nrw_supercharger_price_source"] = nrw_source
+        data["nrw_supercharger_prices_updated_at"] = now.isoformat(timespec="seconds")
+    except Exception as exc:
+        data["errors"]["nrw_supercharger_prices"] = str(exc)
+        data["nrw_supercharger_prices"] = old.get("nrw_supercharger_prices", {})
+        data["nrw_supercharger_price_source"] = old.get(
+            "nrw_supercharger_price_source", {}
+        )
+        data["nrw_supercharger_prices_updated_at"] = old.get(
+            "nrw_supercharger_prices_updated_at"
+        )
 
     try:
         data["news"] = fetch_news()
@@ -598,6 +784,7 @@ def main():
                 "news": len(data.get("news", [])),
                 "regional_news": len(data.get("regional_news", [])),
                 "fuel_prices": data.get("fuel_prices", {}),
+                "nrw_supercharger_prices": data.get("nrw_supercharger_prices", {}),
                 "tesla_stock": data.get("tesla_stock", {}),
                 "errors": data.get("errors", {}),
             },
