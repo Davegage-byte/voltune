@@ -228,18 +228,41 @@ def probe_suc_tracker():
             continue
 
         candidates = set()
-        for match in re.findall(r'["\\\']([^"\\\']{3,240})["\\\']', js):
+        for match in re.findall(r'["\\\']([^"\\\']{3,300})["\\\']', js):
             low = match.lower()
             if (
                 "/api/" in low
                 or low.endswith(".json")
                 or "supercharger" in low
                 or "pricing" in low
+                or "tariff" in low
+                or "station" in low
+                or "charger" in low
                 or "price" in low and ("/" in match or "http" in low)
             ):
-                if len(match) <= 220:
+                if len(match) <= 280:
                     candidates.add(match)
-        print(f"SuC-Tracker candidates from {url}:", sorted(candidates)[:120])
+
+        absolute_urls = sorted(set(re.findall(r'https?://[^"\\\'\\s)]+', js)))
+        fetch_snippets = []
+        for needle in ("fetch(", "axios", "supabase", "firebase", "/api/", ".json", "chargers", "stations", "prices"):
+            start = 0
+            hits = 0
+            low_js = js.lower()
+            low_needle = needle.lower()
+            while hits < 8:
+                pos = low_js.find(low_needle, start)
+                if pos < 0:
+                    break
+                snippet = js[max(0, pos - 180): min(len(js), pos + 360)]
+                fetch_snippets.append((needle, " ".join(snippet.split())))
+                start = pos + len(needle)
+                hits += 1
+
+        print(f"SuC-Tracker asset bytes {url}: {len(js)}")
+        print(f"SuC-Tracker absolute URLs from {url}:", absolute_urls[:80])
+        print(f"SuC-Tracker candidates from {url}:", sorted(candidates)[:160])
+        print(f"SuC-Tracker snippets from {url}:", fetch_snippets[:80])
 
 
 def fetch_news():
