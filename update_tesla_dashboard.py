@@ -425,7 +425,23 @@ def build_data(old, now):
     return data
 
 
+def probe_wdr_fuel_data():
+    urls = [
+        "https://datawrapper.dwcdn.net/dkS5c/dataset.csv",
+        "https://datawrapper.dwcdn.net/dkS5c/8/dataset.csv",
+        "https://datawrapper.dwcdn.net/dkS5c/8/",
+    ]
+    for url in urls:
+        try:
+            raw = download_bytes(url, max_bytes=2_000_000)
+            sample = raw[:2500].decode("utf-8", errors="replace")
+            print("WDR fuel probe", url, "bytes", len(raw), "sample", repr(sample))
+        except Exception as exc:
+            print("WDR fuel probe failed", url, repr(exc))
+
+
 def main():
+    probe_wdr_fuel_data()
     now = datetime.now(TIMEZONE)
     old = load_json(OUTPUT, {})
     data = build_data(old, now)
