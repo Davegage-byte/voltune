@@ -84,25 +84,33 @@ button,a.button{
 .brand-mark{
     width:46px;
     height:46px;
+    min-width:46px;
+    min-height:46px;
+    flex:0 0 46px;
+    aspect-ratio:1 / 1;
     border-radius:15px;
-    background:linear-gradient(145deg, #ef3b40, #a8090e);
+    background:
+        linear-gradient(135deg,#ff5a5f 0%,#e82127 30%,#8f0b10 62%,#e82127 82%,#ff777b 100%);
+    background-size:220% 220%;
+    background-position:0% 50%;
     box-shadow:0 10px 28px rgba(232,33,39,.28);
     display:grid;
     place-items:center;
     font-weight:900;
     font-size:24px;
+    animation:brandGradientShift 9s ease-in-out infinite;
+    overflow:hidden;
+}
+
+@keyframes brandGradientShift{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
 }
 
 .brand-title{
     font-size:25px;
     font-weight:800;
     letter-spacing:.3px;
-}
-
-.brand-sub{
-    color:var(--muted);
-    font-size:13px;
-    margin-top:2px;
 }
 
 .clock{
@@ -553,7 +561,13 @@ button,a.button{
     .shell{width:min(100% - 20px, 1440px); padding-top:14px}
     .topbar{align-items:flex-start}
     .brand-title{font-size:20px}
-    .brand-mark{width:42px;height:42px}
+    .brand-mark{
+        width:42px;
+        height:42px;
+        min-width:42px;
+        min-height:42px;
+        flex-basis:42px;
+    }
     .clock-time{font-size:17px}
     .quicklinks .quicklink{width:calc(50% - 5px);flex-basis:calc(50% - 5px)}
     .avex-info-row{display:block}
@@ -918,6 +932,7 @@ html[data-theme="light"] body.video-active::before{
 @media (prefers-reduced-motion:reduce){
     body,.card,.quicklink,.hub-panel,.top-action,.button{transition:none!important}
     html.themeChanging body{filter:none;opacity:1}
+    .brand-mark{animation:none!important;background-position:50% 50%}
 }
 
 </style>
@@ -937,7 +952,6 @@ html[data-theme="light"] body.video-active::before{
             <div class="brand-mark">T</div>
             <div>
                 <div class="brand-title">Tesla Hub</div>
-                <div class="brand-sub">AVEX Euskirchen · Supercharger · Updates</div>
             </div>
         </div>
         <div class="top-actions">
