@@ -454,10 +454,6 @@ button,a.button{
     gap:18px;
 }
 
-.lower-grid > .card:nth-child(3){
-    grid-column:1 / -1;
-}
-
 .news-body{
     padding:10px 16px 16px;
 }
@@ -642,8 +638,6 @@ body.video-active::before{
     background:rgba(12,12,15,.78);color:var(--text);padding:0 12px;font:inherit;
 }
 .vehicle-state{color:var(--muted);font-size:12px;margin-top:9px}
-    to{background-position:-145% 0}
-}
 .super-item{cursor:pointer}
 .super-item:active{transform:scale(.992)}
 .gps-state{display:inline-flex;gap:6px;align-items:center}
@@ -660,6 +654,43 @@ body.video-active::before{
     .clock{width:100%}
     .vehicle-controls{grid-template-columns:1fr}
     .vehicle-controls button{grid-column:auto}
+}
+
+.software-spotlight-top{
+    margin:0 0 18px;
+}
+.software-spotlight-top > .card{
+    width:100%;
+}
+
+.fun-fact-body{
+    padding:16px 20px 20px;
+}
+.fact-category{
+    display:inline-flex;
+    align-items:center;
+    min-height:28px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 10px;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:700;
+}
+.fun-fact-text{
+    margin-top:14px;
+    font-size:20px;
+    line-height:1.5;
+    font-weight:700;
+    max-width:1000px;
+}
+.fun-fact-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:18px;
+    margin-top:18px;
+    flex-wrap:wrap;
 }
 
 .vehicle-profile-bottom{
@@ -816,7 +847,51 @@ html[data-theme="light"] body.video-active::before{
             <strong>🧩 Release Notes</strong>
             <span>Aktuelle Versionen</span>
         </a>
+        <a class="quicklink" href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer">
+            <strong>⚡ SuC Tracker</strong>
+            <span>Supercharger Preise</span>
+        </a>
     </nav>
+
+    <section class="software-spotlight-top">
+        <div class="card">
+            <div class="card-head">
+                <div>
+                    <div class="eyebrow">Software Spotlight</div>
+                    <h2>Neu bei Tesla</h2>
+                </div>
+            </div>
+            <div class="software-body">
+                <div id="softwareVersion" class="software-version">Tesla OTA</div>
+                <div id="softwareCopy" class="software-copy">
+                    Tesla verteilt Software-Updates schrittweise. Nicht jedes Fahrzeug bekommt eine Version am selben Tag.
+                </div>
+                <div class="actions">
+                    <a id="softwareStoryLink" class="button primary" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">Aktuelle Updates öffnen</a>
+                    <a class="button" href="https://www.tesla.com/de_de/support/software-updates" target="_blank" rel="noopener noreferrer">Tesla Update-Hilfe</a>
+                </div>
+
+                <div class="mini-links">
+                    <a class="mini-link" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">
+                        Software-Verteilung
+                        <span>Versionen, Rollout und Release Notes</span>
+                    </a>
+                    <a class="mini-link" href="https://www.notateslaapp.com/de/tesla-app-updates/" target="_blank" rel="noopener noreferrer">
+                        Tesla-App Updates
+                        <span>Neue App-Funktionen</span>
+                    </a>
+                    <a class="mini-link" href="https://www.notateslaapp.com/de/news/charging/" target="_blank" rel="noopener noreferrer">
+                        Charging News
+                        <span>Supercharger & Laden</span>
+                    </a>
+                    <a class="mini-link" href="https://www.tesla.com/de_de/supercharger" target="_blank" rel="noopener noreferrer">
+                        Tesla Supercharger
+                        <span>Offizielle Netz-Infos</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
 
 
@@ -924,43 +999,6 @@ html[data-theme="light"] body.video-active::before{
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-head">
-                <div>
-                    <div class="eyebrow">Software Spotlight</div>
-                    <h2>Neu bei Tesla</h2>
-                </div>
-            </div>
-            <div class="software-body">
-                <div id="softwareVersion" class="software-version">Tesla OTA</div>
-                <div id="softwareCopy" class="software-copy">
-                    Tesla verteilt Software-Updates schrittweise. Nicht jedes Fahrzeug bekommt eine Version am selben Tag.
-                </div>
-                <div class="actions">
-                    <a id="softwareStoryLink" class="button primary" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">Aktuelle Updates öffnen</a>
-                    <a class="button" href="https://www.tesla.com/de_de/support/software-updates" target="_blank" rel="noopener noreferrer">Tesla Update-Hilfe</a>
-                </div>
-
-                <div class="mini-links">
-                    <a class="mini-link" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">
-                        Software-Verteilung
-                        <span>Versionen, Rollout und Release Notes</span>
-                    </a>
-                    <a class="mini-link" href="https://www.notateslaapp.com/de/tesla-app-updates/" target="_blank" rel="noopener noreferrer">
-                        Tesla-App Updates
-                        <span>Neue App-Funktionen</span>
-                    </a>
-                    <a class="mini-link" href="https://www.notateslaapp.com/de/news/charging/" target="_blank" rel="noopener noreferrer">
-                        Charging News
-                        <span>Supercharger & Laden</span>
-                    </a>
-                    <a class="mini-link" href="https://www.tesla.com/de_de/supercharger" target="_blank" rel="noopener noreferrer">
-                        Tesla Supercharger
-                        <span>Offizielle Netz-Infos</span>
-                    </a>
-                </div>
-            </div>
-        </div>
     </section>
 
     <section class="section vehicle-profile-bottom">
@@ -979,6 +1017,29 @@ html[data-theme="light"] body.video-active::before{
                 <button id="saveVehicleBtn" class="button primary" type="button">Speichern</button>
             </div>
             <div id="vehicleState" class="vehicle-state">Noch kein Fahrzeug gespeichert.</div>
+        </div>
+    </section>
+
+    <section class="section fun-facts-bottom">
+        <div class="card">
+            <div class="card-head">
+                <div>
+                    <div class="eyebrow">Tesla Fun-Facts</div>
+                    <h2>Schon gewusst?</h2>
+                </div>
+                <div id="factProgress" class="card-meta">Lade Fakten…</div>
+            </div>
+            <div class="fun-fact-body">
+                <div id="factCategory" class="fact-category">Tesla</div>
+                <div id="factText" class="fun-fact-text">Lade Fakt…</div>
+                <div class="fun-fact-footer">
+                    <div id="factLevel" class="vehicle-state">🏆 Tesla Anfänger</div>
+                    <div class="actions">
+                        <button id="nextFactBtn" class="button primary" type="button">⏭ Nächster Fakt</button>
+                        <button id="resetFactsBtn" class="button" type="button">🔄 Reset</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -1600,6 +1661,98 @@ function escapeHtml(value){
         .replace(/'/g, "&#039;");
 }
 
+let facts = [];
+let seenFacts = [];
+
+try{
+    const storedFacts = JSON.parse(localStorage.getItem("seenFacts") || "[]");
+    seenFacts = Array.isArray(storedFacts) ? storedFacts : [];
+}catch(_){
+    seenFacts = [];
+}
+
+function getFactLevel(count){
+    if(count >= 100) return "👑 Tesla Legende";
+    if(count >= 90) return "🌟 Tesla Guru";
+    if(count >= 75) return "🚀 Tesla Experte";
+    if(count >= 60) return "🏆 Tesla Nerd";
+    if(count >= 40) return "🔋 Akku-Profi";
+    if(count >= 25) return "⚡ Supercharger Rookie";
+    if(count >= 10) return "🚗 Tesla Fan";
+    return "🔰 Tesla Anfänger";
+}
+
+function updateFactStats(){
+    const progress = document.getElementById("factProgress");
+    const level = document.getElementById("factLevel");
+    if(progress){
+        progress.textContent = "📚 Gelesen: " + seenFacts.length + " / " + facts.length;
+    }
+    if(level){
+        level.textContent = "🏆 " + getFactLevel(seenFacts.length);
+    }
+}
+
+function showNextUnseenFact(){
+    if(!facts.length) return;
+
+    const knownIds = new Set(facts.map(function(fact){ return fact.id; }));
+    seenFacts = seenFacts.filter(function(id){ return knownIds.has(id); });
+
+    const available = facts.filter(function(fact){
+        return seenFacts.indexOf(fact.id) < 0;
+    });
+
+    const text = document.getElementById("factText");
+    const category = document.getElementById("factCategory");
+
+    if(!available.length){
+        if(text) text.textContent = "🎉 Du hast alle 100 Tesla-Fakten gelesen!";
+        if(category) category.textContent = "Komplett";
+        updateFactStats();
+        return;
+    }
+
+    const fact = available[Math.floor(Math.random() * available.length)];
+    if(text) text.textContent = fact.text;
+    if(category) category.textContent = fact.category || "Tesla";
+
+    seenFacts.push(fact.id);
+    try{
+        localStorage.setItem("seenFacts", JSON.stringify(seenFacts));
+    }catch(_){}
+
+    updateFactStats();
+}
+
+async function loadFacts(){
+    try{
+        const response = await fetch("facts.json", {cache:"no-store"});
+        if(!response.ok) throw new Error("Facts HTTP " + response.status);
+        const payload = await response.json();
+        facts = Array.isArray(payload) ? payload : [];
+        showNextUnseenFact();
+    }catch(error){
+        console.error(error);
+        const text = document.getElementById("factText");
+        const progress = document.getElementById("factProgress");
+        if(text) text.textContent = "Fun-Facts konnten gerade nicht geladen werden.";
+        if(progress) progress.textContent = "Fehler";
+    }
+}
+
+function resetFacts(){
+    if(!confirm("Fortschritt der Tesla-Fakten wirklich zurücksetzen?")) return;
+    seenFacts = [];
+    try{
+        localStorage.removeItem("seenFacts");
+    }catch(_){}
+    showNextUnseenFact();
+}
+
+document.getElementById("nextFactBtn").addEventListener("click", showNextUnseenFact);
+document.getElementById("resetFactsBtn").addEventListener("click", resetFacts);
+
 function getVehicle(){
     try{
         return JSON.parse(localStorage.getItem(VEHICLE_KEY) || "null");
@@ -1994,6 +2147,7 @@ document.getElementById("fullscreenBtn").addEventListener("click", function(){
 
 loadVehicleUi();
 applyVideoPreference();
+loadFacts();
 setTimeout(function(){
     document.getElementById("startup").classList.add("done");
 }, 1450);
