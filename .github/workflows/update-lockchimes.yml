@@ -1,0 +1,86 @@
+name: Update LockChime library
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lockchimes/*.wav'
+      - 'lockchimes/**/*.wav'
+      - '.github/workflows/update-lockchimes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-lockchimes-library
+  cancel-in-progress: true
+
+jobs:
+  build-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build LockChime manifest
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import subprocess
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path.cwd()
+          audio_root = root / "lockchimes"
+          output = root / "lockchimes-data.json"
+
+          def first_added_at(relative_path):
+              result = subprocess.run(
+                  ["git", "log", "--follow", "--diff-filter=A", "--format=%aI", "--", relative_path],
+                  cwd=root,
+                  capture_output=True,
+                  text=True,
+                  check=False,
+              )
+              dates = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+              return dates[-1] if dates else None
+
+          sounds = []
+          if audio_root.exists():
+              for path in sorted(audio_root.rglob("*.wav"), key=lambda p: p.as_posix().lower()):
+                  if not path.is_file():
+                      continue
+                  relative = path.relative_to(root).as_posix()
+                  folder = path.parent.relative_to(audio_root).as_posix()
+                  category = "Ohne Kategorie" if folder == "." else folder.replace("/", " / ")
+                  sounds.append({
+                      "id": hashlib.sha1(relative.encode("utf-8")).hexdigest()[:12],
+                      "name": path.stem,
+                      "category": category,
+                      "path": relative,
+                      "addedAt": first_added_at(relative),
+                      "size": path.stat().st_size,
+                  })
+
+          payload = {
+              "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+              "sounds": sounds,
+          }
+          output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Indexed {len(sounds)} LockChime WAV file(s).")
+
+      - name: Commit manifest when changed
+        run: |
+          if git diff --quiet -- lockchimes-data.json && git ls-files --error-unmatch lockchimes-data.json >/dev/null 2>&1; then
+            echo "LockChime manifest is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lockchimes-data.json
+          git commit -m "Update LockChime library index" -m "Regenerate lockchimes-data.json from the WAV files below lockchimes/, including folder categories, first-added timestamps, file sizes and stable IDs for the AVEX LockChime browser."
+          git push
