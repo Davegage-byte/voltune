@@ -454,6 +454,10 @@ button,a.button{
     gap:18px;
 }
 
+.lower-grid > .card:nth-child(3){
+    grid-column:1 / -1;
+}
+
 .news-body{
     padding:10px 16px 16px;
 }
@@ -907,6 +911,21 @@ html[data-theme="light"] body.video-active::before{
             <div class="news-body">
                 <div id="newsList" class="news-list">
                     <div class="empty">News werden geladen…</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div>
+                    <div class="eyebrow">Tesla News DE</div>
+                    <h2>Deutschland & Europa</h2>
+                </div>
+                <div id="regionalNewsChecked" class="card-meta">--</div>
+            </div>
+            <div class="news-body">
+                <div id="regionalNewsList" class="news-list">
+                    <div class="empty">Deutsche Tesla-News werden geladen…</div>
                 </div>
             </div>
         </div>
@@ -1617,6 +1636,45 @@ function vehicleNewsScore(item){
     return score;
 }
 
+function renderRegionalNews(){
+    const list = document.getElementById("regionalNewsList");
+    if(!list) return;
+
+    if(!dashboardData || !Array.isArray(dashboardData.regional_news) || !dashboardData.regional_news.length){
+        list.innerHTML = '<div class="empty">Noch keine deutschen Tesla-News vorhanden.</div>';
+        return;
+    }
+
+    const ranked = dashboardData.regional_news.slice().sort(function(a,b){
+        const scoreDiff = vehicleNewsScore(b) - vehicleNewsScore(a);
+        if(scoreDiff !== 0) return scoreDiff;
+        return Date.parse(b.published_at || 0) - Date.parse(a.published_at || 0);
+    });
+
+    list.innerHTML = "";
+
+    ranked.slice(0,6).forEach(function(item){
+        const link = document.createElement("a");
+        link.className = "news-item";
+        link.href = item.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.innerHTML =
+            '<div class="news-title">' + escapeHtml(item.title) + '</div>' +
+            '<div class="news-time">' +
+                'TeslaMag.de' +
+                (item.published_at ? ' · ' + formatRelative(item.published_at) : '') +
+            '</div>';
+        list.appendChild(link);
+    });
+
+    const checked = document.getElementById("regionalNewsChecked");
+    if(checked){
+        checked.textContent =
+            "Feed " + formatRelative(dashboardData.regional_news_updated_at || dashboardData.checked_at);
+    }
+}
+
 function renderNews(){
     const list = document.getElementById("newsList");
     if(!dashboardData || !Array.isArray(dashboardData.news) || !dashboardData.news.length){
@@ -1674,6 +1732,7 @@ async function loadDashboard(){
     dashboardData = await response.json();
     renderSuperchargers();
     renderNews();
+    renderRegionalNews();
 }
 
 async function loadAll(){
