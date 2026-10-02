@@ -1,7 +1,5 @@
 """Build compact Tesla dashboard data for the AVEX/Tesla start page."""
 
-import csv
-import io
 import json
 import math
 import re
@@ -20,14 +18,13 @@ SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
 SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
 TESLAMAG_RSS_URL = "https://teslamag.de/feed"
-WDR_FUEL_CHART_BOOTSTRAP_URL = "https://datawrapper.dwcdn.net/dkS5c/8/"
-WDR_FUEL_PAGE_URL = "https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html"
+SPRITFUCHS_NRW_URL = "https://derspritfuchs.de/bundesland/nordrhein-westfalen"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 10
+DATA_VERSION = 11
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -343,85 +340,61 @@ def fetch_regional_news():
     return items
 
 
-def parse_local_datetime(value):
-    if not value:
-        return None
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
-        try:
-            return datetime.strptime(str(value), fmt).replace(tzinfo=TIMEZONE)
-        except ValueError:
-            continue
-    return None
-
-
 def fetch_nrw_fuel_prices(now):
-    bootstrap = download_bytes(
-        WDR_FUEL_CHART_BOOTSTRAP_URL,
-        max_bytes=1_000_000,
+    raw = download_bytes(
+        SPRITFUCHS_NRW_URL,
+        max_bytes=5_000_000,
     ).decode("utf-8", errors="replace")
 
-    versions = [
-        int(value)
-        for value in re.findall(r"datawrapper\.dwcdn\.net/dkS5c/(\d+)/", bootstrap)
-    ]
-    chart_version = max(versions) if versions else 8
-    dataset_url = f"https://datawrapper.dwcdn.net/dkS5c/{chart_version}/dataset.csv"
+    section_pos = raw.find("Durchschnittspreise in Nordrhein-Westfalen")
+    if section_pos < 0:
+        raise ValueError("SpritFuchs NRW average section not found")
 
-    raw_csv = download_bytes(dataset_url, max_bytes=2_000_000).decode("utf-8-sig")
-    rows = list(csv.DictReader(io.StringIO(raw_csv)))
+    # Limit parsing to the current-average section so historical values,
+    # FAQs and metadata cannot be mistaken for the current daily average.
+    section = raw[section_pos : section_pos + 30_000]
+    section = re.sub(r"<script\\b[^>]*>.*?</script>", " ", section, flags=re.I | re.S)
+    section = re.sub(r"<style\\b[^>]*>.*?</style>", " ", section, flags=re.I | re.S)
+    text = unescape(re.sub(r"<[^>]+>", " ", section))
+    text = re.sub(r"\\s+", " ", text).strip()
 
-    wanted = {"Super E10": "e10", "Diesel": "diesel"}
-    by_day = {}
+    def extract_price(label):
+        match = re.search(
+            rf"{re.escape(label)}\\s+([0-9]+[,.][0-9]{{3}})\\b",
+            text,
+            flags=re.I,
+        )
+        if not match:
+            raise ValueError(f"SpritFuchs {label} average not found")
+        value = float(match.group(1).replace(",", "."))
+        if not math.isfinite(value) or not (0.5 <= value <= 5):
+            raise ValueError(f"SpritFuchs {label} average invalid")
+        return round(value, 4)
 
-    for row in rows:
-        fuel_type = str(row.get("type") or "").strip()
-        key = wanted.get(fuel_type)
-        if not key:
-            continue
+    date_match = re.search(
+        r"Stand:\\s*(\\d{1,2})\\.(\\d{1,2})\\.(20\\d{2})",
+        text,
+        flags=re.I,
+    )
+    if not date_match:
+        raise ValueError("SpritFuchs data date not found")
 
-        day = str(row.get("day") or "").strip()
-        if not re.fullmatch(r"20\d{2}-\d{2}-\d{2}", day):
-            continue
-
-        try:
-            average = float(str(row.get("tages_mittel") or "").replace(",", "."))
-        except ValueError:
-            continue
-
-        if not math.isfinite(average) or not (0.5 <= average <= 5):
-            continue
-
-        slot = by_day.setdefault(day, {})
-        slot[key] = round(average, 4)
-        slot["retrieved_at_raw"] = row.get("abrufdatum")
-        slot["data_status_raw"] = row.get("datenstand")
-
-    complete_days = [
-        day for day, values in by_day.items()
-        if "e10" in values and "diesel" in values
-    ]
-    if not complete_days:
-        raise ValueError("WDR fuel dataset has no complete E10/Diesel day")
-
-    day = max(complete_days)
-    values = by_day[day]
-    retrieved_at = parse_local_datetime(values.get("retrieved_at_raw"))
+    day = f"{date_match.group(3)}-{int(date_match.group(2)):02d}-{int(date_match.group(1)):02d}"
+    e10 = extract_price("Super E10")
+    diesel = extract_price("Diesel")
 
     fuel_prices = {
         "date": day,
-        "e10": values["e10"],
-        "diesel": values["diesel"],
+        "e10": e10,
+        "diesel": diesel,
         "currency": "EUR",
         "unit": "l",
-        "retrieved_at": retrieved_at.isoformat(timespec="seconds") if retrieved_at else None,
     }
     source = {
-        "name": "WDR / SWR",
-        "page_url": WDR_FUEL_PAGE_URL,
-        "dataset_url": dataset_url,
-        "chart_version": chart_version,
+        "name": "SpritFuchs",
+        "page_url": SPRITFUCHS_NRW_URL,
         "checked_at": now.isoformat(timespec="seconds"),
-        "note": "NRW-Tagesmittel aus bereinigten Tankstellen-Preisdaten",
+        "note": "NRW-Tagesmittel auf Basis amtlicher MTS-K-Daten",
     }
     return fuel_prices, source
 
@@ -526,27 +499,7 @@ def build_data(old, now):
     return data
 
 
-def probe_tankerkoenig_stats():
-    urls = [
-        "https://creativecommons.tankerkoenig.de/swagger/tankerkoenig.yaml",
-        "https://creativecommons.tankerkoenig.de/stats",
-        "https://creativecommons.tankerkoenig.de/json/stats.php",
-    ]
-    for url in urls:
-        try:
-            raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
-            print("Tankerkönig stats probe", url, "bytes", len(raw))
-            if "tankerkoenig.yaml" in url:
-                pos = raw.find("/stats:")
-                print("Tankerkönig stats yaml", repr(raw[max(0, pos-1200):pos+6500] if pos >= 0 else raw[:6500]))
-            else:
-                print("Tankerkönig stats response", repr(raw[:5000]))
-        except Exception as exc:
-            print("Tankerkönig stats probe failed", url, repr(exc))
-
-
 def main():
-    probe_tankerkoenig_stats()
     now = datetime.now(TIMEZONE)
     old = load_json(OUTPUT, {})
     data = build_data(old, now)
