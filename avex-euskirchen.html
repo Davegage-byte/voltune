@@ -392,6 +392,13 @@ button,a.button{
     font-size:12px;
 }
 
+.avex-price-time{
+    color:var(--muted);
+    font-size:10px;
+    font-weight:600;
+    margin-left:6px;
+}
+
 .price-arrow-up{
     color:var(--red);
     font-weight:900;
@@ -1030,10 +1037,12 @@ html[data-theme="light"] body.video-active::before{
                         <span>Now:</span><strong id="avexPrice">-- €/kWh</strong>
                     </span>
                     <span id="avexHighChip" class="price-chip price-high" title="Tageshoch">
-                        <span class="price-arrow-up">↑</span><strong id="dayHigh">-- €/kWh</strong>
+                        <span class="price-arrow-up">↑</span>
+                        <strong><span id="dayHigh">-- €/kWh</span><span id="dayHighTime" class="avex-price-time"></span></strong>
                     </span>
                     <span id="avexLowChip" class="price-chip price-low" title="Tagestief">
-                        <span class="price-arrow-down">↓</span><strong id="dayLow">-- €/kWh</strong>
+                        <span class="price-arrow-down">↓</span>
+                        <strong><span id="dayLow">-- €/kWh</span><span id="dayLowTime" class="avex-price-time"></span></strong>
                     </span>
                 </div>
 
@@ -1328,6 +1337,14 @@ function formatRange(entry){
     return from + "–" + to;
 }
 
+function avexPriceWindows(schedule, targetPrice){
+    return schedule
+        .filter(function(entry){ return Number(entry.price) === Number(targetPrice); })
+        .map(function(entry){ return formatRange(entry); })
+        .filter(Boolean)
+        .join(" · ");
+}
+
 function renderAvex(){
     if(!avexData) return;
 
@@ -1376,21 +1393,27 @@ function renderAvex(){
         const prices = schedule.map(function(entry){ return Number(entry.price); });
         const min = Math.min.apply(null, prices);
         const max = Math.max.apply(null, prices);
-        const low = schedule.find(function(entry){ return Number(entry.price) === min; });
-        const high = schedule.find(function(entry){ return Number(entry.price) === max; });
+        const highWindows = avexPriceWindows(schedule, max);
+        const lowWindows = avexPriceWindows(schedule, min);
 
         document.getElementById("dayHigh").textContent =
             formatEuro(max) + "/kWh";
         document.getElementById("dayLow").textContent =
             formatEuro(min) + "/kWh";
+        document.getElementById("dayHighTime").textContent =
+            highWindows ? "· " + highWindows : "";
+        document.getElementById("dayLowTime").textContent =
+            lowWindows ? "· " + lowWindows : "";
 
         document.getElementById("avexHighChip").title =
-            "Tageshoch · " + formatRange(high) + " Uhr";
+            highWindows ? "Tageshoch · " + highWindows + " Uhr" : "Tageshoch";
         document.getElementById("avexLowChip").title =
-            "Tagestief · " + formatRange(low) + " Uhr";
+            lowWindows ? "Tagestief · " + lowWindows + " Uhr" : "Tagestief";
     }else{
         document.getElementById("dayHigh").textContent = "-- €/kWh";
         document.getElementById("dayLow").textContent = "-- €/kWh";
+        document.getElementById("dayHighTime").textContent = "";
+        document.getElementById("dayLowTime").textContent = "";
         document.getElementById("avexHighChip").title = "Tageshoch";
         document.getElementById("avexLowChip").title = "Tagestief";
     }
