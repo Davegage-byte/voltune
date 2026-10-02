@@ -1,6 +1,6 @@
 {
   "data_version": 12,
-  "checked_at": "2026-10-02T09:33:40+02:00",
+  "checked_at": "2026-10-02T09:34:14+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -31,20 +31,21 @@
     "rss_url": "https://teslamag.de/feed"
   },
   "fuel_price_source": {
-    "name": "WDR / SWR",
-    "page_url": "https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html",
-    "dataset_url": "https://datawrapper.dwcdn.net/dkS5c/16/dataset.csv",
-    "chart_version": 16,
-    "checked_at": "2026-10-02T09:24:12+02:00",
-    "note": "NRW-Tagesmittel aus bereinigten Tankstellen-Preisdaten"
+    "name": "benzinpreise.de",
+    "page_url": "https://benzinpreise.de/statistik/bundeslaender",
+    "e10_url": "https://benzinpreise.de/statistik/bundeslaender/super-e10",
+    "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
+    "checked_at": "2026-10-02T09:34:14+02:00",
+    "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
+    "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "date": "2026-06-28",
-    "e10": 1.8224,
-    "diesel": 1.7412,
+    "e10": 2.084,
+    "diesel": 2.261,
+    "e10_updated_at": "2026-10-02T09:00+02:00",
+    "diesel_updated_at": "2026-10-02T09:00+02:00",
     "currency": "EUR",
-    "unit": "l",
-    "retrieved_at": "2026-06-28T10:40:07+02:00"
+    "unit": "l"
   },
   "superchargers": [
     {
@@ -24530,11 +24531,9 @@
       "source": "TeslaMag.de"
     }
   ],
-  "errors": {
-    "fuel_prices": "benzinpreise.de timestamp missing"
-  },
-  "superchargers_updated_at": "2026-10-02T09:33:40+02:00",
-  "news_updated_at": "2026-10-02T09:33:40+02:00",
-  "regional_news_updated_at": "2026-10-02T09:33:40+02:00",
-  "fuel_prices_updated_at": "2026-10-02T09:24:12+02:00"
+  "errors": {},
+  "superchargers_updated_at": "2026-10-02T09:34:14+02:00",
+  "news_updated_at": "2026-10-02T09:34:14+02:00",
+  "regional_news_updated_at": "2026-10-02T09:34:14+02:00",
+  "fuel_prices_updated_at": "2026-10-02T09:34:14+02:00"
 }
