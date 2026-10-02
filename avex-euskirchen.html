@@ -662,6 +662,29 @@ button,a.button{
     margin-top:8px;
 }
 
+.footer-controls{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+    margin-top:16px;
+    padding-top:12px;
+    border-top:1px solid rgba(255,255,255,.06);
+}
+
+.footer-controls .top-action{
+    min-height:34px;
+    padding:7px 10px;
+    font-size:10px;
+    opacity:.72;
+}
+
+.footer-controls .top-action:hover,
+.footer-controls .top-action.active{
+    opacity:1;
+}
+
 @media(max-width:1050px){
     .grid-main,.lower-grid{grid-template-columns:1fr}
 }
@@ -1186,14 +1209,9 @@ body.data-saver-on .celebration-banner{
                 <div class="brand-title">Tesla Hub</div>
             </div>
         </div>
-        <div class="top-actions">
-            <button id="themeBtn" class="top-action" type="button" data-theme-mode="auto">Theme: Auto</button>
-            <button id="dataSaverBtn" class="top-action" type="button" title="Bei AN werden Video, Celebration-Effekte und automatische GPS-Updates reduziert">Datensparmodus</button>
-            <button id="fullscreenBtn" class="top-action" type="button">⛶ Vollbild</button>
-            <div class="clock">
-                <div id="clockTime" class="clock-time">--:--</div>
-                <div id="clockDate" class="clock-date">--</div>
-            </div>
+        <div class="clock">
+            <div id="clockTime" class="clock-time">--:--</div>
+            <div id="clockDate" class="clock-date">--</div>
         </div>
     </header>
 
@@ -1431,6 +1449,11 @@ body.data-saver-on .celebration-banner{
         </div>
         <div class="footer-private">
             Tesla Hub ist eine private Übersichtsseite. Supercharger-Preise außerhalb der Tesla-App sind als Zusatzinformation zu verstehen und können abweichen.
+        </div>
+        <div class="footer-controls" aria-label="Tesla Hub Einstellungen">
+            <button id="themeBtn" class="top-action" type="button" data-theme-mode="auto">Theme: Auto</button>
+            <button id="dataSaverBtn" class="top-action" type="button" title="Bei AN werden Video, Celebration-Effekte und automatische GPS-Updates reduziert">Datensparmodus</button>
+            <button id="fullscreenBtn" class="top-action" type="button">⛶ Vollbild</button>
         </div>
     </div>
 </div>
