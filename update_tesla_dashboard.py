@@ -343,10 +343,6 @@ def fetch_regional_news():
 
 def fetch_bundesland_average(url, expected_heading):
     raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
-    for marker in ("Stand", "Nordrhein-Westfalen", expected_heading):
-        pos = raw.find(marker)
-        if pos >= 0:
-            print("benzinpreise.de debug", url, marker, repr(raw[max(0, pos - 800):pos + 2600]))
 
     # Remove scripts/styles and collapse HTML into readable text. Parsing is
     # anchored to the visible Bundesländer statistics table.
@@ -359,7 +355,7 @@ def fetch_bundesland_average(url, expected_heading):
         raise ValueError(f"benzinpreise.de heading missing: {expected_heading}")
 
     stand = re.search(
-        r"Stand:\\s*(\\d{1,2})\\.(\\d{1,2})\\.(20\\d{2})\\s+(\\d{1,2}):(\\d{2})",
+        r"Stand:\s*(\d{1,2})\.(\d{1,2})\.(20\d{2})\s+(\d{1,2}):(\d{2})",
         text,
         flags=re.I,
     )
@@ -367,7 +363,7 @@ def fetch_bundesland_average(url, expected_heading):
         raise ValueError("benzinpreise.de timestamp missing")
 
     price_match = re.search(
-        r"Nordrhein-Westfalen\\s+([0-9]+[,.][0-9]{3})\\b",
+        r"Nordrhein-Westfalen\s+([0-9]+[,.][0-9]{3})\b",
         text,
         flags=re.I,
     )
