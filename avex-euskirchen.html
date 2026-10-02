@@ -1139,6 +1139,9 @@ body.data-saver-on .celebration-banner{
         <span class="debug-celebration-label">DEBUG · Celebration</span>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="birthday">🎂 Geburtstag anonym</button>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="elon">🚀 Elon Musk</button>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="tesla-founded">⚡ Tesla Gründung</button>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="model3-unveil">🚗 Model 3 Vorstellung</button>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="model3-release">🎉 Model 3 Release</button>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="christmas">❄ 24.12 Weihnachten</button>
         <button class="debug-celebration-btn" type="button" data-celebration-debug="newyear">🥂 01.01 Neujahr</button>
         <button id="celebrationDebugStop" class="debug-celebration-btn stop" type="button">■ Stop</button>
@@ -1453,6 +1456,42 @@ const CELEBRATION_EVENTS = [
         effect:"confetti"
     },
     {
+        date:"01.07",
+        label:"01.07",
+        visibility:"public",
+        showMessage:true,
+        anniversaryYear:2003,
+        anniversaryName:"Tesla",
+        anniversaryTemplate:"{years} Jahre Tesla! ⚡",
+        reason:"Tesla wurde am 01.07.2003 gegründet. ⚡",
+        effect:"confetti",
+        palette:["#e82127","#ffffff","#8f0b10","#d9d9dc"]
+    },
+    {
+        date:"31.03",
+        label:"31.03",
+        visibility:"public",
+        showMessage:true,
+        anniversaryYear:2016,
+        anniversaryName:"Model 3 Vorstellung",
+        anniversaryTemplate:"{years} Jahre seit der Vorstellung des Model 3! 🚗",
+        reason:"Jahrestag der Model 3 Vorstellung 🚗",
+        effect:"confetti",
+        palette:["#e82127","#ffffff","#4aa8ff","#d9d9dc"]
+    },
+    {
+        date:"28.07",
+        label:"28.07",
+        visibility:"public",
+        showMessage:true,
+        anniversaryYear:2017,
+        anniversaryName:"Model 3 Auslieferungsstart",
+        anniversaryTemplate:"{years} Jahre Model 3 Auslieferungen! 🎉",
+        reason:"Jahrestag der ersten Model 3 Kundenübergaben 🎉",
+        effect:"confetti",
+        palette:["#e82127","#ffffff","#c0c0c0","#ffcc3d"]
+    },
+    {
         start:"24.12",
         end:"31.12",
         label:"24.–31.12",
@@ -1472,6 +1511,7 @@ const CELEBRATION_EVENTS = [
     }
 ];
 // Bei Geburtstagen kann optional birthYear:YYYY ergänzt werden; birthdayName nur, wenn der Name sichtbar sein soll.
+// Historische Ereignisse können anniversaryYear und anniversaryTemplate mit {years} verwenden.
 // Öffentliche Ereignisse können visibility:"public", reason:"..." und eigene Effekte/Farben erhalten.
 
 
@@ -1547,19 +1587,32 @@ function currentCelebrationEvent(){
 function celebrationDisplayMessage(event){
     if(!event) return "";
 
+    const currentYear = Number(new Intl.DateTimeFormat("de-DE", {
+        timeZone:"Europe/Berlin",
+        year:"numeric"
+    }).format(new Date()));
+
     const birthYear = Number(event.birthYear);
     if(Number.isInteger(birthYear) && birthYear > 1900){
-        const currentYear = Number(new Intl.DateTimeFormat("de-DE", {
-            timeZone:"Europe/Berlin",
-            year:"numeric"
-        }).format(new Date()));
-
         const age = currentYear - birthYear;
         if(Number.isInteger(age) && age > 0){
             if(event.birthdayName){
                 return "Alles Gute zum " + age + ". Geburtstag, " + event.birthdayName + "! 🎂";
             }
             return "Alles Gute zum " + age + ". Geburtstag! 🎂";
+        }
+    }
+
+    const anniversaryYear = Number(event.anniversaryYear);
+    if(Number.isInteger(anniversaryYear) && anniversaryYear > 1800){
+        const years = currentYear - anniversaryYear;
+        if(Number.isInteger(years) && years > 0){
+            if(event.anniversaryTemplate){
+                return String(event.anniversaryTemplate).replace("{years}", String(years));
+            }
+            if(event.anniversaryName){
+                return years + " Jahre " + event.anniversaryName + "! 🎉";
+            }
         }
     }
 
@@ -1852,6 +1905,18 @@ function triggerCelebrationDebug(type){
     }else if(type === "elon"){
         event = CELEBRATION_EVENTS.find(function(item){
             return item.date === "28.06";
+        });
+    }else if(type === "tesla-founded"){
+        event = CELEBRATION_EVENTS.find(function(item){
+            return item.date === "01.07";
+        });
+    }else if(type === "model3-unveil"){
+        event = CELEBRATION_EVENTS.find(function(item){
+            return item.date === "31.03";
+        });
+    }else if(type === "model3-release"){
+        event = CELEBRATION_EVENTS.find(function(item){
+            return item.date === "28.07";
         });
     }else if(type === "christmas"){
         event = CELEBRATION_EVENTS.find(function(item){
