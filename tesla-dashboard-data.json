@@ -1,6 +1,6 @@
 {
-  "data_version": 7,
-  "checked_at": "2026-10-02T08:57:35+02:00",
+  "data_version": 8,
+  "checked_at": "2026-10-02T08:59:09+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -25,9 +25,14 @@
     "name": "Not a Tesla App",
     "url": "https://www.notateslaapp.com/"
   },
-  "official_news_source": {
-    "name": "Tesla Learn",
-    "url": "https://www.tesla.com/learn"
+  "social_news_source": {
+    "name": "Tesla Social",
+    "accounts": [
+      "Tesla",
+      "teslaeurope",
+      "TeslaCharging"
+    ],
+    "url": "https://x.com/Tesla"
   },
   "superchargers": [
     {
@@ -24439,11 +24444,11 @@
       "published_at": "2026-09-30T15:35:00+02:00"
     }
   ],
-  "official_news": [],
+  "social_news": [],
   "errors": {
-    "official_news": "HTTP Error 403: Forbidden"
+    "social_news": "No X social posts available; @Tesla: HTTP Error 429: Too Many Requests; @teslaeurope: HTTP Error 429: Too Many Requests; @TeslaCharging: HTTP Error 429: Too Many Requests"
   },
-  "superchargers_updated_at": "2026-10-02T08:57:35+02:00",
-  "news_updated_at": "2026-10-02T08:57:35+02:00",
-  "official_news_updated_at": null
+  "superchargers_updated_at": "2026-10-02T08:59:09+02:00",
+  "news_updated_at": "2026-10-02T08:59:09+02:00",
+  "social_news_updated_at": null
 }
