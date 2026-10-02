@@ -18,13 +18,14 @@ SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
 SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
 TESLAMAG_RSS_URL = "https://teslamag.de/feed"
-SPRITFUCHS_NRW_URL = "https://derspritfuchs.de/bundesland/nordrhein-westfalen"
+BENZINPREISE_E10_URL = "https://benzinpreise.de/statistik/bundeslaender/super-e10"
+BENZINPREISE_DIESEL_URL = "https://benzinpreise.de/statistik/bundeslaender/diesel"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 11
+DATA_VERSION = 12
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -340,61 +341,76 @@ def fetch_regional_news():
     return items
 
 
-def fetch_nrw_fuel_prices(now):
-    raw = download_bytes(
-        SPRITFUCHS_NRW_URL,
-        max_bytes=5_000_000,
-    ).decode("utf-8", errors="replace")
+def fetch_bundesland_average(url, expected_heading):
+    raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
 
-    section_pos = raw.find("Durchschnittspreise in Nordrhein-Westfalen")
-    if section_pos < 0:
-        raise ValueError("SpritFuchs NRW average section not found")
-
-    # Limit parsing to the current-average section so historical values,
-    # FAQs and metadata cannot be mistaken for the current daily average.
-    section = raw[section_pos : section_pos + 30_000]
-    section = re.sub(r"<script\\b[^>]*>.*?</script>", " ", section, flags=re.I | re.S)
-    section = re.sub(r"<style\\b[^>]*>.*?</style>", " ", section, flags=re.I | re.S)
-    text = unescape(re.sub(r"<[^>]+>", " ", section))
+    # Remove scripts/styles and collapse HTML into readable text. Parsing is
+    # anchored to the visible Bundesländer statistics table.
+    clean = re.sub(r"<script\\b[^>]*>.*?</script>", " ", raw, flags=re.I | re.S)
+    clean = re.sub(r"<style\\b[^>]*>.*?</style>", " ", clean, flags=re.I | re.S)
+    text = unescape(re.sub(r"<[^>]+>", " ", clean))
     text = re.sub(r"\\s+", " ", text).strip()
 
-    def extract_price(label):
-        match = re.search(
-            rf"{re.escape(label)}\\s+([0-9]+[,.][0-9]{{3}})\\b",
-            text,
-            flags=re.I,
-        )
-        if not match:
-            raise ValueError(f"SpritFuchs {label} average not found")
-        value = float(match.group(1).replace(",", "."))
-        if not math.isfinite(value) or not (0.5 <= value <= 5):
-            raise ValueError(f"SpritFuchs {label} average invalid")
-        return round(value, 4)
+    if expected_heading.lower() not in text.lower():
+        raise ValueError(f"benzinpreise.de heading missing: {expected_heading}")
 
-    date_match = re.search(
-        r"Stand:\\s*(\\d{1,2})\\.(\\d{1,2})\\.(20\\d{2})",
+    stand = re.search(
+        r"Stand:\\s*(\\d{1,2})\\.(\\d{1,2})\\.(20\\d{2})\\s+(\\d{1,2}):(\\d{2})",
         text,
         flags=re.I,
     )
-    if not date_match:
-        raise ValueError("SpritFuchs data date not found")
+    if not stand:
+        raise ValueError("benzinpreise.de timestamp missing")
 
-    day = f"{date_match.group(3)}-{int(date_match.group(2)):02d}-{int(date_match.group(1)):02d}"
-    e10 = extract_price("Super E10")
-    diesel = extract_price("Diesel")
+    price_match = re.search(
+        r"Nordrhein-Westfalen\\s+([0-9]+[,.][0-9]{3})\\b",
+        text,
+        flags=re.I,
+    )
+    if not price_match:
+        raise ValueError("benzinpreise.de NRW average missing")
+
+    price = float(price_match.group(1).replace(",", "."))
+    if not math.isfinite(price) or not (0.5 <= price <= 5):
+        raise ValueError("benzinpreise.de NRW average invalid")
+
+    observed = datetime(
+        int(stand.group(3)),
+        int(stand.group(2)),
+        int(stand.group(1)),
+        int(stand.group(4)),
+        int(stand.group(5)),
+        tzinfo=TIMEZONE,
+    )
+    return round(price, 4), observed
+
+
+def fetch_nrw_fuel_prices(now):
+    e10, e10_at = fetch_bundesland_average(
+        BENZINPREISE_E10_URL,
+        "Durchschnitt: Super E10",
+    )
+    diesel, diesel_at = fetch_bundesland_average(
+        BENZINPREISE_DIESEL_URL,
+        "Durchschnitt: Diesel",
+    )
 
     fuel_prices = {
-        "date": day,
         "e10": e10,
         "diesel": diesel,
+        "e10_updated_at": e10_at.isoformat(timespec="minutes"),
+        "diesel_updated_at": diesel_at.isoformat(timespec="minutes"),
         "currency": "EUR",
         "unit": "l",
     }
     source = {
-        "name": "SpritFuchs",
-        "page_url": SPRITFUCHS_NRW_URL,
+        "name": "benzinpreise.de",
+        "page_url": "https://benzinpreise.de/statistik/bundeslaender",
+        "e10_url": BENZINPREISE_E10_URL,
+        "diesel_url": BENZINPREISE_DIESEL_URL,
         "checked_at": now.isoformat(timespec="seconds"),
-        "note": "NRW-Tagesmittel auf Basis amtlicher MTS-K-Daten",
+        "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
+        "license": "CC BY 4.0",
     }
     return fuel_prices, source
 
