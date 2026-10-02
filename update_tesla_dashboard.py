@@ -429,6 +429,8 @@ def build_data(old, now):
         and old.get("news")
         and old.get("regional_news")
         and old.get("fuel_prices")
+        and (old.get("fuel_price_source") or {}).get("name") == "benzinpreise.de"
+        and not (old.get("errors") or {}).get("fuel_prices")
     ):
         print("Tesla dashboard cache is fresh")
         return None
