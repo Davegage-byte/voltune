@@ -1,6 +1,6 @@
 {
-  "data_version": 9,
-  "checked_at": "2026-10-02T09:00:08+02:00",
+  "data_version": 10,
+  "checked_at": "2026-10-02T09:22:26+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -30,6 +30,8 @@
     "url": "https://teslamag.de/",
     "rss_url": "https://teslamag.de/feed"
   },
+  "fuel_price_source": {},
+  "fuel_prices": {},
   "superchargers": [
     {
       "id": "27a84873-7584-4b02-8c3f-f22818a24f0d",
@@ -24514,8 +24516,11 @@
       "source": "TeslaMag.de"
     }
   ],
-  "errors": {},
-  "superchargers_updated_at": "2026-10-02T09:00:08+02:00",
-  "news_updated_at": "2026-10-02T09:00:08+02:00",
-  "regional_news_updated_at": "2026-10-02T09:00:08+02:00"
+  "errors": {
+    "fuel_prices": "WDR fuel dataset has no complete E10/Diesel day"
+  },
+  "superchargers_updated_at": "2026-10-02T09:22:26+02:00",
+  "news_updated_at": "2026-10-02T09:22:26+02:00",
+  "regional_news_updated_at": "2026-10-02T09:22:26+02:00",
+  "fuel_prices_updated_at": null
 }
