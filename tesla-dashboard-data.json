@@ -1,6 +1,6 @@
 {
   "data_version": 5,
-  "checked_at": "2026-10-02T00:55:57+02:00",
+  "checked_at": "2026-10-02T03:55:49+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -10263,6 +10263,11 @@
   ],
   "news": [
     {
+      "title": "Tesla Teases Spooky Halloween Mode, Coming Soon",
+      "url": "https://www.notateslaapp.com/news/4758/tesla-teases-spooky-halloween-mode-coming-soon",
+      "published_at": "2026-10-02T03:23:00+02:00"
+    },
+    {
       "title": "Tesla Quietly Rolls Out New 'Dynamic Headlight Leveling' to Select Cars",
       "url": "https://www.notateslaapp.com/news/4757/tesla-quietly-rolls-out-new-dynamic-headlight-leveling-to-select-cars",
       "published_at": "2026-10-01T23:09:00+02:00"
@@ -10296,14 +10301,9 @@
       "title": "Tesla Secures $30 Billion in Loans to Fund Future Projects",
       "url": "https://www.notateslaapp.com/news/4750/tesla-secures-30-billion-in-loans-to-fund-future-projects",
       "published_at": "2026-09-30T15:35:00+02:00"
-    },
-    {
-      "title": "Tesla Update 2026.38 Release Notes",
-      "url": "https://www.notateslaapp.com/software-updates/version/2026.38/release-notes",
-      "published_at": "2026-09-30T07:45:09+02:00"
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-02T00:55:57+02:00",
-  "news_updated_at": "2026-10-02T00:55:57+02:00"
+  "superchargers_updated_at": "2026-10-02T03:55:49+02:00",
+  "news_updated_at": "2026-10-02T03:55:49+02:00"
 }
