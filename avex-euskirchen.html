@@ -1225,6 +1225,10 @@ body.data-saver-on .celebration-banner{
             <strong>🧩 Release Notes</strong>
             <span>Aktuelle Versionen</span>
         </a>
+        <a class="quicklink" href="https://finance.yahoo.com/quote/TSLA/" target="_blank" rel="noopener noreferrer" title="Tesla Aktie · Yahoo Finance">
+            <strong>📈 Tesla Aktie</strong>
+            <span id="teslaStockPrice">TSLA · -- $</span>
+        </a>
         <a class="quicklink" href="https://suc-tracker.eu/" target="_blank" rel="noopener noreferrer">
             <strong>⚡ SuC Tracker</strong>
             <span>Supercharger Preise</span>
@@ -2781,6 +2785,51 @@ function fuelTimeInfo(value){
     return {label:label, detail:detail};
 }
 
+function formatStockPrice(value, currency){
+    const price = Number(value);
+    if(!Number.isFinite(price) || price <= 0) return "--";
+
+    const formatted = price.toLocaleString("de-DE", {
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+    });
+    return currency === "USD" ? formatted + " $" : formatted + " " + (currency || "");
+}
+
+function renderTeslaStock(){
+    const element = document.getElementById("teslaStockPrice");
+    if(!element) return;
+
+    const stock = dashboardData && dashboardData.tesla_stock;
+    const source = dashboardData && dashboardData.tesla_stock_source;
+
+    if(!stock || !Number.isFinite(Number(stock.price))){
+        element.textContent = "TSLA · -- $";
+        element.parentElement.title = "Tesla Aktie · Kurs derzeit nicht verfügbar";
+        return;
+    }
+
+    element.textContent = (stock.symbol || "TSLA") + " · " +
+        formatStockPrice(stock.price, stock.currency || "USD");
+
+    const marketTime = stock.market_time
+        ? new Date(stock.market_time).toLocaleString("de-DE", {
+            timeZone:"Europe/Berlin",
+            day:"2-digit",
+            month:"2-digit",
+            year:"numeric",
+            hour:"2-digit",
+            minute:"2-digit"
+        }) + " Uhr"
+        : "--";
+
+    const sourceName = source && source.name ? source.name : "Yahoo Finance";
+    element.parentElement.title =
+        "Tesla Aktie " + (stock.symbol || "TSLA") +
+        " · " + sourceName +
+        " · Stand " + marketTime;
+}
+
 function renderFuelPrices(){
     const e5El = document.getElementById("fuelE5Price");
     const dieselEl = document.getElementById("fuelDieselPrice");
@@ -2930,6 +2979,7 @@ async function loadDashboard(){
     renderNews();
     renderRegionalNews();
     renderFuelPrices();
+    renderTeslaStock();
 }
 
 async function loadAll(){
