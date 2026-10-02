@@ -1,6 +1,6 @@
 {
   "data_version": 10,
-  "checked_at": "2026-10-02T09:22:26+02:00",
+  "checked_at": "2026-10-02T09:23:35+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -24519,8 +24519,8 @@
   "errors": {
     "fuel_prices": "WDR fuel dataset has no complete E10/Diesel day"
   },
-  "superchargers_updated_at": "2026-10-02T09:22:26+02:00",
-  "news_updated_at": "2026-10-02T09:22:26+02:00",
-  "regional_news_updated_at": "2026-10-02T09:22:26+02:00",
+  "superchargers_updated_at": "2026-10-02T09:23:35+02:00",
+  "news_updated_at": "2026-10-02T09:23:35+02:00",
+  "regional_news_updated_at": "2026-10-02T09:23:35+02:00",
   "fuel_prices_updated_at": null
 }
