@@ -4,31 +4,26 @@ import json
 import math
 import re
 import urllib.request
-from html import unescape
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
+from html import unescape
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 TIMEZONE = ZoneInfo("Europe/Berlin")
 OUTPUT = Path("tesla-dashboard-data.json")
 SUPERCHARGERS_URL = "https://raw.githubusercontent.com/Niek/tesla-superchargers/main/superchargers-with-pricing.json"
+SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
+SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
-# Keep a compact Europe-wide pool so the browser can pick the 12 nearest sites
-# from the user's live GPS position without calling a third-party API client-side.
+SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 5
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.2"
-
-PUBLIC_PRICE_SOURCES = {
-    "Bonn, Germany": "https://adhoccharging.eu/de/city/bonn/tesla-am-bonner-bogen-1/",
-    "Frechen, Germany": "https://adhoccharging.eu/de/city/frechen/tesla-europaallee-8/",
-    "Kerpen, Germany": "https://adhoccharging.eu/de/city/sindorf/tesla-kerpener-strasse-150/",
-}
+DATA_VERSION = 6
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
 def load_json(path, default):
@@ -99,50 +94,133 @@ def normalize_rates(block):
     }
 
 
-def fetch_public_price(site_name, now):
-    url = PUBLIC_PRICE_SOURCES.get(site_name)
-    if not url:
+def normalize_site_name(value):
+    value = unescape(str(value or "")).lower().strip()
+    value = re.sub(r"\s+", " ", value)
+    return value
+
+
+def normalize_suc_pricing(block):
+    if not isinstance(block, dict):
+        return None
+    if block.get("pricingStatus") != "available":
         return None
 
-    raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
-    text = unescape(re.sub(r"<[^>]+>", " ", raw))
-    text = " ".join(text.split())
+    unit = block.get("pricingUnit") or "kwh"
+    raw_prices = block.get("prices")
+    if unit != "kwh" or not isinstance(raw_prices, list):
+        return None
 
-    patterns = (
-        r"Ad-hoc\s+(?:ab|from)\s+€?\s*(\d+[,.]\d+)\s*€?\s*/\s*kWh",
-        r"(?:Energiepreis|Energy rate)\s+(\d+[,.]\d+)\s*EUR\s*/\s*kWh",
-    )
+    windows = []
+    for item in raw_prices:
+        if not isinstance(item, dict):
+            continue
+        try:
+            days = int(item.get("days", 127))
+            start = int(item["start"])
+            end = int(item["end"])
+            raw_price = float(item["price"])
+        except (KeyError, TypeError, ValueError):
+            continue
 
-    parsed = []
-    for pattern in patterns:
-        for value in re.findall(pattern, text, flags=re.I):
-            try:
-                number = float(value.replace(",", "."))
-            except ValueError:
-                continue
-            if 0.05 <= number <= 3:
-                parsed.append(round(number, 4))
-        if parsed:
-            break
+        if not (0 <= start <= 1440 and 0 <= end <= 1440 and end > start):
+            continue
 
-    unique = sorted(set(parsed))
-    if not unique:
-        raise ValueError("no public tariff found in response")
-    if len(unique) != 1:
-        raise ValueError(f"ambiguous public tariffs: {unique}")
+        rate = raw_price / 1_000_000.0
+        if not math.isfinite(rate) or not (0 <= rate <= 5):
+            continue
 
+        windows.append(
+            {
+                "days": days,
+                "start": start,
+                "end": end,
+                "rate": round(rate, 4),
+            }
+        )
+
+    if not windows:
+        return None
+
+    windows.sort(key=lambda item: (item["start"], item["end"], item["rate"]))
     return {
-        "rate": unique[0],
-        "currency": "EUR",
-        "metric": "kWh",
-        "source": "adhoccharging.eu / Mobilithek",
-        "url": url,
-        "checked_at": now.isoformat(timespec="seconds"),
-        "kind": "public",
+        "currency": block.get("currency") or "EUR",
+        "unit": "kwh",
+        "status": "available",
+        "windows": windows,
+        "price_changed_at": block.get("priceChangedAt"),
     }
 
 
-def fetch_superchargers(now):
+def fetch_suc_tracker_dataset(now):
+    payload = json.loads(download_bytes(SUC_TRACKER_URL, max_bytes=30_000_000).decode("utf-8"))
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != 2:
+        raise ValueError("Unsupported SuC-Tracker dataset schema")
+
+    stations = payload.get("stations")
+    if not isinstance(stations, list):
+        raise ValueError("SuC-Tracker stations missing")
+
+    pricing_by_name = {}
+    for station in stations:
+        if not isinstance(station, dict):
+            continue
+
+        pricing = station.get("pricing")
+        tesla = pricing.get("tesla") if isinstance(pricing, dict) else None
+        normalized = normalize_suc_pricing(tesla)
+        name = station.get("name")
+        key = normalize_site_name(name)
+
+        if key and normalized:
+            pricing_by_name[key] = {
+                "suc_tracker_id": station.get("id"),
+                "pricing": normalized,
+            }
+
+    meta = {
+        "name": "SuC Tracker",
+        "page_url": SUC_TRACKER_PAGE,
+        "dataset_url": SUC_TRACKER_URL,
+        "schema_version": payload.get("schemaVersion"),
+        "generated_at": payload.get("generatedAt"),
+        "checked_at": now.isoformat(timespec="seconds"),
+        "station_count": len(stations),
+    }
+    return meta, pricing_by_name
+
+
+def merge_suc_pricing(superchargers, pricing_by_name):
+    matched = 0
+    for site in superchargers:
+        match = pricing_by_name.get(normalize_site_name(site.get("name")))
+        if not match:
+            continue
+        site["suc_tracker_id"] = match.get("suc_tracker_id")
+        site["suc_pricing"] = match.get("pricing")
+        matched += 1
+    return matched
+
+
+def copy_cached_suc_pricing(superchargers, old_superchargers):
+    old_by_id = {
+        item.get("id"): item
+        for item in old_superchargers
+        if isinstance(item, dict) and item.get("id")
+    }
+    matched = 0
+    for site in superchargers:
+        old_site = old_by_id.get(site.get("id"))
+        if not old_site:
+            continue
+        if old_site.get("suc_pricing"):
+            site["suc_pricing"] = old_site.get("suc_pricing")
+            site["suc_tracker_id"] = old_site.get("suc_tracker_id")
+            matched += 1
+    return matched
+
+
+def fetch_superchargers():
     payload = json.loads(download_bytes(SUPERCHARGERS_URL).decode("utf-8"))
     nearby = []
 
@@ -163,21 +241,8 @@ def fetch_superchargers(now):
         ):
             continue
 
-        distance = haversine_km(
-            AVEX["latitude"], AVEX["longitude"], lat, lon
-        )
-
+        distance = haversine_km(AVEX["latitude"], AVEX["longitude"], lat, lon)
         prices = site.get("prices") or {}
-        member = normalize_rates(prices.get("member"))
-        user = normalize_rates(prices.get("user"))
-
-        public_price = None
-        if site.get("name") in PUBLIC_PRICE_SOURCES:
-            try:
-                public_price = fetch_public_price(site.get("name"), now)
-            except Exception as exc:
-                print(f"Public price unavailable for {site.get('name')}: {exc}")
-                public_price = None
 
         nearby.append(
             {
@@ -189,101 +254,13 @@ def fetch_superchargers(now):
                 "power_kw": site.get("power"),
                 "stalls": site.get("stalls"),
                 "access": site.get("access"),
-                "member_price": member,
-                "other_price": user,
-                "public_price": public_price,
+                "member_price": normalize_rates(prices.get("member")),
+                "other_price": normalize_rates(prices.get("user")),
             }
         )
 
     nearby.sort(key=lambda item: item["distance_km"])
     return nearby[:MAX_SUPERCHARGERS]
-
-
-def probe_suc_tracker():
-    """One-run-safe diagnostics for discovering SuC-Tracker's public browser data path."""
-    base = "https://suc-tracker.eu/"
-    try:
-        html = download_bytes(base, max_bytes=2_000_000).decode("utf-8", errors="replace")
-    except Exception as exc:
-        print(f"SuC-Tracker probe homepage failed: {exc}")
-        return
-
-    script_srcs = re.findall(r'<script[^>]+src=["\\\']([^"\\\']+)["\\\']', html, flags=re.I)
-    links = re.findall(r'(?:href|src)=["\\\']([^"\\\']+)["\\\']', html, flags=re.I)
-    print("SuC-Tracker scripts:", script_srcs[:20])
-    print("SuC-Tracker asset links:", [x for x in links if "asset" in x.lower()][:20])
-
-    for src in script_srcs[:8]:
-        if src.startswith("//"):
-            url = "https:" + src
-        elif src.startswith("http://") or src.startswith("https://"):
-            url = src
-        else:
-            url = base.rstrip("/") + "/" + src.lstrip("/")
-
-        try:
-            js = download_bytes(url, max_bytes=5_000_000).decode("utf-8", errors="replace")
-        except Exception as exc:
-            print(f"SuC-Tracker asset failed {url}: {exc}")
-            continue
-
-        candidates = set()
-        for match in re.findall(r'["\\\']([^"\\\']{3,300})["\\\']', js):
-            low = match.lower()
-            if (
-                "/api/" in low
-                or low.endswith(".json")
-                or "supercharger" in low
-                or "pricing" in low
-                or "tariff" in low
-                or "station" in low
-                or "charger" in low
-                or "price" in low and ("/" in match or "http" in low)
-            ):
-                if len(match) <= 280:
-                    candidates.add(match)
-
-        absolute_urls = sorted(set(re.findall(r'https?://[^"\\\'\\s)]+', js)))
-        fetch_snippets = []
-        for needle in ("fetch(", "axios", "supabase", "firebase", "/api/", ".json", "chargers", "stations", "prices"):
-            start = 0
-            hits = 0
-            low_js = js.lower()
-            low_needle = needle.lower()
-            while hits < 8:
-                pos = low_js.find(low_needle, start)
-                if pos < 0:
-                    break
-                snippet = js[max(0, pos - 180): min(len(js), pos + 360)]
-                fetch_snippets.append((needle, " ".join(snippet.split())))
-                start = pos + len(needle)
-                hits += 1
-
-        print(f"SuC-Tracker asset bytes {url}: {len(js)}")
-        print(f"SuC-Tracker absolute URLs from {url}:", absolute_urls[:80])
-        print(f"SuC-Tracker candidates from {url}:", sorted(candidates)[:160])
-        print(f"SuC-Tracker snippets from {url}:", fetch_snippets[:80])
-
-    try:
-        dataset = json.loads(download_bytes(base.rstrip("/") + "/data/europe.json", max_bytes=30_000_000).decode("utf-8"))
-        stations = dataset.get("stations", []) if isinstance(dataset, dict) else []
-        print("SuC-Tracker dataset keys:", sorted(dataset.keys()) if isinstance(dataset, dict) else type(dataset).__name__)
-        print("SuC-Tracker schema/count:", dataset.get("schemaVersion") if isinstance(dataset, dict) else None, len(stations))
-        for station in stations:
-            hay = " ".join(str(station.get(k, "")) for k in ("name", "city", "address", "id")).lower()
-            if any(term in hay for term in ("kerpen", "frechen", "bonn", "erftstadt", "troisdorf")):
-                slim = {
-                    "id": station.get("id"),
-                    "name": station.get("name"),
-                    "city": station.get("city"),
-                    "country": station.get("country"),
-                    "latitude": station.get("latitude"),
-                    "longitude": station.get("longitude"),
-                    "pricing": station.get("pricing"),
-                }
-                print("SuC-Tracker sample station:", json.dumps(slim, ensure_ascii=False))
-    except Exception as exc:
-        print(f"SuC-Tracker dataset probe failed: {exc}")
 
 
 def fetch_news():
@@ -315,7 +292,6 @@ def fetch_news():
                 "published_at": published_at,
             }
         )
-
         if len(items) >= 8:
             break
 
@@ -341,8 +317,9 @@ def build_data(old, now):
         "supercharger_source": {
             "name": "Niek/tesla-superchargers",
             "url": "https://github.com/Niek/tesla-superchargers",
-            "note": "Unofficial daily Tesla-app pricing dataset",
+            "note": "Location and site metadata",
         },
+        "suc_tracker_source": old.get("suc_tracker_source", {}),
         "news_source": {
             "name": "Not a Tesla App",
             "url": "https://www.notateslaapp.com/",
@@ -353,11 +330,34 @@ def build_data(old, now):
     }
 
     try:
-        data["superchargers"] = fetch_superchargers(now)
+        data["superchargers"] = fetch_superchargers()
         data["superchargers_updated_at"] = now.isoformat(timespec="seconds")
     except Exception as exc:
         data["errors"]["superchargers"] = str(exc)
         data["superchargers_updated_at"] = old.get("superchargers_updated_at")
+
+    suc_checked = timestamp((old.get("suc_tracker_source") or {}).get("checked_at"))
+    should_refresh_suc = not suc_checked or now - suc_checked >= SUC_TRACKER_REFRESH_AFTER
+
+    if data.get("superchargers"):
+        if should_refresh_suc:
+            try:
+                meta, pricing_by_name = fetch_suc_tracker_dataset(now)
+                matched = merge_suc_pricing(data["superchargers"], pricing_by_name)
+                meta["matched_stations"] = matched
+                data["suc_tracker_source"] = meta
+                print(f"SuC-Tracker pricing matched {matched}/{len(data['superchargers'])} dashboard sites")
+            except Exception as exc:
+                data["errors"]["suc_tracker"] = str(exc)
+                matched = copy_cached_suc_pricing(
+                    data["superchargers"], old.get("superchargers", [])
+                )
+                print(f"SuC-Tracker refresh failed; reused {matched} cached station prices")
+        else:
+            matched = copy_cached_suc_pricing(
+                data["superchargers"], old.get("superchargers", [])
+            )
+            print(f"SuC-Tracker cache reused for {matched} station prices")
 
     try:
         data["news"] = fetch_news()
@@ -370,7 +370,6 @@ def build_data(old, now):
 
 
 def main():
-    probe_suc_tracker()
     now = datetime.now(TIMEZONE)
     old = load_json(OUTPUT, {})
     data = build_data(old, now)
@@ -385,11 +384,14 @@ def main():
     )
     tmp.replace(OUTPUT)
 
+    source = data.get("suc_tracker_source") or {}
     print(
         json.dumps(
             {
                 "checked_at": data["checked_at"],
                 "superchargers": len(data.get("superchargers", [])),
+                "suc_prices_matched": source.get("matched_stations"),
+                "suc_prices_generated_at": source.get("generated_at"),
                 "news": len(data.get("news", [])),
                 "errors": data.get("errors", {}),
             },
