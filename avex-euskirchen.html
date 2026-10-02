@@ -121,10 +121,15 @@ button,a.button{
 }
 
 .quicklinks{
-    display:grid;
-    grid-template-columns:repeat(6, minmax(0,1fr));
+    display:flex;
+    flex-wrap:wrap;
     gap:10px;
     margin-bottom:18px;
+}
+
+.quicklinks .quicklink{
+    width:180px;
+    flex:0 0 180px;
 }
 
 .quicklink{
@@ -545,7 +550,6 @@ button,a.button{
 }
 
 @media(max-width:1050px){
-    .quicklinks{grid-template-columns:repeat(3,minmax(0,1fr))}
     .grid-main,.lower-grid{grid-template-columns:1fr}
 }
 
@@ -555,7 +559,7 @@ button,a.button{
     .brand-title{font-size:20px}
     .brand-mark{width:42px;height:42px}
     .clock-time{font-size:17px}
-    .quicklinks{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .quicklinks .quicklink{width:calc(50% - 5px);flex-basis:calc(50% - 5px)}
     .price-row{display:block}
     .price-big{font-size:52px}
     .status{text-align:left;margin-top:15px}
@@ -624,9 +628,6 @@ body.video-active::before{
     border-radius:12px;padding:9px 11px;cursor:pointer;min-height:38px;
 }
 .top-action.active{border-color:rgba(98,168,255,.65);background:rgba(98,168,255,.12)}
-.settings-row{
-    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-bottom:18px;
-}
 .hub-panel{
     border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
 }
@@ -637,32 +638,6 @@ body.video-active::before{
     background:rgba(12,12,15,.78);color:var(--text);padding:0 12px;font:inherit;
 }
 .vehicle-state{color:var(--muted);font-size:12px;margin-top:9px}
-.voltune-strip{display:flex;align-items:center;justify-content:space-between;gap:14px}
-.voltune-mark{font-size:25px;font-weight:900;letter-spacing:.06em}
-.voltune-copy{color:var(--muted);font-size:12px;margin-top:3px}
-.motion-rail{
-    height:4px;border-radius:99px;margin-top:12px;overflow:hidden;background:#27272d;position:relative
-}
-.motion-rail::after{
-    content:"";position:absolute;inset:0;
-    background:linear-gradient(
-        90deg,
-        transparent 0%,
-        transparent 28%,
-        rgba(232,33,39,.18) 39%,
-        #e82127 47%,
-        #fff 50%,
-        #e82127 53%,
-        rgba(232,33,39,.18) 61%,
-        transparent 72%,
-        transparent 100%
-    );
-    background-size:220% 100%;
-    animation:motionSweep 6.5s linear infinite;
-    will-change:background-position;
-}
-@keyframes motionSweep{
-    from{background-position:145% 0}
     to{background-position:-145% 0}
 }
 .super-item{cursor:pointer}
@@ -672,8 +647,7 @@ body.video-active::before{
 .gps-state.live .gps-dot{background:var(--green);box-shadow:0 0 12px rgba(52,209,123,.6)}
 .gps-state.fallback .gps-dot{background:var(--yellow)}
 @media(max-width:900px){
-    .settings-row{grid-template-columns:1fr}
-    .vehicle-controls{grid-template-columns:1fr 1fr}
+        .vehicle-controls{grid-template-columns:1fr 1fr}
     .vehicle-controls button{grid-column:1/-1}
 }
 @media(max-width:640px){
@@ -684,6 +658,12 @@ body.video-active::before{
     .vehicle-controls button{grid-column:auto}
 }
 
+.vehicle-profile-bottom{
+    margin-top:18px;
+}
+.vehicle-profile-panel{
+    width:100%;
+}
 
 /* Tesla Hub theme system – shared with Voltune */
 html[data-theme="dark"]{color-scheme:dark}
@@ -778,8 +758,7 @@ html[data-theme="light"] .vehicle-controls select{
     background:rgba(255,255,255,.82);
     color:var(--text);
 }
-html[data-theme="light"] .motion-rail{background:#d8dfe7}
-html[data-theme="light"] .startup{background:#eef1f5}
+html[data-theme="light"] html[data-theme="light"] .startup{background:#eef1f5}
 html[data-theme="light"] .startup-line{background:#d7dfe7}
 html[data-theme="light"] .startup-line::after{
     background:linear-gradient(90deg,transparent,#17202a,transparent)
@@ -827,17 +806,9 @@ html[data-theme="light"] body.video-active::before{
     </header>
 
     <nav class="quicklinks" aria-label="Tesla Schnellzugriff">
-        <a class="quicklink" href="https://www.tesla.com/teslaaccount" target="_blank" rel="noopener noreferrer">
-            <strong>⚡ Tesla Konto</strong>
-            <span>Account & Fahrzeug</span>
-        </a>
-        <a class="quicklink" href="https://www.tesla.com/de_de/findus" target="_blank" rel="noopener noreferrer">
-            <strong>📍 Supercharger</strong>
-            <span>Tesla Standortkarte</span>
-        </a>
-        <a class="quicklink" href="https://www.tesla.com/de_de/support/software-updates" target="_blank" rel="noopener noreferrer">
-            <strong>⬆ Software</strong>
-            <span>Offizielle Update-Hilfe</span>
+        <a class="quicklink" href="index.html">
+            <strong>⚡ Voltune</strong>
+            <span>Sound & Launch</span>
         </a>
         <a class="quicklink" href="https://www.notateslaapp.com/de/software-updates/" target="_blank" rel="noopener noreferrer">
             <strong>🧩 Release Notes</strong>
@@ -847,42 +818,9 @@ html[data-theme="light"] body.video-active::before{
             <strong>🛠 Support</strong>
             <span>Tesla Hilfe</span>
         </a>
-        <a class="quicklink" href="https://www.tesla.com/de_de/trips" target="_blank" rel="noopener noreferrer">
-            <strong>🗺 Routenplaner</strong>
-            <span>Trip Planner</span>
-        </a>
     </nav>
 
-    <section class="settings-row">
-        <div class="hub-panel">
-            <div class="eyebrow">Mein Tesla</div>
-            <div class="panel-title">Fahrzeugprofil für Update-News</div>
-            <div class="vehicle-controls">
-                <select id="vehicleModel" aria-label="Tesla Modell">
-                    <option value="Model 3">Model 3</option>
-                    <option value="Model Y">Model Y</option>
-                    <option value="Model S">Model S</option>
-                    <option value="Model X">Model X</option>
-                    <option value="Cybertruck">Cybertruck</option>
-                </select>
-                <select id="vehicleYear" aria-label="Baujahr"></select>
-                <button id="saveVehicleBtn" class="button primary" type="button">Speichern</button>
-            </div>
-            <div id="vehicleState" class="vehicle-state">Noch kein Fahrzeug gespeichert.</div>
-        </div>
 
-        <div class="hub-panel">
-            <div class="voltune-strip">
-                <div>
-                    <div class="eyebrow">Voltune</div>
-                    <div class="voltune-mark">LAUNCH</div>
-                    <div class="voltune-copy">Beschleunigung / Verzögerung mit weicher Ein- und Endbeschleunigung</div>
-                </div>
-                <a class="button primary" href="index.html">Voltune starten</a>
-            </div>
-            <div class="motion-rail" aria-hidden="true"></div>
-        </div>
-    </section>
 
     <main class="grid-main">
         <section class="card">
@@ -1009,6 +947,25 @@ html[data-theme="light"] body.video-active::before{
                     </a>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="section vehicle-profile-bottom">
+        <div class="hub-panel vehicle-profile-panel">
+            <div class="eyebrow">Mein Tesla</div>
+            <div class="panel-title">Fahrzeugprofil für Update-News</div>
+            <div class="vehicle-controls">
+                <select id="vehicleModel" aria-label="Tesla Modell">
+                    <option value="Model 3">Model 3</option>
+                    <option value="Model Y">Model Y</option>
+                    <option value="Model S">Model S</option>
+                    <option value="Model X">Model X</option>
+                    <option value="Cybertruck">Cybertruck</option>
+                </select>
+                <select id="vehicleYear" aria-label="Baujahr"></select>
+                <button id="saveVehicleBtn" class="button primary" type="button">Speichern</button>
+            </div>
+            <div id="vehicleState" class="vehicle-state">Noch kein Fahrzeug gespeichert.</div>
         </div>
     </section>
 
