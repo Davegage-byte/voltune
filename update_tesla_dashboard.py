@@ -264,6 +264,27 @@ def probe_suc_tracker():
         print(f"SuC-Tracker candidates from {url}:", sorted(candidates)[:160])
         print(f"SuC-Tracker snippets from {url}:", fetch_snippets[:80])
 
+    try:
+        dataset = json.loads(download_bytes(base.rstrip("/") + "/data/europe.json", max_bytes=30_000_000).decode("utf-8"))
+        stations = dataset.get("stations", []) if isinstance(dataset, dict) else []
+        print("SuC-Tracker dataset keys:", sorted(dataset.keys()) if isinstance(dataset, dict) else type(dataset).__name__)
+        print("SuC-Tracker schema/count:", dataset.get("schemaVersion") if isinstance(dataset, dict) else None, len(stations))
+        for station in stations:
+            hay = " ".join(str(station.get(k, "")) for k in ("name", "city", "address", "id")).lower()
+            if any(term in hay for term in ("kerpen", "frechen", "bonn", "erftstadt", "troisdorf")):
+                slim = {
+                    "id": station.get("id"),
+                    "name": station.get("name"),
+                    "city": station.get("city"),
+                    "country": station.get("country"),
+                    "latitude": station.get("latitude"),
+                    "longitude": station.get("longitude"),
+                    "pricing": station.get("pricing"),
+                }
+                print("SuC-Tracker sample station:", json.dumps(slim, ensure_ascii=False))
+    except Exception as exc:
+        print(f"SuC-Tracker dataset probe failed: {exc}")
+
 
 def fetch_news():
     root = ET.fromstring(download_bytes(NEWS_URL, max_bytes=3_000_000))
