@@ -526,30 +526,27 @@ def build_data(old, now):
     return data
 
 
-def probe_spritexperte():
-    url = "https://sprit-experte.de/statistiken/bundesland/nordrhein-westfalen"
-    try:
-        raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
-        print("SpritExperte bytes", len(raw))
-        for needle in ("Super E10", "Diesel", "Live ·", "Schnitt Nordrhein-Westfalen", "fetch(", "/api/", "axios", "XMLHttpRequest"):
-            start = 0
-            hits = 0
-            while hits < 12:
-                pos = raw.find(needle, start)
-                if pos < 0:
-                    break
-                print("SpritExperte snippet", needle, repr(raw[max(0, pos-700):pos+2200]))
-                start = pos + len(needle)
-                hits += 1
-
-        urls = sorted(set(re.findall(r'https?://[^"\\\'\\s<>]+', raw)))
-        print("SpritExperte URLs", urls[:120])
-    except Exception as exc:
-        print("SpritExperte probe failed", repr(exc))
+def probe_tankerkoenig_stats():
+    urls = [
+        "https://creativecommons.tankerkoenig.de/swagger/tankerkoenig.yaml",
+        "https://creativecommons.tankerkoenig.de/stats",
+        "https://creativecommons.tankerkoenig.de/json/stats.php",
+    ]
+    for url in urls:
+        try:
+            raw = download_bytes(url, max_bytes=3_000_000).decode("utf-8", errors="replace")
+            print("Tankerkönig stats probe", url, "bytes", len(raw))
+            if "tankerkoenig.yaml" in url:
+                pos = raw.find("/stats:")
+                print("Tankerkönig stats yaml", repr(raw[max(0, pos-1200):pos+6500] if pos >= 0 else raw[:6500]))
+            else:
+                print("Tankerkönig stats response", repr(raw[:5000]))
+        except Exception as exc:
+            print("Tankerkönig stats probe failed", url, repr(exc))
 
 
 def main():
-    probe_spritexperte()
+    probe_tankerkoenig_stats()
     now = datetime.now(TIMEZONE)
     old = load_json(OUTPUT, {})
     data = build_data(old, now)
