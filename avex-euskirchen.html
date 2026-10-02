@@ -667,7 +667,6 @@ body.video-active::before{
 }
 .super-item{cursor:pointer}
 .super-item:active{transform:scale(.992)}
-.nav-hint{font-size:10px;color:var(--muted);margin-top:5px}
 .gps-state{display:inline-flex;gap:6px;align-items:center}
 .gps-dot{width:7px;height:7px;border-radius:50%;background:var(--yellow)}
 .gps-state.live .gps-dot{background:var(--green);box-shadow:0 0 12px rgba(52,209,123,.6)}
@@ -1437,19 +1436,27 @@ function currentSucPrice(pricing, now){
     const active = windows.find(function(window){
         return Number(window.start) <= minutes && minutes < Number(window.end);
     });
-    return active && Number.isFinite(Number(active.rate)) ? Number(active.rate) : null;
+    if(!active || active.rate === null || active.rate === undefined || active.rate === "") return null;
+    const rate = Number(active.rate);
+    return Number.isFinite(rate) && rate > 0 ? rate : null;
 }
 
 function dailyLowSucPrice(pricing, now){
     const windows = pricingWindowsForToday(pricing, now || new Date());
-    const rates = windows.map(function(window){ return Number(window.rate); }).filter(Number.isFinite);
+    const rates = windows
+        .map(function(window){ return window && window.rate; })
+        .filter(function(rate){ return rate !== null && rate !== undefined && rate !== ""; })
+        .map(Number)
+        .filter(function(rate){ return Number.isFinite(rate) && rate > 0; });
     return rates.length ? Math.min.apply(null, rates) : null;
 }
 
 function formatSucRate(rate, currency){
-    if(!Number.isFinite(Number(rate))) return null;
+    if(rate === null || rate === undefined || rate === "") return null;
+    const numericRate = Number(rate);
+    if(!Number.isFinite(numericRate) || numericRate <= 0) return null;
     const symbol = currency === "EUR" ? "€" : (currency || "");
-    return Number(rate).toFixed(2).replace(".", ",") + " " + symbol + "/kWh";
+    return numericRate.toFixed(2).replace(".", ",") + " " + symbol + "/kWh";
 }
 
 function formatMinuteOfDay(value){
@@ -1577,7 +1584,6 @@ function renderSuperchargers(){
             '<div class="super-actions">' +
                 '<button class="icon-btn ' + (site.is_favorite ? 'active' : '') + '" type="button" title="Favorit umschalten">★</button>' +
                 '<button class="map-link nav-btn" type="button">Navigation</button>' +
-                '<div class="nav-hint">Tesla / Handy / PC</div>' +
             '</div>';
 
         item.querySelector(".icon-btn").addEventListener("click", function(event){
