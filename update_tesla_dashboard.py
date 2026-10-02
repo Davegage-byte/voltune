@@ -362,13 +362,12 @@ def fetch_nrw_fuel_prices(now):
 
     versions = [
         int(value)
-        for value in re.findall(r"datawrapper\\.dwcdn\\.net/dkS5c/(\\d+)/", bootstrap)
+        for value in re.findall(r"datawrapper\.dwcdn\.net/dkS5c/(\d+)/", bootstrap)
     ]
     chart_version = max(versions) if versions else 8
     dataset_url = f"https://datawrapper.dwcdn.net/dkS5c/{chart_version}/dataset.csv"
 
     raw_csv = download_bytes(dataset_url, max_bytes=2_000_000).decode("utf-8-sig")
-    print("WDR fuel dataset debug", dataset_url, repr(raw_csv[:4000]))
     rows = list(csv.DictReader(io.StringIO(raw_csv)))
 
     wanted = {"Super E10": "e10", "Diesel": "diesel"}
@@ -381,7 +380,7 @@ def fetch_nrw_fuel_prices(now):
             continue
 
         day = str(row.get("day") or "").strip()
-        if not re.fullmatch(r"20\\d{2}-\\d{2}-\\d{2}", day):
+        if not re.fullmatch(r"20\d{2}-\d{2}-\d{2}", day):
             continue
 
         try:
