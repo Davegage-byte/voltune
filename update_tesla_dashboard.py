@@ -1,5 +1,7 @@
 """Build compact Tesla dashboard data for the AVEX/Tesla start page."""
 
+import csv
+import io
 import json
 import math
 import re
@@ -18,12 +20,14 @@ SUC_TRACKER_URL = "https://suc-tracker.eu/data/europe.json"
 SUC_TRACKER_PAGE = "https://suc-tracker.eu/"
 NEWS_URL = "https://www.notateslaapp.com/rss"
 TESLAMAG_RSS_URL = "https://teslamag.de/feed"
+WDR_FUEL_CHART_BOOTSTRAP_URL = "https://datawrapper.dwcdn.net/dkS5c/8/"
+WDR_FUEL_PAGE_URL = "https://www1.wdr.de/nrw/aktuelle-benzinpreise-diesel-e5-e10-nrw-100.html"
 AVEX = {"name": "AVEX Euskirchen", "latitude": 50.686726020023045, "longitude": 6.838122769536388}
 REFRESH_AFTER = timedelta(minutes=30)
 SUC_TRACKER_REFRESH_AFTER = timedelta(hours=2)
 EUROPE_BOUNDS = {"min_lat": 34.0, "max_lat": 72.0, "min_lon": -12.0, "max_lon": 32.0}
 MAX_SUPERCHARGERS = 2500
-DATA_VERSION = 9
+DATA_VERSION = 10
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Voltune-Tesla-Dashboard/1.3"
 
 
@@ -339,6 +343,89 @@ def fetch_regional_news():
     return items
 
 
+def parse_local_datetime(value):
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.strptime(str(value), fmt).replace(tzinfo=TIMEZONE)
+        except ValueError:
+            continue
+    return None
+
+
+def fetch_nrw_fuel_prices(now):
+    bootstrap = download_bytes(
+        WDR_FUEL_CHART_BOOTSTRAP_URL,
+        max_bytes=1_000_000,
+    ).decode("utf-8", errors="replace")
+
+    versions = [
+        int(value)
+        for value in re.findall(r"datawrapper\\.dwcdn\\.net/dkS5c/(\\d+)/", bootstrap)
+    ]
+    chart_version = max(versions) if versions else 8
+    dataset_url = f"https://datawrapper.dwcdn.net/dkS5c/{chart_version}/dataset.csv"
+
+    raw_csv = download_bytes(dataset_url, max_bytes=2_000_000).decode("utf-8-sig")
+    rows = list(csv.DictReader(io.StringIO(raw_csv)))
+
+    wanted = {"Super E10": "e10", "Diesel": "diesel"}
+    by_day = {}
+
+    for row in rows:
+        fuel_type = str(row.get("type") or "").strip()
+        key = wanted.get(fuel_type)
+        if not key:
+            continue
+
+        day = str(row.get("day") or "").strip()
+        if not re.fullmatch(r"20\\d{2}-\\d{2}-\\d{2}", day):
+            continue
+
+        try:
+            average = float(str(row.get("tages_mittel") or "").replace(",", "."))
+        except ValueError:
+            continue
+
+        if not math.isfinite(average) or not (0.5 <= average <= 5):
+            continue
+
+        slot = by_day.setdefault(day, {})
+        slot[key] = round(average, 4)
+        slot["retrieved_at_raw"] = row.get("abrufdatum")
+        slot["data_status_raw"] = row.get("datenstand")
+
+    complete_days = [
+        day for day, values in by_day.items()
+        if "e10" in values and "diesel" in values
+    ]
+    if not complete_days:
+        raise ValueError("WDR fuel dataset has no complete E10/Diesel day")
+
+    day = max(complete_days)
+    values = by_day[day]
+    retrieved_at = parse_local_datetime(values.get("retrieved_at_raw"))
+
+    fuel_prices = {
+        "date": day,
+        "e10": values["e10"],
+        "diesel": values["diesel"],
+        "currency": "EUR",
+        "unit": "l",
+        "retrieved_at": retrieved_at.isoformat(timespec="seconds") if retrieved_at else None,
+    }
+    source = {
+        "name": "WDR / SWR",
+        "page_url": WDR_FUEL_PAGE_URL,
+        "dataset_url": dataset_url,
+        "chart_version": chart_version,
+        "checked_at": now.isoformat(timespec="seconds"),
+        "note": "NRW-Tagesmittel aus bereinigten Tankstellen-Preisdaten",
+    }
+    return fuel_prices, source
+
+
 def build_data(old, now):
     old_checked = timestamp(old.get("checked_at"))
     if (
@@ -348,6 +435,7 @@ def build_data(old, now):
         and old.get("superchargers")
         and old.get("news")
         and old.get("regional_news")
+        and old.get("fuel_prices")
     ):
         print("Tesla dashboard cache is fresh")
         return None
@@ -371,6 +459,8 @@ def build_data(old, now):
             "url": "https://teslamag.de/",
             "rss_url": TESLAMAG_RSS_URL,
         },
+        "fuel_price_source": old.get("fuel_price_source", {}),
+        "fuel_prices": old.get("fuel_prices", {}),
         "superchargers": old.get("superchargers", []),
         "news": old.get("news", []),
         "regional_news": old.get("regional_news", []),
@@ -422,26 +512,21 @@ def build_data(old, now):
         data["regional_news"] = old.get("regional_news", [])
         data["regional_news_updated_at"] = old.get("regional_news_updated_at")
 
+    try:
+        fuel_prices, fuel_source = fetch_nrw_fuel_prices(now)
+        data["fuel_prices"] = fuel_prices
+        data["fuel_price_source"] = fuel_source
+        data["fuel_prices_updated_at"] = now.isoformat(timespec="seconds")
+    except Exception as exc:
+        data["errors"]["fuel_prices"] = str(exc)
+        data["fuel_prices"] = old.get("fuel_prices", {})
+        data["fuel_price_source"] = old.get("fuel_price_source", {})
+        data["fuel_prices_updated_at"] = old.get("fuel_prices_updated_at")
+
     return data
 
 
-def probe_wdr_fuel_data():
-    urls = [
-        "https://datawrapper.dwcdn.net/dkS5c/dataset.csv",
-        "https://datawrapper.dwcdn.net/dkS5c/8/dataset.csv",
-        "https://datawrapper.dwcdn.net/dkS5c/8/",
-    ]
-    for url in urls:
-        try:
-            raw = download_bytes(url, max_bytes=2_000_000)
-            sample = raw[:2500].decode("utf-8", errors="replace")
-            print("WDR fuel probe", url, "bytes", len(raw), "sample", repr(sample))
-        except Exception as exc:
-            print("WDR fuel probe failed", url, repr(exc))
-
-
 def main():
-    probe_wdr_fuel_data()
     now = datetime.now(TIMEZONE)
     old = load_json(OUTPUT, {})
     data = build_data(old, now)
@@ -466,6 +551,7 @@ def main():
                 "suc_prices_generated_at": source.get("generated_at"),
                 "news": len(data.get("news", [])),
                 "regional_news": len(data.get("regional_news", [])),
+                "fuel_prices": data.get("fuel_prices", {}),
                 "errors": data.get("errors", {}),
             },
             ensure_ascii=False,
