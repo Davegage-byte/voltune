@@ -67,6 +67,67 @@ button,a.button{
     padding:24px 0 54px;
 }
 
+.debug-celebration-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+    padding:9px 10px;
+    border:1px dashed rgba(255,91,97,.48);
+    border-radius:13px;
+    background:rgba(232,33,39,.055);
+}
+
+.debug-celebration-label{
+    color:var(--muted);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.7px;
+    text-transform:uppercase;
+    margin-right:2px;
+}
+
+.debug-celebration-btn{
+    appearance:none;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:rgba(25,25,29,.9);
+    color:var(--text);
+    padding:7px 10px;
+    cursor:pointer;
+    font:inherit;
+    font-size:11px;
+    font-weight:700;
+}
+
+.debug-celebration-btn:hover{
+    border-color:#565660;
+    background:#222228;
+}
+
+.debug-celebration-btn.stop{
+    margin-left:auto;
+    color:#ff8b8f;
+}
+
+@media(max-width:650px){
+    .debug-celebration-bar{
+        gap:6px;
+        padding:8px;
+    }
+    .debug-celebration-label{
+        width:100%;
+    }
+    .debug-celebration-btn{
+        flex:1 1 calc(50% - 6px);
+        padding:8px 7px;
+    }
+    .debug-celebration-btn.stop{
+        margin-left:0;
+    }
+}
+
 .topbar{
     display:flex;
     align-items:center;
@@ -1074,6 +1135,14 @@ body.data-saver-on .celebration-banner{
 </div>
 
 <div class="shell">
+    <div class="debug-celebration-bar" aria-label="Celebration Debug">
+        <span class="debug-celebration-label">DEBUG · Celebration</span>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="birthday">🎂 02.10 Geburtstag</button>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="christmas">❄ 24.12 Weihnachten</button>
+        <button class="debug-celebration-btn" type="button" data-celebration-debug="newyear">🥂 01.01 Neujahr</button>
+        <button id="celebrationDebugStop" class="debug-celebration-btn stop" type="button">■ Stop</button>
+    </div>
+
     <header class="topbar">
         <div class="brand">
             <div class="brand-mark">T</div>
@@ -1083,7 +1152,7 @@ body.data-saver-on .celebration-banner{
         </div>
         <div class="top-actions">
             <button id="themeBtn" class="top-action" type="button" data-theme-mode="auto">Theme: Auto</button>
-            <button id="dataSaverBtn" class="top-action" type="button" title="Videohintergrund nicht laden">Datensparmodus</button>
+            <button id="dataSaverBtn" class="top-action" type="button" title="Bei AN werden Video, Celebration-Effekte und automatische GPS-Updates reduziert">Datensparmodus</button>
             <button id="fullscreenBtn" class="top-action" type="button">⛶ Vollbild</button>
             <div class="clock">
                 <div id="clockTime" class="clock-time">--:--</div>
@@ -1715,6 +1784,46 @@ function maybeStartCelebration(){
         runCelebration(event);
     }
 }
+
+function triggerCelebrationDebug(type){
+    hideCelebrationOverlay();
+
+    let event = null;
+    if(type === "birthday"){
+        event = CELEBRATION_EVENTS.find(function(item){
+            return item.date === "02.10";
+        });
+    }else if(type === "christmas"){
+        event = CELEBRATION_EVENTS.find(function(item){
+            return item.effect === "snow";
+        });
+    }else if(type === "newyear"){
+        event = CELEBRATION_EVENTS.find(function(item){
+            return item.date === "01.01";
+        });
+    }
+
+    if(!event) return;
+
+    requestAnimationFrame(function(){
+        if(event.effect === "snow"){
+            runSnowCelebration(event);
+        }else{
+            runCelebration(event);
+        }
+    });
+}
+
+document.querySelectorAll("[data-celebration-debug]").forEach(function(button){
+    button.addEventListener("click", function(){
+        triggerCelebrationDebug(button.dataset.celebrationDebug);
+    });
+});
+
+document.getElementById("celebrationDebugStop").addEventListener("click", function(){
+    hideCelebrationOverlay();
+});
+
 
 function pad(value){
     return String(value).padStart(2, "0");
