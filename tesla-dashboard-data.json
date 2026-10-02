@@ -1,6 +1,6 @@
 {
-  "data_version": 11,
-  "checked_at": "2026-10-02T09:30:11+02:00",
+  "data_version": 12,
+  "checked_at": "2026-10-02T09:31:48+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -24531,10 +24531,10 @@
     }
   ],
   "errors": {
-    "fuel_prices": "HTTP Error 429: Too Many Requests"
+    "fuel_prices": "benzinpreise.de timestamp missing"
   },
-  "superchargers_updated_at": "2026-10-02T09:30:11+02:00",
-  "news_updated_at": "2026-10-02T09:30:11+02:00",
-  "regional_news_updated_at": "2026-10-02T09:30:11+02:00",
+  "superchargers_updated_at": "2026-10-02T09:31:48+02:00",
+  "news_updated_at": "2026-10-02T09:31:48+02:00",
+  "regional_news_updated_at": "2026-10-02T09:31:48+02:00",
   "fuel_prices_updated_at": "2026-10-02T09:24:12+02:00"
 }
