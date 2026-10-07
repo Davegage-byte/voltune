@@ -1,4 +1,53 @@
 {
-  "generatedAt": "2026-10-02T11:15:16.112959Z",
-  "sounds": []
+  "generatedAt": "2026-10-07T20:09:40.428086Z",
+  "sounds": [
+    {
+      "id": "803392d6c267",
+      "name": "big-hero-6_baymax-low-battery",
+      "category": "Ohne Kategorie",
+      "path": "lockchimes/big-hero-6_baymax-low-battery.wav",
+      "addedAt": "2026-10-07T22:09:28+02:00",
+      "size": 257916
+    },
+    {
+      "id": "243fd16f6637",
+      "name": "general_owl-hoot",
+      "category": "Ohne Kategorie",
+      "path": "lockchimes/general_owl-hoot.wav",
+      "addedAt": "2026-10-07T22:09:28+02:00",
+      "size": 191184
+    },
+    {
+      "id": "bc193f28c823",
+      "name": "general_security-enabled",
+      "category": "Ohne Kategorie",
+      "path": "lockchimes/general_security-enabled.wav",
+      "addedAt": "2026-10-07T22:09:28+02:00",
+      "size": 275986
+    },
+    {
+      "id": "e1a0b8b237e3",
+      "name": "halloween_halloween-clock",
+      "category": "Ohne Kategorie",
+      "path": "lockchimes/halloween_halloween-clock.wav",
+      "addedAt": "2026-10-07T22:09:28+02:00",
+      "size": 895304
+    },
+    {
+      "id": "de777e23b8f6",
+      "name": "halloween_halloween-scary",
+      "category": "Ohne Kategorie",
+      "path": "lockchimes/halloween_halloween-scary.wav",
+      "addedAt": "2026-10-07T22:09:28+02:00",
+      "size": 389114
+    },
+    {
+      "id": "e7538253228b",
+      "name": "halloween_wolf-howling",
+      "category": "Ohne Kategorie",
+      "path": "lockchimes/halloween_wolf-howling.wav",
+      "addedAt": "2026-10-07T22:09:28+02:00",
+      "size": 441062
+    }
+  ]
 }
