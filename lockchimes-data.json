@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T20:09:40.428086Z",
+  "generatedAt": "2026-10-07T20:18:43.586162Z",
   "sounds": [
     {
       "id": "803392d6c267",
@@ -48,6 +48,310 @@
       "path": "lockchimes/halloween_wolf-howling.wav",
       "addedAt": "2026-10-07T22:09:28+02:00",
       "size": 441062
+    },
+    {
+      "id": "c2389fbddd03",
+      "name": "LOTW - Aufmachen",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Aufmachen.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 158360
+    },
+    {
+      "id": "7f128c7b48ed",
+      "name": "LOTW - Aufs Maul Nee lass mal",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Aufs Maul Nee lass mal.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 174622
+    },
+    {
+      "id": "abdfc6a25e32",
+      "name": "LOTW - Aufs Maul",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Aufs Maul.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 55814
+    },
+    {
+      "id": "4fd5171011a0",
+      "name": "LOTW - Boa alda",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Boa alda.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 37836
+    },
+    {
+      "id": "1debbf6f00a2",
+      "name": "LOTW - Deine Mudda schluckt gleich",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Deine Mudda schluckt gleich.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 112840
+    },
+    {
+      "id": "647f827e0372",
+      "name": "LOTW - Der ehrlich puncher wird von Bullen umzingelt",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Der ehrlich puncher wird von Bullen umzingelt.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 366228
+    },
+    {
+      "id": "bbe1e618c1b3",
+      "name": "LOTW - Die Wände kommen immer näher",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Die Wände kommen immer näher.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 422054
+    },
+    {
+      "id": "00569dd3d265",
+      "name": "LOTW - Drogen",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Drogen.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 106824
+    },
+    {
+      "id": "c3f355060eab",
+      "name": "LOTW - Du hast mein Ring",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Du hast mein Ring.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 113334
+    },
+    {
+      "id": "36c5ac87f48f",
+      "name": "LOTW - Elron MC Bong",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Elron MC Bong.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 106858
+    },
+    {
+      "id": "8d60fcd89aa1",
+      "name": "LOTW - Es tut mir leid",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Es tut mir leid.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 95812
+    },
+    {
+      "id": "fa31fa0c56d6",
+      "name": "LOTW - Fick dich ich brech dir die Beine",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Fick dich ich brech dir die Beine.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 331444
+    },
+    {
+      "id": "dd15a62ce07f",
+      "name": "LOTW - Fick dich",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Fick dich.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 232956
+    },
+    {
+      "id": "332754da85db",
+      "name": "LOTW - Halts Maul du Hurensohn",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Halts Maul du Hurensohn.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 204382
+    },
+    {
+      "id": "7b600da6fc55",
+      "name": "LOTW - Hier spricht Gott",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Hier spricht Gott.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 375626
+    },
+    {
+      "id": "430f4fb93eac",
+      "name": "LOTW - Ich bin zwar übelst dicht",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Ich bin zwar übelst dicht.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 263884
+    },
+    {
+      "id": "5fe87fb3d9f2",
+      "name": "LOTW - Ich brauche etwas härteres",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Ich brauche etwas härteres.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 110538
+    },
+    {
+      "id": "a52f1ebd4f93",
+      "name": "LOTW - Ich Träume von nackten Männern",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Ich Träume von nackten Männern.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 306530
+    },
+    {
+      "id": "7859c8a7806a",
+      "name": "LOTW - Ja watt denn",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Ja watt denn.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 204776
+    },
+    {
+      "id": "1da1d282dd55",
+      "name": "LOTW - Klatscht gleich zwei mal",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Klatscht gleich zwei mal.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 459796
+    },
+    {
+      "id": "5394bd07bd1a",
+      "name": "LOTW - Kleine Schwänze",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Kleine Schwänze.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 160444
+    },
+    {
+      "id": "d3736671fc3a",
+      "name": "LOTW - Kopfnuss",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Kopfnuss.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 163926
+    },
+    {
+      "id": "9b7c461d4804",
+      "name": "LOTW - Meine Stählernde Faust",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Meine Stählernde Faust.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 437252
+    },
+    {
+      "id": "b69dd5778a62",
+      "name": "LOTW - Pass mal auf du kleiner Hoden",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Pass mal auf du kleiner Hoden.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 150118
+    },
+    {
+      "id": "9ba9587f3f48",
+      "name": "LOTW - Quack Long",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Quack Long.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 309180
+    },
+    {
+      "id": "365376f87a83",
+      "name": "LOTW - Quack Short",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Quack Short.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 143478
+    },
+    {
+      "id": "620d3233e17d",
+      "name": "LOTW - Ring um die Augen",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Ring um die Augen.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 136770
+    },
+    {
+      "id": "b56c88180219",
+      "name": "LOTW - Schnee im Sommer",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Schnee im Sommer.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 320262
+    },
+    {
+      "id": "55db1ebb1d6f",
+      "name": "LOTW - Tolle Karte",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Tolle Karte.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 109388
+    },
+    {
+      "id": "611e3a55d11b",
+      "name": "LOTW - Ueh",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Ueh.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 41108
+    },
+    {
+      "id": "81bb25d50eb2",
+      "name": "LOTW - Ueh2",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Ueh2.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 78188
+    },
+    {
+      "id": "5067f5ad8a04",
+      "name": "LOTW - Wacken ist vorbei du Spast",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Wacken ist vorbei du Spast.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 325512
+    },
+    {
+      "id": "183e2c8d31ca",
+      "name": "LOTW - Was fällt dir eigentlich ein Milch in meinem Kaffee zu schütten",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Was fällt dir eigentlich ein Milch in meinem Kaffee zu schütten.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 328260
+    },
+    {
+      "id": "ec76def01959",
+      "name": "LOTW - Wenn du dich mit dem Teufel einlässt",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Wenn du dich mit dem Teufel einlässt.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 450510
+    },
+    {
+      "id": "e161cddc73dd",
+      "name": "LOTW - Wenn ihr Koks mit mehl puncht",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Wenn ihr Koks mit mehl puncht.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 295078
+    },
+    {
+      "id": "bd467659a8f3",
+      "name": "LOTW - Willst du Milch zu deinem Kaffee",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Willst du Milch zu deinem Kaffee.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 127022
+    },
+    {
+      "id": "6e418d7d2c5a",
+      "name": "LOTW - Wir Batzen bis wir umfallen",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Wir Batzen bis wir umfallen.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 144576
+    },
+    {
+      "id": "9e4579fbf635",
+      "name": "LOTW - Wir Puffen bis wir umfallen",
+      "category": "LOTW",
+      "path": "lockchimes/LOTW/LOTW - Wir Puffen bis wir umfallen.wav",
+      "addedAt": "2026-10-07T22:18:27+02:00",
+      "size": 123748
     }
   ]
 }
