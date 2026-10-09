@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-09T16:34:15+02:00",
+  "checked_at": "2026-10-09T21:41:11+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -16,8 +16,8 @@
     "page_url": "https://suc-tracker.eu/",
     "dataset_url": "https://suc-tracker.eu/data/europe.json",
     "schema_version": 2,
-    "generated_at": "2026-10-02T13:02:45.599Z",
-    "checked_at": "2026-10-09T16:34:15+02:00",
+    "generated_at": "2026-10-09T19:22:47.424Z",
+    "checked_at": "2026-10-09T21:41:11+02:00",
     "station_count": 1784,
     "matched_stations": 616
   },
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-09T16:34:15+02:00",
+    "checked_at": "2026-10-09T21:41:11+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.187,
-    "diesel": 2.272,
-    "e5_updated_at": "2026-10-09T16:05+02:00",
-    "diesel_updated_at": "2026-10-09T16:05+02:00",
+    "e5": 2.177,
+    "diesel": 2.267,
+    "e5_updated_at": "2026-10-09T21:10+02:00",
+    "diesel_updated_at": "2026-10-09T21:10+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-09T16:34:15+02:00",
+    "checked_at": "2026-10-09T21:41:11+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 386.26,
+    "price": 383.17,
     "currency": "USD",
-    "market_time": "2026-10-09T16:34:19+02:00",
+    "market_time": "2026-10-09T21:41:16+02:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-09T16:34:15+02:00",
+    "checked_at": "2026-10-09T21:41:11+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.4175,
+    "average": 0.415,
     "min": 0.35,
     "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-09T16:34:15+02:00"
+    "calculated_at": "2026-10-09T21:41:11+02:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,16 @@
   ],
   "news": [
     {
+      "title": "Tesla’s Halloween Mode Does Not Support Intel Vehicles",
+      "url": "https://www.notateslaapp.com/news/4798/teslas-halloween-mode-no-intel-support",
+      "published_at": "2026-10-09T21:13:00+02:00"
+    },
+    {
+      "title": "SpaceX Buys Spectrum to Make Starlink a U.S. Phone Carrier",
+      "url": "https://www.notateslaapp.com/news/4799/spacex-buys-spectrum-to-make-starlink-a-us-phone-carrier",
+      "published_at": "2026-10-09T20:54:00+02:00"
+    },
+    {
       "title": "Trump Honors Elon Musk With National Medal of Science",
       "url": "https://www.notateslaapp.com/news/4795/trump-honors-elon-musk-with-national-medal-of-science",
       "published_at": "2026-10-08T23:40:00+02:00"
@@ -24474,16 +24484,6 @@
       "title": "Tesla Patent Reveals Flexible Sensors That Let Optimus Feel Objects",
       "url": "https://www.notateslaapp.com/news/4790/tesla-patent-reveals-flexible-sensors-that-let-optimus-feel-objects",
       "published_at": "2026-10-08T16:48:00+02:00"
-    },
-    {
-      "title": "Tesla Owner Enables Track Mode on Non-Performance Model Y",
-      "url": "https://www.notateslaapp.com/news/4788/tesla-owner-enables-track-mode-on-non-performance-model-y",
-      "published_at": "2026-10-08T00:29:00+02:00"
-    },
-    {
-      "title": "Halloween Mode Is Coming to Tesla FSD Vehicles Soon",
-      "url": "https://www.notateslaapp.com/news/4781/halloween-mode-is-coming-to-tesla-fsd-vehicles-soon",
-      "published_at": "2026-10-07T23:24:00+02:00"
     }
   ],
   "regional_news": [
@@ -24561,10 +24561,10 @@
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-09T16:34:15+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-09T16:34:15+02:00",
-  "news_updated_at": "2026-10-09T16:34:15+02:00",
-  "regional_news_updated_at": "2026-10-09T16:34:15+02:00",
-  "fuel_prices_updated_at": "2026-10-09T16:34:15+02:00",
-  "tesla_stock_updated_at": "2026-10-09T16:34:15+02:00"
+  "superchargers_updated_at": "2026-10-09T21:41:11+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-09T21:41:11+02:00",
+  "news_updated_at": "2026-10-09T21:41:11+02:00",
+  "regional_news_updated_at": "2026-10-09T21:41:11+02:00",
+  "fuel_prices_updated_at": "2026-10-09T21:41:11+02:00",
+  "tesla_stock_updated_at": "2026-10-09T21:41:11+02:00"
 }
