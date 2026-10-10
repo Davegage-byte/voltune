@@ -154,15 +154,28 @@ body.tesla-mode .tesla-badge{display:inline-flex}
 }
 .categories,.editor{position:sticky;top:14px}
 .category-list{padding:10px}
+.category-group{margin:3px 0 7px}
+.category-group-head{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:9px;
+    border:1px solid transparent;background:transparent;color:var(--text);border-radius:11px;
+    padding:10px 9px;text-align:left;cursor:pointer;transition:.16s ease;font-size:13px;font-weight:800;
+}
+.category-group-head:hover{background:var(--soft);border-color:var(--line)}
+.category-group-left{display:flex;align-items:center;gap:7px;min-width:0}
+.category-chevron{width:14px;flex:0 0 14px;color:var(--muted);font-size:11px;transition:transform .16s ease}
+.category-group.open .category-chevron{transform:rotate(90deg)}
+.category-group-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.category-children{display:none;padding:2px 0 3px 17px}
+.category-group.open .category-children{display:block}
 .category-btn{
     width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
     border:1px solid transparent;background:transparent;color:var(--text);border-radius:11px;
-    padding:10px 11px;text-align:left;cursor:pointer;transition:.16s ease;font-size:13px;
+    padding:9px 11px;text-align:left;cursor:pointer;transition:.16s ease;font-size:13px;
 }
 .category-btn:hover{background:var(--soft);border-color:var(--line)}
 .category-btn.active{background:rgba(232,33,39,.10);border-color:rgba(232,33,39,.30)}
 .category-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.count{color:var(--muted);font-size:11px;font-weight:700}
+.count{color:var(--muted);font-size:11px;font-weight:700;flex:0 0 auto}
 .library-body{padding:10px}
 .library-top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 8px 12px}
 .library-title{font-size:14px;font-weight:800}
@@ -266,9 +279,10 @@ body.tesla-mode .tesla-note{display:block}
     .main-grid{display:flex;flex-direction:column}
     .categories,.editor,.library{width:100%;position:static}
     .categories{order:1}.editor{order:2}.library{order:3}
-    .category-list{display:flex;gap:7px;overflow:auto;padding:9px;scrollbar-width:none}
-    .category-list::-webkit-scrollbar{display:none}
-    .category-btn{width:auto;min-width:max-content;padding:9px 11px}
+    .category-list{display:block;padding:9px;overflow:visible}
+    .category-btn{width:100%;min-width:0;padding:9px 11px}
+    .category-group-head{padding:9px 10px}
+    .category-children{padding-left:16px}
     .editor .card-body{display:block}
     .editor-content{display:block}
     .editor-right{margin-top:0}
@@ -467,6 +481,7 @@ body.tesla-mode .search{min-height:48px;font-size:15px}
         decodedBuffer: null,
         decodedForId: null,
         peak: null,
+        expandedCategories: new Set(),
         isTesla: /Tesla/i.test(navigator.userAgent || ""),
     };
 
@@ -599,6 +614,7 @@ body.tesla-mode .search{min-height:48px;font-size:15px}
                         path: item.path,
                         addedAt: null,
                         size: item.size || null,
+                        duration: null,
                     };
                 });
             return {generatedAt:null, sounds};
@@ -619,6 +635,7 @@ body.tesla-mode .search{min-height:48px;font-size:15px}
             url: path.split("/").map(encodeURIComponent).join("/"),
             addedAt: sound.addedAt || null,
             size: Number.isFinite(Number(sound.size)) ? Number(sound.size) : null,
+            duration: Number.isFinite(Number(sound.duration)) ? Number(sound.duration) : null,
         };
     }
 
@@ -630,9 +647,74 @@ body.tesla-mode .search{min-height:48px;font-size:15px}
         const counts = new Map();
         state.sounds.forEach(sound => counts.set(sound.category, (counts.get(sound.category) || 0) + 1));
         const categories = [...counts.keys()].sort((a,b) => a.localeCompare(b, "de", {numeric:true, sensitivity:"base"}));
+
+        const groups = new Map();
+        categories.forEach(category => {
+            const parts = category.split(" / ");
+            const parent = parts[0];
+            if(!groups.has(parent)) groups.set(parent, {direct:null, children:[]});
+            const group = groups.get(parent);
+            if(parts.length === 1) group.direct = category;
+            else group.children.push({value:category, label:parts.slice(1).join(" / ")});
+        });
+
         el.categoryList.innerHTML = "";
         el.categoryList.appendChild(categoryButton("all", "Alle Ordner", state.sounds.length));
-        categories.forEach(category => el.categoryList.appendChild(categoryButton(category, category, counts.get(category))));
+
+        [...groups.entries()]
+            .sort((a,b) => a[0].localeCompare(b[0], "de", {numeric:true, sensitivity:"base"}))
+            .forEach(([parent, group]) => {
+                if(group.children.length === 0 && group.direct){
+                    el.categoryList.appendChild(categoryButton(group.direct, parent, counts.get(group.direct)));
+                    return;
+                }
+
+                const total = (group.direct ? counts.get(group.direct) || 0 : 0) +
+                    group.children.reduce((sum, child) => sum + (counts.get(child.value) || 0), 0);
+
+                const wrapper = document.createElement("div");
+                wrapper.className = "category-group";
+                const selectedInGroup = state.category === group.direct || group.children.some(child => child.value === state.category);
+                const isOpen = state.expandedCategories.has(parent) || selectedInGroup;
+                wrapper.classList.toggle("open", isOpen);
+
+                const head = document.createElement("button");
+                head.type = "button";
+                head.className = "category-group-head";
+                head.setAttribute("aria-expanded", String(isOpen));
+
+                const left = document.createElement("span");
+                left.className = "category-group-left";
+                const chevron = document.createElement("span");
+                chevron.className = "category-chevron";
+                chevron.textContent = "▶";
+                const title = document.createElement("span");
+                title.className = "category-group-name";
+                title.textContent = parent;
+                left.append(chevron, title);
+
+                const counter = document.createElement("span");
+                counter.className = "count";
+                counter.textContent = total;
+                head.append(left, counter);
+
+                const children = document.createElement("div");
+                children.className = "category-children";
+                if(group.direct) children.appendChild(categoryButton(group.direct, "Alle", counts.get(group.direct)));
+                group.children
+                    .sort((a,b) => a.label.localeCompare(b.label, "de", {numeric:true, sensitivity:"base"}))
+                    .forEach(child => children.appendChild(categoryButton(child.value, child.label, counts.get(child.value))));
+
+                head.addEventListener("click", () => {
+                    const open = wrapper.classList.toggle("open");
+                    head.setAttribute("aria-expanded", String(open));
+                    if(open) state.expandedCategories.add(parent);
+                    else state.expandedCategories.delete(parent);
+                });
+
+                wrapper.append(head, children);
+                el.categoryList.appendChild(wrapper);
+            });
     }
 
     function categoryButton(value, label, count){
@@ -648,7 +730,7 @@ body.tesla-mode .search{min-height:48px;font-size:15px}
         btn.append(name, counter);
         btn.addEventListener("click", () => {
             state.category = value;
-            [...el.categoryList.children].forEach(x => x.classList.toggle("active", x === btn));
+            renderCategories();
             renderSounds();
         });
         return btn;
@@ -718,10 +800,13 @@ body.tesla-mode .search{min-height:48px;font-size:15px}
             pill.textContent = "NEU";
             meta.appendChild(pill);
         }
-        if(sound.size){
-            const size = document.createElement("span");
-            size.textContent = formatBytes(sound.size);
-            meta.appendChild(size);
+        if(sound.size || sound.duration != null){
+            const details = document.createElement("span");
+            const parts = [];
+            if(sound.size) parts.push(formatBytes(sound.size));
+            if(sound.duration != null) parts.push(formatDuration(sound.duration));
+            details.textContent = parts.join(" · ");
+            meta.appendChild(details);
         }
         main.append(name, meta);
 
