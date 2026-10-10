@@ -1,0 +1,63 @@
+name: Replace LockChime library once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/replace-lockchimes-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download sorted LockChime archive
+        env:
+          LOCKCHIME_ARCHIVE_URL: "https://sdmntprnortheu.oaiusercontent.com/files/00000000-9bfc-81f4-b845-73fb737c9ed8/raw?se=2026-10-10T13%3A46%3A41Z&sp=r&sv=2026-02-06&sr=b&scid=1ac028d9-e32e-5cd7-844d-7b435a9d1fd2&skoid=002823aa-689d-47ca-9347-108c20f4f00d&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-10T07%3A25%3A39Z&ske=2026-10-11T07%3A25%3A39Z&sks=b&skv=2026-02-06&sig=jmdLoBw0ZjHMxz4r1MQdaiKgEjFwkyCOdKNsG1v6YUs%3D"
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output /tmp/LockChimes_sortiert.zip "$LOCKCHIME_ARCHIVE_URL"
+          unzip -t /tmp/LockChimes_sortiert.zip >/dev/null
+
+      - name: Replace old LockChime files
+        run: |
+          set -euo pipefail
+          rm -rf lockchimes
+          rm -rf /tmp/lockchime-import
+          mkdir -p /tmp/lockchime-import
+          unzip -q /tmp/LockChimes_sortiert.zip -d /tmp/lockchime-import
+          test -d "/tmp/lockchime-import/LockChimes_sortiert/lockchimes"
+          cp -a "/tmp/lockchime-import/LockChimes_sortiert/lockchimes" ./lockchimes
+
+          count="$(find lockchimes -type f -iname '*.wav' | wc -l | tr -d ' ')"
+          echo "Imported WAV files: $count"
+          if [ "$count" -ne 212 ]; then
+            echo "Expected exactly 212 WAV files, got $count" >&2
+            exit 1
+          fi
+
+          bad="$(find lockchimes -type f -iname '*.wav' -size +1048575c -print)"
+          if [ -n "$bad" ]; then
+            echo "The following WAV files exceed 1 MiB:" >&2
+            echo "$bad" >&2
+            exit 1
+          fi
+
+      - name: Remove one-time workflow
+        run: rm -f .github/workflows/replace-lockchimes-once.yml
+
+      - name: Commit replacement library
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A lockchimes .github/workflows/replace-lockchimes-once.yml
+          git commit -m "Replace LockChime sound library" -m "Remove the previous LockChime WAV collection and replace it with the cleaned, renamed and reorganized 212-file library. Preserve the curated folder structure, include the converted mono GTA V notification WAV, and keep every sound below the 1 MiB Tesla LockChime limit."
+          git push
