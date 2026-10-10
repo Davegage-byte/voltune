@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-10T21:08:33+02:00",
+  "checked_at": "2026-10-11T00:27:33+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -17,7 +17,7 @@
     "dataset_url": "https://suc-tracker.eu/data/europe.json",
     "schema_version": 2,
     "generated_at": "2026-10-09T19:22:47.424Z",
-    "checked_at": "2026-10-10T21:08:33+02:00",
+    "checked_at": "2026-10-11T00:27:33+02:00",
     "station_count": 1784,
     "matched_stations": 616
   },
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-10T21:08:33+02:00",
+    "checked_at": "2026-10-11T00:27:33+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.169,
-    "diesel": 2.259,
-    "e5_updated_at": "2026-10-10T20:40+02:00",
-    "diesel_updated_at": "2026-10-10T20:40+02:00",
+    "e5": 2.199,
+    "diesel": 2.292,
+    "e5_updated_at": "2026-10-10T23:55+02:00",
+    "diesel_updated_at": "2026-10-10T23:55+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-10T21:08:33+02:00",
+    "checked_at": "2026-10-11T00:27:33+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-10T21:08:33+02:00",
+    "checked_at": "2026-10-11T00:27:33+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.415,
-    "min": 0.35,
-    "max": 0.45,
+    "average": 0.3094,
+    "min": 0.26,
+    "max": 0.41,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-10T21:08:33+02:00"
+    "calculated_at": "2026-10-11T00:27:33+02:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,21 @@
   ],
   "news": [
     {
+      "title": "Tesla Officially Renames Original Summon to ‘Dumb Summon’",
+      "url": "https://www.notateslaapp.com/news/4806/tesla-officially-renames-original-summon-feature",
+      "published_at": "2026-10-11T00:17:00+02:00"
+    },
+    {
+      "title": "Tesla Now Has 300+ Cybercabs in Austin, Dallas Rides Next",
+      "url": "https://www.notateslaapp.com/news/4802/tesla-now-has-300-cybercabs-in-austin-dallas-rides-next",
+      "published_at": "2026-10-10T21:58:00+02:00"
+    },
+    {
+      "title": "Tesla Starts Rolling Out New Maps Update for North America",
+      "url": "https://www.notateslaapp.com/news/4801/tesla-starts-rolling-out-new-maps-update-for-north-america",
+      "published_at": "2026-10-10T21:12:00+02:00"
+    },
+    {
       "title": "Tesla’s Halloween Mode Does Not Support Intel Vehicles",
       "url": "https://www.notateslaapp.com/news/4798/teslas-halloween-mode-no-intel-support",
       "published_at": "2026-10-09T21:13:00+02:00"
@@ -24469,21 +24484,6 @@
       "title": "Tesla Gets Extension to Respond to NHTSA's Cybercab Probe",
       "url": "https://www.notateslaapp.com/news/4793/tesla-gets-extension-to-respond-to-nhtsas-cybercab-probe",
       "published_at": "2026-10-08T21:40:00+02:00"
-    },
-    {
-      "title": "Lemonade Extends FSD Insurance Discount to HW3 Tesla Owners",
-      "url": "https://www.notateslaapp.com/news/4792/lemonade-extends-fsd-insurance-discount-to-hw3-tesla-owners",
-      "published_at": "2026-10-08T19:23:00+02:00"
-    },
-    {
-      "title": "How to Check If Your Tesla Supports Powershare Home Backup",
-      "url": "https://www.notateslaapp.com/news/4791/how-to-check-if-your-tesla-supports-powershare-home-backup",
-      "published_at": "2026-10-08T17:59:00+02:00"
-    },
-    {
-      "title": "Tesla Patent Reveals Flexible Sensors That Let Optimus Feel Objects",
-      "url": "https://www.notateslaapp.com/news/4790/tesla-patent-reveals-flexible-sensors-that-let-optimus-feel-objects",
-      "published_at": "2026-10-08T16:48:00+02:00"
     }
   ],
   "regional_news": [
@@ -24561,10 +24561,10 @@
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-10T21:08:33+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-10T21:08:33+02:00",
-  "news_updated_at": "2026-10-10T21:08:33+02:00",
-  "regional_news_updated_at": "2026-10-10T21:08:33+02:00",
-  "fuel_prices_updated_at": "2026-10-10T21:08:33+02:00",
-  "tesla_stock_updated_at": "2026-10-10T21:08:33+02:00"
+  "superchargers_updated_at": "2026-10-11T00:27:33+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-11T00:27:33+02:00",
+  "news_updated_at": "2026-10-11T00:27:33+02:00",
+  "regional_news_updated_at": "2026-10-11T00:27:33+02:00",
+  "fuel_prices_updated_at": "2026-10-11T00:27:33+02:00",
+  "tesla_stock_updated_at": "2026-10-11T00:27:33+02:00"
 }
