@@ -1,0 +1,81 @@
+name: Rebuild LockChime index once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rebuild-lockchimes-index-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build LockChime manifest
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import subprocess
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path.cwd()
+          audio_root = root / "lockchimes"
+          output = root / "lockchimes-data.json"
+
+          def first_added_at(relative_path):
+              result = subprocess.run(
+                  ["git", "log", "--follow", "--diff-filter=A", "--format=%aI", "--", relative_path],
+                  cwd=root,
+                  capture_output=True,
+                  text=True,
+                  check=False,
+              )
+              dates = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+              return dates[-1] if dates else None
+
+          sounds = []
+          for path in sorted(audio_root.rglob("*.wav"), key=lambda p: p.as_posix().lower()):
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(root).as_posix()
+              folder = path.parent.relative_to(audio_root).as_posix()
+              category = "Ohne Kategorie" if folder == "." else folder.replace("/", " / ")
+              sounds.append({
+                  "id": hashlib.sha1(relative.encode("utf-8")).hexdigest()[:12],
+                  "name": path.stem,
+                  "category": category,
+                  "path": relative,
+                  "addedAt": first_added_at(relative),
+                  "size": path.stat().st_size,
+              })
+
+          if len(sounds) != 212:
+              raise SystemExit(f"Expected 212 WAV files, found {len(sounds)}")
+
+          payload = {
+              "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+              "sounds": sounds,
+          }
+          output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Indexed {len(sounds)} LockChimes.")
+
+      - name: Remove one-time workflow
+        run: rm -f .github/workflows/rebuild-lockchimes-index-once.yml
+
+      - name: Commit refreshed index
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lockchimes-data.json .github/workflows/rebuild-lockchimes-index-once.yml
+          git commit -m "Refresh LockChime library index" -m "Rebuild lockchimes-data.json from the replacement 212-file WAV library so the LockChime page uses the new paths, categories, sizes and first-added dates. Remove the temporary index-rebuild workflow after the one-time update."
+          git push
