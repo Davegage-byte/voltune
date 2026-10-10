@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T13:44:08.105468Z",
+  "generatedAt": "2026-10-10T14:00:03.820484Z",
   "sounds": [
     {
       "id": "524de4a6db50",
@@ -7,7 +7,8 @@
       "category": "Alarme & Signale",
       "path": "lockchimes/Alarme & Signale/Alarm 3.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 303720
+      "size": 303720,
+      "duration": 1.722
     },
     {
       "id": "87ebc5a10527",
@@ -15,7 +16,8 @@
       "category": "Alarme & Signale",
       "path": "lockchimes/Alarme & Signale/Old School Armed.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 79410
+      "size": 79410,
+      "duration": 0.45
     },
     {
       "id": "85241eee5a7a",
@@ -23,7 +25,8 @@
       "category": "Alarme & Signale",
       "path": "lockchimes/Alarme & Signale/Police Dispatch Siren.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 90384
+      "size": 90384,
+      "duration": 0.511
     },
     {
       "id": "db6ac9aec6db",
@@ -31,7 +34,8 @@
       "category": "Alarme & Signale",
       "path": "lockchimes/Alarme & Signale/Security Enabled.wav",
       "addedAt": "2026-10-07T22:09:28+02:00",
-      "size": 275986
+      "size": 275986,
+      "duration": 3.127
     },
     {
       "id": "764dc6787296",
@@ -39,7 +43,8 @@
       "category": "Alarme & Signale",
       "path": "lockchimes/Alarme & Signale/Smoke Detector Beep.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 187806
+      "size": 187806,
+      "duration": 1.064
     },
     {
       "id": "debb00b0e97e",
@@ -47,7 +52,8 @@
       "category": "Alltag & Geräte",
       "path": "lockchimes/Alltag & Geräte/Microwave Ending.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 637002
+      "size": 637002,
+      "duration": 7.221
     },
     {
       "id": "e097f70d507d",
@@ -55,7 +61,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Braam.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 434260
+      "size": 434260,
+      "duration": 4.923
     },
     {
       "id": "c97b13b16784",
@@ -63,7 +70,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Drone 1.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 141772
+      "size": 141772,
+      "duration": 1.607
     },
     {
       "id": "d01a31ee822d",
@@ -71,7 +79,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Drone 2.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 41938
+      "size": 41938,
+      "duration": 0.475
     },
     {
       "id": "d65949d7c72a",
@@ -79,7 +88,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Drone 3.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 215084
+      "size": 215084,
+      "duration": 2.438
     },
     {
       "id": "aced8c66916a",
@@ -87,7 +97,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Electric Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 533838
+      "size": 533838,
+      "duration": 3.026
     },
     {
       "id": "7c177312004e",
@@ -95,7 +106,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Error Glitch.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 232970
+      "size": 232970,
+      "duration": 1.32
     },
     {
       "id": "6c5b0ecd202c",
@@ -103,7 +115,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Hyperspace Jump.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 707222
+      "size": 707222,
+      "duration": 8.017
     },
     {
       "id": "b3dd1e76d8df",
@@ -111,7 +124,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Kurzer Effekt.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 377934
+      "size": 377934,
+      "duration": 2.142
     },
     {
       "id": "2b14372c8dc6",
@@ -119,7 +133,8 @@
       "category": "Effekte / Oblivion Drone",
       "path": "lockchimes/Effekte/Oblivion Drone/Activation.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 264416
+      "size": 264416,
+      "duration": 1.499
     },
     {
       "id": "1d1800df750c",
@@ -127,7 +142,8 @@
       "category": "Effekte / Oblivion Drone",
       "path": "lockchimes/Effekte/Oblivion Drone/Blip.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 217124
+      "size": 217124,
+      "duration": 1.231
     },
     {
       "id": "db5dcf7d2231",
@@ -135,7 +151,8 @@
       "category": "Effekte / Oblivion Drone",
       "path": "lockchimes/Effekte/Oblivion Drone/Confirmation.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 244092
+      "size": 244092,
+      "duration": 1.383
     },
     {
       "id": "2a44efac4723",
@@ -143,7 +160,8 @@
       "category": "Effekte / Oblivion Drone",
       "path": "lockchimes/Effekte/Oblivion Drone/Data Transmission.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 300004
+      "size": 300004,
+      "duration": 1.7
     },
     {
       "id": "21d3af0fac8e",
@@ -151,7 +169,8 @@
       "category": "Effekte / Oblivion Drone",
       "path": "lockchimes/Effekte/Oblivion Drone/Klaxon.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 464856
+      "size": 464856,
+      "duration": 2.635
     },
     {
       "id": "4854f841f56d",
@@ -159,7 +178,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Orchestra Transition.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 228022
+      "size": 228022,
+      "duration": 7.123
     },
     {
       "id": "9b7695b674b2",
@@ -167,7 +187,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Scary Swoosh.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 468542
+      "size": 468542,
+      "duration": 5.311
     },
     {
       "id": "6ab725c502be",
@@ -175,7 +196,8 @@
       "category": "Effekte",
       "path": "lockchimes/Effekte/Singularity.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 389580
+      "size": 389580,
+      "duration": 4.416
     },
     {
       "id": "aa373cd6a6f9",
@@ -183,7 +205,8 @@
       "category": "Fahrzeuge / BMW",
       "path": "lockchimes/Fahrzeuge/BMW/BMW Chime.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 333902
+      "size": 333902,
+      "duration": 1.892
     },
     {
       "id": "fe8e90df503a",
@@ -191,7 +214,8 @@
       "category": "Fahrzeuge / Rivian",
       "path": "lockchimes/Fahrzeuge/Rivian/Rivian Chirp.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 37568
+      "size": 37568,
+      "duration": 0.211
     },
     {
       "id": "611046aa69bf",
@@ -199,7 +223,8 @@
       "category": "Fahrzeuge / Tesla",
       "path": "lockchimes/Fahrzeuge/Tesla/Tesla Autopilot Chime.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 166676
+      "size": 166676,
+      "duration": 0.944
     },
     {
       "id": "3be042e09343",
@@ -207,7 +232,8 @@
       "category": "Fahrzeuge / Volkswagen",
       "path": "lockchimes/Fahrzeuge/Volkswagen/Golf 7 GTI - Abschließen.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 107194
+      "size": 107194,
+      "duration": 1.214
     },
     {
       "id": "d28406438401",
@@ -215,7 +241,8 @@
       "category": "Fahrzeuge / Volkswagen",
       "path": "lockchimes/Fahrzeuge/Volkswagen/Golf 7 GTI - Aufschließen.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 117498
+      "size": 117498,
+      "duration": 1.331
     },
     {
       "id": "5d977caebe95",
@@ -223,7 +250,8 @@
       "category": "Filme & Serien / Big Hero 6",
       "path": "lockchimes/Filme & Serien/Big Hero 6/Baymax - Low Battery.wav",
       "addedAt": "2026-10-07T22:09:28+02:00",
-      "size": 257916
+      "size": 257916,
+      "duration": 2.922
     },
     {
       "id": "8b0f3f17af3d",
@@ -231,7 +259,8 @@
       "category": "Filme & Serien / Die Jetsons",
       "path": "lockchimes/Filme & Serien/Die Jetsons/Doorbell.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 466366
+      "size": 466366,
+      "duration": 2.643
     },
     {
       "id": "b8ec468b60c2",
@@ -239,7 +268,8 @@
       "category": "Filme & Serien / Looney Tunes",
       "path": "lockchimes/Filme & Serien/Looney Tunes/Road Runner - Meep Meep.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 83136
+      "size": 83136,
+      "duration": 0.47
     },
     {
       "id": "1442664e18d3",
@@ -247,7 +277,8 @@
       "category": "Filme & Serien / Marvel",
       "path": "lockchimes/Filme & Serien/Marvel/JARVIS - Connected.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 203018
+      "size": 203018,
+      "duration": 1.15
     },
     {
       "id": "3d944bd43351",
@@ -255,7 +286,8 @@
       "category": "Filme & Serien / Regular Show",
       "path": "lockchimes/Filme & Serien/Regular Show/Intro.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 387520
+      "size": 387520,
+      "duration": 4.392
     },
     {
       "id": "f810ddd6b4c8",
@@ -263,7 +295,8 @@
       "category": "Filme & Serien / Rick & Morty",
       "path": "lockchimes/Filme & Serien/Rick & Morty/Beschütze Summer.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 124972
+      "size": 124972,
+      "duration": 1.416
     },
     {
       "id": "e72c5d23f2ac",
@@ -271,7 +304,8 @@
       "category": "Filme & Serien / SpongeBob",
       "path": "lockchimes/Filme & Serien/SpongeBob/Sponge Stank Noise.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 475214
+      "size": 475214,
+      "duration": 2.694
     },
     {
       "id": "4ee62c906434",
@@ -279,7 +313,8 @@
       "category": "Filme & Serien / SpongeBob",
       "path": "lockchimes/Filme & Serien/SpongeBob/SpongeBob Boowomp.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 253518
+      "size": 253518,
+      "duration": 1.437
     },
     {
       "id": "38b642194c3e",
@@ -287,7 +322,8 @@
       "category": "Filme & Serien / SpongeBob",
       "path": "lockchimes/Filme & Serien/SpongeBob/SpongeBob Bubble Transition.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 571614
+      "size": 571614,
+      "duration": 3.24
     },
     {
       "id": "d2c880222471",
@@ -295,7 +331,8 @@
       "category": "Filme & Serien / SpongeBob",
       "path": "lockchimes/Filme & Serien/SpongeBob/SpongeBob Fail.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 597032
+      "size": 597032,
+      "duration": 3.384
     },
     {
       "id": "0332b3a87d5c",
@@ -303,7 +340,8 @@
       "category": "Filme & Serien / Squid Game",
       "path": "lockchimes/Filme & Serien/Squid Game/Red Light, Green Light.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 433746
+      "size": 433746,
+      "duration": 4.916
     },
     {
       "id": "99b8de596022",
@@ -311,7 +349,8 @@
       "category": "Filme & Serien / Star Trek",
       "path": "lockchimes/Filme & Serien/Star Trek/Viewscreen Off.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 95678
+      "size": 95678,
+      "duration": 0.541
     },
     {
       "id": "655a3979c25c",
@@ -319,7 +358,8 @@
       "category": "Filme & Serien / Star Wars",
       "path": "lockchimes/Filme & Serien/Star Wars/Battle Droid - Roger, Roger.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 103902
+      "size": 103902,
+      "duration": 1.176
     },
     {
       "id": "28cf1a35ac37",
@@ -327,7 +367,8 @@
       "category": "Filme & Serien / Star Wars",
       "path": "lockchimes/Filme & Serien/Star Wars/R2-D2 - Voice 17.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 378110
+      "size": 378110,
+      "duration": 4.284
     },
     {
       "id": "982882a7051d",
@@ -335,7 +376,8 @@
       "category": "Filme & Serien / Star Wars",
       "path": "lockchimes/Filme & Serien/Star Wars/R2-D2 - Voice 5.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 67070
+      "size": 67070,
+      "duration": 0.758
     },
     {
       "id": "e0d66dd78147",
@@ -343,7 +385,8 @@
       "category": "Filme & Serien / Star Wars",
       "path": "lockchimes/Filme & Serien/Star Wars/Seismic Charge.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 445882
+      "size": 445882,
+      "duration": 5.054
     },
     {
       "id": "2628f1ae99c9",
@@ -351,7 +394,8 @@
       "category": "Filme & Serien / Tagesschau",
       "path": "lockchimes/Filme & Serien/Tagesschau/Intro (Lang).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 414210
+      "size": 414210,
+      "duration": 4.694
     },
     {
       "id": "b8052211bf59",
@@ -359,7 +403,8 @@
       "category": "Filme & Serien / Tagesschau",
       "path": "lockchimes/Filme & Serien/Tagesschau/Intro Gong.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 141130
+      "size": 141130,
+      "duration": 1.598
     },
     {
       "id": "c5a854dffc0c",
@@ -367,7 +412,8 @@
       "category": "Filme & Serien / TRON",
       "path": "lockchimes/Filme & Serien/TRON/Mode Lock Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 492192
+      "size": 492192,
+      "duration": 2.789
     },
     {
       "id": "5f9a58abeac3",
@@ -375,7 +421,8 @@
       "category": "Filme & Serien / WALL-E",
       "path": "lockchimes/Filme & Serien/WALL-E/WALL-E Says His Name.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 457512
+      "size": 457512,
+      "duration": 2.592
     },
     {
       "id": "310816b9a3b5",
@@ -383,7 +430,8 @@
       "category": "Games / 3D Pinball Space Cadet",
       "path": "lockchimes/Games/3D Pinball Space Cadet/Loading.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 241914
+      "size": 241914,
+      "duration": 1.371
     },
     {
       "id": "9970ec4d3529",
@@ -391,7 +439,8 @@
       "category": "Games / Among Us",
       "path": "lockchimes/Games/Among Us/Role Reveal.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 806822
+      "size": 806822,
+      "duration": 4.572
     },
     {
       "id": "cc655de11a23",
@@ -399,7 +448,8 @@
       "category": "Games / ARC Raiders",
       "path": "lockchimes/Games/ARC Raiders/Elevator.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 496818
+      "size": 496818,
+      "duration": 2.816
     },
     {
       "id": "41612c2770b9",
@@ -407,7 +457,8 @@
       "category": "Games / ARC Raiders",
       "path": "lockchimes/Games/ARC Raiders/Probe.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 417368
+      "size": 417368,
+      "duration": 2.365
     },
     {
       "id": "74aef4efe56f",
@@ -415,7 +466,8 @@
       "category": "Games / Battlefield 4",
       "path": "lockchimes/Games/Battlefield 4/Flag Capture.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 161546
+      "size": 161546,
+      "duration": 0.915
     },
     {
       "id": "63029966ff61",
@@ -423,7 +475,8 @@
       "category": "Games / Battlefield 4",
       "path": "lockchimes/Games/Battlefield 4/Main Theme.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 444606
+      "size": 444606,
+      "duration": 2.52
     },
     {
       "id": "a0fbed13271e",
@@ -431,7 +484,8 @@
       "category": "Games / Call of Duty",
       "path": "lockchimes/Games/Call of Duty/M1 Garand Ping.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 503886
+      "size": 503886,
+      "duration": 2.856
     },
     {
       "id": "7fdc6fb0e3d3",
@@ -439,7 +493,8 @@
       "category": "Games / Capcom",
       "path": "lockchimes/Games/Capcom/Intro.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 359856
+      "size": 359856,
+      "duration": 4.078
     },
     {
       "id": "157f3583940d",
@@ -447,7 +502,8 @@
       "category": "Games / Counter-Strike",
       "path": "lockchimes/Games/Counter-Strike/Equip Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 193614
+      "size": 193614,
+      "duration": 1.097
     },
     {
       "id": "5e1fd670de28",
@@ -455,7 +511,8 @@
       "category": "Games / Counter-Strike",
       "path": "lockchimes/Games/Counter-Strike/Loading Stutter.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 391370
+      "size": 391370,
+      "duration": 2.218
     },
     {
       "id": "e2613611d214",
@@ -463,7 +520,8 @@
       "category": "Games / Counter-Strike",
       "path": "lockchimes/Games/Counter-Strike/Planting C4 (CSGO).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 348238
+      "size": 348238,
+      "duration": 1.974
     },
     {
       "id": "69acf7996dc4",
@@ -471,7 +529,8 @@
       "category": "Games / Cyberpunk 2077",
       "path": "lockchimes/Games/Cyberpunk 2077/Message.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 184398
+      "size": 184398,
+      "duration": 1.045
     },
     {
       "id": "fbe5c886a27d",
@@ -479,7 +538,8 @@
       "category": "Games / Duck Hunt",
       "path": "lockchimes/Games/Duck Hunt/Miss.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 126364
+      "size": 126364,
+      "duration": 1.431
     },
     {
       "id": "d898d3057ba3",
@@ -487,7 +547,8 @@
       "category": "Games / Elite Dangerous",
       "path": "lockchimes/Games/Elite Dangerous/Honk.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 659092
+      "size": 659092,
+      "duration": 7.471
     },
     {
       "id": "b74dfa901c4c",
@@ -495,7 +556,8 @@
       "category": "Games / GTA V",
       "path": "lockchimes/Games/GTA V/Notification.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 132176
+      "size": 132176,
+      "duration": 1.498
     },
     {
       "id": "2544fed0da7c",
@@ -503,7 +565,8 @@
       "category": "Games / GTA V",
       "path": "lockchimes/Games/GTA V/Wasted.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 547504
+      "size": 547504,
+      "duration": 6.206
     },
     {
       "id": "f9ed7446f9e0",
@@ -511,7 +574,8 @@
       "category": "Games / Half-Life 2",
       "path": "lockchimes/Games/Half-Life 2/Metro Police Death.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 114764
+      "size": 114764,
+      "duration": 2.597
     },
     {
       "id": "baa5d0182e52",
@@ -519,7 +583,8 @@
       "category": "Games / Half-Life",
       "path": "lockchimes/Games/Half-Life/Access Denied.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 299598
+      "size": 299598,
+      "duration": 1.698
     },
     {
       "id": "09914e2a6cbf",
@@ -527,7 +592,8 @@
       "category": "Games / Half-Life",
       "path": "lockchimes/Games/Half-Life/Button 2.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 29678
+      "size": 29678,
+      "duration": 0.168
     },
     {
       "id": "114be74d0875",
@@ -535,7 +601,8 @@
       "category": "Games / Half-Life",
       "path": "lockchimes/Games/Half-Life/Button 3.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 117470
+      "size": 117470,
+      "duration": 0.665
     },
     {
       "id": "2240b66d334e",
@@ -543,7 +610,8 @@
       "category": "Games / Half-Life",
       "path": "lockchimes/Games/Half-Life/Button 4.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 100546
+      "size": 100546,
+      "duration": 0.569
     },
     {
       "id": "871f5f9a0c77",
@@ -551,7 +619,8 @@
       "category": "Games / Half-Life",
       "path": "lockchimes/Games/Half-Life/Button 5.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 19358
+      "size": 19358,
+      "duration": 0.109
     },
     {
       "id": "cdac085ca8f6",
@@ -559,7 +628,8 @@
       "category": "Games / Half-Life",
       "path": "lockchimes/Games/Half-Life/Button.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 37198
+      "size": 37198,
+      "duration": 0.21
     },
     {
       "id": "2e5d26ccf723",
@@ -567,7 +637,8 @@
       "category": "Games / Half-Life",
       "path": "lockchimes/Games/Half-Life/HEV Suit Alert.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 151326
+      "size": 151326,
+      "duration": 0.857
     },
     {
       "id": "84a5610c099d",
@@ -575,7 +646,8 @@
       "category": "Games / Halo",
       "path": "lockchimes/Games/Halo/Health Regen.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 268366
+      "size": 268366,
+      "duration": 3.042
     },
     {
       "id": "6b0b70ae0a3c",
@@ -583,7 +655,8 @@
       "category": "Games / Mega Man",
       "path": "lockchimes/Games/Mega Man/Mega Man 3 - Death Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 382556
+      "size": 382556,
+      "duration": 2.168
     },
     {
       "id": "0b882a38b7df",
@@ -591,7 +664,8 @@
       "category": "Games / Metal Gear Solid",
       "path": "lockchimes/Games/Metal Gear Solid/Alert.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 341162
+      "size": 341162,
+      "duration": 1.934
     },
     {
       "id": "6abff0acf5f6",
@@ -599,7 +673,8 @@
       "category": "Games / Minecraft",
       "path": "lockchimes/Games/Minecraft/Level Up.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 661578
+      "size": 661578,
+      "duration": 3.75
     },
     {
       "id": "2298e7a6d4a4",
@@ -607,7 +682,8 @@
       "category": "Games / Minecraft",
       "path": "lockchimes/Games/Minecraft/Zombie.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 733262
+      "size": 733262,
+      "duration": 4.156
     },
     {
       "id": "97be7930243c",
@@ -615,7 +691,8 @@
       "category": "Games / Pac-Man",
       "path": "lockchimes/Games/Pac-Man/Intro (Kurz).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 82024
+      "size": 82024,
+      "duration": 0.928
     },
     {
       "id": "6916e26db903",
@@ -623,7 +700,8 @@
       "category": "Games / Pac-Man",
       "path": "lockchimes/Games/Pac-Man/Intro (Lang).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 376424
+      "size": 376424,
+      "duration": 4.266
     },
     {
       "id": "3cba3ce5a1e4",
@@ -631,7 +709,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Classic Pokémon Heal.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 381546
+      "size": 381546,
+      "duration": 4.321
     },
     {
       "id": "edf010ac6279",
@@ -639,7 +718,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Lavender Town (Kurz).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 345556
+      "size": 345556,
+      "duration": 3.599
     },
     {
       "id": "d9a5d663cef2",
@@ -647,7 +727,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Nintendo Game Boy Startup.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 303304
+      "size": 303304,
+      "duration": 1.718
     },
     {
       "id": "07f2efcfbe87",
@@ -655,7 +736,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/PC Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 267356
+      "size": 267356,
+      "duration": 1.515
     },
     {
       "id": "df3655d2d093",
@@ -663,7 +745,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Pokémon Level Up.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 212044
+      "size": 212044,
+      "duration": 2.398
     },
     {
       "id": "23bd06cdea6a",
@@ -671,7 +754,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Pokémon Plink.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 364344
+      "size": 364344,
+      "duration": 2.065
     },
     {
       "id": "850435830dd2",
@@ -679,7 +763,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Pokémon Save Game Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 198516
+      "size": 198516,
+      "duration": 1.124
     },
     {
       "id": "c581dba29c92",
@@ -687,7 +772,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Pokémon Teleport Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 529998
+      "size": 529998,
+      "duration": 3.004
     },
     {
       "id": "a3e546db3dfb",
@@ -695,7 +781,8 @@
       "category": "Games / Pokémon",
       "path": "lockchimes/Games/Pokémon/Regirock Sound 2.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 477594
+      "size": 477594,
+      "duration": 2.707
     },
     {
       "id": "1604129320c8",
@@ -703,7 +790,8 @@
       "category": "Games / Portal",
       "path": "lockchimes/Games/Portal/Goodbye.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 156750
+      "size": 156750,
+      "duration": 0.888
     },
     {
       "id": "e9c10af3f492",
@@ -711,7 +799,8 @@
       "category": "Games / Portal",
       "path": "lockchimes/Games/Portal/Sentry Mode Activated.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 234092
+      "size": 234092,
+      "duration": 2.653
     },
     {
       "id": "b4c7aa7359fc",
@@ -719,7 +808,8 @@
       "category": "Games / Portal",
       "path": "lockchimes/Games/Portal/Sleep Mode Activated.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 413800
+      "size": 413800,
+      "duration": 2.345
     },
     {
       "id": "8cb7498d928c",
@@ -727,7 +817,8 @@
       "category": "Games / Portal",
       "path": "lockchimes/Games/Portal/Turret Goodnight.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 278558
+      "size": 278558,
+      "duration": 1.579
     },
     {
       "id": "7f1393f7789e",
@@ -735,7 +826,8 @@
       "category": "Games / Roblox",
       "path": "lockchimes/Games/Roblox/Death Sound.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 258126
+      "size": 258126,
+      "duration": 1.463
     },
     {
       "id": "d109e8486161",
@@ -743,7 +835,8 @@
       "category": "Games / Splinter Cell",
       "path": "lockchimes/Games/Splinter Cell/Night Vision Goggles.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 90584
+      "size": 90584,
+      "duration": 2.043
     },
     {
       "id": "84c04953d762",
@@ -751,7 +844,8 @@
       "category": "Games / Super Mario",
       "path": "lockchimes/Games/Super Mario/Death.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 245648
+      "size": 245648,
+      "duration": 2.784
     },
     {
       "id": "6e65219721bd",
@@ -759,7 +853,8 @@
       "category": "Games / Super Mario",
       "path": "lockchimes/Games/Super Mario/Pipe.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 212066
+      "size": 212066,
+      "duration": 1.202
     },
     {
       "id": "9d1d13250bfa",
@@ -767,7 +862,8 @@
       "category": "Games / Super Mario",
       "path": "lockchimes/Games/Super Mario/Power Up.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 189100
+      "size": 189100,
+      "duration": 1.071
     },
     {
       "id": "6a67f9d95a88",
@@ -775,7 +871,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Legion - Engaging Guard Mode - Scanning for Enemy Hostiles.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 582996
+      "size": 582996,
+      "duration": 3.248
     },
     {
       "id": "5c4e516b6c73",
@@ -783,7 +880,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Legion - Friendly Pilot Has Left the Hull.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 346170
+      "size": 346170,
+      "duration": 1.905
     },
     {
       "id": "132112f48e76",
@@ -791,7 +889,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Legion - Guard Mode Activated - Weapons Hot.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 360414
+      "size": 360414,
+      "duration": 1.993
     },
     {
       "id": "9d08f0385e75",
@@ -799,7 +898,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Legion - Smart Core Activated.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 307024
+      "size": 307024,
+      "duration": 1.683
     },
     {
       "id": "fd53042522f0",
@@ -807,7 +907,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Legion - Smart Core Is Ready.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 263866
+      "size": 263866,
+      "duration": 1.446
     },
     {
       "id": "3bdd17ab0461",
@@ -815,7 +916,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Legion - Smart Core On.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 275732
+      "size": 275732,
+      "duration": 1.506
     },
     {
       "id": "fcb038e3ed3e",
@@ -823,7 +925,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Monarch - Engaging Guard Mode - XO16 Armed.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 538868
+      "size": 538868,
+      "duration": 3.0
     },
     {
       "id": "2a56b9e642fe",
@@ -831,7 +934,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Monarch - Guard Mode Activated - Protocol 3.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 435920
+      "size": 435920,
+      "duration": 2.416
     },
     {
       "id": "562520d54100",
@@ -839,7 +943,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Monarch - Pilot Disengage.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 288822
+      "size": 288822,
+      "duration": 1.588
     },
     {
       "id": "6fd6d4a1aa65",
@@ -847,7 +952,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Monarch - Upgrade Core Standing By.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 340744
+      "size": 340744,
+      "duration": 1.872
     },
     {
       "id": "8b6a8f50698e",
@@ -855,7 +961,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Northstar - Guard Mode Activated - Scanning for Hostiles.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 534512
+      "size": 534512,
+      "duration": 2.987
     },
     {
       "id": "04bfec8a0229",
@@ -863,7 +970,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Ronin - Engaging Guard Mode - Sensors Scanning for Enemy Hostiles.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 645862
+      "size": 645862,
+      "duration": 3.612
     },
     {
       "id": "423968b444ab",
@@ -871,7 +979,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Scorch - Engaging Guard Mode - Scanning for Enemy Hostiles.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 588736
+      "size": 588736,
+      "duration": 3.288
     },
     {
       "id": "c4e1a6250d7c",
@@ -879,7 +988,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Scorch - Pilot Mode Online.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 340406
+      "size": 340406,
+      "duration": 1.88
     },
     {
       "id": "645e0056ae20",
@@ -887,7 +997,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Tone - Engaging Guard Mode - 40mm Armed.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 454486
+      "size": 454486,
+      "duration": 2.527
     },
     {
       "id": "834ca9fe2482",
@@ -895,7 +1006,8 @@
       "category": "Games / Titanfall 2",
       "path": "lockchimes/Games/Titanfall 2/Tone - Engaging Titan - Aiming to Destroy.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 460788
+      "size": 460788,
+      "duration": 2.56
     },
     {
       "id": "59f782ca373d",
@@ -903,7 +1015,8 @@
       "category": "Games / Undertale",
       "path": "lockchimes/Games/Undertale/Gaster Vanish.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 397390
+      "size": 397390,
+      "duration": 2.252
     },
     {
       "id": "d507f11ab792",
@@ -911,7 +1024,8 @@
       "category": "Halloween",
       "path": "lockchimes/Halloween/Halloween Clock.wav",
       "addedAt": "2026-10-07T22:09:28+02:00",
-      "size": 895304
+      "size": 895304,
+      "duration": 10.148
     },
     {
       "id": "91351a96604a",
@@ -919,7 +1033,8 @@
       "category": "Halloween",
       "path": "lockchimes/Halloween/Halloween Scary.wav",
       "addedAt": "2026-10-07T22:09:28+02:00",
-      "size": 389114
+      "size": 389114,
+      "duration": 4.409
     },
     {
       "id": "05d558ce2255",
@@ -927,7 +1042,8 @@
       "category": "Halloween",
       "path": "lockchimes/Halloween/Wolf Howling.wav",
       "addedAt": "2026-10-07T22:09:28+02:00",
-      "size": 441062
+      "size": 441062,
+      "duration": 4.998
     },
     {
       "id": "fbb160750600",
@@ -935,7 +1051,8 @@
       "category": "Konsolen / Nintendo GameCube",
       "path": "lockchimes/Konsolen/Nintendo GameCube/Startup.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 876970
+      "size": 876970,
+      "duration": 4.567
     },
     {
       "id": "ae23c485018e",
@@ -943,7 +1060,8 @@
       "category": "Konsolen / Nintendo Wii",
       "path": "lockchimes/Konsolen/Nintendo Wii/Channel Music 1.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 539996
+      "size": 539996,
+      "duration": 3.061
     },
     {
       "id": "55e575b7b071",
@@ -951,7 +1069,8 @@
       "category": "Konsolen / Nintendo Wii",
       "path": "lockchimes/Konsolen/Nintendo Wii/Channel Music 2.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 655256
+      "size": 655256,
+      "duration": 7.426
     },
     {
       "id": "d2c2bfa3dfe1",
@@ -959,7 +1078,8 @@
       "category": "Konsolen / Nintendo Wii",
       "path": "lockchimes/Konsolen/Nintendo Wii/Menu Music.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 445224
+      "size": 445224,
+      "duration": 5.045
     },
     {
       "id": "e19012829c8c",
@@ -967,7 +1087,8 @@
       "category": "Konsolen / Nintendo Wii",
       "path": "lockchimes/Konsolen/Nintendo Wii/Shop Music 1.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 287788
+      "size": 287788,
+      "duration": 3.262
     },
     {
       "id": "1f2c2b05be71",
@@ -975,7 +1096,8 @@
       "category": "Konsolen / Nintendo Wii",
       "path": "lockchimes/Konsolen/Nintendo Wii/Shop Music 2.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 287568
+      "size": 287568,
+      "duration": 3.255
     },
     {
       "id": "ac47dacbcdda",
@@ -983,7 +1105,8 @@
       "category": "Konsolen / Nintendo Wii",
       "path": "lockchimes/Konsolen/Nintendo Wii/Wii Sports - Intro.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 484398
+      "size": 484398,
+      "duration": 5.487
     },
     {
       "id": "9e0b02f2f807",
@@ -991,7 +1114,8 @@
       "category": "Konsolen / PlayStation 1",
       "path": "lockchimes/Konsolen/PlayStation 1/Startup - Version 1.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 646068
+      "size": 646068,
+      "duration": 7.323
     },
     {
       "id": "32f64ba5a216",
@@ -999,7 +1123,8 @@
       "category": "Konsolen / PlayStation 1",
       "path": "lockchimes/Konsolen/PlayStation 1/Startup - Version 2.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 587606
+      "size": 587606,
+      "duration": 6.66
     },
     {
       "id": "b455bb3d42ad",
@@ -1007,7 +1132,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Aufmachen.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 158360
+      "size": 158360,
+      "duration": 1.795
     },
     {
       "id": "039ccce15471",
@@ -1015,7 +1141,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Aufs Maul Nee lass mal.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 174622
+      "size": 174622,
+      "duration": 1.979
     },
     {
       "id": "7ac2d61ce9c9",
@@ -1023,7 +1150,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Aufs Maul.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 55814
+      "size": 55814,
+      "duration": 0.632
     },
     {
       "id": "52b4a56c77e0",
@@ -1031,7 +1159,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Boa Alda.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 37836
+      "size": 37836,
+      "duration": 0.428
     },
     {
       "id": "757966e09972",
@@ -1039,7 +1168,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Deine Mudda schluckt gleich.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 112840
+      "size": 112840,
+      "duration": 1.278
     },
     {
       "id": "38164656c32b",
@@ -1047,7 +1177,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Der ehrlich Puncher wird von Bullen umzingelt.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 366228
+      "size": 366228,
+      "duration": 4.151
     },
     {
       "id": "495389b2480b",
@@ -1055,7 +1186,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Die Wände kommen immer näher.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 422054
+      "size": 422054,
+      "duration": 4.784
     },
     {
       "id": "36b5edb96467",
@@ -1063,7 +1195,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Drogen.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 106824
+      "size": 106824,
+      "duration": 1.21
     },
     {
       "id": "e1779df7b931",
@@ -1071,7 +1204,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Du hast mein Ring.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 113334
+      "size": 113334,
+      "duration": 1.284
     },
     {
       "id": "895dfdc6f863",
@@ -1079,7 +1213,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Elron MC Bong.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 106858
+      "size": 106858,
+      "duration": 1.211
     },
     {
       "id": "71ccb15683bc",
@@ -1087,7 +1222,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Es tut mir leid.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 95812
+      "size": 95812,
+      "duration": 1.085
     },
     {
       "id": "79bbbd40f595",
@@ -1095,7 +1231,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Fick dich ich brech dir die Beine.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 331444
+      "size": 331444,
+      "duration": 3.757
     },
     {
       "id": "329d3bb35dcf",
@@ -1103,7 +1240,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Fick dich.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 232956
+      "size": 232956,
+      "duration": 2.64
     },
     {
       "id": "dc1ea865fcfd",
@@ -1111,7 +1249,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Halt’s Maul du Hurensohn.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 204382
+      "size": 204382,
+      "duration": 2.317
     },
     {
       "id": "a8f20318dfe6",
@@ -1119,7 +1258,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Hier spricht Gott.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 375626
+      "size": 375626,
+      "duration": 4.258
     },
     {
       "id": "7095ccf01409",
@@ -1127,7 +1267,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Ich bin zwar übelst dicht.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 263884
+      "size": 263884,
+      "duration": 2.991
     },
     {
       "id": "bd1d8f491390",
@@ -1135,7 +1276,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Ich brauche etwas härteres.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 110538
+      "size": 110538,
+      "duration": 1.252
     },
     {
       "id": "172283bebf16",
@@ -1143,7 +1285,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Ich träume von nackten Männern.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 306530
+      "size": 306530,
+      "duration": 3.475
     },
     {
       "id": "da49d947efd1",
@@ -1151,7 +1294,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Ja watt denn.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 204776
+      "size": 204776,
+      "duration": 2.321
     },
     {
       "id": "592b3a1b2597",
@@ -1159,7 +1303,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Klatscht gleich zweimal.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 459796
+      "size": 459796,
+      "duration": 5.213
     },
     {
       "id": "0499a871934d",
@@ -1167,7 +1312,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Kleine Schwänze.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 160444
+      "size": 160444,
+      "duration": 1.818
     },
     {
       "id": "cb181e1b6486",
@@ -1175,7 +1321,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Kopfnuss.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 163926
+      "size": 163926,
+      "duration": 1.858
     },
     {
       "id": "a24b78509ad1",
@@ -1183,7 +1330,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Meine stählerne Faust.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 437252
+      "size": 437252,
+      "duration": 4.957
     },
     {
       "id": "9cc13712e88a",
@@ -1191,7 +1339,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Pass mal auf du kleiner Hoden.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 150118
+      "size": 150118,
+      "duration": 1.701
     },
     {
       "id": "87cbf5931ca4",
@@ -1199,7 +1348,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Quack (Kurz).wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 143478
+      "size": 143478,
+      "duration": 3.248
     },
     {
       "id": "a3800fc45a37",
@@ -1207,7 +1357,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Quack (Lang).wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 309180
+      "size": 309180,
+      "duration": 7.005
     },
     {
       "id": "76f348dbbdcc",
@@ -1215,7 +1366,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Ring um die Augen.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 136770
+      "size": 136770,
+      "duration": 1.55
     },
     {
       "id": "f0005877cf16",
@@ -1223,7 +1375,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Schnee im Sommer.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 320262
+      "size": 320262,
+      "duration": 3.631
     },
     {
       "id": "fdf3230761be",
@@ -1231,7 +1384,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Tolle Karte.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 109388
+      "size": 109388,
+      "duration": 1.24
     },
     {
       "id": "f63500fe0d8d",
@@ -1239,7 +1393,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Ueh 1.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 41108
+      "size": 41108,
+      "duration": 0.465
     },
     {
       "id": "36180967f43c",
@@ -1247,7 +1402,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Ueh 2.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 78188
+      "size": 78188,
+      "duration": 0.886
     },
     {
       "id": "da63930e33c5",
@@ -1255,7 +1411,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Wacken ist vorbei du Spast.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 325512
+      "size": 325512,
+      "duration": 3.69
     },
     {
       "id": "67e64a45ade9",
@@ -1263,7 +1420,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Was fällt dir eigentlich ein, Milch in meinen Kaffee zu schütten.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 328260
+      "size": 328260,
+      "duration": 3.721
     },
     {
       "id": "e2d30273fe0c",
@@ -1271,7 +1429,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Wenn du dich mit dem Teufel einlässt.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 450510
+      "size": 450510,
+      "duration": 5.107
     },
     {
       "id": "b7da2adca5c4",
@@ -1279,7 +1438,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Wenn ihr Koks mit Mehl puncht.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 295078
+      "size": 295078,
+      "duration": 3.345
     },
     {
       "id": "af09adf01978",
@@ -1287,7 +1447,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Willst du Milch zu deinem Kaffee.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 127022
+      "size": 127022,
+      "duration": 1.439
     },
     {
       "id": "8c1f0a9f6e14",
@@ -1295,7 +1456,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Wir Batzen bis wir umfallen.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 144576
+      "size": 144576,
+      "duration": 1.638
     },
     {
       "id": "58638c72b1f2",
@@ -1303,7 +1465,8 @@
       "category": "Lord of the Weed",
       "path": "lockchimes/Lord of the Weed/Wir Puffen bis wir umfallen.wav",
       "addedAt": "2026-10-07T22:18:27+02:00",
-      "size": 123748
+      "size": 123748,
+      "duration": 1.402
     },
     {
       "id": "bf0c83ccc363",
@@ -1311,7 +1474,8 @@
       "category": "Luftfahrt",
       "path": "lockchimes/Luftfahrt/Airbus - Autopilot Disconnect.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 130636
+      "size": 130636,
+      "duration": 0.739
     },
     {
       "id": "0a41b67e5f58",
@@ -1319,7 +1483,8 @@
       "category": "Luftfahrt",
       "path": "lockchimes/Luftfahrt/Airplane Intro Calling.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 158712
+      "size": 158712,
+      "duration": 1.797
     },
     {
       "id": "5f8652bf5baf",
@@ -1327,7 +1492,8 @@
       "category": "Luftfahrt",
       "path": "lockchimes/Luftfahrt/Flughafen Köln-Bonn - Gong.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 885038
+      "size": 885038,
+      "duration": 4.609
     },
     {
       "id": "0489f32d43bc",
@@ -1335,7 +1501,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Alarm Meme.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 695906
+      "size": 695906,
+      "duration": 3.944
     },
     {
       "id": "a3e90e893773",
@@ -1343,7 +1510,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Annihilation - The Alien.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 195802
+      "size": 195802,
+      "duration": 2.218
     },
     {
       "id": "92b390cdbb63",
@@ -1351,7 +1519,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Asian Gong with Music.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 765950
+      "size": 765950,
+      "duration": 8.682
     },
     {
       "id": "ed253a3dd994",
@@ -1359,7 +1528,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Bad to the Bone Meme.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 223198
+      "size": 223198,
+      "duration": 2.529
     },
     {
       "id": "262cb88b685b",
@@ -1367,7 +1537,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Bass Drop.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 584344
+      "size": 584344,
+      "duration": 3.312
     },
     {
       "id": "ab85c26fcbf1",
@@ -1375,7 +1546,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Doge Bonk.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 88384
+      "size": 88384,
+      "duration": 1.0
     },
     {
       "id": "94758dd0be2f",
@@ -1383,7 +1555,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Duck Toy Squeak.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 167478
+      "size": 167478,
+      "duration": 0.949
     },
     {
       "id": "616f248fd3b0",
@@ -1391,7 +1564,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Goofy Spring.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 385246
+      "size": 385246,
+      "duration": 2.183
     },
     {
       "id": "4eda9d66cfb6",
@@ -1399,7 +1573,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Hawk Tuah.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 183422
+      "size": 183422,
+      "duration": 1.039
     },
     {
       "id": "e5eca2543a3c",
@@ -1407,7 +1582,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/If Cars Could Talk - JDM.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 332158
+      "size": 332158,
+      "duration": 3.765
     },
     {
       "id": "d9b70bfcdeef",
@@ -1415,7 +1591,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/If JDM Cars Could Talk.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 329194
+      "size": 329194,
+      "duration": 3.73
     },
     {
       "id": "23ba6df5d9c8",
@@ -1423,7 +1600,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Japanese YOOOO.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 226538
+      "size": 226538,
+      "duration": 2.567
     },
     {
       "id": "4020a995c5b5",
@@ -1431,7 +1609,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Japanese YOOOOOO (Lang).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 772518
+      "size": 772518,
+      "duration": 8.757
     },
     {
       "id": "175332f2976a",
@@ -1439,7 +1618,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Kawaii Wow.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 732970
+      "size": 732970,
+      "duration": 4.155
     },
     {
       "id": "42bd67159764",
@@ -1447,7 +1627,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Noot Noot - Pingu.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 193658
+      "size": 193658,
+      "duration": 1.097
     },
     {
       "id": "a4469c215275",
@@ -1455,7 +1636,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Oh My God.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 288846
+      "size": 288846,
+      "duration": 1.637
     },
     {
       "id": "84533fc6fb1d",
@@ -1463,7 +1645,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Okay, Let’s Go.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 171750
+      "size": 171750,
+      "duration": 1.946
     },
     {
       "id": "e87fefd81d82",
@@ -1471,7 +1654,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Prowler Sound Effect.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 635110
+      "size": 635110,
+      "duration": 3.6
     },
     {
       "id": "e62df250e979",
@@ -1479,7 +1663,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Rat Dance (Kurz).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 247918
+      "size": 247918,
+      "duration": 2.81
     },
     {
       "id": "5b65a23da4b7",
@@ -1487,7 +1672,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Smoke Weed Everyday.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 268414
+      "size": 268414,
+      "duration": 3.042
     },
     {
       "id": "1feb2cde366c",
@@ -1495,7 +1681,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/UIA Spinning Cat.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 70144
+      "size": 70144,
+      "duration": 1.58
     },
     {
       "id": "77f9e74e23eb",
@@ -1503,7 +1690,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/UwU Hannah.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 180244
+      "size": 180244,
+      "duration": 1.021
     },
     {
       "id": "b9923f51019f",
@@ -1511,7 +1699,8 @@
       "category": "Memes",
       "path": "lockchimes/Memes/Vine Boom.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 221516
+      "size": 221516,
+      "duration": 1.255
     },
     {
       "id": "56510d476e26",
@@ -1519,7 +1708,8 @@
       "category": "Motoren & Tuning",
       "path": "lockchimes/Motoren & Tuning/Audi RS4 B5 - Loud.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 844000
+      "size": 844000,
+      "duration": 9.568
     },
     {
       "id": "cbb7c47fd9c9",
@@ -1527,7 +1717,8 @@
       "category": "Motoren & Tuning",
       "path": "lockchimes/Motoren & Tuning/Blow-Off Valve.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 64270
+      "size": 64270,
+      "duration": 0.727
     },
     {
       "id": "0c6153f69b4a",
@@ -1535,7 +1726,8 @@
       "category": "Motoren & Tuning",
       "path": "lockchimes/Motoren & Tuning/Engine Start.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 610710
+      "size": 610710,
+      "duration": 6.923
     },
     {
       "id": "98a90c99ae97",
@@ -1543,7 +1735,8 @@
       "category": "Motoren & Tuning",
       "path": "lockchimes/Motoren & Tuning/Turbo Flutter.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 705678
+      "size": 705678,
+      "duration": 4.0
     },
     {
       "id": "9f1fee28e949",
@@ -1551,7 +1744,8 @@
       "category": "Motoren & Tuning",
       "path": "lockchimes/Motoren & Tuning/V8 Engine Rev.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 505564
+      "size": 505564,
+      "duration": 2.865
     },
     {
       "id": "077f9258b4e6",
@@ -1559,7 +1753,8 @@
       "category": "Musik & Jingles",
       "path": "lockchimes/Musik & Jingles/Japanese Koto Music.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 415690
+      "size": 415690,
+      "duration": 4.712
     },
     {
       "id": "af55c12d7f89",
@@ -1567,7 +1762,8 @@
       "category": "Musik & Jingles",
       "path": "lockchimes/Musik & Jingles/La Cucaracha.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 658222
+      "size": 658222,
+      "duration": 3.731
     },
     {
       "id": "d7f8e2f09457",
@@ -1575,7 +1771,8 @@
       "category": "Sommer & Hitze",
       "path": "lockchimes/Sommer & Hitze/Cicadas Chirping.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 882044
+      "size": 882044,
+      "duration": 10.0
     },
     {
       "id": "650b3ea8cfea",
@@ -1583,7 +1780,8 @@
       "category": "Sommer & Hitze",
       "path": "lockchimes/Sommer & Hitze/Desert Meme Music.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 527826
+      "size": 527826,
+      "duration": 5.984
     },
     {
       "id": "c26c3bbdd4c6",
@@ -1591,7 +1789,8 @@
       "category": "Sommer & Hitze",
       "path": "lockchimes/Sommer & Hitze/Mario Desert Music.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 563716
+      "size": 563716,
+      "duration": 6.39
     },
     {
       "id": "af9780e81342",
@@ -1599,7 +1798,8 @@
       "category": "Sommer & Hitze",
       "path": "lockchimes/Sommer & Hitze/Rattlesnake.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 369454
+      "size": 369454,
+      "duration": 4.188
     },
     {
       "id": "4d2d1c963cbd",
@@ -1607,7 +1807,8 @@
       "category": "Sommer & Hitze",
       "path": "lockchimes/Sommer & Hitze/The Good, the Bad and the Ugly.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 455732
+      "size": 455732,
+      "duration": 4.746
     },
     {
       "id": "8aa61d631a71",
@@ -1615,7 +1816,8 @@
       "category": "Sommer & Hitze",
       "path": "lockchimes/Sommer & Hitze/Western Showdown.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 734194
+      "size": 734194,
+      "duration": 8.323
     },
     {
       "id": "0308782c9ba6",
@@ -1623,7 +1825,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/iPhone - Charging.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 194232
+      "size": 194232,
+      "duration": 1.1
     },
     {
       "id": "4504539a53ae",
@@ -1631,7 +1834,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/Microsoft Teams - Incoming Call (Kurz).wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 688224
+      "size": 688224,
+      "duration": 3.901
     },
     {
       "id": "202a0d53d365",
@@ -1639,7 +1843,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/Modem.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 475214
+      "size": 475214,
+      "duration": 2.694
     },
     {
       "id": "9c82ddef6c2a",
@@ -1647,7 +1852,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/MSN - New Message.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 269878
+      "size": 269878,
+      "duration": 1.529
     },
     {
       "id": "36bb22b1ad32",
@@ -1655,7 +1861,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/Steam - Achievement.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 133736
+      "size": 133736,
+      "duration": 0.758
     },
     {
       "id": "8ae690c5077f",
@@ -1663,7 +1870,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/Steam - Incoming Message.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 138362
+      "size": 138362,
+      "duration": 0.784
     },
     {
       "id": "657a9b4c7349",
@@ -1671,7 +1879,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/Windows - USB Disconnect.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 470350
+      "size": 470350,
+      "duration": 2.666
     },
     {
       "id": "0aecb73d659b",
@@ -1679,7 +1888,8 @@
       "category": "System & Technik",
       "path": "lockchimes/System & Technik/Windows XP - Shutdown.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 286282
+      "size": 286282,
+      "duration": 3.24
     },
     {
       "id": "069f973a1cfb",
@@ -1687,7 +1897,8 @@
       "category": "Tiere & Natur",
       "path": "lockchimes/Tiere & Natur/Owl Hoot.wav",
       "addedAt": "2026-10-07T22:09:28+02:00",
-      "size": 191184
+      "size": 191184,
+      "duration": 2.165
     },
     {
       "id": "5c41b6f436b6",
@@ -1695,7 +1906,8 @@
       "category": "Tiere & Natur",
       "path": "lockchimes/Tiere & Natur/Wild Turkey Gobble.wav",
       "addedAt": "2026-10-10T13:42:27Z",
-      "size": 168720
+      "size": 168720,
+      "duration": 0.955
     }
   ]
 }
