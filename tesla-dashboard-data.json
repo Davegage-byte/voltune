@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-10T01:29:44+02:00",
+  "checked_at": "2026-10-10T04:36:20+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -17,7 +17,7 @@
     "dataset_url": "https://suc-tracker.eu/data/europe.json",
     "schema_version": 2,
     "generated_at": "2026-10-09T19:22:47.424Z",
-    "checked_at": "2026-10-10T01:29:44+02:00",
+    "checked_at": "2026-10-10T04:36:20+02:00",
     "station_count": 1784,
     "matched_stations": 616
   },
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-10T01:29:44+02:00",
+    "checked_at": "2026-10-10T04:36:20+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
     "e5": 2.204,
-    "diesel": 2.298,
-    "e5_updated_at": "2026-10-10T01:00+02:00",
-    "diesel_updated_at": "2026-10-10T01:00+02:00",
+    "diesel": 2.299,
+    "e5_updated_at": "2026-10-10T04:10+02:00",
+    "diesel_updated_at": "2026-10-10T04:10+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-10T01:29:44+02:00",
+    "checked_at": "2026-10-10T04:36:20+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-10T01:29:44+02:00",
+    "checked_at": "2026-10-10T04:36:20+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3094,
+    "average": 0.3131,
     "min": 0.26,
     "max": 0.41,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-10T01:29:44+02:00"
+    "calculated_at": "2026-10-10T04:36:20+02:00"
   },
   "superchargers": [
     {
@@ -24561,10 +24561,10 @@
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-10T01:29:44+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-10T01:29:44+02:00",
-  "news_updated_at": "2026-10-10T01:29:44+02:00",
-  "regional_news_updated_at": "2026-10-10T01:29:44+02:00",
-  "fuel_prices_updated_at": "2026-10-10T01:29:44+02:00",
-  "tesla_stock_updated_at": "2026-10-10T01:29:44+02:00"
+  "superchargers_updated_at": "2026-10-10T04:36:20+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-10T04:36:20+02:00",
+  "news_updated_at": "2026-10-10T04:36:20+02:00",
+  "regional_news_updated_at": "2026-10-10T04:36:20+02:00",
+  "fuel_prices_updated_at": "2026-10-10T04:36:20+02:00",
+  "tesla_stock_updated_at": "2026-10-10T04:36:20+02:00"
 }
