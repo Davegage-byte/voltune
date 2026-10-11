@@ -1,82 +1,22 @@
 {
-  "price": "0,60",
-  "free": 7,
-  "occupied": 1,
+  "price": "0,55",
+  "free": 8,
+  "occupied": 0,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-11T20:37:08+02:00",
-  "status_checked_at": "2026-10-11T20:37:08+02:00",
-  "price_changed_at": "2026-10-11T20:37:08+02:00",
-  "updated": "20:37",
-  "checked_at": "2026-10-11T20:37:08+02:00",
+  "price_checked_at": "2026-10-12T00:26:03+02:00",
+  "status_checked_at": "2026-10-12T00:26:03+02:00",
+  "price_changed_at": "2026-10-12T00:26:03+02:00",
+  "updated": "00:26",
+  "checked_at": "2026-10-12T00:26:03+02:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-11T15:45:00+00:00",
-  "price_valid_to": "2026-10-11T20:45:00+00:00",
+  "price_valid_from": "2026-10-11T22:00:00+00:00",
+  "price_valid_to": "2026-10-12T03:45:00+00:00",
   "price_schedule": [
-    {
-      "valid_from": "2026-10-10T22:00:00+00:00",
-      "valid_to": "2026-10-10T23:00:00+00:00",
-      "price": 0.52
-    },
-    {
-      "valid_from": "2026-10-10T23:00:00+00:00",
-      "valid_to": "2026-10-11T05:15:00+00:00",
-      "price": 0.48
-    },
-    {
-      "valid_from": "2026-10-11T05:15:00+00:00",
-      "valid_to": "2026-10-11T07:30:00+00:00",
-      "price": 0.5
-    },
-    {
-      "valid_from": "2026-10-11T07:30:00+00:00",
-      "valid_to": "2026-10-11T08:30:00+00:00",
-      "price": 0.47
-    },
-    {
-      "valid_from": "2026-10-11T08:30:00+00:00",
-      "valid_to": "2026-10-11T09:30:00+00:00",
-      "price": 0.44
-    },
-    {
-      "valid_from": "2026-10-11T09:30:00+00:00",
-      "valid_to": "2026-10-11T12:45:00+00:00",
-      "price": 0.38
-    },
-    {
-      "valid_from": "2026-10-11T12:45:00+00:00",
-      "valid_to": "2026-10-11T13:45:00+00:00",
-      "price": 0.41
-    },
-    {
-      "valid_from": "2026-10-11T13:45:00+00:00",
-      "valid_to": "2026-10-11T14:45:00+00:00",
-      "price": 0.47
-    },
-    {
-      "valid_from": "2026-10-11T14:45:00+00:00",
-      "valid_to": "2026-10-11T15:45:00+00:00",
-      "price": 0.52
-    },
-    {
-      "valid_from": "2026-10-11T15:45:00+00:00",
-      "valid_to": "2026-10-11T20:45:00+00:00",
-      "price": 0.6
-    },
-    {
-      "valid_from": "2026-10-11T20:45:00+00:00",
-      "valid_to": "2026-10-11T21:45:00+00:00",
-      "price": 0.57
-    },
-    {
-      "valid_from": "2026-10-11T21:45:00+00:00",
-      "valid_to": "2026-10-11T22:00:00+00:00",
-      "price": 0.55
-    },
     {
       "valid_from": "2026-10-11T22:00:00+00:00",
       "valid_to": "2026-10-12T03:45:00+00:00",
@@ -141,66 +81,6 @@
       "url": "https://e-preis.avex-tankstellen.de",
       "data": [
         {
-          "valid_from": "2026-10-10T22:00:00+00:00",
-          "valid_to": "2026-10-10T23:00:00+00:00",
-          "price": 0.52
-        },
-        {
-          "valid_from": "2026-10-10T23:00:00+00:00",
-          "valid_to": "2026-10-11T05:15:00+00:00",
-          "price": 0.48
-        },
-        {
-          "valid_from": "2026-10-11T05:15:00+00:00",
-          "valid_to": "2026-10-11T07:30:00+00:00",
-          "price": 0.5
-        },
-        {
-          "valid_from": "2026-10-11T07:30:00+00:00",
-          "valid_to": "2026-10-11T08:30:00+00:00",
-          "price": 0.47
-        },
-        {
-          "valid_from": "2026-10-11T08:30:00+00:00",
-          "valid_to": "2026-10-11T09:30:00+00:00",
-          "price": 0.44
-        },
-        {
-          "valid_from": "2026-10-11T09:30:00+00:00",
-          "valid_to": "2026-10-11T12:45:00+00:00",
-          "price": 0.38
-        },
-        {
-          "valid_from": "2026-10-11T12:45:00+00:00",
-          "valid_to": "2026-10-11T13:45:00+00:00",
-          "price": 0.41
-        },
-        {
-          "valid_from": "2026-10-11T13:45:00+00:00",
-          "valid_to": "2026-10-11T14:45:00+00:00",
-          "price": 0.47
-        },
-        {
-          "valid_from": "2026-10-11T14:45:00+00:00",
-          "valid_to": "2026-10-11T15:45:00+00:00",
-          "price": 0.52
-        },
-        {
-          "valid_from": "2026-10-11T15:45:00+00:00",
-          "valid_to": "2026-10-11T20:45:00+00:00",
-          "price": 0.6
-        },
-        {
-          "valid_from": "2026-10-11T20:45:00+00:00",
-          "valid_to": "2026-10-11T21:45:00+00:00",
-          "price": 0.57
-        },
-        {
-          "valid_from": "2026-10-11T21:45:00+00:00",
-          "valid_to": "2026-10-11T22:00:00+00:00",
-          "price": 0.55
-        },
-        {
           "valid_from": "2026-10-11T22:00:00+00:00",
           "valid_to": "2026-10-12T03:45:00+00:00",
           "price": 0.55
@@ -261,16 +141,28 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 7,
-        "occupied": 1,
+        "free": 8,
+        "occupied": 0,
         "offline": 0,
         "unknown": 0,
         "price": 0.55,
         "published_at": "2026-10-11T12:31:00+02:00",
         "evses": {
-          "DE*AVX*E262414": {
+          "DE*AVX*E262415": {
             "status": "free",
-            "status_at": "2026-10-09T06:15:00+02:00",
+            "status_at": "2026-10-09T12:01:00+02:00",
+            "price": 0.55,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262427": {
+            "status": "free",
+            "status_at": "2026-10-09T14:23:00+02:00",
+            "price": 0.55,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262430": {
+            "status": "free",
+            "status_at": "2026-10-09T13:14:00+02:00",
             "price": 0.55,
             "data_since": "2026-07-03"
           },
@@ -288,19 +180,7 @@
           },
           "DE*AVX*E262431": {
             "status": "free",
-            "status_at": "2026-10-09T11:00:00+02:00",
-            "price": 0.55,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262427": {
-            "status": "occupied",
-            "status_at": "2026-10-09T13:11:00+02:00",
-            "price": 0.55,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262430": {
-            "status": "free",
-            "status_at": "2026-10-09T13:14:00+02:00",
+            "status_at": "2026-10-09T14:41:00+02:00",
             "price": 0.55,
             "data_since": "2026-07-03"
           },
@@ -310,9 +190,9 @@
             "price": 0.55,
             "data_since": "2026-07-04"
           },
-          "DE*AVX*E262415": {
+          "DE*AVX*E262414": {
             "status": "free",
-            "status_at": "2026-10-09T12:01:00+02:00",
+            "status_at": "2026-10-09T06:15:00+02:00",
             "price": 0.55,
             "data_since": "2026-07-03"
           }
@@ -323,45 +203,43 @@
       "ok": true,
       "url": "https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/",
       "data": {
-        "price": 0.5,
+        "price": 0.38,
         "published_at": null,
-        "free": 1,
+        "free": 0,
         "occupied": 0,
         "offline": 0,
         "evses": {
           "DE*AVX*E262414": {
             "power_kw": 400,
-            "price": 0.5
+            "price": 0.38
           },
           "DE*AVX*E262415": {
             "power_kw": 400,
-            "price": 0.5
+            "price": 0.38
           },
           "DE*AVX*E262426": {
             "power_kw": 400,
-            "price": 0.5,
-            "status": "free",
-            "status_age_seconds": 780
+            "price": 0.38
           },
           "DE*AVX*E262427": {
             "power_kw": 400,
-            "price": 0.5
+            "price": 0.38
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
-            "price": 0.5
+            "price": 0.38
           },
           "DE*AVX*E262431": {
             "power_kw": 400,
-            "price": 0.5
+            "price": 0.38
           },
           "DE*AVX*E262451": {
             "power_kw": 400,
-            "price": 0.5
+            "price": 0.38
           },
           "DE*AVX*E262452": {
             "power_kw": 400,
-            "price": 0.5
+            "price": 0.38
           }
         }
       }
