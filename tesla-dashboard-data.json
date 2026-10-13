@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-13T05:47:59+02:00",
+  "checked_at": "2026-10-13T13:10:34+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -17,7 +17,7 @@
     "dataset_url": "https://suc-tracker.eu/data/europe.json",
     "schema_version": 2,
     "generated_at": "2026-10-09T19:22:47.424Z",
-    "checked_at": "2026-10-13T05:47:59+02:00",
+    "checked_at": "2026-10-13T13:10:34+02:00",
     "station_count": 1784,
     "matched_stations": 616
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-13T05:47:59+02:00",
+    "checked_at": "2026-10-13T13:10:34+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-13T05:47:59+02:00",
+    "checked_at": "2026-10-13T13:10:34+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3131,
-    "min": 0.26,
-    "max": 0.41,
+    "average": 0.4175,
+    "min": 0.35,
+    "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-13T05:47:59+02:00"
+    "calculated_at": "2026-10-13T13:10:34+02:00"
   },
   "superchargers": [
     {
@@ -24488,6 +24488,12 @@
   ],
   "regional_news": [
     {
+      "title": "Aktuell: Auto-Messe in Paris – Tesla und Smart zeigen denkbar unterschiedliche E-Zweisitzer",
+      "url": "https://teslamag.de/news/auto-messe-paris-tesla-smart-zeigen-unterschiedliche-elektroauto-zweisitzer-67506",
+      "published_at": "2026-10-13T07:19:10+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
       "title": "Tesla-Woche 41/26: Model Y vorn, FSD wird TAD, Grusel-Update, V2H in USA, Auto für AfD",
       "url": "https://teslamag.de/news/tesla-41-26-model-y-vorn-fsd-tad-grusel-update-v2h-usa-auto-fuer-afd-67489",
       "published_at": "2026-10-11T07:39:12+02:00",
@@ -24552,19 +24558,15 @@
       "url": "https://teslamag.de/news/roadster-vorstellung-diese-woche-tesla-wirklich-fliegendes-auto-67381",
       "published_at": "2026-09-29T11:11:03+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Tesla-Woche 39/26: Semi-Start, EU-FSD später, Büro brennt, Optimus-Leak, Laden mit 2,2 MW",
-      "url": "https://teslamag.de/news/39-26-tesla-semi-start-eu-fsd-spaeter-buero-brennt-optimus-leak-laden-2-mw-67373",
-      "published_at": "2026-09-27T06:57:35+02:00",
-      "source": "TeslaMag.de"
     }
   ],
-  "errors": {},
-  "superchargers_updated_at": "2026-10-13T05:47:59+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-13T05:47:59+02:00",
-  "news_updated_at": "2026-10-13T05:47:59+02:00",
-  "regional_news_updated_at": "2026-10-13T05:47:59+02:00",
+  "errors": {
+    "fuel_prices": "The read operation timed out"
+  },
+  "superchargers_updated_at": "2026-10-13T13:10:34+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-13T13:10:34+02:00",
+  "news_updated_at": "2026-10-13T13:10:34+02:00",
+  "regional_news_updated_at": "2026-10-13T13:10:34+02:00",
   "fuel_prices_updated_at": "2026-10-13T05:47:59+02:00",
-  "tesla_stock_updated_at": "2026-10-13T05:47:59+02:00"
+  "tesla_stock_updated_at": "2026-10-13T13:10:34+02:00"
 }
