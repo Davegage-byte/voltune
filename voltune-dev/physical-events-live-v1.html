@@ -36,6 +36,15 @@ hr{border:0;border-top:1px solid #2b3d54;margin:19px 0}
 .readout{font-size:29px;font-weight:750;font-variant-numeric:tabular-nums}
 footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;flex-wrap:wrap}
 .small{font-size:12px;color:#9aacc0;margin-top:12px}
+#photoReport{display:none;margin-top:14px;padding:17px;border:2px solid #527da3;border-radius:13px;background:#0b1b2b}
+#photoReport h3{font-size:23px;line-height:1.2;margin:0 0 10px;color:#f4f9fe}
+#photoReport .statGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+#photoReport .stat{background:#172e43;padding:11px;border-radius:9px;font-size:12px;color:#bfcee0}
+#photoReport .stat strong{display:block;font-size:22px;color:#fff;font-variant-numeric:tabular-nums}
+#photoReport .eventRow{padding:9px 0;border-bottom:1px solid #304c65;font-size:15px;line-height:1.35}
+#photoReport .eventRow:last-child{border:0}
+#photoReport .eventRow strong{color:#fff}
+#photoReport .info{color:#a8c2d9;font-size:13px;line-height:1.5}
 @media(max-width:700px){.grid{grid-template-columns:1fr}.card{padding:17px}}
 </style>
 </head>
@@ -90,6 +99,15 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <h2>Fahrtprotokoll</h2>
 <p>Für die spätere Auswertung: etwa ein GPS-Datenpunkt pro Sekunde und jedes wirklich ausgelöste Schalt-/Schub-Ereignis. <strong>Keine Standortkoordinaten.</strong> Das Protokoll bleibt bis zum Schließen/Neuladen dieser Seite im Arbeitsspeicher. Bitte erst nach dem Parken sichern.</p>
 <div class="small" id="logInfo">Noch keine Aufzeichnung.</div>
+<div class="buttons one"><button id="photoShow">📷 Fahrtbericht fürs Handyfoto anzeigen</button></div>
+<div id="photoReport" aria-live="polite">
+ <h3>Voltune · Fahrtbericht</h3>
+ <div id="photoHeader" class="info">GPS-Fahrt noch nicht gestartet.</div>
+ <div id="photoStats" class="statGrid"></div>
+ <div style="font-size:16px;font-weight:750;margin:14px 0 6px">Automatische Soundeffekte</div>
+ <div id="photoEvents"></div>
+ <div id="photoFooter" class="info" style="margin-top:14px"></div>
+</div>
 <div class="buttons">
  <button id="logSave">↓ CSV speichern</button>
  <button id="logCopy">⧉ CSV kopieren</button>
@@ -158,6 +176,44 @@ function logEntry(type,source,intensity="",extra={}){
  if(type==="upshift"||type==="downshift"||type==="overrun")loggedEvents++;
  $("logInfo").textContent=flightLog.length+" protokollierte Einträge, davon "+loggedEvents+" Effekte. Ohne Standortkoordinaten.";
 }
+function photoReport(){
+ const start=flightLog.find(row=>row.type==="GPS_start");
+ const stop=[...flightLog].reverse().find(row=>row.type==="GPS_stop");
+ const samples=flightLog.filter(row=>row.type==="GPS_sample");
+ const failures=flightLog.filter(row=>row.type==="GPS_ungueltig");
+ const events=flightLog.filter(row=>row.source==="GPS Automatik" &&
+   ["upshift","downshift","overrun"].includes(row.type));
+ const time=v=>v?new Date(v).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"–";
+ const show=id=>$(id);
+ const validHz=samples.filter(row=>Number.isFinite(row.gps_hz));
+ const hz=validHz.length?validHz.reduce((sum,row)=>sum+row.gps_hz,0)/validHz.length:0;
+ const maxSpeed=samples.length?Math.max(...samples.map(row=>row.speed_kmh)):0;
+ const gears=events.reduce((acc,row)=>(acc[row.type]=(acc[row.type]||0)+1,acc),{});
+ show("photoHeader").textContent="Zeitraum: "+time(start&&start.time)+" – "+
+   (stop?time(stop.time):"Fahrt läuft")+" · "+$("preset").selectedOptions[0].textContent;
+ const specs=[
+  ["GPS-Spitze",maxSpeed.toFixed(1)+" km/h"],
+  ["GPS-Rate Ø",hz?hz.toFixed(1)+" Hz":"–"],
+  ["Schaltungen",(gears.upshift||0)+" ↑ / "+(gears.downshift||0)+" ↓"],
+  ["Schubknallen",String(gears.overrun||0)]
+ ];
+ show("photoStats").innerHTML=specs.map(([name,v])=>
+  '<div class="stat">'+name+'<strong>'+v+'</strong></div>').join("");
+ const label={upshift:"↑ Hochschalten",downshift:"↓ Runterschalten",overrun:"✦ Schubknallen"};
+ show("photoEvents").innerHTML=events.length?events.slice(-9).map(row=>
+  '<div class="eventRow"><strong>'+time(row.time)+" · "+label[row.type]+'</strong>'+
+  '<div class="info">'+row.speed_kmh.toFixed(1)+" km/h · Gang "+row.gear+
+  " · "+Math.round(row.rpm)+" RPM · Stärke "+Math.round(row.intensity*100)+" %</div></div>").join(""):
+  '<div class="info">Noch keine GPS-Effekte ausgelöst.</div>';
+ show("photoFooter").textContent="Gültige Protokollpunkte: "+samples.length+
+  " · abgewiesene GPS-Meldungen: "+failures.length+
+  " · letzte "+Math.min(events.length,9)+" von "+events.length+
+  " automatischen Effekten. Keine Standortkoordinaten. "+
+  "Nach dem Parken diese Ansicht mit dem Handy fotografieren; "+
+  "beim Neuladen gehen die Daten verloren.";
+ show("photoReport").style.display="block";
+}
+$("photoShow").addEventListener("click",photoReport);
 function asCSV(){
  const header=["time","type","source","speed_kmh","accel_mps2","gear","rpm","accuracy_m","gps_hz","intensity"];
  const esc=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
@@ -348,7 +404,12 @@ function setManualEnabled(manual){
 }
 function stopGps(){
  if(window.VoltuneGps&&window.VoltuneGps.isActive())window.VoltuneGps.stop();
- if(gpsRunning)logEntry("GPS_stop","System");
+ if(gpsRunning){
+  logEntry("GPS_stop","System");
+  // Nach dem Abstellen sofort fotofähige Zusammenfassung anzeigen,
+  // ohne Datenübertragung oder Zugriff auf Tesla-Browser-Downloads.
+  photoReport();
+ }
  gpsRunning=false;gpsLastFix=0;gpsLastGood=0;gpsLastSpeed=null;
  gpsPreviousGear=null;gpsPreviousLoad=.13;gpsStaleReported=false;gpsCurrentRpm=null;
  if(gpsWatchdog){clearInterval(gpsWatchdog);gpsWatchdog=0;}
