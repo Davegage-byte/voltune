@@ -59,6 +59,13 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
     this.evAirLP = 0;
     this.evBreathPhase = 0;
     this.evColor = 0;
+    // DC-Sperre NACH der nichtlinearen Sättigung:
+    // Unsymmetrische Zündimpulse können sonst Gleichanteile erzeugen.
+    this.outPrevL = 0;
+    this.outPrevR = 0;
+    this.outHpL = 0;
+    this.outHpR = 0;
+    this.outHpCoef = Math.exp(-2 * Math.PI * 16 / sr);
 
     this.port.onmessage = (event) => {
       if (!event.data || event.data.type !== "preset") return;
@@ -224,10 +231,14 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
 
       const engineL = (acoustic[0] * 0.78 + acoustic[1] * 0.22) * this.engineMix;
       const engineR = (acoustic[1] * 0.78 + acoustic[0] * 0.22) * this.engineMix;
-      left[i] = Math.tanh((engineL + this.evMix * ev * 0.74) * 1.2) * 0.70;
-      if (right !== left) {
-        right[i] = Math.tanh((engineR + this.evMix * ev * 0.74) * 1.2) * 0.70;
-      }
+      const rawL = Math.tanh((engineL + this.evMix * ev * 0.74) * 1.2) * 0.70;
+      const rawR = Math.tanh((engineR + this.evMix * ev * 0.74) * 1.2) * 0.70;
+      const highL = rawL - this.outPrevL + this.outHpCoef * this.outHpL;
+      const highR = rawR - this.outPrevR + this.outHpCoef * this.outHpR;
+      this.outPrevL = rawL; this.outPrevR = rawR;
+      this.outHpL = highL; this.outHpR = highR;
+      left[i] = highL;
+      if (right !== left) right[i] = highR;
     }
     return true;
   }
