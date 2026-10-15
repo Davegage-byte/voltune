@@ -60,3 +60,33 @@ Für einen ersten Praxisversuch genügen Kopfhörer-/Standtest und die live erfa
 ## Weitere Arbeit
 
 Bei überzeugendem Hörtest die neuen Event- und Motorsound-Arten als **zusätzliche auswählbare Engine** in der produktiven Voltune-Dev-App integrieren; die alten Sounds inklusive Wankel und bisherigen Schalt-/Schub-Effekten dauerhaft auswählbar lassen.
+
+
+## Lenkrad-/Mediensteuerung (optional, 15.10.2026)
+
+Zur GPS-Testseite wurde ein eigener Opt-in-Modus **„Medien-/Lenkradsteuerung aktivieren“** ergänzt. Standardmäßig **aus**, um Teslas normale Medientasten nicht zu kapern.
+
+Bedienung beim Tesla Model 3:
+- Das **linke Scrollrad seitlich nach rechts drücken** (normalerweise „nächster Song“) → nächstes Klangprofil.
+- Nach links drücken → vorheriges Klangprofil.
+- **Hoch-/Runterrollen verändert weiterhin die Fahrzeuglautstärke**; diese Funktion wird nicht von der Webseite abgefangen.
+
+Implementation:
+- \`navigator.mediaSession.setActionHandler("nexttrack" / "previoustrack")\`
+- Metadaten zeigen jeweils das aktuell gewählte Profil.
+- Alternativ werden \`MediaTrackNext\` / \`MediaTrackPrevious\` und bei nicht fokussierten Formularen Pfeiltasten-Events unterstützt.
+- Ein von einer Nutzeraktion gestarteter \`Audio\`-Player spielt den echten Worklet-Ausgang über \`MediaStreamAudioDestinationNode\` ab. Hintergrund: Manche Chromium-/Android-Browser aktivieren die Medientasten für reines Web Audio nicht.
+- Wird die Audio-Bridge nicht unterstützt oder das Abspielen verweigert, verbleibt der Sound auf dem normalen Web-Audio-Ausgang. Die Testtasten auf dem Bildschirm funktionieren stets.
+- Beim Ausschalten schaltet die Audioausgabe wieder auf den originalen \`AudioContext.destination\` um. Die Media-Action-Handler werden entfernt.
+- Profilwechsel werden mit einer 260-ms-Sperre gegen Doppelbefehle geschützt.
+- Profilwechsel erhalten laufende Audio-/GPS-Verarbeitung und die Effekte; kein Neuladen der Seite.
+- Im UI stehen „Vorheriger Sound“ und „Nächster Sound“ als verlässliche Testtasten sowie ein Empfangs-/Statusindikator.
+
+**Nicht bestätigt:** Die interne Technik von rupteur.app ist nicht öffentlich einsehbar. Der Tesla-Browser muss erst im Fahrzeug getestet werden, um zu prüfen, ob die linken Lenkradtasten ihre Mediensignale der Webseite zur Verfügung stellen. Ein erfolgreich registrierter MediaSession-Handler beweist dies nicht. Keine CAN-/Tesla-Fleet-API-Verbindung notwendig.
+
+Sicherheit: Die Audioausgabe kann über ein HTML-Audio-Element etwas mehr Latenz aufweisen. Musik-Medienbefehle könnten in diesem Testmodus von Voltune übernommen werden. Nur bei stehendem Fahrzeug einschalten bzw. konfigurieren und die Funkionalität gefahrlos prüfen.
+
+Informationsquellen:
+- Tesla Model 3 Handbuch: https://www.tesla.com/ownersmanual/2017_2023_model3/en_ae/GUID-DEB259CC-ABAC-4BFC-8D10-B7B1BBCFCB1F.html
+- Browser Media Session: https://developer.mozilla.org/en-US/docs/Web/API/MediaSession/setActionHandler
+- Rupteur-Produktbeschreibung: https://rupteur.app/de/
