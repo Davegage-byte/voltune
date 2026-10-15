@@ -89,10 +89,13 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
  <input id="steeringEnabled" type="checkbox">
  <label for="steeringEnabled">Medien-/Lenkradsteuerung aktivieren (experimentell)</label>
 </div>
-<div class="small">Beim Model 3 das <strong>linke Scrollrad seitlich drücken</strong>: rechts = nächster Sound, links = vorheriger Sound. Rollen verändert weiterhin die Fahrzeuglautstärke. Zuerst im Stand testen. Während dieser Modus aktiv ist, können die Musiktitel-Tasten statt der Musik die Soundprofile steuern.</div>
+<div class="small"><strong>Neu: Linkes Scrollrad mittig klicken → nächstes Soundprofil.</strong> Alternativ weiterhin seitlich rechts kippen → nächster Sound und links kippen → vorheriger Sound. Hoch-/Runterrollen bleibt Fahrzeuglautstärke. Nur im Stand aktivieren und prüfen. Der mittige Klick übernimmt während des Tests die normale Play/Pause-Funktion.</div>
 <div class="buttons">
  <button id="profilePrev">◀ Vorheriger Sound</button>
  <button id="profileNext">Nächster Sound ▶</button>
+</div>
+<div class="buttons one">
+ <button id="profileClickTest">● Lenkrad-Klick simulieren</button>
 </div>
 <div class="small" id="steerStatus" aria-live="polite">Lenkradsteuerung aus. Profilwechsel per Bildschirm sind jederzeit möglich.</div>
 <hr>
@@ -298,10 +301,11 @@ function update(rpm,load){
  apply();
 }
 
-// Tesla: Linkes Scrollrad nach rechts/links drückt normalerweise
-// Media "nächster/vorheriger Titel". Keine Fahrzeug-/CAN-Abfrage.
-// Die MediaSession ist optional, weil Browser dieses Signal
-// nicht notwendigerweise an Webseiten weiterreichen.
+// Tesla Model 3, linkes Scrollrad:
+// Mitte = Media play/pause, seitlich = nexttrack / previoustrack.
+// Diese Befehle kommen über MediaSession und ggf. Keyboard-MediaKeys.
+// Kein Zugriff auf CAN, Fahrzeugsteuerung oder das Scrollrad selbst.
+// Ob der Tesla-Browser Aktionen weiterleitet, ist im Auto zu verifizieren.
 function steeringLabel(message){
  $("steerStatus").textContent=message;
 }
@@ -337,6 +341,24 @@ function rotateProfile(direction,origin){
  if(origin!=="Bildschirm"&&origin!=="Testtaste")steeringCount++;
  setProfile(options[next].value,origin);
 }
+function keepMediaPlaying(){
+ // Der Klick ist normalerweise Play/Pause. Im Testmodus soll er
+ // ausschließlich das Profil wechseln und den Sound nicht abschalten.
+ if(steeringAudio&&steeringAudio.paused){
+  try{
+   const result=steeringAudio.play();
+   if(result&&typeof result.catch==="function")
+    result.catch(()=>steeringLabel("Medienwiedergabe wurde pausiert. Sound ggf. per Bildschirm neu starten."));
+  }catch(_){}
+ }
+ try{
+  if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";
+ }catch(_){}
+}
+function wheelClick(origin){
+ rotateProfile(1,origin);
+ if(steeringOn)keepMediaPlaying();
+}
 function steeringKeyHandler(e){
  if(!steeringOn||!e)return;
  if(e.altKey||e.ctrlKey||e.metaKey)return;
@@ -346,12 +368,16 @@ function steeringKeyHandler(e){
    e.key==="MediaNextTrack"||e.keyCode===176;
  const previous=e.code==="MediaTrackPrevious"||e.key==="MediaTrackPrevious"||
    e.key==="MediaPreviousTrack"||e.keyCode===177;
+ const click=["MediaPlayPause","MediaPlay","MediaPause"].includes(e.code)||
+   ["MediaPlayPause","MediaPlay","MediaPause","PlayPause"].includes(e.key)||
+   e.keyCode===179;
  // Einige eingebettete Browser liefern Pfeiltasten statt Medientasten.
  const arrowNext=e.key==="ArrowRight"&&!editing;
  const arrowPrevious=e.key==="ArrowLeft"&&!editing;
- if(!next&&!previous&&!arrowNext&&!arrowPrevious)return;
+ if(!next&&!previous&&!arrowNext&&!arrowPrevious&&!click)return;
  if(typeof e.preventDefault==="function")e.preventDefault();
- rotateProfile(next||arrowNext?1:-1,"Tastatur-/Lenkradbefehl");
+ if(click)wheelClick("Lenkrad-Klick / Tastatur");
+ else rotateProfile(next||arrowNext?1:-1,"Tastatur-/Lenkradbefehl");
 }
 function registerSteeringHandlers(){
  if(!steeringKeyListener){
@@ -366,9 +392,18 @@ function registerSteeringHandlers(){
    available++;
   }catch(_){}
  }
+ // Der zentrale Scrollrad-Klick wird als Play- oder Pause-Aktion
+ // geliefert. Beide sollen EINEN Schritt nach vorne auslösen.
+ // Doppel-Events werden von der gemeinsamen 260-ms-Sperre gefiltert.
+ for(const action of ["play","pause"]){
+  try{
+   navigator.mediaSession.setActionHandler(action,()=>wheelClick("Lenkrad-Klick ("+action+")"));
+   available++;
+  }catch(_){}
+ }
  profileMetadata();
  try{navigator.mediaSession.playbackState="playing";}catch(_){}
- return available===2;
+ return available>0;
 }
 function unregisterSteeringHandlers(){
  if(steeringKeyListener){
@@ -376,7 +411,7 @@ function unregisterSteeringHandlers(){
   steeringKeyListener=false;
  }
  if(navigator.mediaSession&&typeof navigator.mediaSession.setActionHandler==="function"){
-  for(const name of ["nexttrack","previoustrack"]){
+  for(const name of ["nexttrack","previoustrack","play","pause"]){
    try{navigator.mediaSession.setActionHandler(name,null);}catch(_){}
   }
   try{navigator.mediaSession.playbackState="none";}catch(_){}
@@ -406,7 +441,7 @@ async function enableSteering(){
  steeringOn=true;
  const supported=registerSteeringHandlers();
  if(!supported){
-  steeringLabel("MediaSession eingeschränkt/nicht verfügbar. Tastaturbefehle und Testtasten bleiben nutzbar.");
+  steeringLabel("MediaSession eingeschränkt/nicht verfügbar. Testtasten bleiben nutzbar; Lenkrad-Klick ggf. nicht empfangbar.");
   return;
  }
  // Chromium unter Android erkennt reines WebAudio teilweise NICHT als
@@ -425,7 +460,7 @@ async function enableSteering(){
   await audio.play();
   if(!steeringOn){try{master.disconnect(sink);}catch(_){}return;}
   master.disconnect(ctx.destination);
-  steeringLabel("MediaSession + Audio-Ausgabe aktiviert. Im Tesla links/rechts testen; Befehle: "+steeringCount+".");
+  steeringLabel("Medienmodus bereit: im Stand mittig klicken oder links/rechts kippen. Empfangene Befehle: "+steeringCount+".");
  }catch(error){
   if(steeringStream&&master){try{master.disconnect(steeringStream);}catch(_){}}
   if(steeringAudio){try{steeringAudio.pause();steeringAudio.srcObject=null;steeringAudio.remove();}catch(_){}}
@@ -436,6 +471,7 @@ async function enableSteering(){
 }
 $("profilePrev").addEventListener("click",()=>rotateProfile(-1,"Testtaste"));
 $("profileNext").addEventListener("click",()=>rotateProfile(1,"Testtaste"));
+$("profileClickTest").addEventListener("click",()=>wheelClick("Testtaste"));
 $("steeringEnabled").addEventListener("change",()=>{
  if($("steeringEnabled").checked)enableSteering();
  else disableSteering();
