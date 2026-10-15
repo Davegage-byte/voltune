@@ -137,7 +137,7 @@ let demoFrame=0,demoStart=0,demoFlags=0;
 let timeouts=[];
 let gpsRunning=false,gpsLastFix=0,gpsLastGood=0,gpsLastSpeed=null;
 let gpsPreviousGear=null,gpsPreviousLoad=.13,gpsLastShift=0,gpsLastPop=0;
-let gpsWatchdog=0,gpsStaleReported=false;
+let gpsWatchdog=0,gpsStaleReported=false,gpsCurrentRpm=null;
 const flightLog=[];
 let lastSampleLogged=0,lastInvalidLogged=0,loggedEvents=0;
 const LOG_CAP=10000;
@@ -148,7 +148,7 @@ function logEntry(type,source,intensity="",extra={}){
   speed_kmh:Number(value("gpsSpeed"))||0,
   accel_mps2:Number.isFinite(extra.accel)?extra.accel:"",
   gear:value("gpsGear"),
-  rpm:Number($("rpm").value)||0,
+  rpm:Number.isFinite(extra.rpm)?Math.round(extra.rpm):Number($("rpm").value)||0,
   accuracy_m:Number.isFinite(extra.accuracy)?extra.accuracy:"",
   gps_hz:Number.isFinite(extra.hz)?extra.hz:"",
   intensity:Number.isFinite(intensity)?intensity:""
@@ -236,7 +236,7 @@ function sendEvent(type,intensity=.85,source="Manueller Test"){
  if(type==="overrun"&&Number($("popStrength").value)===0)return;
  if(type!=="overrun"&&Number($("shiftStrength").value)===0)return;
  events.port.postMessage({type,intensity});
- logEntry(type,source,intensity);
+ logEntry(type,source,intensity,source==="GPS Automatik"?{rpm:gpsCurrentRpm}:{});
 }
 async function start(){
  if(busy||ctx)return;busy=true;$("start").disabled=true;status("Audio-Module werden geladen …");
@@ -350,7 +350,7 @@ function stopGps(){
  if(window.VoltuneGps&&window.VoltuneGps.isActive())window.VoltuneGps.stop();
  if(gpsRunning)logEntry("GPS_stop","System");
  gpsRunning=false;gpsLastFix=0;gpsLastGood=0;gpsLastSpeed=null;
- gpsPreviousGear=null;gpsPreviousLoad=.13;gpsStaleReported=false;
+ gpsPreviousGear=null;gpsPreviousLoad=.13;gpsStaleReported=false;gpsCurrentRpm=null;
  if(gpsWatchdog){clearInterval(gpsWatchdog);gpsWatchdog=0;}
  $("gpsStart").disabled=false;
  $("gpsStop").disabled=true;
@@ -385,16 +385,13 @@ function onGpsUpdate(data){
   }
   return;
  }
- if(now-lastSampleLogged>=1000){
-  lastSampleLogged=now;
-  logEntry("GPS_sample","GPS","",{accel,accuracy,hz});
- }
  gpsStaleReported=false;
  gpsLastGood=now;gpsLastSpeed=speed;
  const trans=window.VoltuneDrivetrain.update(speed,accel,driveConfig);
  const gear=trans.gear;
  $("gpsGear").textContent=String(gear);
  const rpm=clamp(trans.rpm,800,8500);
+ gpsCurrentRpm=rpm;
  const demand=accel>=.2 ? clamp(.24+accel*.28,.24,.94)
    : accel<=-.30 ? .055
    : speed<=2 ?.13 : .24;
@@ -422,6 +419,10 @@ function onGpsUpdate(data){
    status("GPS: deutlicher Lastabfall – kurzer Schubimpuls.");
  }
  update(rpm,demand);
+ if(now-lastSampleLogged>=1000){
+  lastSampleLogged=now;
+  logEntry("GPS_sample","GPS","",{accel,accuracy,hz,rpm});
+ }
 }
 async function startGps(){
  if(gpsRunning)return;
