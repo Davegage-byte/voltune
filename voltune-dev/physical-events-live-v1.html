@@ -72,6 +72,8 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <div class="control"><label for="rpm">Virtuelle Drehzahl <output id="rpmText">3500 RPM</output></label><input id="rpm" type="range" min="700" max="8500" step="10" value="3500"></div>
 <div class="control"><label for="load">Virtuelle Motorlast <output id="loadText">65 %</output></label><input id="load" type="range" min="0" max="100" value="65"></div>
 <div class="control"><label for="volume">Lautstärke <output id="volumeText">25 %</output></label><input id="volume" type="range" min="0" max="100" value="25"></div>
+<div class="control"><label for="musicBoost">Musik-Boost (alle Soundprofile) <output id="musicBoostText">+8 dB</output></label><input id="musicBoost" type="range" min="0" max="12" step="1" value="8"></div>
+<div class="small">Gemeinsamer Pegel-Boost für alle zehn Sounds, unabhängig von der Musik-Lautstärke. Standard: +8 dB (ca. 2,5-fache Signalamplitude). +12 dB ist die Test-Obergrenze. Ein Sicherheitsdeckel begrenzt den maximalen Browser-Ausgangspegel, daher kann der Effekt bei sehr hoher Hauptlautstärke geringer sein. Keine Änderung der Klangprofile.</div>
 <div class="control" id="hybridWrap">
  <label for="evBlend">Hybrid EV-Anteil <output id="evBlendText">25 %</output></label>
  <input id="evBlend" type="range" min="0" max="100" value="25">
@@ -271,7 +273,8 @@ const driveConfig={maxRpm:6500,gearRange:270,shiftRpm:6000,gearsEnabled:true,dyn
 const track=(fn,delay)=>{const t=setTimeout(fn,delay);timeouts.push(t);};
 const status=(msg)=>{$("status").textContent=msg;};
 function syncUI(){
- for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["amgHighs","amgHighsText"," %"],["evBlend","evBlendText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
+ for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["musicBoost","musicBoostText"," dB"],["amgHighs","amgHighsText"," %"],["evBlend","evBlendText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
+ $("musicBoostText").textContent="+"+$("musicBoost").value+" dB";
  $("readRpm").textContent=$("rpm").value;
  $("rpmMeter").style.width=clamp(Number($("rpm").value)/8500*100,0,100)+"%";
  $("amgHighs").disabled=$("preset").value!=="amg";
@@ -299,7 +302,15 @@ function apply(){
  events.parameters.get("shiftLevel").setTargetAtTime(eventScale($("shiftStrength").value,.7,1.75),at,.03);
  events.parameters.get("popLevel").setTargetAtTime(eventScale($("popStrength").value,.65,2.0),at,.03);
  events.parameters.get("muffling").setTargetAtTime(Number($("muffling").value)/100,at,.03);
- master.gain.setTargetAtTime(Math.pow(Number($("volume").value)/100,1.6)*.75,at,.04);
+ // Lautstärke aller Profile im selben Verhältnis verstärken.
+ // Der bestehende Events-Prozessor begrenzt normalerweise auf ±0,96.
+ // Master-Gain bleibt <=0,90: bei hohen Lautstärken reduziert dies
+ // automatisch die mögliche Boost-Wirkung gegen digitales Clipping.
+ const volume=clamp(Number($("volume").value)/100,0,1);
+ const boostDb=clamp(Number($("musicBoost").value),0,12);
+ const boost=Math.pow(10,boostDb/20);
+ const safeMaster=Math.min(.90,Math.pow(volume,1.6)*.75*boost);
+ master.gain.setTargetAtTime(safeMaster,at,.055);
  // AMG-Hochtonabsenkung ist kein Umbau am Preset, sondern ein schaltbares EQ.
  amgEq.gain.setTargetAtTime($("preset").value==="amg"?-11*Number($("amgHighs").value)/100:0,at,.055);
  profileGain.gain.setTargetAtTime($("preset").value==="hybrid"?2:1,at,.08);
@@ -785,7 +796,7 @@ $("bypass").addEventListener("change",()=>{
  if(events)events.port.postMessage({type:"bypass",value:$("bypass").checked});
  status($("bypass").checked?"Neue Effekte überbrückt – Basismotor läuft.":"Neue Effekte aktiviert.");
 });
-for(const id of ["rpm","load","volume","amgHighs","evBlend","shiftStrength","popStrength","muffling"]){
+for(const id of ["rpm","load","volume","musicBoost","amgHighs","evBlend","shiftStrength","popStrength","muffling"]){
  $(id).addEventListener("input",()=>{
   // Keine laufende Demo oder GPS-Fahrt mehr unterbrechen!
   // RPM/Last sind im manuellen Demo-Modus für 2 Sekunden übersteuerbar.
