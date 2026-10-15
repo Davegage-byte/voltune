@@ -167,10 +167,12 @@ function makeTone(){
  }
  return new Blob([buffer],{type:"audio/wav"});
 }
-async function stop(){
+function stop(){
+ // Audio.play() muss im selben Nutzerklick stattfinden. Deshalb gibt
+ // es vor dem Neustart keinen await/async-Schritt im Cleanup.
  try{audio.pause();audio.removeAttribute("src");audio.srcObject=null;audio.load();}catch(_){}
  if(osc){try{osc.stop();}catch(_){}try{osc.disconnect();}catch(_){}osc=null;}
- if(ctx){try{await ctx.close();}catch(_){}ctx=null;sink=null;}
+ if(ctx){try{const closed=ctx.close();if(closed?.catch)closed.catch(()=>{});}catch(_){}ctx=null;sink=null;}
  if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null;}
  mode="aus";
  $("status").textContent="Testton gestoppt.";
@@ -178,7 +180,7 @@ async function stop(){
  render();
 }
 async function playHtml(){
- await stop();
+ stop();
  mode="HTML-Audio";
  try{
   blobUrl=URL.createObjectURL(makeTone());
@@ -195,7 +197,7 @@ async function playHtml(){
  render();
 }
 async function playStream(){
- await stop();
+ stop();
  mode="WebAudio-Stream";
  try{
   const Context=window.AudioContext||window.webkitAudioContext;
