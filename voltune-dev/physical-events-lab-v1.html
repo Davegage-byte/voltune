@@ -66,7 +66,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <div class="control" id="hybridWrap">
  <label for="evBlend">Hybrid EV-Anteil <output id="evBlendText">25 %</output></label>
  <input id="evBlend" type="range" min="0" max="100" value="25">
- <div class="small">Nur im Hybrid aktiv. So kannst du testen, ob die Schalt- und Abgasereignisse mit verschieden starkem EV-Klang harmonieren.</div>
+ <div class="small">Nur im Hybrid aktiv. EV-/V8-Mischung frei regelbar. <strong>Hybrid im Labor etwa +6 dB lauter</strong>, andere Profile unverändert.</div>
 </div>
 <div class="control" id="amgWrap">
  <label for="amgHighs">AMG: helles Knistern reduzieren <output id="amgHighsText">55 %</output></label>
@@ -108,7 +108,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 "use strict";
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
-let ctx=null,engine=null,events=null,master=null,amgEq=null,busy=false;
+let ctx=null,engine=null,events=null,master=null,amgEq=null,profileGain=null,busy=false;
 let demoFrame=0,demoStart=0,demoFlags=0,demoOverrideUntil=0;
 let timeouts=[];
 const track=(fn,delay)=>{const t=setTimeout(fn,delay);timeouts.push(t);};
@@ -139,6 +139,7 @@ function apply(){
  master.gain.setTargetAtTime(Math.pow(Number($("volume").value)/100,1.6)*.75,at,.04);
  // AMG-Hochtonabsenkung ist kein Umbau am Preset, sondern ein schaltbares EQ.
  amgEq.gain.setTargetAtTime($("preset").value==="amg"?-11*Number($("amgHighs").value)/100:0,at,.055);
+ profileGain.gain.setTargetAtTime($("preset").value==="hybrid"?2:1,at,.08);
 }
 function update(rpm,load){
  $("rpm").value=String(clamp(Math.round(rpm/10)*10,700,8500));
@@ -170,7 +171,9 @@ async function start(){
   limiter.threshold.value=-11;limiter.knee.value=4;limiter.ratio.value=7;
   limiter.attack.value=.003;limiter.release.value=.12;
   master=ctx.createGain();master.gain.value=0;
-  engine.connect(amgEq).connect(events).connect(limiter).connect(master).connect(ctx.destination);
+  // Der +6-dB-Ausgleich gilt nur dem Hybrid. Die v0.4-Engine bleibt original.
+  profileGain=ctx.createGain();profileGain.gain.value=1;
+  engine.connect(amgEq).connect(profileGain).connect(events).connect(limiter).connect(master).connect(ctx.destination);
   engine.onprocessorerror=()=>status("Fehler: Motorsound-Worklet gestoppt.");
   events.onprocessorerror=()=>status("Fehler: Ereignis-Worklet gestoppt.");
   apply();
@@ -179,7 +182,7 @@ async function start(){
  }catch(error){
   status("Startfehler: "+(error.message||error));
   if(ctx){try{await ctx.close();}catch(_){}}
-  ctx=null;engine=null;events=null;master=null;amgEq=null;$("start").disabled=false;
+  ctx=null;engine=null;events=null;master=null;amgEq=null;profileGain=null;$("start").disabled=false;
  }finally{busy=false;}
 }
 async function stop(){
@@ -192,7 +195,7 @@ async function stop(){
   }
   await ctx.close();status("Sound gestoppt.");
  }catch(error){status("Stopfehler: "+(error.message||error));}
- finally{ctx=null;engine=null;events=null;master=null;amgEq=null;busy=false;$("start").disabled=false;}
+ finally{ctx=null;engine=null;events=null;master=null;amgEq=null;profileGain=null;busy=false;$("start").disabled=false;}
 }
 function up(){
  if(!engine)return;cancelDemo();cancelPending();
