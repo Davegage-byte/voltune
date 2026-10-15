@@ -84,6 +84,18 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 </div>
 <div class="buttons"><button class="primary" id="start">▶ Sound starten</button><button id="stop" disabled>■ Stoppen</button></div>
 <hr>
+<h2>Lenkrad · Soundprofil wechseln <span class="pill">TESLA-TEST</span></h2>
+<div class="control checkboxline">
+ <input id="steeringEnabled" type="checkbox">
+ <label for="steeringEnabled">Medien-/Lenkradsteuerung aktivieren (experimentell)</label>
+</div>
+<div class="small">Beim Model 3 das <strong>linke Scrollrad seitlich drücken</strong>: rechts = nächster Sound, links = vorheriger Sound. Rollen verändert weiterhin die Fahrzeuglautstärke. Zuerst im Stand testen. Während dieser Modus aktiv ist, können die Musiktitel-Tasten statt der Musik die Soundprofile steuern.</div>
+<div class="buttons">
+ <button id="profilePrev">◀ Vorheriger Sound</button>
+ <button id="profileNext">Nächster Sound ▶</button>
+</div>
+<div class="small" id="steerStatus" aria-live="polite">Lenkradsteuerung aus. Profilwechsel per Bildschirm sind jederzeit möglich.</div>
+<hr>
 <h2>Live-GPS-Fahrt</h2>
 <p>Live-Daten aus dem bestehenden Voltune-GPS-Modul. Das virtuelle Getriebe reagiert auf Geschwindigkeit und Beschleunigung.</p>
 <div class="buttons"><button class="primary" id="gpsStart">▶ Live-Fahrt starten</button><button id="gpsStop" disabled>■ GPS beenden</button></div>
@@ -151,6 +163,9 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 let ctx=null,engine=null,events=null,master=null,amgEq=null,busy=false;
+let steeringOn=false,steeringAudio=null,steeringStream=null,steeringCount=0;
+let lastSteeringAt=-999999,steeringKeyListener=false;
+const STEERING_GUARD_MS=260;
 let demoFrame=0,demoStart=0,demoFlags=0,demoOverrideUntil=0;
 let timeouts=[];
 let gpsRunning=false,gpsLastFix=0,gpsLastGood=0,gpsLastSpeed=null;
@@ -282,6 +297,150 @@ function update(rpm,load){
  $("load").value=String(clamp(Math.round(load*100),0,100));
  apply();
 }
+
+// Tesla: Linkes Scrollrad nach rechts/links drückt normalerweise
+// Media "nächster/vorheriger Titel". Keine Fahrzeug-/CAN-Abfrage.
+// Die MediaSession ist optional, weil Browser dieses Signal
+// nicht notwendigerweise an Webseiten weiterreichen.
+function steeringLabel(message){
+ $("steerStatus").textContent=message;
+}
+function profileMetadata(){
+ if(!steeringOn||!navigator.mediaSession)return;
+ if(typeof window.MediaMetadata!=="function")return;
+ try{
+  navigator.mediaSession.metadata=new window.MediaMetadata({
+   title:$("preset").selectedOptions[0].textContent,
+   artist:"Voltune · Physical Engine",
+   album:"Soundprofil-Test"
+  });
+ }catch(_){}
+}
+function setProfile(value,origin="Bildschirm"){
+ if(!$("preset").querySelector('option[value="'+value+'"]'))return;
+ $("preset").value=value;
+ cancelPending();
+ if(engine)engine.port.postMessage({type:"preset",value});
+ apply();profileMetadata();
+ if(steeringOn){
+  const label=$("preset").selectedOptions[0].textContent;
+  steeringLabel(origin+" · "+label+" · empfangene Medienbefehle: "+steeringCount);
+ }
+}
+function rotateProfile(direction,origin){
+ const now=performance.now();
+ if(origin!=="Bildschirm"&&now-lastSteeringAt<STEERING_GUARD_MS)return;
+ if(origin!=="Bildschirm")lastSteeringAt=now;
+ const select=$("preset"),options=Array.from(select.options);
+ const index=options.findIndex(option=>option.value===select.value);
+ const next=(Math.max(0,index)+direction+options.length)%options.length;
+ if(origin!=="Bildschirm"&&origin!=="Testtaste")steeringCount++;
+ setProfile(options[next].value,origin);
+}
+function steeringKeyHandler(e){
+ if(!steeringOn||!e)return;
+ if(e.altKey||e.ctrlKey||e.metaKey)return;
+ const target=e.target;
+ const editing=target&&(/^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)||target.isContentEditable);
+ const next=e.code==="MediaTrackNext"||e.key==="MediaTrackNext"||
+   e.key==="MediaNextTrack"||e.keyCode===176;
+ const previous=e.code==="MediaTrackPrevious"||e.key==="MediaTrackPrevious"||
+   e.key==="MediaPreviousTrack"||e.keyCode===177;
+ // Einige eingebettete Browser liefern Pfeiltasten statt Medientasten.
+ const arrowNext=e.key==="ArrowRight"&&!editing;
+ const arrowPrevious=e.key==="ArrowLeft"&&!editing;
+ if(!next&&!previous&&!arrowNext&&!arrowPrevious)return;
+ if(typeof e.preventDefault==="function")e.preventDefault();
+ rotateProfile(next||arrowNext?1:-1,"Tastatur-/Lenkradbefehl");
+}
+function registerSteeringHandlers(){
+ if(!steeringKeyListener){
+  window.addEventListener("keydown",steeringKeyHandler,true);
+  steeringKeyListener=true;
+ }
+ if(!navigator.mediaSession||typeof navigator.mediaSession.setActionHandler!=="function")return false;
+ let available=0;
+ for(const [action,direction] of [["nexttrack",1],["previoustrack",-1]]){
+  try{
+   navigator.mediaSession.setActionHandler(action,()=>rotateProfile(direction,"Lenkrad/MediaSession"));
+   available++;
+  }catch(_){}
+ }
+ profileMetadata();
+ try{navigator.mediaSession.playbackState="playing";}catch(_){}
+ return available===2;
+}
+function unregisterSteeringHandlers(){
+ if(steeringKeyListener){
+  window.removeEventListener("keydown",steeringKeyHandler,true);
+  steeringKeyListener=false;
+ }
+ if(navigator.mediaSession&&typeof navigator.mediaSession.setActionHandler==="function"){
+  for(const name of ["nexttrack","previoustrack"]){
+   try{navigator.mediaSession.setActionHandler(name,null);}catch(_){}
+  }
+  try{navigator.mediaSession.playbackState="none";}catch(_){}
+ }
+}
+function disableSteering(){
+ steeringOn=false;
+ unregisterSteeringHandlers();
+ if(steeringStream&&master&&ctx){
+  try{master.connect(ctx.destination);}catch(_){}
+  try{master.disconnect(steeringStream);}catch(_){}
+ }
+ if(steeringAudio){
+  try{steeringAudio.pause();steeringAudio.srcObject=null;steeringAudio.remove();}catch(_){}
+ }
+ steeringStream=null;steeringAudio=null;
+ $("steeringEnabled").checked=false;
+ steeringLabel("Lenkradsteuerung aus. Normale Audioausgabe aktiv.");
+}
+async function enableSteering(){
+ if(steeringOn)return;
+ if(!ctx||!master||ctx.state!=="running"){
+  $("steeringEnabled").checked=false;
+  steeringLabel("Zuerst den Motorsound starten, dann die Lenkradsteuerung aktivieren.");
+  return;
+ }
+ steeringOn=true;
+ const supported=registerSteeringHandlers();
+ if(!supported){
+  steeringLabel("MediaSession eingeschränkt/nicht verfügbar. Tastaturbefehle und Testtasten bleiben nutzbar.");
+  return;
+ }
+ // Chromium unter Android erkennt reines WebAudio teilweise NICHT als
+ // Mediaplayer. Daher optional eine echte MediaStream -> Audio-Ausgabe.
+ // Falls Tesla diese Brücke nicht unterstützt: unverändertes WebAudio.
+ try{
+  if(typeof ctx.createMediaStreamDestination!=="function")throw Error("MediaStream-Audio nicht verfügbar");
+  const sink=ctx.createMediaStreamDestination();
+  const audio=document.createElement("audio");
+  audio.autoplay=true;audio.playsInline=true;
+  audio.srcObject=sink.stream;
+  audio.style.display="none";
+  document.body.appendChild(audio);
+  steeringStream=sink;steeringAudio=audio;
+  master.connect(sink);
+  await audio.play();
+  if(!steeringOn){try{master.disconnect(sink);}catch(_){}return;}
+  master.disconnect(ctx.destination);
+  steeringLabel("MediaSession + Audio-Ausgabe aktiviert. Im Tesla links/rechts testen; Befehle: "+steeringCount+".");
+ }catch(error){
+  if(steeringStream&&master){try{master.disconnect(steeringStream);}catch(_){}}
+  if(steeringAudio){try{steeringAudio.pause();steeringAudio.srcObject=null;steeringAudio.remove();}catch(_){}}
+  steeringStream=null;steeringAudio=null;
+  steeringLabel("Audio bleibt über WebAudio aktiv. Medienbrücke nicht unterstützt: "+
+    (error.message||"Browserfehler")+". Lenkradbefehle möglicherweise nicht verfügbar.");
+ }
+}
+$("profilePrev").addEventListener("click",()=>rotateProfile(-1,"Testtaste"));
+$("profileNext").addEventListener("click",()=>rotateProfile(1,"Testtaste"));
+$("steeringEnabled").addEventListener("change",()=>{
+ if($("steeringEnabled").checked)enableSteering();
+ else disableSteering();
+});
+
 function cancelDemo(){
  if(demoFrame)cancelAnimationFrame(demoFrame);
  demoFrame=0;demoFlags=0;demoOverrideUntil=0;
@@ -321,12 +480,14 @@ async function start(){
   status("Sound läuft. Du kannst einzelne Ereignisse testen.");
  }catch(error){
   status("Startfehler: "+(error.message||error));
+  disableSteering();
   if(ctx){try{await ctx.close();}catch(_){}}
   ctx=null;engine=null;events=null;master=null;amgEq=null;$("start").disabled=false;
  }finally{busy=false;}
 }
 async function stop(){
  if(busy||!ctx)return;busy=true;stopGps();cancelDemo();cancelPending();
+ disableSteering();
  for(const id of ["stop","up","down","overrun","demo"])$(id).disabled=true;
  try{
   if(ctx.state==="running"){
@@ -532,10 +693,9 @@ $("down").addEventListener("click",down);
 $("overrun").addEventListener("click",overrun);
 $("demo").addEventListener("click",playDemo);
 $("preset").addEventListener("change",()=>{
- // Motorwechsel im laufenden Hörtest ohne Neustart.
- cancelPending();
- if(engine)engine.port.postMessage({type:"preset",value:$("preset").value});
- apply();
+ // Motorwechsel im laufenden Hörtest ohne Neustart,
+ // identisch zum Profilwechsel über das Lenkrad.
+ setProfile($("preset").value,"Bildschirm");
 });
 $("bypass").addEventListener("change",()=>{
  if(events)events.port.postMessage({type:"bypass",value:$("bypass").checked});
