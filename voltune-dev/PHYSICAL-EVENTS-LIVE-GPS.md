@@ -67,12 +67,16 @@ Bei überzeugendem Hörtest die neuen Event- und Motorsound-Arten als **zusätzl
 Zur GPS-Testseite wurde ein eigener Opt-in-Modus **„Medien-/Lenkradsteuerung aktivieren“** ergänzt. Standardmäßig **aus**, um Teslas normale Medientasten nicht zu kapern.
 
 Bedienung beim Tesla Model 3:
-- Das **linke Scrollrad seitlich nach rechts drücken** (normalerweise „nächster Song“) → nächstes Klangprofil.
-- Nach links drücken → vorheriges Klangprofil.
+- **Neu:** Linkes Scrollrad **mittig drücken** (normalerweise „Play/Pause“) → nächstes Soundprofil.
+- Linkes Scrollrad **seitlich nach rechts kippen** → ebenfalls nächstes Profil.
+- Nach links kippen → vorheriges Profil.
 - **Hoch-/Runterrollen verändert weiterhin die Fahrzeuglautstärke**; diese Funktion wird nicht von der Webseite abgefangen.
 
 Implementation:
 - \`navigator.mediaSession.setActionHandler("nexttrack" / "previoustrack")\`
+- Zusätzlich behandelt `navigator.mediaSession.setActionHandler("play" / "pause")` den mittigen Klick: Beide Aktionen wechseln genau ein Soundprofil vorwärts; der Motorsound soll dabei weiterlaufen.
+- Fallback-Tasten `MediaPlayPause`, `MediaPlay`, `MediaPause` werden ebenfalls erkannt; eine 260-ms-Sperre schützt vor doppeltem Profilwechsel.
+- Bei eventuell pausiertem Medien-Audioelement wird die Wiedergabe erneut gestartet. Browser-/Tesla-Verhalten weiterhin im Fahrzeug zu verifizieren.
 - Metadaten zeigen jeweils das aktuell gewählte Profil.
 - Alternativ werden \`MediaTrackNext\` / \`MediaTrackPrevious\` und bei nicht fokussierten Formularen Pfeiltasten-Events unterstützt.
 - Ein von einer Nutzeraktion gestarteter \`Audio\`-Player spielt den echten Worklet-Ausgang über \`MediaStreamAudioDestinationNode\` ab. Hintergrund: Manche Chromium-/Android-Browser aktivieren die Medientasten für reines Web Audio nicht.
@@ -80,7 +84,7 @@ Implementation:
 - Beim Ausschalten schaltet die Audioausgabe wieder auf den originalen \`AudioContext.destination\` um. Die Media-Action-Handler werden entfernt.
 - Profilwechsel werden mit einer 260-ms-Sperre gegen Doppelbefehle geschützt.
 - Profilwechsel erhalten laufende Audio-/GPS-Verarbeitung und die Effekte; kein Neuladen der Seite.
-- Im UI stehen „Vorheriger Sound“ und „Nächster Sound“ als verlässliche Testtasten sowie ein Empfangs-/Statusindikator.
+- Im UI stehen „Vorheriger Sound“, „Nächster Sound“ und „Lenkrad-Klick simulieren“ als Testtasten sowie ein Empfangs-/Statusindikator.
 
 **Nicht bestätigt:** Die interne Technik von rupteur.app ist nicht öffentlich einsehbar. Der Tesla-Browser muss erst im Fahrzeug getestet werden, um zu prüfen, ob die linken Lenkradtasten ihre Mediensignale der Webseite zur Verfügung stellen. Ein erfolgreich registrierter MediaSession-Handler beweist dies nicht. Keine CAN-/Tesla-Fleet-API-Verbindung notwendig.
 
