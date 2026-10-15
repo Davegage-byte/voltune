@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080e15">
-<title>Voltune | Events Lab v0.1</title>
+<title>Voltune | Events Lab v0.1.1</title>
 <style>
 :root{color-scheme:dark;--bg:#07101a;--box:#121e2c;--line:#2c3d55;--txt:#edf4fc;--muted:#98aec3;--accent:#61bcff}
 *{box-sizing:border-box}
@@ -41,7 +41,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 </head>
 <body><main>
 <div class="eyebrow">Voltune · unabhängiges Soundlabor</div>
-<h1>Gearshift &amp; Overrun <span class="pill">EXPERIMENT v0.1</span></h1>
+<h1>Gearshift &amp; Overrun <span class="pill">EXPERIMENT v0.1.1</span></h1>
 <p>Neue, selbst erzeugte Effekte für Hochschalten, Runterschalten und Schubknallen – direkt mit dem laufenden Physical-Engine-Motorsound. Keine WAV-Dateien und keine Sägezahngeräusche. Unsere alte Voltune-Engine und alle Physical-Engine-Labs bleiben unangetastet.</p>
 <div class="note"><strong>Wichtig:</strong> Neues Klangexperiment, noch nicht im normalen Voltune aktiv. Bitte mit niedriger Lautstärke starten und zunächst am Kopfhörer testen. Im Auto nur im Stand bedienen.</div>
 <div class="grid">
@@ -49,16 +49,25 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <h2>Motor und Ausgang</h2>
 <label for="preset">Klangbasis aus Physical Engine v0.4</label>
 <select id="preset">
+ <option value="hybrid" selected>Hybrid EV + V8 · mit Schalt-/Schub-Effekten</option>
  <option value="amg">V8 AMG · tiefes Grundprofil</option>
  <option value="gti">R4 Golf GTI</option>
  <option value="italia">V12 Italia</option>
  <option value="v8">V8 Crossplane v0.2</option>
+ <option value="v4">V4 ungleichmäßig v0.3</option>
  <option value="v6">V6 v0.3</option>
  <option value="v12">V12 v0.3</option>
+ <option value="i5">Reihenfünfzylinder v0.2</option>
+ <option value="ev">EV · elektrische Textur v0.2</option>
 </select>
 <div class="control"><label for="rpm">Virtuelle Drehzahl <output id="rpmText">3500 RPM</output></label><input id="rpm" type="range" min="700" max="8500" step="10" value="3500"></div>
 <div class="control"><label for="load">Virtuelle Motorlast <output id="loadText">65 %</output></label><input id="load" type="range" min="0" max="100" value="65"></div>
 <div class="control"><label for="volume">Lautstärke <output id="volumeText">25 %</output></label><input id="volume" type="range" min="0" max="100" value="25"></div>
+<div class="control" id="hybridWrap">
+ <label for="evBlend">Hybrid EV-Anteil <output id="evBlendText">25 %</output></label>
+ <input id="evBlend" type="range" min="0" max="100" value="25">
+ <div class="small">Nur im Hybrid aktiv. So kannst du testen, ob die Schalt- und Abgasereignisse mit verschieden starkem EV-Klang harmonieren.</div>
+</div>
 <div class="control" id="amgWrap">
  <label for="amgHighs">AMG: helles Knistern reduzieren <output id="amgHighsText">55 %</output></label>
  <input id="amgHighs" type="range" min="0" max="100" value="55">
@@ -81,7 +90,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <div class="control"><label for="popStrength">Abgasimpulse <output id="popText">65 %</output></label><input id="popStrength" type="range" min="0" max="100" value="65"></div>
 <div class="control"><label for="muffling">Auspuffdämpfung <output id="mufflingText">55 %</output></label><input id="muffling" type="range" min="0" max="100" value="55"></div>
 <div class="control checkboxline"><input id="bypass" type="checkbox"><label for="bypass">Neue Effekte vollständig überbrücken (A/B)</label></div>
-<div class="small">Der Bypass lässt das originale Motorsignal unverändert durch den Effektprozessor. Der optionale AMG-Hochtonfilter bleibt davon unabhängig.</div>
+<div class="small">Der Bypass lässt das originale Motorsignal unverändert durch den Effektprozessor. Der AMG-Hochtonfilter bleibt davon unabhängig. Auch Hybrid EV + V8 bekommt Hochschalten, Runterschalten und Schubknallen; alle Klänge bleiben eigenständig auswählbar.</div>
 <hr>
 <div class="readout"><span id="readRpm">3500</span> <span style="font-size:14px;font-weight:400;color:#96aabe">RPM</span></div><div class="meter"><div id="rpmMeter"></div></div>
 <div class="small" id="hint">Hochschalten simuliert eine kurze Leistungsunterbrechung, Runterschalten einen Drehzahl-Blip und Schubknallen mehrere ausklingende Druckereignisse. Ein Hörtest entscheidet über die Klangqualität.</div>
@@ -104,11 +113,13 @@ let timeouts=[];
 const track=(fn,delay)=>{const t=setTimeout(fn,delay);timeouts.push(t);};
 const status=(msg)=>{$("status").textContent=msg;};
 function syncUI(){
- for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["amgHighs","amgHighsText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
+ for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["amgHighs","amgHighsText"," %"],["evBlend","evBlendText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
  $("readRpm").textContent=$("rpm").value;
  $("rpmMeter").style.width=clamp(Number($("rpm").value)/8500*100,0,100)+"%";
  $("amgHighs").disabled=$("preset").value!=="amg";
  $("amgWrap").style.opacity=$("preset").value==="amg"?"1":".5";
+ $("evBlend").disabled=$("preset").value!=="hybrid";
+ $("hybridWrap").style.opacity=$("preset").value==="hybrid"?"1":".5";
 }
 function apply(){
  syncUI();
@@ -116,6 +127,7 @@ function apply(){
  const at=ctx.currentTime;
  engine.parameters.get("rpm").setTargetAtTime(Number($("rpm").value),at,.045);
  engine.parameters.get("load").setTargetAtTime(Number($("load").value)/100,at,.035);
+ engine.parameters.get("evBlend").setTargetAtTime(Number($("evBlend").value)/100,at,.035);
  events.parameters.get("shiftLevel").setTargetAtTime(Number($("shiftStrength").value)/100,at,.03);
  events.parameters.get("popLevel").setTargetAtTime(Number($("popStrength").value)/100,at,.03);
  events.parameters.get("muffling").setTargetAtTime(Number($("muffling").value)/100,at,.03);
@@ -252,7 +264,7 @@ $("bypass").addEventListener("change",()=>{
  if(events)events.port.postMessage({type:"bypass",value:$("bypass").checked});
  status($("bypass").checked?"Neue Effekte überbrückt – Basismotor läuft.":"Neue Effekte aktiviert.");
 });
-for(const id of ["rpm","load","volume","amgHighs","shiftStrength","popStrength","muffling"]){
+for(const id of ["rpm","load","volume","amgHighs","evBlend","shiftStrength","popStrength","muffling"]){
  $(id).addEventListener("input",()=>{if(demoFrame){cancelDemo();cancelPending();}apply();});
 }
 syncUI();
