@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080e15">
+<title>Voltune | Events Lab v0.1</title>
+<style>
+:root{color-scheme:dark;--bg:#07101a;--box:#121e2c;--line:#2c3d55;--txt:#edf4fc;--muted:#98aec3;--accent:#61bcff}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--txt)}
+body{background:radial-gradient(ellipse at 80% -15%,#193d5f 0,transparent 55%),radial-gradient(ellipse at 0 110%,#302027 0,transparent 40%),var(--bg)}
+main{max-width:900px;margin:0 auto;padding:28px 14px 55px}
+h1{margin:0;font-size:clamp(28px,5vw,48px);letter-spacing:-.045em} h2{font-size:19px;margin:0 0 8px}
+p{color:var(--muted);margin:6px 0 18px}
+.eyebrow{font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:800}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:linear-gradient(155deg,#182538,#0c1520);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.note{background:#11253a;border:1px solid #345577;border-radius:12px;padding:12px 15px;margin:16px 0 20px;color:#c5def2}
+.control{margin:15px 0}
+label{display:block;color:#d8e7f5;font-size:13px;margin-bottom:7px}
+output{float:right;color:#ffbb7b;font-variant-numeric:tabular-nums;font-weight:700}
+input[type=range]{width:100%;accent-color:var(--accent);min-height:28px}
+select{width:100%;padding:12px;background:#0b1622;color:white;border:1px solid #40516a;border-radius:10px;font:inherit}
+button,.link{border:1px solid #41617d;background:#173047;color:#eff8ff;padding:11px 13px;min-height:45px;border-radius:10px;cursor:pointer;font:inherit;font-weight:650;text-align:center;text-decoration:none;display:inline-block}
+button:hover,.link:hover{filter:brightness(1.13)}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:#166eae;border-color:#58ade8}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.buttons.one{grid-template-columns:1fr}
+.pill{font-size:12px;display:inline-block;vertical-align:middle;padding:2px 8px;border:1px solid #3b6587;border-radius:22px;color:#9ed6ff;letter-spacing:.02em}
+.status{min-height:34px;padding-top:10px;color:#9ad7ff;font-size:13px}
+.checkboxline{display:flex;gap:9px;align-items:center;font-size:14px}
+.checkboxline label{margin:0}
+hr{border:0;border-top:1px solid #2b3d54;margin:19px 0}
+.meter{height:9px;border-radius:10px;overflow:hidden;background:#213247;margin:10px 0}.meter div{height:100%;width:9.4%;background:linear-gradient(90deg,#5ebeff,#fca569)}
+.readout{font-size:29px;font-weight:750;font-variant-numeric:tabular-nums}
+footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;flex-wrap:wrap}
+.small{font-size:12px;color:#9aacc0;margin-top:12px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.card{padding:17px}}
+</style>
+</head>
+<body><main>
+<div class="eyebrow">Voltune · unabhängiges Soundlabor</div>
+<h1>Gearshift &amp; Overrun <span class="pill">EXPERIMENT v0.1</span></h1>
+<p>Neue, selbst erzeugte Effekte für Hochschalten, Runterschalten und Schubknallen – direkt mit dem laufenden Physical-Engine-Motorsound. Keine WAV-Dateien und keine Sägezahngeräusche. Unsere alte Voltune-Engine und alle Physical-Engine-Labs bleiben unangetastet.</p>
+<div class="note"><strong>Wichtig:</strong> Neues Klangexperiment, noch nicht im normalen Voltune aktiv. Bitte mit niedriger Lautstärke starten und zunächst am Kopfhörer testen. Im Auto nur im Stand bedienen.</div>
+<div class="grid">
+<section class="card">
+<h2>Motor und Ausgang</h2>
+<label for="preset">Klangbasis aus Physical Engine v0.4</label>
+<select id="preset">
+ <option value="amg">V8 AMG · tiefes Grundprofil</option>
+ <option value="gti">R4 Golf GTI</option>
+ <option value="italia">V12 Italia</option>
+ <option value="v8">V8 Crossplane v0.2</option>
+ <option value="v6">V6 v0.3</option>
+ <option value="v12">V12 v0.3</option>
+</select>
+<div class="control"><label for="rpm">Virtuelle Drehzahl <output id="rpmText">3500 RPM</output></label><input id="rpm" type="range" min="700" max="8500" step="10" value="3500"></div>
+<div class="control"><label for="load">Virtuelle Motorlast <output id="loadText">65 %</output></label><input id="load" type="range" min="0" max="100" value="65"></div>
+<div class="control"><label for="volume">Lautstärke <output id="volumeText">25 %</output></label><input id="volume" type="range" min="0" max="100" value="25"></div>
+<div class="control" id="amgWrap">
+ <label for="amgHighs">AMG: helles Knistern reduzieren <output id="amgHighsText">55 %</output></label>
+ <input id="amgHighs" type="range" min="0" max="100" value="55">
+ <div class="small">Nur ein abschaltbarer Hochtonfilter dieses Hörlabors. 0 % = AMG v0.4 unverändert.</div>
+</div>
+<div class="buttons"><button class="primary" id="start">▶ Sound starten</button><button id="stop" disabled>■ Stoppen</button></div>
+<div class="status" id="status" aria-live="polite">Bereit – Audio benötigt einen Klick.</div>
+</section>
+<section class="card">
+<h2>Neue Ereignisse</h2>
+<p>Die Impulse regen Abgasresonanzen an, während das Motorgeräusch kurz in Leistung und Drehzahl reagiert. So soll der Effekt Teil des Motors klingen.</p>
+<div class="buttons">
+ <button id="up" disabled>⬆ Hochschalten</button>
+ <button id="down" disabled>⬇ Runterschalten</button>
+ <button id="overrun" disabled>✦ Schubknallen</button>
+ <button id="demo" disabled>▶ Fahrsequenz</button>
+</div>
+<hr>
+<div class="control"><label for="shiftStrength">Schalthärte <output id="shiftText">70 %</output></label><input id="shiftStrength" type="range" min="0" max="100" value="70"></div>
+<div class="control"><label for="popStrength">Abgasimpulse <output id="popText">65 %</output></label><input id="popStrength" type="range" min="0" max="100" value="65"></div>
+<div class="control"><label for="muffling">Auspuffdämpfung <output id="mufflingText">55 %</output></label><input id="muffling" type="range" min="0" max="100" value="55"></div>
+<div class="control checkboxline"><input id="bypass" type="checkbox"><label for="bypass">Neue Effekte vollständig überbrücken (A/B)</label></div>
+<div class="small">Der Bypass lässt das originale Motorsignal unverändert durch den Effektprozessor. Der optionale AMG-Hochtonfilter bleibt davon unabhängig.</div>
+<hr>
+<div class="readout"><span id="readRpm">3500</span> <span style="font-size:14px;font-weight:400;color:#96aabe">RPM</span></div><div class="meter"><div id="rpmMeter"></div></div>
+<div class="small" id="hint">Hochschalten simuliert eine kurze Leistungsunterbrechung, Runterschalten einen Drehzahl-Blip und Schubknallen mehrere ausklingende Druckereignisse. Ein Hörtest entscheidet über die Klangqualität.</div>
+</section>
+</div>
+<footer>
+<a class="link" href="./physical-engine-lab-v4.html">◀ Motor-Labor v0.4</a>
+<a class="link" href="./index.html">Normales Voltune</a>
+<span>Keine GPS-Kopplung · keine Originalmotoraufnahmen · unveränderte ältere Soundprofile</span>
+</footer>
+</main>
+<script>
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id);
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+let ctx=null,engine=null,events=null,master=null,amgEq=null,busy=false;
+let demoFrame=0,demoStart=0,demoFlags=0;
+let timeouts=[];
+const track=(fn,delay)=>{const t=setTimeout(fn,delay);timeouts.push(t);};
+const status=(msg)=>{$("status").textContent=msg;};
+function syncUI(){
+ for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["amgHighs","amgHighsText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
+ $("readRpm").textContent=$("rpm").value;
+ $("rpmMeter").style.width=clamp(Number($("rpm").value)/8500*100,0,100)+"%";
+ $("amgHighs").disabled=$("preset").value!=="amg";
+ $("amgWrap").style.opacity=$("preset").value==="amg"?"1":".5";
+}
+function apply(){
+ syncUI();
+ if(!ctx||!engine||ctx.state!=="running")return;
+ const at=ctx.currentTime;
+ engine.parameters.get("rpm").setTargetAtTime(Number($("rpm").value),at,.045);
+ engine.parameters.get("load").setTargetAtTime(Number($("load").value)/100,at,.035);
+ events.parameters.get("shiftLevel").setTargetAtTime(Number($("shiftStrength").value)/100,at,.03);
+ events.parameters.get("popLevel").setTargetAtTime(Number($("popStrength").value)/100,at,.03);
+ events.parameters.get("muffling").setTargetAtTime(Number($("muffling").value)/100,at,.03);
+ master.gain.setTargetAtTime(Math.pow(Number($("volume").value)/100,1.6)*.75,at,.04);
+ // AMG-Hochtonabsenkung ist kein Umbau am Preset, sondern ein schaltbares EQ.
+ amgEq.gain.setTargetAtTime($("preset").value==="amg"?-11*Number($("amgHighs").value)/100:0,at,.055);
+}
+function update(rpm,load){
+ $("rpm").value=String(clamp(Math.round(rpm/10)*10,700,8500));
+ $("load").value=String(clamp(Math.round(load*100),0,100));
+ apply();
+}
+function cancelDemo(){
+ if(demoFrame)cancelAnimationFrame(demoFrame);
+ demoFrame=0;demoFlags=0;
+}
+function cancelPending(){for(const x of timeouts)clearTimeout(x);timeouts=[];}
+function sendEvent(type,intensity=.85){if(events&&ctx&&ctx.state==="running")events.port.postMessage({type,intensity});}
+async function start(){
+ if(busy||ctx)return;busy=true;$("start").disabled=true;status("Audio-Module werden geladen …");
+ try{
+  const Context=window.AudioContext||window.webkitAudioContext;
+  if(!Context||!window.AudioWorkletNode)throw Error("Dieser Browser unterstützt AudioWorklet nicht.");
+  ctx=new Context({latencyHint:"interactive"});
+  const ready=ctx.resume();
+  await ctx.audioWorklet.addModule("./js/physical-engine-worklet-v4.js?v=4");
+  await ctx.audioWorklet.addModule("./js/physical-events-worklet-v1.js?v=1");
+  await ready;
+  engine=new AudioWorkletNode(ctx,"voltune-physical-engine-v4",{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
+  events=new AudioWorkletNode(ctx,"voltune-events-v1",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
+  engine.port.postMessage({type:"preset",value:$("preset").value});
+  events.port.postMessage({type:"bypass",value:$("bypass").checked});
+  amgEq=ctx.createBiquadFilter();amgEq.type="highshelf";amgEq.frequency.value=1200;amgEq.gain.value=0;
+  const limiter=ctx.createDynamicsCompressor();
+  limiter.threshold.value=-11;limiter.knee.value=4;limiter.ratio.value=7;
+  limiter.attack.value=.003;limiter.release.value=.12;
+  master=ctx.createGain();master.gain.value=0;
+  engine.connect(amgEq).connect(events).connect(limiter).connect(master).connect(ctx.destination);
+  engine.onprocessorerror=()=>status("Fehler: Motorsound-Worklet gestoppt.");
+  events.onprocessorerror=()=>status("Fehler: Ereignis-Worklet gestoppt.");
+  apply();
+  for(const id of ["stop","up","down","overrun","demo"])$(id).disabled=false;
+  status("Sound läuft. Du kannst einzelne Ereignisse testen.");
+ }catch(error){
+  status("Startfehler: "+(error.message||error));
+  if(ctx){try{await ctx.close();}catch(_){}}
+  ctx=null;engine=null;events=null;master=null;amgEq=null;$("start").disabled=false;
+ }finally{busy=false;}
+}
+async function stop(){
+ if(busy||!ctx)return;busy=true;cancelDemo();cancelPending();
+ for(const id of ["stop","up","down","overrun","demo"])$(id).disabled=true;
+ try{
+  if(ctx.state==="running"){
+   master.gain.setTargetAtTime(0,ctx.currentTime,.012);
+   await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  await ctx.close();status("Sound gestoppt.");
+ }catch(error){status("Stopfehler: "+(error.message||error));}
+ finally{ctx=null;engine=null;events=null;master=null;amgEq=null;busy=false;$("start").disabled=false;}
+}
+function up(){
+ if(!engine)return;cancelDemo();cancelPending();
+ const rpm=Number($("rpm").value),load=Number($("load").value)/100;
+ sendEvent("upshift",.92);
+ $("load").value=10;apply();
+ // Physikalische Reaktion gehört zur Motor-Engine, nicht zum Pop-Sample.
+ track(()=>update(Math.max(800,rpm*.71),.18),65);
+ track(()=>update(Math.max(800,rpm*.71),Math.max(.35,load)),175);
+ status("Hochschalten: Drehmomentpause → kurzer Abgasimpuls → RPM sinkt.");
+}
+function down(){
+ if(!engine)return;cancelDemo();cancelPending();
+ const rpm=Number($("rpm").value),load=Number($("load").value)/100;
+ sendEvent("downshift",.8);
+ update(Math.min(8500,rpm+1450),.86);
+ track(()=>update(Math.min(8500,rpm+1450),Math.max(.20,load)),210);
+ status("Runterschalten: kurzer Zwischengas-Blip mit RPM-Anstieg.");
+}
+function overrun(){
+ if(!engine)return;cancelDemo();cancelPending();
+ let rpm=Number($("rpm").value);
+ // Bei niedriger Drehzahl zunächst virtuell Last aufbauen.
+ if(rpm<1900){
+  update(3800,.82);
+  track(()=>{update(3800,.04);sendEvent("overrun",.9);},500);
+ }else{
+  update(rpm,.04);
+  sendEvent("overrun",.9);
+ }
+ status("Schubbetrieb: Gas weg, unregelmäßige gedämpfte Abgasimpulse.");
+}
+function demoValues(t){
+ const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+ const lerp=(a,b,x)=>a+(b-a)*smooth(x);
+ if(t<2)return [850,.13];
+ if(t<5)return [lerp(850,6200,(t-2)/3),.92];
+ if(t<5.2)return [lerp(6200,4300,(t-5)/.2),.18];
+ if(t<8)return [lerp(4300,6800,(t-5.2)/2.8),.92];
+ if(t<9.6)return [lerp(6800,3900,(t-8)/1.6),.05];
+ if(t<10.2)return [lerp(3900,5400,(t-9.6)/.6),.70];
+ if(t<11.5)return [lerp(5400,3000,(t-10.2)/1.3),.05];
+ return [lerp(3000,850,(t-11.5)/1.5),.12];
+}
+function demoTick(now){
+ if(!engine||!demoFrame)return;
+ const t=(now-demoStart)/1000;
+ if(t>=13){cancelDemo();update(850,.13);status("Hörsequenz abgeschlossen.");return;}
+ if(t>=5&&!(demoFlags&1)){sendEvent("upshift",.92);demoFlags|=1;}
+ if(t>=8&&!(demoFlags&2)){sendEvent("overrun",.88);demoFlags|=2;}
+ if(t>=9.6&&!(demoFlags&4)){sendEvent("downshift",.8);demoFlags|=4;}
+ const vals=demoValues(t);
+ update(vals[0],vals[1]);
+ demoFrame=requestAnimationFrame(demoTick);
+}
+function playDemo(){
+ if(!engine)return;cancelPending();cancelDemo();
+ demoStart=performance.now();demoFlags=0;
+ status("Fahrsequenz: Leerlauf → Beschleunigen → Schalten → Schubknallen → Runterschalten.");
+ demoFrame=requestAnimationFrame(demoTick);
+}
+$("start").addEventListener("click",start);
+$("stop").addEventListener("click",stop);
+$("up").addEventListener("click",up);
+$("down").addEventListener("click",down);
+$("overrun").addEventListener("click",overrun);
+$("demo").addEventListener("click",playDemo);
+$("preset").addEventListener("change",()=>{
+ cancelDemo();cancelPending();
+ if(engine)engine.port.postMessage({type:"preset",value:$("preset").value});
+ apply();
+});
+$("bypass").addEventListener("change",()=>{
+ if(events)events.port.postMessage({type:"bypass",value:$("bypass").checked});
+ status($("bypass").checked?"Neue Effekte überbrückt – Basismotor läuft.":"Neue Effekte aktiviert.");
+});
+for(const id of ["rpm","load","volume","amgHighs","shiftStrength","popStrength","muffling"]){
+ $(id).addEventListener("input",()=>{if(demoFrame){cancelDemo();cancelPending();}apply();});
+}
+syncUI();
+})();
+</script>
+</body></html>
