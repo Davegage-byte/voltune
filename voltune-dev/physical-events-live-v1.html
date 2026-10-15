@@ -86,6 +86,16 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
  <div><div class="small">Virtueller Gang</div><div class="readout"><span id="gpsGear">–</span></div></div>
 </div>
 <div class="small" id="gpsDiagnostics">GPS nicht gestartet.</div>
+<hr>
+<h2>Fahrtprotokoll</h2>
+<p>Für die spätere Auswertung: etwa ein GPS-Datenpunkt pro Sekunde und jedes wirklich ausgelöste Schalt-/Schub-Ereignis. <strong>Keine Standortkoordinaten.</strong> Das Protokoll bleibt bis zum Schließen/Neuladen dieser Seite im Arbeitsspeicher. Bitte erst nach dem Parken sichern.</p>
+<div class="small" id="logInfo">Noch keine Aufzeichnung.</div>
+<div class="buttons">
+ <button id="logSave">↓ CSV speichern</button>
+ <button id="logCopy">⧉ CSV kopieren</button>
+</div>
+<div class="buttons one"><button id="logShow">Protokoll anzeigen</button></div>
+<textarea id="logOutput" readonly rows="6" style="display:none;width:100%;margin-top:9px;resize:vertical;background:#0b1725;color:#dfeffd;border:1px solid #40516a;border-radius:10px;padding:10px;font:12px/1.5 ui-monospace,monospace"></textarea>
 <div class="status" id="status" aria-live="polite">Bereit – Audio benötigt einen Klick.</div>
 </section>
 <section class="card">
@@ -112,7 +122,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <footer>
 <a class="link" href="./physical-events-lab-v1.html">◀ Manuelles Events Lab</a><a class="link" href="./physical-engine-lab-v4.html">Motor-Labor v0.4</a>
 <a class="link" href="./index.html">Normales Voltune</a>
-<span>Live-GPS aus Voltune · keine Datenübertragung aus dem Labor · alte Soundprofile unverändert</span>
+<span>Live-GPS aus Voltune · Fahrtprotokoll nur im Arbeitsspeicher, ohne Koordinaten · alte Soundprofile unverändert</span>
 </footer>
 </main>
 <script src="./js/gps.js?v=1"></script>
@@ -128,6 +138,59 @@ let timeouts=[];
 let gpsRunning=false,gpsLastFix=0,gpsLastGood=0,gpsLastSpeed=null;
 let gpsPreviousGear=null,gpsPreviousLoad=.13,gpsLastShift=0,gpsLastPop=0;
 let gpsWatchdog=0,gpsStaleReported=false;
+const flightLog=[];
+let lastSampleLogged=0,lastInvalidLogged=0,loggedEvents=0;
+const LOG_CAP=10000;
+function logEntry(type,source,intensity="",extra={}){
+ const stamp=new Date().toISOString();
+ const value=id=>$(id).textContent||"";
+ const data={time:stamp,type,source,
+  speed_kmh:Number(value("gpsSpeed"))||0,
+  accel_mps2:Number.isFinite(extra.accel)?extra.accel:"",
+  gear:value("gpsGear"),
+  rpm:Number($("rpm").value)||0,
+  accuracy_m:Number.isFinite(extra.accuracy)?extra.accuracy:"",
+  gps_hz:Number.isFinite(extra.hz)?extra.hz:"",
+  intensity:Number.isFinite(intensity)?intensity:""
+ };
+ flightLog.push(data);
+ if(flightLog.length>LOG_CAP)flightLog.splice(0,flightLog.length-LOG_CAP);
+ if(type==="upshift"||type==="downshift"||type==="overrun")loggedEvents++;
+ $("logInfo").textContent=flightLog.length+" protokollierte Einträge, davon "+loggedEvents+" Effekte. Ohne Standortkoordinaten.";
+}
+function asCSV(){
+ const header=["time","type","source","speed_kmh","accel_mps2","gear","rpm","accuracy_m","gps_hz","intensity"];
+ const esc=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+ return [header.map(esc).join(";"),...flightLog.map(row=>header.map(k=>esc(row[k])).join(";"))].join("\r\n");
+}
+function showLog(){
+ $("logOutput").style.display="block";
+ $("logOutput").value=asCSV();
+ $("logOutput").focus();
+ $("logOutput").select();
+}
+$("logSave").addEventListener("click",()=>{
+ const url=URL.createObjectURL(new Blob(["\uFEFF"+asCSV()],{type:"text/csv;charset=utf-8"}));
+ const link=document.createElement("a");
+ link.href=url;link.download="voltune-gps-fahrt-"+new Date().toISOString().slice(0,10)+".csv";
+ document.body.appendChild(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),2500);
+ status("Protokoll-Download ausgelöst. Prüfe die Downloads des Browsers.");
+});
+$("logCopy").addEventListener("click",async()=>{
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard nicht verfügbar");
+  await navigator.clipboard.writeText(asCSV());
+  status("Fahrtprotokoll kopiert. Du kannst es in diesen Chat einfügen.");
+ }catch(_){
+  showLog();
+  status("Automatisches Kopieren nicht verfügbar – CSV unten markiert, zum manuellen Kopieren.");
+ }
+});
+$("logShow").addEventListener("click",()=>{
+ if($("logOutput").style.display==="none")showLog();
+ else $("logOutput").style.display="none";
+});
 const driveConfig={maxRpm:6500,gearRange:270,shiftRpm:6000,gearsEnabled:true,dynamicShiftEnabled:true,driveMode:"normal"};
 const track=(fn,delay)=>{const t=setTimeout(fn,delay);timeouts.push(t);};
 const status=(msg)=>{$("status").textContent=msg;};
@@ -168,7 +231,13 @@ function cancelDemo(){
  demoFrame=0;demoFlags=0;
 }
 function cancelPending(){for(const x of timeouts)clearTimeout(x);timeouts=[];}
-function sendEvent(type,intensity=.85){if(events&&ctx&&ctx.state==="running")events.port.postMessage({type,intensity});}
+function sendEvent(type,intensity=.85,source="Manueller Test"){
+ if(!events||!ctx||ctx.state!=="running")return;
+ if(type==="overrun"&&Number($("popStrength").value)===0)return;
+ if(type!=="overrun"&&Number($("shiftStrength").value)===0)return;
+ events.port.postMessage({type,intensity});
+ logEntry(type,source,intensity);
+}
 async function start(){
  if(busy||ctx)return;busy=true;$("start").disabled=true;status("Audio-Module werden geladen …");
  try{
@@ -279,6 +348,7 @@ function setManualEnabled(manual){
 }
 function stopGps(){
  if(window.VoltuneGps&&window.VoltuneGps.isActive())window.VoltuneGps.stop();
+ if(gpsRunning)logEntry("GPS_stop","System");
  gpsRunning=false;gpsLastFix=0;gpsLastGood=0;gpsLastSpeed=null;
  gpsPreviousGear=null;gpsPreviousLoad=.13;gpsStaleReported=false;
  if(gpsWatchdog){clearInterval(gpsWatchdog);gpsWatchdog=0;}
@@ -308,7 +378,17 @@ function onGpsUpdate(data){
  $("gpsDiagnostics").textContent=
   "GPS "+(good?"OK":"nicht belastbar")+" · "+hz.toFixed(1)+" Hz · Genauigkeit "+
   (accuracy===null?"–":Math.round(accuracy)+" m")+" · Beschleunigung "+accel.toFixed(2)+" m/s²";
- if(!good)return;
+ if(!good){
+  if(now-lastInvalidLogged>5000){
+   lastInvalidLogged=now;
+   logEntry("GPS_ungueltig","GPS","",{accel,accuracy,hz});
+  }
+  return;
+ }
+ if(now-lastSampleLogged>=1000){
+  lastSampleLogged=now;
+  logEntry("GPS_sample","GPS","",{accel,accuracy,hz});
+ }
  gpsStaleReported=false;
  gpsLastGood=now;gpsLastSpeed=speed;
  const trans=window.VoltuneDrivetrain.update(speed,accel,driveConfig);
@@ -329,7 +409,7 @@ function onGpsUpdate(data){
    // Im Schubbetrieb leiseres Zwischengas; niemals Raufschalten
    // bei Geschwindigkeitszittern als massiven Knall interpretieren.
    if(Number($("shiftStrength").value)>0){
-    sendEvent(type,clamp(.45+Math.abs(accel)*.15,.35,.88));
+    sendEvent(type,clamp(.45+Math.abs(accel)*.15,.35,.88),"GPS Automatik");
     status("GPS-Getriebe "+previousGear+" → "+gear+" · "+(type==="upshift"?"Hochschalten":"Runterschalten"));
    }
    gpsLastShift=now;
@@ -337,7 +417,7 @@ function onGpsUpdate(data){
  if($("autoPops").checked&&Number($("popStrength").value)>0
     &&speed>=38&&accel<=-1.0&&oldLoad>=.36&&demand<=.1
     &&now-gpsLastPop>3200&&now-gpsLastShift>700){
-   sendEvent("overrun",clamp(.45+Math.abs(accel)*.11,.45,.85));
+   sendEvent("overrun",clamp(.45+Math.abs(accel)*.11,.45,.85),"GPS Automatik");
    gpsLastPop=now;
    status("GPS: deutlicher Lastabfall – kurzer Schubimpuls.");
  }
@@ -358,7 +438,9 @@ async function startGps(){
  window.VoltuneDrivetrain.reset();
  gpsPreviousGear=null;gpsLastSpeed=null;gpsLastGood=0;gpsLastFix=0;
  gpsLastShift=performance.now();gpsLastPop=performance.now();
+ lastSampleLogged=0;lastInvalidLogged=0;
  gpsRunning=true;gpsStaleReported=false;
+ logEntry("GPS_start","System");
  $("gpsStart").disabled=true;$("gpsStop").disabled=false;
  setManualEnabled(false);
  const started=window.VoltuneGps.start({onUpdate:onGpsUpdate,onError:onGpsError});
