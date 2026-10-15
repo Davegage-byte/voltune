@@ -18,7 +18,8 @@ class VoltunePhysicalEngineV4 extends AudioWorkletProcessor {
       { name: "rpm", defaultValue: 850, minValue: 500, maxValue: 9000, automationRate: "k-rate" },
       { name: "load", defaultValue: 0.20, minValue: 0, maxValue: 1, automationRate: "k-rate" },
       { name: "exhaust", defaultValue: 0.55, minValue: 0, maxValue: 1, automationRate: "k-rate" },
-      { name: "evBlend", defaultValue: 0.25, minValue: 0, maxValue: 1, automationRate: "k-rate" }
+      { name: "evBlend", defaultValue: 0.25, minValue: 0, maxValue: 1, automationRate: "k-rate" },
+      { name: "trumpet", defaultValue: 0.60, minValue: 0, maxValue: 1, automationRate: "k-rate" }
     ];
   }
 
@@ -30,6 +31,7 @@ class VoltunePhysicalEngineV4 extends AudioWorkletProcessor {
     this.load = 0.2;
     this.exhaust = 0.55;
     this.evBlend = 0.25;
+    this.trumpet = 0.60;
     this.engineMix = 1;
     this.evMix = 0.17;
     this.firePhase = 0;
@@ -197,6 +199,7 @@ class VoltunePhysicalEngineV4 extends AudioWorkletProcessor {
     const targetLoad = Math.max(0, Math.min(1, parameters.load[0]));
     const targetExhaust = Math.max(0, Math.min(1, parameters.exhaust[0]));
     const targetBlend = Math.max(0, Math.min(1, parameters.evBlend[0]));
+    const targetTrumpet = Math.max(0, Math.min(1, parameters.trumpet[0]));
     const useEV = this.mode === "ev";
     const useI5 = this.mode === "i5";
     const useV4 = this.mode === "v4";
@@ -241,6 +244,7 @@ class VoltunePhysicalEngineV4 extends AudioWorkletProcessor {
       this.load += gainSmoothing * (targetLoad - this.load);
       this.exhaust += gainSmoothing * (targetExhaust - this.exhaust);
       this.evBlend += gainSmoothing * (targetBlend - this.evBlend);
+      this.trumpet += gainSmoothing * (targetTrumpet - this.trumpet);
       this.engineMix += gainSmoothing * (targetEngineMix - this.engineMix);
       this.evMix += gainSmoothing * (targetEvMix - this.evMix);
       const load = this.load;
@@ -383,8 +387,8 @@ class VoltunePhysicalEngineV4 extends AudioWorkletProcessor {
           const fullThrottle = Math.max(0, Math.min(1, (load - 0.12) / 0.72));
           const trumpet = highRev * fullThrottle;
           coloredBody += useItalia
-            ? (0.25 + trumpet * 2.6) * lowFormant +
-              (0.10 + trumpet * 2.0) * highFormant
+            ? (0.17 + trumpet * (0.35 + this.trumpet * 4.2)) * lowFormant +
+              (0.06 + trumpet * (0.22 + this.trumpet * 3.4)) * highFormant
             : useAMG
               ? (0.10 + this.accelEnergy * 0.75 + load * 0.38) * lowFormant +
                 (0.05 + load * 0.18) * highFormant
