@@ -151,7 +151,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 let ctx=null,engine=null,events=null,master=null,amgEq=null,busy=false;
-let demoFrame=0,demoStart=0,demoFlags=0;
+let demoFrame=0,demoStart=0,demoFlags=0,demoOverrideUntil=0;
 let timeouts=[];
 let gpsRunning=false,gpsLastFix=0,gpsLastGood=0,gpsLastSpeed=null;
 let gpsPreviousGear=null,gpsPreviousLoad=.13,gpsLastShift=0,gpsLastPop=0;
@@ -284,7 +284,7 @@ function update(rpm,load){
 }
 function cancelDemo(){
  if(demoFrame)cancelAnimationFrame(demoFrame);
- demoFrame=0;demoFlags=0;
+ demoFrame=0;demoFlags=0;demoOverrideUntil=0;
 }
 function cancelPending(){for(const x of timeouts)clearTimeout(x);timeouts=[];}
 function sendEvent(type,intensity=.85,source="Manueller Test"){
@@ -388,7 +388,9 @@ function demoTick(now){
  if(t>=8&&!(demoFlags&2)){sendEvent("overrun",.88);demoFlags|=2;}
  if(t>=9.6&&!(demoFlags&4)){sendEvent("downshift",.8);demoFlags|=4;}
  const vals=demoValues(t);
- update(vals[0],vals[1]);
+ // Bei manueller RPM-/Last-Änderung bleibt die virtuelle Fahrt aktiv;
+ // nach 2 Sekunden übernimmt die Testfahrt wieder die Regler.
+ if(now>=demoOverrideUntil)update(vals[0],vals[1]);
  demoFrame=requestAnimationFrame(demoTick);
 }
 function playDemo(){
@@ -530,7 +532,8 @@ $("down").addEventListener("click",down);
 $("overrun").addEventListener("click",overrun);
 $("demo").addEventListener("click",playDemo);
 $("preset").addEventListener("change",()=>{
- cancelDemo();cancelPending();
+ // Motorwechsel im laufenden Hörtest ohne Neustart.
+ cancelPending();
  if(engine)engine.port.postMessage({type:"preset",value:$("preset").value});
  apply();
 });
@@ -539,7 +542,12 @@ $("bypass").addEventListener("change",()=>{
  status($("bypass").checked?"Neue Effekte überbrückt – Basismotor läuft.":"Neue Effekte aktiviert.");
 });
 for(const id of ["rpm","load","volume","amgHighs","evBlend","shiftStrength","popStrength","muffling"]){
- $(id).addEventListener("input",()=>{if(demoFrame){cancelDemo();cancelPending();}apply();});
+ $(id).addEventListener("input",()=>{
+  // Keine laufende Demo oder GPS-Fahrt mehr unterbrechen!
+  // RPM/Last sind im manuellen Demo-Modus für 2 Sekunden übersteuerbar.
+  if(demoFrame && (id==="rpm"||id==="load"))demoOverrideUntil=performance.now()+2000;
+  apply();
+ });
 }
 syncUI();
 })();
