@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#070a10">
+  <title>Voltune · Physical Engine Lab v0.3</title>
+  <style>
+    :root{color-scheme:dark;--bg:#070a10;--panel:#111925;--panel2:#162235;--line:#2c3d55;--text:#eff4fc;--muted:#9facbf;--blue:#67c5ff;--orange:#ffb273}
+    *{box-sizing:border-box}
+    html{background:var(--bg)}
+    body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);
+      background:radial-gradient(ellipse at 75% -10%,#14304b 0,transparent 58%),
+      radial-gradient(ellipse at 0 90%,#251c23 0,transparent 42%),var(--bg);min-height:100vh}
+    main{width:min(980px,calc(100% - 28px));margin:0 auto;padding:28px 0 55px}
+    .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--blue);font-weight:800}
+    h1{font-size:clamp(30px,5vw,52px);letter-spacing:-.045em;margin:4px 0 8px}
+    .intro{max-width:770px;color:var(--muted);margin:0 0 23px}
+    .banner{background:#102437;border:1px solid #284967;border-radius:13px;padding:12px 16px;color:#bbd9f3;margin-bottom:18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+    .card{background:linear-gradient(180deg,rgba(22,33,49,.97),rgba(13,19,29,.98));border:1px solid var(--line);border-radius:18px;padding:21px;min-width:0;box-shadow:0 13px 36px #0003}
+    .card h2{margin:0 0 8px;font-size:19px}
+    .card p{color:var(--muted);margin:0 0 17px;font-size:13px}
+    label{display:block;font-size:13px;color:#cad7e8;margin-bottom:7px}
+    .value{color:var(--orange);float:right;font-variant-numeric:tabular-nums;font-weight:750}
+    select{width:100%;min-height:49px;background:#0b1420;border:1px solid #40536d;border-radius:11px;color:white;padding:11px;font:inherit}
+    .control{padding-top:19px}
+    input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer;min-height:27px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    button,.linkbtn{min-height:49px;padding:11px 15px;border-radius:11px;background:#1a2b40;color:#f7faff;border:1px solid #385473;font:inherit;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+    button.primary{background:linear-gradient(135deg,#2280d0,#3065c0);border-color:#61b8f2;flex:1}
+    button:disabled{opacity:.4;cursor:not-allowed}
+    button:not(:disabled):hover,.linkbtn:hover{filter:brightness(1.13)}
+    .status{font-size:13px;color:#9eadc0;min-height:26px;margin-top:16px}
+    .status.error{color:#ffb0a5}
+    .status.ready{color:#87ddba}
+    .readouts{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:0 0 12px}
+    .readout{background:#0a1421;border-radius:12px;padding:16px;border:1px solid #253950}
+    .readout strong{display:block;font-size:clamp(25px,4vw,38px);letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+    .readout span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.1em}
+    .meter{height:10px;border-radius:6px;overflow:hidden;background:#24364a;margin:16px 0 7px}
+    .meter>div{height:100%;width:10%;background:linear-gradient(90deg,#369bea,#ffad71);transition:width .1s linear}
+    .details{margin-top:18px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px}
+    .details strong{color:var(--text)}
+    .footer{margin-top:22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+    .footer a{color:#8fd2ff}
+    .pill{display:inline-block;color:#9dd6fc;border:1px solid #365d80;border-radius:30px;padding:3px 10px;font-size:11px;letter-spacing:.05em;vertical-align:middle}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}main{padding-top:20px}.card{padding:17px}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Voltune / Forschungslabor</div>
+  <h1>Physical Engine <span class="pill">EXPERIMENT v0.3</span></h1>
+  <p class="intro">Neues Soundlabor mit <strong>V4, V6 und V12</strong>, eigenständigen Zündrhythmen und zusätzlichen Lastwechsel-Texturen. Standklang, Beschleunigen und Lupfen kannst du getrennt testen. <strong>Alle Sounds aus v0.2 und der normalen Voltune-App bleiben erhalten.</strong></p>
+  <div class="banner"><strong>Wichtig:</strong> Dies ist ein unabhängiger Hörtest – keine Änderung an der normalen Voltune-App. Starte mit niedriger Lautstärke. Die virtuelle Fahrt nutzt noch keine GPS-Daten.</div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Klangerzeugung</h2>
+      <p>Drei neue Verbrennerprofile mit unterscheidbaren Zündfolgen, Abgaswegen und dynamischer Ansaug-/Schubtextur. Alle bisherigen v0.2-Profile sind klanglich unverändert enthalten.</p>
+      <label for="preset">Testantrieb</label>
+      <select id="preset">
+        <option value="v6" selected>V6 · kraftvoll und rhythmisch (neu)</option>
+        <option value="v4">V4 · ungleichmäßige Zündfolge (neu)</option>
+        <option value="v12">V12 · dichter, samtiger Klang (neu)</option>
+        <option value="hybrid">Hybrid V8 · v0.2 unverändert</option>
+        <option value="v8">V8 Crossplane · v0.2 unverändert</option>
+        <option value="i5">Reihenfünfzylinder · v0.2 unverändert</option>
+        <option value="ev">EV · v0.2 unverändert</option>
+      </select>
+
+      <div class="control">
+        <label for="rpm">Virtuelle Motordrehzahl <span class="value" id="rpmText">850 U/min</span></label>
+        <input id="rpm" type="range" min="500" max="9000" step="10" value="850">
+      </div>
+      <div class="control">
+        <label for="load">Motorlast / Leistungsanforderung <span class="value" id="loadText">20 %</span></label>
+        <input id="load" type="range" min="0" max="100" step="1" value="20">
+      </div>
+      <div class="control">
+        <label for="exhaust">Klangfarbe / offener Auspuff <span class="value" id="exhaustText">55 %</span></label>
+        <input id="exhaust" type="range" min="0" max="100" step="1" value="55">
+      </div>
+      <div class="control" id="evBlendWrap">
+        <label for="evBlend">EV-Anteil im Hybrid <span class="value" id="evBlendText">25 %</span></label>
+        <input id="evBlend" type="range" min="0" max="100" step="1" value="25">
+      </div>
+      <div class="control">
+        <label for="volume">Testlautstärke <span class="value" id="volumeText">25 %</span></label>
+        <input id="volume" type="range" min="0" max="100" step="1" value="25">
+      </div>
+      <div class="actions">
+        <button class="primary" id="start">▶ Sound starten</button>
+        <button id="stop" disabled>■ Stoppen</button>
+      </div>
+      <div class="status" id="status" aria-live="polite">Bereit. Zum Start ist ein Klick erforderlich.</div>
+    </section>
+
+    <section class="card">
+      <h2>Virtuelle Testfahrt</h2>
+      <p>Teste <strong>Leerlauf</strong>, <strong>Beschleunigung + Lupfen</strong> oder die komplette Fahrt getrennt. Besonders die neuen V-Motoren reagieren mit eigenen Texturen auf Lastwechsel.</p>
+      <div class="readouts">
+        <div class="readout"><strong id="readRpm">850</strong><span>RPM</span></div>
+        <div class="readout"><strong id="readLoad">20 %</strong><span>Last</span></div>
+      </div>
+      <div class="meter"><div id="rpmMeter"></div></div>
+      <div class="actions">
+        <button class="primary" id="demoIdle" disabled>▶ 8 Sek. Leerlauf</button>
+        <button class="primary" id="demoBurst" disabled>▶ 12 Sek. Gas &amp; Lupfen</button>
+      </div>
+      <div class="actions">
+        <button id="demo" disabled>▶ 25-Sekunden-Fahrt</button>
+        <button id="demoStop" disabled>Demo beenden</button>
+      </div>
+      <div class="details" id="description">
+        <strong>V6:</strong> Gleichmäßig zündender 60°-V6-inspirierter Motor, getrennte Abgasbänke und lastabhängiges Ansauggeräusch.
+      </div>
+      <div class="details">
+        <strong>Neu in v0.3:</strong> V4, V6 und V12 mit eigenen Resonanzen und Zündmustern, Leerlaufvariationen, Beschleunigungsansaugung und einem kurzen Schub-Ausklang. Keine Änderung an den älteren Sounds.<br><br>
+        <strong>Noch nicht enthalten:</strong> echte Fahrzeug-Messkalibrierung, GPS-Anbindung, gangabhängige Soundführung und finaler Verbrenner-/EV-Mix. Bitte zuerst mit moderater Lautstärke testen.
+      </div>
+    </section>
+  </div>
+  <div class="footer"><a class="linkbtn" href="./index.html">← Normale Voltune-App</a><a class="linkbtn" href="./physical-engine-lab-v2.html">◀ v0.2 vergleichen</a><a class="linkbtn" href="./physical-engine-lab.html">◀ v0.1</a>
+    <span>Alle bisherigen Sounds bleiben eigenständig erhalten. Keine externen Audio-Samples und keine Fahrzeugdatenübertragung.</span>
+  </div>
+</main>
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+  const ui = {
+    preset: $("preset"), rpm: $("rpm"), load: $("load"), exhaust: $("exhaust"), evBlend: $("evBlend"),
+    volume: $("volume"), start: $("start"), stop: $("stop"),
+    demo: $("demo"), demoIdle: $("demoIdle"), demoBurst: $("demoBurst"),
+    demoStop: $("demoStop"), status: $("status")
+  };
+  const descriptions = {
+    v4: "<strong>V4 v0.3:</strong> Experimenteller V4 mit unregelmäßigen Zündabständen (180°/270°/180°/90°), rauem Leerlauf und akzentuierten Lastwechseln. Keine Simulation eines konkreten Motorrads.",
+    v6: "<strong>V6 v0.3:</strong> Sechs gleichmäßig verteilte Zündungen, zwei getrennte Abgasbänke, kräftiger, lastbetonter Klangkörper.",
+    v12: "<strong>V12 v0.3:</strong> Zwölf gleichmäßig verteilte Zündungen, dichter, weicherer Motorlauf, getrennte Resonatoren und zurückhaltende Lastwechseltextur.",
+    v8: "<strong>V8 Crossplane v0.2:</strong> Neu geformte Einzelzündungen, warme Resonanzen und zurückgenommene Höhen. Kein originalgetreuer AMG-V8.",
+    i5: "<strong>Fünfzylinder v0.2:</strong> Gemeinsamer Abgasimpulsstrom für alle fünf Zündungen; weniger künstliche Stereo-Unterbrechungen.",
+    ev: "<strong>EV v0.2:</strong> Tiefere Elektromotor-Textur mit gedämpften Obertönen und luftiger Körnung; eigenständig, aber weiterhin experimentell.",
+    hybrid: "<strong>Hybrid v0.2:</strong> Verbrenner dominiert. Der elektrische Anteil liegt bewusst darunter und kann mit dem EV-Regler angepasst werden."
+  };
+  let ctx = null, node = null, gain = null, busy = false;
+  let demoFrame = 0, demoStartAt = 0, demoMode = null;
+
+  function status(message, kind) {
+    ui.status.textContent = message;
+    ui.status.className = "status " + (kind || "");
+  }
+
+  function updateReadouts() {
+    $("rpmText").textContent = ui.rpm.value + " U/min";
+    $("loadText").textContent = ui.load.value + " %";
+    $("exhaustText").textContent = ui.exhaust.value + " %";
+    $("evBlendText").textContent = ui.evBlend.value + " %";
+    $("evBlendWrap").style.opacity = ui.preset.value === "hybrid" ? "1" : "0.45";
+    ui.evBlend.disabled = ui.preset.value !== "hybrid";
+    $("volumeText").textContent = ui.volume.value + " %";
+    $("readRpm").textContent = ui.rpm.value;
+    $("readLoad").textContent = ui.load.value + " %";
+    $("rpmMeter").style.width = clamp(Number(ui.rpm.value) / 9000 * 100, 0, 100) + "%";
+    $("description").innerHTML = descriptions[ui.preset.value];
+  }
+
+  function sendParameters() {
+    updateReadouts();
+    if (!ctx || !node || ctx.state !== "running") return;
+    const now = ctx.currentTime;
+    node.parameters.get("rpm").setTargetAtTime(Number(ui.rpm.value), now, 0.045);
+    node.parameters.get("load").setTargetAtTime(Number(ui.load.value) / 100, now, 0.035);
+    node.parameters.get("exhaust").setTargetAtTime(Number(ui.exhaust.value) / 100, now, 0.035);
+    node.parameters.get("evBlend").setTargetAtTime(Number(ui.evBlend.value) / 100, now, 0.035);
+    if (gain) gain.gain.setTargetAtTime(Math.pow(Number(ui.volume.value) / 100, 1.6) * 0.8, now, 0.035);
+  }
+
+  function setValues(rpm, load) {
+    ui.rpm.value = String(Math.round(clamp(rpm, 500, 9000) / 10) * 10);
+    ui.load.value = String(Math.round(clamp(load, 0, 1) * 100));
+    sendParameters();
+  }
+
+  function demoValues(t) {
+    const mix = (a, b, u) => a + (b - a) * clamp(u, 0, 1);
+    const smooth = (x) => {
+      x = clamp(x, 0, 1);
+      return x * x * (3 - 2 * x);
+    };
+    if (t < 3) return [850 + 35 * Math.sin(t * 2.8), 0.12];
+    if (t < 12) return [mix(880, 7100, smooth((t - 3) / 9)), mix(0.25, 0.93, (t - 3) / 6)];
+    if (t < 13) return [mix(7100, 4700, smooth((t - 12) / 0.8)), 0.16];
+    if (t < 19) return [mix(4700, 7900, smooth((t - 13) / 6)), 0.91];
+    if (t < 22) return [mix(7900, 2700, smooth((t - 19) / 3)), 0.04];
+    return [mix(2700, 850, smooth((t - 22) / 3)), 0.10];
+  }
+
+  function endDemo() {
+    if (demoFrame) cancelAnimationFrame(demoFrame);
+    demoFrame = 0;
+    demoMode = null;
+    ui.demo.disabled = !node;
+    ui.demoIdle.disabled = !node;
+    ui.demoBurst.disabled = !node;
+    ui.demoStop.disabled = true;
+  }
+
+  function idleValues(t) {
+    // Leerlauf bleibt absichtlich ein enger Drehzahlbereich statt
+    // künstlicher Drehzahlfahrt; keine Kopplung an GPS.
+    return [800 + Math.sin(t * 1.4) * 18 + Math.sin(t * 3.3) * 11, 0.13];
+  }
+
+  function burstValues(t) {
+    const mix = (a, b, v) => a + (b - a) * clamp(v, 0, 1);
+    const smooth = (v) => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
+    if (t < 2) return [840, 0.14];
+    if (t < 5.6) return [mix(840, 5500, smooth((t - 2) / 3.6)), 0.87];
+    if (t < 7.5) return [mix(5500, 3300, smooth((t - 5.6) / 1.9)), 0.05];
+    if (t < 8.3) return [3300, 0.10];
+    if (t < 10.4) return [mix(3300, 6500, smooth((t - 8.3) / 2.1)), 0.94];
+    return [mix(6500, 1750, smooth((t - 10.4) / 1.6)), 0.04];
+  }
+
+  function startDemo(mode) {
+    if (!node || !ctx || ctx.state !== "running") return;
+    endDemo();
+    demoMode = mode;
+    demoStartAt = performance.now();
+    ui.demo.disabled = true;
+    ui.demoIdle.disabled = true;
+    ui.demoBurst.disabled = true;
+    ui.demoStop.disabled = false;
+    status(mode === "idle" ? "Leerlauf wird simuliert." :
+      mode === "burst" ? "Beschleunigung / Gas weg / erneutes Beschleunigen." :
+      "Virtuelle Testfahrt läuft (keine GPS-Fahrt).", "ready");
+    demoFrame = requestAnimationFrame(demoTick);
+  }
+
+  function demoTick(now) {
+    if (!node || !demoMode) { endDemo(); return; }
+    const t = (now - demoStartAt) / 1000;
+    const duration = demoMode === "idle" ? 8 : demoMode === "burst" ? 12 : 25;
+    if (t >= duration) {
+      setValues(850, 0.12);
+      endDemo();
+      status("Hörtest abgeschlossen. Regler sind wieder frei.", "ready");
+      return;
+    }
+    const [rpm, load] = demoMode === "idle" ? idleValues(t)
+      : demoMode === "burst" ? burstValues(t) : demoValues(t);
+    setValues(rpm, load);
+    demoFrame = requestAnimationFrame(demoTick);
+  }
+
+  async function start() {
+    if (busy || ctx) return;
+    busy = true;
+    ui.start.disabled = true;
+    status("AudioWorklet wird geladen …");
+    try {
+      const Context = window.AudioContext || window.webkitAudioContext;
+      if (!Context || !window.AudioWorkletNode) throw new Error("Dieser Browser unterstützt kein AudioWorklet.");
+      ctx = new Context({ latencyHint: "interactive" });
+      // Sofort nach Benutzerklick entsperren – wichtig für mobile Browser.
+      const resume = ctx.resume();
+      await ctx.audioWorklet.addModule("./js/physical-engine-worklet-v3.js?v=3");
+      await resume;
+      node = new AudioWorkletNode(ctx, "voltune-physical-engine-v3", {
+        numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2]
+      });
+      node.port.onmessageerror = () => status("Kommunikationsfehler im Audio-Worklet.", "error");
+      node.onprocessorerror = () => status("Audio-Worklet abgestürzt. Bitte stoppen und neu starten.", "error");
+      node.port.postMessage({ type: "preset", value: ui.preset.value });
+
+      const cut = ctx.createBiquadFilter();
+      cut.type = "highpass";
+      cut.frequency.value = 30;
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -9;
+      limiter.knee.value = 5;
+      limiter.ratio.value = 8;
+      limiter.attack.value = 0.004;
+      limiter.release.value = 0.14;
+      gain = ctx.createGain();
+      gain.gain.value = 0;
+      node.connect(cut).connect(limiter).connect(gain).connect(ctx.destination);
+      sendParameters();
+      ui.stop.disabled = false;
+      ui.demo.disabled = false;
+      ui.demoIdle.disabled = false;
+      ui.demoBurst.disabled = false;
+      status("Physical Engine v0.3 aktiv. Drei getrennte Hörtests verfügbar.", "ready");
+    } catch (error) {
+      status("Audiostart fehlgeschlagen: " + (error && error.message ? error.message : error), "error");
+      if (ctx) { try { await ctx.close(); } catch (_) {} }
+      ctx = null; node = null; gain = null;
+      ui.start.disabled = false;
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function stop() {
+    if (busy || !ctx) return;
+    busy = true;
+    endDemo();
+    ui.stop.disabled = true;
+    ui.demo.disabled = true;
+    ui.demoIdle.disabled = true;
+    ui.demoBurst.disabled = true;
+    try {
+      if (gain && ctx.state === "running") {
+        gain.gain.setTargetAtTime(0, ctx.currentTime, 0.012);
+        await new Promise((resolve) => setTimeout(resolve, 110));
+      }
+      await ctx.close();
+      status("Sound gestoppt. Die normale Voltune-Engine wurde nicht verändert.");
+    } catch (error) {
+      status("Fehler beim Stoppen: " + error.message, "error");
+    } finally {
+      ctx = null; node = null; gain = null;
+      ui.start.disabled = false;
+      busy = false;
+    }
+  }
+
+  ui.start.addEventListener("click", start);
+  ui.stop.addEventListener("click", stop);
+  ui.demo.addEventListener("click", () => startDemo("drive"));
+  ui.demoIdle.addEventListener("click", () => startDemo("idle"));
+  ui.demoBurst.addEventListener("click", () => startDemo("burst"));
+  ui.demoStop.addEventListener("click", () => {
+    endDemo();
+    status("Testfahrt beendet. Manuelle Bedienung ist wieder aktiv.", "ready");
+  });
+  ui.preset.addEventListener("change", () => {
+    endDemo();
+    if (node) node.port.postMessage({ type: "preset", value: ui.preset.value });
+    updateReadouts();
+  });
+  [ui.rpm, ui.load, ui.exhaust, ui.evBlend, ui.volume].forEach((el) => {
+    el.addEventListener("input", () => {
+      if (demoFrame) endDemo();
+      sendParameters();
+    });
+  });
+
+  updateReadouts();
+})();
+</script>
+</body>
+</html>
