@@ -54,6 +54,12 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
 
     // Rotor-Grundton, Unterordnung und leicht verschobene Obertöne.
     this.evPhases = new Float64Array([0.1, 1.4, 2.5, 0.6]);
+    this.evPartials = new Float64Array([0.52, 1.0, 1.975, 3.03]);
+    this.evLevels = new Float64Array([0.18, 0.26, 0.085, 0.018]);
+    this.v8Banks = new Uint8Array([0, 1, 0, 0, 1, 0, 1, 1]);
+    this.v8CylinderLevels = new Float32Array([1.0, 0.976, 1.02, 0.995, 0.965, 1.025, 0.988, 1.015]);
+    this.i5CylinderLevels = new Float32Array([1.025, 0.97, 1.012, 0.96, 1.03]);
+    this.twoPiPerSample = Math.PI * 2 / sr;
     this.evLP = 0;
     this.evGrainLP = 0;
     this.evAirLP = 0;
@@ -125,7 +131,6 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
     const cylinders = useI5 ? 5 : 8;
     // Einfache plausible Crossplane-Bankfolge mit unregelmäßigen
     // Abständen pro Bank – keine spezifische OEM-Zündfolge.
-    const v8Banks = [0, 1, 0, 0, 1, 0, 1, 1];
     const b0 = this.banks[0], b1 = this.banks[1];
     const gainSmoothing = this.paramCoef;
 
@@ -147,9 +152,12 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
         // Kleine Ereignisvariation – nicht das harsche Sample-Rauschen aus v0.1.
         const variability = 1 + 0.045 * this.random();
         const cylinderGain = useI5
-          ? [1.025, 0.97, 1.012, 0.96, 1.03][cyl]
-          : [1.0, 0.976, 1.02, 0.995, 0.965, 1.025, 0.988, 1.015][cyl];
-        const hit = (0.31 + 0.83 * Math.pow(load, 0.65)) * variability * cylinderGain;
+          ? this.i5CylinderLevels[cyl]
+          : this.v8CylinderLevels[cyl];
+        // Der R5 hat weniger Zündungen: die Lautheit bei niedriger
+        // Drehzahl angleichen, ohne den Hochdrehzahlbereich zu verlieren.
+        const i5Trim = useI5 ? (0.65 + 0.38 * (rpm / 9000)) : 1;
+        const hit = (0.31 + 0.83 * Math.pow(load, 0.65)) * variability * cylinderGain * i5Trim;
         if (useI5) {
           // R5: gemeinsamer Abgaskanal, kein künstliches L/R-Bank-Stottern.
           b0.fast += hit;
@@ -157,7 +165,7 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
           b1.fast += hit * 0.72;
           b1.slow += hit * 0.72;
         } else {
-          const b = v8Banks[cyl] ? b1 : b0;
+          const b = this.v8Banks[cyl] ? b1 : b0;
           b.fast += hit;
           b.slow += hit;
         }
@@ -166,7 +174,7 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
 
       const warm = 1.0 + load * 0.6;
       const brightness = Math.pow(this.exhaust, 1.8);
-      const acoustic = [0, 0];
+      let acousticL = 0, acousticR = 0;
       for (let k = 0; k < 2; k++) {
         const b = k === 0 ? b0 : b1;
         b.fast *= this.fastDecay;
@@ -197,7 +205,9 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
           + 0.65 * r + 0.35 * q;
         const hp = body - b.hpX + this.hpCoef * b.hpY;
         b.hpX = body; b.hpY = hp;
-        acoustic[k] = Math.tanh(hp * warm * 2.25) * 0.50;
+        const bankOut = Math.tanh(hp * warm * 2.25) * 0.50;
+        if (k === 0) acousticL = bankOut;
+        else acousticR = bankOut;
       }
 
       // Tiefes, texturiertes elektrisches Antriebsbett.
@@ -205,14 +215,11 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
       let ev = 0;
       if (this.evMix > 0.00001 || useEV || hybrid) {
         const f = 28 + rpm * 0.020;
-        const tau = Math.PI * 2 / this.sr;
-        const partials = [0.52, 1.0, 1.975, 3.03];
-        const levels = [0.18, 0.26, 0.085, 0.018];
         let tonal = 0;
         for (let h = 0; h < 4; h++) {
-          this.evPhases[h] += tau * f * partials[h];
+          this.evPhases[h] += this.twoPiPerSample * f * this.evPartials[h];
           if (this.evPhases[h] >= Math.PI * 2) this.evPhases[h] -= Math.PI * 2;
-          tonal += Math.sin(this.evPhases[h]) * levels[h];
+          tonal += Math.sin(this.evPhases[h]) * this.evLevels[h];
         }
         const noise = this.random();
         this.evGrainLP += 0.063 * (noise - this.evGrainLP);
@@ -222,15 +229,17 @@ class VoltunePhysicalEngineV2 extends AudioWorkletProcessor {
           + airflow * (0.08 + load * 0.23);
         // Frequenzgang wird mit steigender Last geöffnet, nicht mit RPM
         // unkontrolliert in den Hochton gezogen.
-        const color = 1 - Math.exp(-2 * Math.PI * (390 + load * 300) / this.sr);
+        // Bei 48 kHz entspricht das näherungsweise einem One-Pole
+        // zwischen ca. 390 und 690 Hz, ohne exp() pro Audiosample.
+        const color = (390 + load * 300) * this.twoPiPerSample / (1 + (390 + load * 300) * this.twoPiPerSample);
         this.evLP += color * (strained - this.evLP);
         this.evColor += 0.024 * (this.evLP - this.evColor);
         // Körnung und breiter Grundton statt einer einzelnen reinen Stimme.
         ev = this.evColor * 1.62 + (this.evLP - this.evColor) * 0.46;
       }
 
-      const engineL = (acoustic[0] * 0.78 + acoustic[1] * 0.22) * this.engineMix;
-      const engineR = (acoustic[1] * 0.78 + acoustic[0] * 0.22) * this.engineMix;
+      const engineL = (acousticL * 0.78 + acousticR * 0.22) * this.engineMix;
+      const engineR = (acousticR * 0.78 + acousticL * 0.22) * this.engineMix;
       const rawL = Math.tanh((engineL + this.evMix * ev * 0.74) * 1.2) * 0.70;
       const rawR = Math.tanh((engineR + this.evMix * ev * 0.74) * 1.2) * 0.70;
       const highL = rawL - this.outPrevL + this.outHpCoef * this.outHpL;
