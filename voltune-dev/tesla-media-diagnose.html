@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#091521">
+<title>Voltune · Tesla-Medien-Diagnose</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;background:#091521;color:#eaf3fd}
+*{box-sizing:border-box}body{margin:0}main{max-width:740px;margin:auto;padding:24px 16px 60px}
+h1{font-size:27px;margin:0 0 8px}h2{font-size:18px;margin:0 0 10px}p{line-height:1.5;margin:7px 0 14px}
+.small{font-size:13px;color:#afc0d0}.warning{padding:12px;border-left:3px solid #e4b161;background:#2b291f;border-radius:6px}
+.card{background:#122335;border:1px solid #314a60;border-radius:14px;padding:18px;margin:16px 0}
+button{font:inherit;font-weight:600;color:#ecf7ff;background:#234767;border:1px solid #467295;padding:12px;border-radius:9px;cursor:pointer;min-height:45px}
+button.primary{background:#087ba7;border-color:#22a5d5}
+button:disabled{opacity:.5;cursor:not-allowed}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.buttons.one{grid-template-columns:1fr}.status{padding:11px;border-radius:9px;background:#0c1a29;color:#a9d4f2;overflow-wrap:anywhere}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.stat{padding:12px;background:#091a29;border-radius:9px;font-size:13px;color:#a9c1d4}
+.stat strong{display:block;color:#fff;font-size:22px;font-variant-numeric:tabular-nums}
+#events{max-height:260px;overflow:auto;list-style:none;padding:0;margin:0}
+#events li{padding:8px 2px;border-bottom:1px solid #344d64;word-break:break-word;font-size:13px}
+#audio{width:100%;min-height:35px;margin-top:12px}a{color:#9bd8f8}
+</style>
+</head>
+<body>
+<main>
+<h1>Voltune · Tesla Medien-Test</h1>
+<p>Diagnose für das linke Scrollrad: Erkennt der Tesla-Browser eine Webseite als aktive Medienquelle und kommen die Play/Pause-Befehle dort an?</p>
+<p class="warning"><strong>Nur im geparkten Fahrzeug ausprobieren.</strong> Diese Seite erzeugt einen leisen Testton. Wenn Tesla den Browser als Medienquelle übernimmt, wird deine laufende Musik möglicherweise pausiert. Die normale Voltune-App bleibt unangetastet.</p>
+<section class="card">
+<h2>1. Medienquelle testen</h2>
+<p class="small">Versuche zuerst den echten HTML-Audio-Player. Danach kannst du den WebAudio-Stream vergleichen, den wir im Voltune-GPS-Labor verwenden.</p>
+<div class="buttons">
+<button id="htmlMode" class="primary">A · HTML-Audio starten</button>
+<button id="streamMode">B · WebAudio-Stream starten</button>
+</div>
+<div class="buttons one"><button id="stopMode">■ Testton stoppen</button></div>
+<audio id="audio" controls playsinline loop></audio>
+<div id="status" class="status">Bereit. Erst einen Modus starten.</div>
+</section>
+<section class="card">
+<h2>2. Tesla-Mini-Player prüfen</h2>
+<p>Wird unten links nach dem Start die Browser-Wiedergabe bzw. eine neue Medienquelle sichtbar?</p>
+<div class="buttons">
+<button id="visibleYes">Ja, Medienquelle sichtbar</button>
+<button id="visibleNo">Nein, nicht sichtbar</button>
+</div>
+<div class="status" id="recognition">Noch nicht bewertet.</div>
+<p class="small">Falls sichtbar: im Stand auf das linke Scrollrad drücken. Der Zähler unten sollte steigen. Ein registrierter JavaScript-Handler allein beweist noch keine Tesla-Unterstützung.</p>
+</section>
+<section class="card">
+<h2>3. Empfangene Lenkradbefehle</h2>
+<div class="stats">
+<div class="stat">Play / Pause<strong id="clickCount">0</strong></div>
+<div class="stat">Links / Rechts<strong id="sideCount">0</strong></div>
+<div class="stat">Key-Events<strong id="keyCount">0</strong></div>
+<div class="stat">MediaSession-Handler<strong id="handlerCount">0/4</strong></div>
+</div>
+<div class="small">Nur echte Browser-Medien-/Key-Ereignisse werden gezählt; Testtasten gehören nicht dazu.</div>
+<div class="buttons">
+<button id="testClick">Test: Klick simulieren</button>
+<button id="testNext">Test: Nächster Titel</button>
+</div>
+<p class="small" id="capabilities"></p>
+<h2>Ereignisprotokoll</h2>
+<ul id="events"><li>Noch keine Ereignisse.</li></ul>
+<div class="buttons one"><button id="reset">Diagnosezähler zurücksetzen</button></div>
+</section>
+<section class="card">
+<h2>4. Ergebnis fotografieren</h2>
+<p class="small">Nach dem Test diesen Abschnitt einfach mit dem Handy fotografieren. Keine Standortdaten oder Diagnoseeinträge werden an einen Server geschickt.</p>
+<div class="status" id="report">Audio: aus · Tesla-Mini-Player: unbekannt · Lenkradbefehle: 0</div>
+</section>
+<p class="small"><a href="./physical-events-live-v1.html">← Zurück zum Voltune GPS-Soundtest</a></p>
+</main>
+<script>
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id);
+let ctx=null,osc=null,sink=null,blobUrl=null,mode="aus";
+let clickCount=0,sideCount=0,keyCount=0,handlers=0,teslaRecognized="unbekannt";
+let lastActionAt=0;
+const audio=$("audio");
+const trace=[];
+function note(message){
+ const item=new Date().toLocaleTimeString("de-DE")+" · "+message;
+ trace.unshift(item);
+ if(trace.length>12)trace.length=12;
+ const root=$("events");
+ root.replaceChildren();
+ for(const entry of trace){const li=document.createElement("li");li.textContent=entry;root.appendChild(li);}
+ render();
+}
+function render(){
+ $("clickCount").textContent=String(clickCount);
+ $("sideCount").textContent=String(sideCount);
+ $("keyCount").textContent=String(keyCount);
+ $("handlerCount").textContent=handlers+"/4";
+ $("recognition").textContent="Tesla-Mini-Player: "+teslaRecognized;
+ $("report").textContent="Audio: "+mode+" · Tesla-Mini-Player: "+teslaRecognized+
+  " · Klick: "+clickCount+" · Links/Rechts: "+sideCount+" · Tasten-Events: "+keyCount+
+  " · MediaSession: "+handlers+"/4";
+}
+function action(name,source,real=true){
+ if(real){
+  // Manche Tesla-/Chromium-Versionen senden in kurzer Folge play und pause.
+  const now=performance.now();
+  if(now-lastActionAt<100){note("Doppelmeldung "+name+" (ignoriert)");return;}
+  lastActionAt=now;
+  if(name==="play"||name==="pause")clickCount++;
+  else sideCount++;
+ }
+ note((real?"ECHT ":"TEST ")+source+" → "+name);
+ if(real&&(name==="play"||name==="pause")&&audio.paused){
+   audio.play().catch(err=>note("Wiederanlauf fehlgeschlagen: "+err.message));
+ }
+ try{if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";}catch(_){}
+}
+function onKey(event){
+ const key=event.key||event.code||"";
+ const mapping={MediaPlayPause:"play",MediaPlay:"play",MediaPause:"pause",
+ MediaTrackNext:"nexttrack",MediaNextTrack:"nexttrack",
+ MediaTrackPrevious:"previoustrack",MediaPreviousTrack:"previoustrack"};
+ const value=mapping[key]||({176:"nexttrack",177:"previoustrack",179:"play"})[event.keyCode];
+ if(!value)return;
+ keyCount++;
+ action(value,"Keyboard "+key);
+ if(event.preventDefault)event.preventDefault();
+}
+function register(){
+ handlers=0;
+ if(!("mediaSession" in navigator)||typeof navigator.mediaSession.setActionHandler!=="function"){
+  note("MediaSession API nicht verfügbar");
+ }else{
+  for(const name of ["play","pause","nexttrack","previoustrack"]){
+   try{navigator.mediaSession.setActionHandler(name,()=>action(name,"MediaSession"));handlers++;}
+   catch(error){note("Handler "+name+" nicht verfügbar");}
+  }
+  if(typeof window.MediaMetadata==="function"){
+   try{navigator.mediaSession.metadata=new MediaMetadata({
+    title:"Voltune Tesla Medien-Test",artist:"Browser-Medienerkennung",album:"Diagnose"});
+   }catch(_){}
+  }
+  try{navigator.mediaSession.playbackState="playing";}catch(_){}
+ }
+ $("capabilities").textContent=
+  "MediaSession: "+(navigator.mediaSession?"vorhanden":"nicht vorhanden")+
+  " · AudioContext: "+(window.AudioContext||window.webkitAudioContext?"vorhanden":"nicht vorhanden")+
+  " · HTML-Audio: vorhanden";
+ render();
+}
+function makeTone(){
+ const rate=22050,length=rate*3,buffer=new ArrayBuffer(44+length*2),view=new DataView(buffer);
+ const ascii=(at,text)=>{for(let i=0;i<text.length;i++)view.setUint8(at+i,text.charCodeAt(i));};
+ ascii(0,"RIFF");view.setUint32(4,36+length*2,true);ascii(8,"WAVE");
+ ascii(12,"fmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);
+ view.setUint16(22,1,true);view.setUint32(24,rate,true);
+ view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);
+ ascii(36,"data");view.setUint32(40,length*2,true);
+ for(let i=0;i<length;i++){
+  const t=i/rate;
+  const sound=(Math.sin(2*Math.PI*180*t)*.16+Math.sin(2*Math.PI*270*t)*.04)*
+    Math.min(1,i/150)*Math.min(1,(length-i)/150);
+  view.setInt16(44+i*2,Math.round(Math.max(-1,Math.min(1,sound))*32767),true);
+ }
+ return new Blob([buffer],{type:"audio/wav"});
+}
+async function stop(){
+ try{audio.pause();audio.removeAttribute("src");audio.srcObject=null;audio.load();}catch(_){}
+ if(osc){try{osc.stop();}catch(_){}try{osc.disconnect();}catch(_){}osc=null;}
+ if(ctx){try{await ctx.close();}catch(_){}ctx=null;sink=null;}
+ if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null;}
+ mode="aus";
+ $("status").textContent="Testton gestoppt.";
+ try{if(navigator.mediaSession)navigator.mediaSession.playbackState="none";}catch(_){}
+ render();
+}
+async function playHtml(){
+ await stop();
+ mode="HTML-Audio";
+ try{
+  blobUrl=URL.createObjectURL(makeTone());
+  audio.src=blobUrl;audio.loop=true;audio.volume=.55;
+  await audio.play();
+  register();
+  $("status").textContent="HTML-Audio spielt. Ist Browser unten links als Medienquelle zu sehen?";
+  note("HTML-Audio erfolgreich gestartet");
+ }catch(error){
+  mode="Fehler";
+  $("status").textContent="HTML-Audio fehlgeschlagen: "+error.message;
+  note("HTML-Audio Fehler: "+error.message);
+ }
+ render();
+}
+async function playStream(){
+ await stop();
+ mode="WebAudio-Stream";
+ try{
+  const Context=window.AudioContext||window.webkitAudioContext;
+  if(!Context)throw Error("AudioContext nicht verfügbar");
+  ctx=new Context();
+  if(!ctx.createMediaStreamDestination)throw Error("MediaStreamDestination nicht verfügbar");
+  sink=ctx.createMediaStreamDestination();
+  osc=ctx.createOscillator();const amp=ctx.createGain();
+  osc.frequency.value=180;amp.gain.value=.025;osc.connect(amp).connect(sink);
+  osc.start();
+  audio.srcObject=sink.stream;audio.volume=1;
+  await audio.play();
+  await ctx.resume();
+  register();
+  $("status").textContent="WebAudio-Stream spielt. Hat Tesla diesen Modus als Medienquelle erkannt?";
+  note("WebAudio-Stream erfolgreich gestartet");
+ }catch(error){
+  mode="Fehler";
+  $("status").textContent="WebAudio-Stream fehlgeschlagen: "+error.message;
+  note("WebAudio-Stream Fehler: "+error.message);
+ }
+ render();
+}
+$("htmlMode").addEventListener("click",playHtml);
+$("streamMode").addEventListener("click",playStream);
+$("stopMode").addEventListener("click",stop);
+$("visibleYes").addEventListener("click",()=>{teslaRecognized="JA";note("Nutzer: Medienquelle im Tesla sichtbar");});
+$("visibleNo").addEventListener("click",()=>{teslaRecognized="NEIN";note("Nutzer: Medienquelle nicht sichtbar");});
+$("testClick").addEventListener("click",()=>action("play","Bildschirmtaste",false));
+$("testNext").addEventListener("click",()=>action("nexttrack","Bildschirmtaste",false));
+$("reset").addEventListener("click",()=>{
+ clickCount=0;sideCount=0;keyCount=0;lastActionAt=0;trace.length=0;
+ teslaRecognized="unbekannt";note("Diagnose zurückgesetzt");
+});
+window.addEventListener("keydown",onKey,true);
+audio.addEventListener("error",()=>note("Audioelement hat einen Fehler gemeldet"));
+audio.addEventListener("pause",()=>note("HTML-Audio wurde pausiert"));
+audio.addEventListener("playing",()=>note("HTML-Audio spielt"));
+document.addEventListener("visibilitychange",()=>note("Browser sichtbar: "+!document.hidden));
+render();
+})();
+</script>
+</body></html>
