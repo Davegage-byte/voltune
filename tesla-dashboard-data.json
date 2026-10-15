@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-15T17:46:09+02:00",
+  "checked_at": "2026-10-15T21:26:57+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -17,7 +17,7 @@
     "dataset_url": "https://suc-tracker.eu/data/europe.json",
     "schema_version": 2,
     "generated_at": "2026-10-09T19:22:47.424Z",
-    "checked_at": "2026-10-15T17:46:09+02:00",
+    "checked_at": "2026-10-15T21:26:57+02:00",
     "station_count": 1784,
     "matched_stations": 616
   },
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-15T17:46:09+02:00",
+    "checked_at": "2026-10-15T21:26:57+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.135,
-    "diesel": 2.242,
-    "e5_updated_at": "2026-10-15T17:20+02:00",
-    "diesel_updated_at": "2026-10-15T17:20+02:00",
+    "e5": 2.125,
+    "diesel": 2.234,
+    "e5_updated_at": "2026-10-15T20:55+02:00",
+    "diesel_updated_at": "2026-10-15T20:55+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-15T17:46:09+02:00",
+    "checked_at": "2026-10-15T21:26:57+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 362.59,
+    "price": 363.38,
     "currency": "USD",
-    "market_time": "2026-10-15T17:46:13+02:00",
+    "market_time": "2026-10-15T21:27:02+02:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-15T17:46:09+02:00",
+    "checked_at": "2026-10-15T21:26:57+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.4175,
+    "average": 0.415,
     "min": 0.35,
     "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-15T17:46:09+02:00"
+    "calculated_at": "2026-10-15T21:26:57+02:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,16 @@
   ],
   "news": [
     {
+      "title": "Tesla Roadster Event: How to Watch & What to Expect",
+      "url": "https://www.notateslaapp.com/news/4818/tesla-roadster-event-how-to-watch-what-to-expect",
+      "published_at": "2026-10-15T20:37:00+02:00"
+    },
+    {
+      "title": "Tesla Roadster Reveal Hints at 'Back to the Future' Tie-In",
+      "url": "https://www.notateslaapp.com/news/4833/tesla-roadster-reveal-hints-at-back-to-the-future-tie-in",
+      "published_at": "2026-10-15T20:26:00+02:00"
+    },
+    {
       "title": "Rivian Taps Tesla Cybercab Veteran to Lead R2 Assembly",
       "url": "https://www.notateslaapp.com/news/4830/rivian-taps-tesla-cybercab-veteran-to-lead-r2-assembly",
       "published_at": "2026-10-15T17:00:00+02:00"
@@ -24474,23 +24484,13 @@
       "title": "Tesla Blocks Rear Screen Browser Workaround for Unsupported Streaming Apps",
       "url": "https://www.notateslaapp.com/news/4821/tesla-blocks-rear-screen-browser-workaround-for-unsupported-streaming-apps",
       "published_at": "2026-10-13T23:13:00+02:00"
-    },
-    {
-      "title": "Tesla Offers Free Supercharging for Hurricane Isaias Relief",
-      "url": "https://www.notateslaapp.com/news/4820/tesla-offers-free-supercharging-for-hurricane-isaias-relief",
-      "published_at": "2026-10-13T22:20:00+02:00"
-    },
-    {
-      "title": "Tesla Cybercab to Let Riders See Rear and Side Camera Feeds",
-      "url": "https://www.notateslaapp.com/news/4819/tesla-cybercab-to-let-riders-see-rear-and-side-camera-feeds",
-      "published_at": "2026-10-13T21:48:00+02:00"
     }
   ],
   "regional_news": [
     {
-      "title": "Vorschau: Tesla nimmt nächsten Anlauf zur Neuvorstellung von Über-Elektroauto Roadster",
+      "title": "Vorschau: Tesla vor Neuvorstellung von Über-Elektroauto Roadster – Live-Link veröffentlicht",
       "url": "https://teslamag.de/news/tesla-naechster-anlauf-neuvorstellung-ueber-elektroauto-roadster-67530",
-      "published_at": "2026-10-15T11:31:37+02:00",
+      "published_at": "2026-10-15T20:31:37+02:00",
       "source": "TeslaMag.de"
     },
     {
@@ -24561,10 +24561,10 @@
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-15T17:46:09+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-15T17:46:09+02:00",
-  "news_updated_at": "2026-10-15T17:46:09+02:00",
-  "regional_news_updated_at": "2026-10-15T17:46:09+02:00",
-  "fuel_prices_updated_at": "2026-10-15T17:46:09+02:00",
-  "tesla_stock_updated_at": "2026-10-15T17:46:09+02:00"
+  "superchargers_updated_at": "2026-10-15T21:26:57+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-15T21:26:57+02:00",
+  "news_updated_at": "2026-10-15T21:26:57+02:00",
+  "regional_news_updated_at": "2026-10-15T21:26:57+02:00",
+  "fuel_prices_updated_at": "2026-10-15T21:26:57+02:00",
+  "tesla_stock_updated_at": "2026-10-15T21:26:57+02:00"
 }
