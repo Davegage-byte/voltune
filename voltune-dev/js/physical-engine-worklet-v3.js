@@ -41,6 +41,10 @@ class VoltunePhysicalEngineV3 extends AudioWorkletProcessor {
     this.slowDecay = Math.exp(-1 / (sr * 0.0051));
     this.lowCoef = 1 - Math.exp(-2 * Math.PI * 95 / sr);
     this.midCoef = 1 - Math.exp(-2 * Math.PI * 255 / sr);
+    // Mehr Ansaugpräsenz beim V12: sehr dichtes Feuer benötigt
+    // einen offenen, aber nicht schrillen oberen Motorbereich.
+    this.v12LowCoef = 1 - Math.exp(-2 * Math.PI * 155 / sr);
+    this.v12MidCoef = 1 - Math.exp(-2 * Math.PI * 365 / sr);
     this.airCoef = 1 - Math.exp(-2 * Math.PI * 1300 / sr);
     this.hpCoef = Math.exp(-2 * Math.PI * 22 / sr);
     this.reflectionCoef = 1 - Math.exp(-2 * Math.PI * 430 / sr);
@@ -216,7 +220,7 @@ class VoltunePhysicalEngineV3 extends AudioWorkletProcessor {
         // Eigene Zylindercharaktere, betonte Ruhepulse im Leerlauf und
         // stufenlose Verstärkung bei Last statt synth-artiger Dauerwelle.
         const idleStrength = useNew ? Math.min(1, Math.max(0, (1450 - rpm) / 750)) : 0;
-        const modelTrim = useV4 ? 1.28 : useV6 ? 1.12 : useV12 ? 0.76 : 1;
+        const modelTrim = useV4 ? 1.28 : useV6 ? 1.12 : useV12 ? 1.15 : 1;
         const idleUneven = useNew ? (1 + idleStrength * (useV4 ? 0.11 : useV6 ? 0.055 : 0.018) * this.random()) : 1;
         const hit = (0.31 + 0.83 * Math.pow(load, 0.65)) * variability * cylinderGain * i5Trim * modelTrim * idleUneven;
         if (useNew) {
@@ -245,7 +249,10 @@ class VoltunePhysicalEngineV3 extends AudioWorkletProcessor {
         this.event++;
       }
 
-      const warm = 1.0 + load * 0.6;
+      // Ein Lastaufbau muss hörbar sein, auch bei nahezu gleicher RPM.
+      // Kein Wechsel von Klangprofilen, nur transienter Druckanstieg.
+      const warm = 1.0 + load * 0.6 +
+        (useNew ? this.accelEnergy * (useV12 ? 0.75 : 0.55) : 0);
       const brightness = Math.pow(this.exhaust, 1.8);
       let acousticL = 0, acousticR = 0;
       for (let k = 0; k < 2; k++) {
@@ -255,8 +262,8 @@ class VoltunePhysicalEngineV3 extends AudioWorkletProcessor {
         // Druckpulse werden innerhalb weniger ms rund statt sägezahnförmig.
         const p = Math.max(0, b.slow - b.fast);
 
-        b.low += this.lowCoef * (p - b.low);
-        b.mid += this.midCoef * (p - b.mid);
+        b.low += (useV12 ? this.v12LowCoef : this.lowCoef) * (p - b.low);
+        b.mid += (useV12 ? this.v12MidCoef : this.midCoef) * (p - b.mid);
         b.air += this.airCoef * (p - b.air);
 
         const delayed = b.pipe[b.pipePos];
