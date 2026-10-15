@@ -157,7 +157,7 @@
     hybrid: "<strong>Hybrid v0.2:</strong> Verbrenner dominiert. Der elektrische Anteil liegt bewusst darunter und kann mit dem EV-Regler angepasst werden."
   };
   let ctx = null, node = null, gain = null, busy = false;
-  let demoFrame = 0, demoStartAt = 0, demoMode = null;
+  let demoFrame = 0, demoStartAt = 0, demoMode = null, demoOverrideUntil = 0;
 
   function status(message, kind) {
     ui.status.textContent = message;
@@ -217,6 +217,7 @@
     if (demoFrame) cancelAnimationFrame(demoFrame);
     demoFrame = 0;
     demoMode = null;
+    demoOverrideUntil = 0;
     ui.demo.disabled = !node;
     ui.demoIdle.disabled = !node;
     ui.demoBurst.disabled = !node;
@@ -267,7 +268,9 @@
     }
     const [rpm, load] = demoMode === "idle" ? idleValues(t)
       : demoMode === "burst" ? burstValues(t) : demoValues(t);
-    setValues(rpm, load);
+    // Beim Ziehen von RPM oder Last bleibt die Demo aktiv.
+    // Zwei Sekunden nach dem letzten Eingriff übernimmt die Automatik.
+    if (now >= demoOverrideUntil) setValues(rpm, load);
     demoFrame = requestAnimationFrame(demoTick);
   }
 
@@ -353,13 +356,14 @@
     status("Testfahrt beendet. Manuelle Bedienung ist wieder aktiv.", "ready");
   });
   ui.preset.addEventListener("change", () => {
-    endDemo();
+    // Auch Profilwechsel sollen die Hörfahrt nicht beenden.
     if (node) node.port.postMessage({ type: "preset", value: ui.preset.value });
     updateReadouts();
   });
   [ui.rpm, ui.load, ui.exhaust, ui.evBlend, ui.trumpet, ui.volume].forEach((el) => {
     el.addEventListener("input", () => {
-      if (demoFrame) endDemo();
+      if (demoFrame && (el === ui.rpm || el === ui.load))
+        demoOverrideUntil = performance.now() + 2000;
       sendParameters();
     });
   });
