@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080e15">
-<title>Voltune | Events Lab v0.1.1</title>
+<title>Voltune | Events Lab v0.2</title>
 <style>
 :root{color-scheme:dark;--bg:#07101a;--box:#121e2c;--line:#2c3d55;--txt:#edf4fc;--muted:#98aec3;--accent:#61bcff}
 *{box-sizing:border-box}
@@ -41,7 +41,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 </head>
 <body><main>
 <div class="eyebrow">Voltune · unabhängiges Soundlabor</div>
-<h1>Gearshift &amp; Overrun <span class="pill">EXPERIMENT v0.1.1</span></h1>
+<h1>Gearshift &amp; Overrun <span class="pill">EXPERIMENT v0.2</span></h1>
 <p>Neue, selbst erzeugte Effekte für Hochschalten, Runterschalten und Schubknallen – direkt mit dem laufenden Physical-Engine-Motorsound. Keine WAV-Dateien und keine Sägezahngeräusche. Unsere alte Voltune-Engine und alle Physical-Engine-Labs bleiben unangetastet.</p>
 <div class="note"><strong>Wichtig:</strong> Neues Klangexperiment, noch nicht im normalen Voltune aktiv. Bitte mit niedriger Lautstärke starten und zunächst am Kopfhörer testen. Im Auto nur im Stand bedienen.</div>
 <div class="grid">
@@ -86,8 +86,9 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
  <button id="demo" disabled>▶ Fahrsequenz</button>
 </div>
 <hr>
-<div class="control"><label for="shiftStrength">Schalthärte <output id="shiftText">70 %</output></label><input id="shiftStrength" type="range" min="0" max="100" value="70"></div>
-<div class="control"><label for="popStrength">Abgasimpulse <output id="popText">65 %</output></label><input id="popStrength" type="range" min="0" max="100" value="65"></div>
+<div class="control"><label for="shiftStrength">Schalthärte <output id="shiftText">50 %</output></label><input id="shiftStrength" type="range" min="0" max="100" value="50"></div>
+<div class="control"><label for="popStrength">Abgasimpulse <output id="popText">50 %</output></label><input id="popStrength" type="range" min="0" max="100" value="50"></div>
+<div class="small">0 % = Effekt aus · <strong>50 % = bisheriger dezenter Klang</strong> · 100 % = deutlich übertriebene Effektstärke.</div>
 <div class="control"><label for="muffling">Auspuffdämpfung <output id="mufflingText">55 %</output></label><input id="muffling" type="range" min="0" max="100" value="55"></div>
 <div class="control checkboxline"><input id="bypass" type="checkbox"><label for="bypass">Neue Effekte vollständig überbrücken (A/B)</label></div>
 <div class="small">Der Bypass lässt das originale Motorsignal unverändert durch den Effektprozessor. Der AMG-Hochtonfilter bleibt davon unabhängig. Auch Hybrid EV + V8 bekommt Hochschalten, Runterschalten und Schubknallen; alle Klänge bleiben eigenständig auswählbar.</div>
@@ -97,7 +98,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 </section>
 </div>
 <footer>
-<a class="link" href="./physical-engine-lab-v4.html">◀ Motor-Labor v0.4</a>
+<a class="link" href="./physical-events-live-v1.html">▶ Live-GPS-Fahrt</a><a class="link" href="./physical-engine-lab-v4.html">◀ Motor-Labor v0.4</a>
 <a class="link" href="./index.html">Normales Voltune</a>
 <span>Keine GPS-Kopplung · keine Originalmotoraufnahmen · unveränderte ältere Soundprofile</span>
 </footer>
@@ -121,6 +122,10 @@ function syncUI(){
  $("evBlend").disabled=$("preset").value!=="hybrid";
  $("hybridWrap").style.opacity=$("preset").value==="hybrid"?"1":".5";
 }
+function eventScale(percent,reference,maxValue){
+ const v=clamp(Number(percent),0,100);
+ return v<=50?reference*v/50:reference+(maxValue-reference)*(v-50)/50;
+}
 function apply(){
  syncUI();
  if(!ctx||!engine||ctx.state!=="running")return;
@@ -128,8 +133,8 @@ function apply(){
  engine.parameters.get("rpm").setTargetAtTime(Number($("rpm").value),at,.045);
  engine.parameters.get("load").setTargetAtTime(Number($("load").value)/100,at,.035);
  engine.parameters.get("evBlend").setTargetAtTime(Number($("evBlend").value)/100,at,.035);
- events.parameters.get("shiftLevel").setTargetAtTime(Number($("shiftStrength").value)/100,at,.03);
- events.parameters.get("popLevel").setTargetAtTime(Number($("popStrength").value)/100,at,.03);
+ events.parameters.get("shiftLevel").setTargetAtTime(eventScale($("shiftStrength").value,.7,1.75),at,.03);
+ events.parameters.get("popLevel").setTargetAtTime(eventScale($("popStrength").value,.65,2),at,.03);
  events.parameters.get("muffling").setTargetAtTime(Number($("muffling").value)/100,at,.03);
  master.gain.setTargetAtTime(Math.pow(Number($("volume").value)/100,1.6)*.75,at,.04);
  // AMG-Hochtonabsenkung ist kein Umbau am Preset, sondern ein schaltbares EQ.
@@ -154,10 +159,10 @@ async function start(){
   ctx=new Context({latencyHint:"interactive"});
   const ready=ctx.resume();
   await ctx.audioWorklet.addModule("./js/physical-engine-worklet-v4.js?v=4");
-  await ctx.audioWorklet.addModule("./js/physical-events-worklet-v1.js?v=1");
+  await ctx.audioWorklet.addModule("./js/physical-events-worklet-v2.js?v=2");
   await ready;
   engine=new AudioWorkletNode(ctx,"voltune-physical-engine-v4",{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
-  events=new AudioWorkletNode(ctx,"voltune-events-v1",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
+  events=new AudioWorkletNode(ctx,"voltune-events-v2",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
   engine.port.postMessage({type:"preset",value:$("preset").value});
   events.port.postMessage({type:"bypass",value:$("bypass").checked});
   amgEq=ctx.createBiquadFilter();amgEq.type="highshelf";amgEq.frequency.value=1200;amgEq.gain.value=0;
