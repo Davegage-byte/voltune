@@ -82,8 +82,12 @@ button:disabled{opacity:.5;cursor:not-allowed}.buttons{display:grid;grid-templat
 </section>
 <section class="card">
 <h2>4. Hintergrundbetrieb testen</h2>
-<p>Audio starten (bei D/E etwa drei Sekunden warten), dann auf <strong>„Hintergrundtest vormerken“</strong> tippen, den Tesla-Browser minimieren und 20–30 Sekunden später zurückkehren. <strong>War der Ton weiterhin zu hören?</strong> Das bitte zusätzlich unten festhalten; reine Browser-Zähler beweisen kein hörbares Audio.</p>
-<div class="buttons one"><button id="armBackground" class="primary">▶ Hintergrundtest vormerken</button></div>
+<p>Audio starten (bei D/E etwa drei Sekunden warten), dann auf <strong>„Hintergrundtest vormerken“</strong> tippen, den Tesla-Browser minimieren und 20–30 Sekunden später zurückkehren. Danach <strong>„Zurück im Browser – auswerten“</strong> drücken, falls kein automatischer Bericht erscheint. <strong>War der Ton weiterhin zu hören?</strong> Das bitte zusätzlich unten festhalten; reine Browser-Zähler beweisen kein hörbares Audio.</p>
+<div class="buttons">
+ <button id="armBackground" class="primary">▶ Hintergrundtest vormerken</button>
+ <button id="finishBackground">✓ Zurück im Browser – auswerten</button>
+</div>
+<p class="small">Der neue Testfenster-Zähler misst auch, wenn Teslas Browser kein <code>document.hidden</code> meldet. Er umfasst die Zeit ab „Vormerken“ bis „Auswerten“, also möglicherweise auch wenige Sekunden vor/nach dem Minimieren.</p>
 <div class="buttons">
  <button id="audibleYes">Ton lief weiter ✓</button>
  <button id="audibleNo">Ton war weg ✕</button>
@@ -106,6 +110,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.buttons{display:grid;grid-templat
 <div class="stats">
  <div class="stat">GPS-Meldungen gesamt<strong id="gpsCount">0</strong></div>
  <div class="stat">Bei versteckter Seite<strong id="gpsHiddenCount">0</strong></div>
+  <div class="stat">Während markiertem Testfenster<strong id="gpsWindowCount">–</strong></div>
 </div>
 <div class="small" id="gpsStatus">Nicht gestartet. Es werden keine Standortkoordinaten gespeichert oder übertragen. Im Stand kann GPS naturgemäß selten aktualisiert werden.</div>
 <h2>Vergleich bisheriger Durchläufe</h2>
@@ -137,6 +142,7 @@ let clickCount=0,sideCount=0,keyCount=0,handlers=0,teslaRecognized="unbekannt",l
 let gpsId=null,gpsCount=0,gpsHiddenCount=0,gpsLastAt=0,gpsLastAccuracy=null,gpsError="";
 let workletSeconds=null,workletReportedAt=0,lastTimerTick=Date.now(),maxTimerGap=0;
 let armed=false,hiddenStarted=0,hiddenDuration=0,hiddenSamples=null,lastBackground=null,hiddenReason="";
+ let testStartAt=0,gpsWindowStart=0,testStartSnapshot=null;
 let runHistory=[],audible="noch nicht bewertet",lastSavedReport="",savedReloaded=false;
 const trace=[];
 const now=()=>Date.now();
@@ -165,6 +171,10 @@ function render(){
  $("recognition").textContent="Tesla-Mini-Player: "+teslaRecognized;
  $("gpsCount").textContent=String(gpsCount);
  $("gpsHiddenCount").textContent=String(gpsHiddenCount);
+ $("gpsWindowCount").textContent=armed?
+  String(Math.max(0,gpsCount-gpsWindowStart)):
+  lastBackground&&Number.isFinite(lastBackground.gpsTestDelta)?
+   String(lastBackground.gpsTestDelta):"–";
  $("contextState").textContent=ctx?ctx.state:"–";
  $("playerState").textContent=audio.paused?"pausiert":"spielt";
  $("renderSeconds").textContent=workletSeconds===null?"–":workletSeconds.toFixed(1)+" s";
@@ -176,7 +186,8 @@ function render(){
  if(!runHistory.length){const li=document.createElement("li");li.textContent="Keine Hintergrundläufe ausgewertet.";rows.appendChild(li);}
  for(const run of runHistory.slice(-8).reverse()){
   const li=document.createElement("li");
-  li.textContent=run.mode+" · "+seconds(run.hiddenMs)+" versteckt · "+
+  li.textContent=run.mode+" · "+seconds(run.hiddenMs)+(run.manual?" markiertes Testfenster":" versteckt")+
+    (run.manual?" · GPS im Testfenster: "+run.gpsTestDelta:"")+" · "+
    "gehörter Ton: "+run.audible+" · AudioContext: "+run.ctxState+
    " · WebAudio-Zeit: "+(run.ctxDelta===null?"–":seconds(run.ctxDelta*1000))+
    " · Worklet: "+(run.renderDelta===null?"–":seconds(run.renderDelta*1000))+
@@ -190,7 +201,9 @@ function render(){
   " · Letzter Hintergrundlauf: "+result.mode+" / "+seconds(result.hiddenMs)+
   " / Ton "+result.audible+" / Worklet "+
   (result.renderDelta===null?"nicht gemessen":seconds(result.renderDelta*1000))+
-  " / GPS-Meldungen "+result.gpsHiddenDelta:"";
+  " / GPS bei versteckter Seite "+result.gpsHiddenDelta+
+  (result.manual?" / GPS im markierten Testfenster "+result.gpsTestDelta+
+  " (kein Hidden-Signal)":""):"";
  $("report").textContent="Audio: "+mode+" · Tesla-Mini-Player: "+teslaRecognized+
   " · Scrollrad-Klick: "+clickCount+" · Links/Rechts: "+sideCount+
   " · Key-Events: "+keyCount+" · MediaSession-Handler: "+handlers+"/4"+
@@ -447,9 +460,42 @@ function armBackground(){
   return;
  }
  armed=true;hiddenStarted=0;hiddenSamples=null;hiddenDuration=0;hiddenReason="";
+ testStartAt=now();gpsWindowStart=gpsCount;testStartSnapshot=capture();
  maxTimerGap=0;lastTimerTick=now();
  $("bgStatus").textContent="Bereit! Tesla-Browser jetzt minimieren, etwa 20–30 Sekunden warten und zurückkehren. Audiotest laufen lassen.";
  note("Hintergrundtest vorbereitet für "+mode);
+}
+function finishBackground(){
+ if(!armed){
+  $("bgStatus").textContent=lastBackground?
+   "Letzter Test bereits ausgewertet. Für einen neuen Lauf zuerst vormerken.":
+   "Bitte erst den Hintergrundtest vormerken.";
+  return;
+ }
+ if(hiddenStarted&&hiddenSamples){backgroundResult();return;}
+ const end=capture(),begin=testStartSnapshot||capture();
+ const delta=(v,w)=>Number.isFinite(v)&&Number.isFinite(w)?Math.max(0,v-w):null;
+ const duration=Math.max(0,now()-testStartAt);
+ const result={
+  mode,hiddenMs:duration,manual:true,
+  detection:"markiertes Testfenster; Tesla hat keine verlässliche Sichtbarkeit signalisiert",
+  mediaDelta:delta(end.mediaTime,begin.mediaTime),
+  ctxDelta:delta(end.contextTime,begin.contextTime),
+  renderDelta:delta(end.rendered,begin.rendered),
+  gpsHiddenDelta:Math.max(0,end.gpsHidden-begin.gpsHidden),
+  gpsTestDelta:Math.max(0,gpsCount-gpsWindowStart),
+  ctxState:end.ctxState,mediaPaused:end.mediaPaused,maxGap:maxTimerGap,
+  audible:"noch nicht bewertet",date:new Date().toLocaleString("de-DE")
+ };
+ runHistory.push(result);if(runHistory.length>12)runHistory.shift();
+ lastBackground=result;audible="noch nicht bewertet";
+ armed=false;hiddenSamples=null;hiddenStarted=0;hiddenReason="";testStartSnapshot=null;
+ $("bgStatus").textContent="Manuell ausgewertet: "+seconds(duration)+
+  " Testfenster, "+result.gpsTestDelta+" GPS-Meldungen zwischen Vormerken und Auswerten, "+
+  result.gpsHiddenDelta+" davon bei document.hidden. "+
+  "Die Testfenster-Zahl allein bestätigt keinen echten Hidden-Status. Jetzt Ton bewerten.";
+ note("Manuelle Testfenster-Auswertung: "+result.gpsTestDelta+" GPS-Meldungen");
+ persist();render();
 }
 function rateAudible(value){
  audible=value;
@@ -520,6 +566,7 @@ $("visibleNo").addEventListener("click",()=>{teslaRecognized="NEIN";note("Tesla-
 $("testClick").addEventListener("click",()=>action("play","Bildschirmtaste",false));
 $("testNext").addEventListener("click",()=>action("nexttrack","Bildschirmtaste",false));
 $("armBackground").addEventListener("click",armBackground);
+ $("finishBackground").addEventListener("click",finishBackground);
 $("audibleYes").addEventListener("click",()=>rateAudible("JA"));
 $("audibleNo").addEventListener("click",()=>rateAudible("NEIN"));
 $("gpsBegin").addEventListener("click",startGps);
