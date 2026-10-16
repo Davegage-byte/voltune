@@ -119,3 +119,14 @@ MediaSession-Aktionen Play/Pause/Next/Previous werden gezählt. Hintergrundprüf
 **Einschränkung:** Ein Tesla-Browser, der Medienbefehle oder GPS-Updates im Hintergrund nicht weiterleitet, kann durch reine JavaScript-Handler nicht gezwungen werden. Audiowiedergabe allein reicht für einen wirklich dynamischen Voltune-Motorsound nicht aus.
 
 **Die normale Voltune-App und ihre Audioengine wurden bei diesen Tests nicht verändert.**
+
+
+## Lautstärke bei 100 % / alle zehn Profile (16.10.2026)
+
+- **GPS- und manuelles Events-Labor:** Gesamtlautstärke 0–100 % mit voller browserseitiger Aussteuerung bei 100 %; starre 0,90-Gain-Grenze entfernt.
+- **Neue abschließende Stereo-Schutzstufe:** `js/physical-output-limiter-v1.js` hinter dem gemeinsamen Ausgangsgain und *vor* normalem Browser-Ausgang bzw. MediaStream-Medienbrücke. Digitales Sample-Peak-Limit ±0,965 mit 75 ms Gain-Recovery, keine Änderung der v0.4-Motor-Worklet-Profile.
+- **Lautstärkekurve:** Gain = `3.8 * (volume/100)^1.65 * 10^((boostDb * (1-volume/100))/20)`. 100 % ergibt immer 3,8 vor dem Limiter, unabhängig vom Boost; bei niedrigeren Reglerwerten unterstützt Musik-Boost 0 bis +12 dB zusätzliche Verstärkung.
+- **Hybrid EV + V8** behält seinen separaten Faktor 2 vor dem bestehenden Event-Prozessor. Andere neun Soundprofile werden nicht einzeln tonal verändert.
+- **Tesla-Medienmodus:** ebenfalls nach dem Output-Limiter abgegriffen; Umleitung zu MediaStream umgeht die Schutzstufe nicht.
+- **Validierung:** beide Testseiten mit simuliertem AudioGraph gestartet, alle drei Worklets geladen, Reglerwerte 0/25/50/100 % und Tesla-Stream-Umschaltung geprüft. 10 Profile bei simulierten 3200 RPM, Last 0,55 und 25/100 % durch Motor-/Events-/Output-Worklets gerendert; digitale Ausgangsspitzen aller zehn Profile bei 100 % max. 0,965 und alle Samples endlich.
+- **Einschränkung:** Peak-Begrenzung ist keine Garantie für subjektiv unverzerrte Wiedergabe bei Extrempegeln (starke Dynamikbegrenzung möglich). Die Tesla-Audiohardware und Betriebssystemlautstärke bleiben separat; in-car Test nötig. Die bestehende Voltune-Hauptapp und das alte Physical-Engine-v0.4-Referenzlabor bleiben unverändert.
