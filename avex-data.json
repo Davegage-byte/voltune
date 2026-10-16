@@ -1,21 +1,21 @@
 {
-  "price": "0,60",
-  "free": 6,
-  "occupied": 2,
+  "price": "0,58",
+  "free": 7,
+  "occupied": 1,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-16T00:33:33+02:00",
-  "status_checked_at": "2026-10-16T00:33:33+02:00",
-  "price_changed_at": "2026-10-15T17:46:09+02:00",
-  "updated": "00:33",
-  "checked_at": "2026-10-16T00:33:33+02:00",
+  "price_checked_at": "2026-10-16T02:40:41+02:00",
+  "status_checked_at": "2026-10-16T02:40:41+02:00",
+  "price_changed_at": "2026-10-16T02:40:41+02:00",
+  "updated": "02:40",
+  "checked_at": "2026-10-16T02:40:41+02:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-15T22:00:00+00:00",
-  "price_valid_to": "2026-10-15T23:00:00+00:00",
+  "price_valid_from": "2026-10-15T23:00:00+00:00",
+  "price_valid_to": "2026-10-16T04:15:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-10-15T22:00:00+00:00",
@@ -141,8 +141,8 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 6,
-        "occupied": 2,
+        "free": 7,
+        "occupied": 1,
         "offline": 0,
         "unknown": 0,
         "price": 0.55,
@@ -166,18 +166,6 @@
             "price": 0.55,
             "data_since": "2026-07-03"
           },
-          "DE*AVX*E262426": {
-            "status": "free",
-            "status_at": "2026-10-11T10:18:00+02:00",
-            "price": 0.55,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262414": {
-            "status": "free",
-            "status_at": "2026-10-11T06:15:00+02:00",
-            "price": 0.55,
-            "data_since": "2026-07-03"
-          },
           "DE*AVX*E262430": {
             "status": "free",
             "status_at": "2026-10-11T09:03:00+02:00",
@@ -185,14 +173,26 @@
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262451": {
-            "status": "occupied",
-            "status_at": "2026-10-11T11:11:00+02:00",
+            "status": "free",
+            "status_at": "2026-10-11T12:16:00+02:00",
             "price": 0.55,
             "data_since": "2026-07-04"
+          },
+          "DE*AVX*E262426": {
+            "status": "free",
+            "status_at": "2026-10-11T10:18:00+02:00",
+            "price": 0.55,
+            "data_since": "2026-07-03"
           },
           "DE*AVX*E262431": {
             "status": "free",
             "status_at": "2026-10-11T11:02:00+02:00",
+            "price": 0.55,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262414": {
+            "status": "free",
+            "status_at": "2026-10-11T06:15:00+02:00",
             "price": 0.55,
             "data_since": "2026-07-03"
           }
