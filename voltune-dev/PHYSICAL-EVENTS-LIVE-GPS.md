@@ -151,3 +151,19 @@ MediaSession-Aktionen Play/Pause/Next/Previous werden gezählt. Hintergrundprüf
 - **Noch offen:** E-Medienanker direkt *im GPS-Labor* am echten Tesla ausprobieren. Der Test-E-Erfolg in der Diagnoseseite garantiert nicht identisches Verhalten in der Laborkonfiguration.
 
 Die eigentliche Voltune-App wird erst nach weiterer Abstimmung integriert. Ihre alten Klangregler sollen nur bei ausgewählter alter Audioengine erscheinen; zusätzliche Physical-Engine-Regler nur bei der neuen Audioengine. Gemeinsame GPS-/Getriebe-/Lautstärkeregelung bleibt unabhängig.
+
+
+## Effekte deutlich hörbarer und empfindlicher (16.10.2026)
+
+Im GPS-Events-Fahrtest wurde der bestehende Effect-Prozessor v0.2 **nicht überschrieben**, sondern durch eine optionale neue v0.3-Worklet-Version ersetzt (Datei \`js/physical-events-worklet-v3.js\`). Die bisherige manuelle Events-Lab-Seite verbleibt als Referenz bei v0.2.
+
+- **Schalthärte und Abgasimpulse:** weiterhin 0–100 %, wobei 50 % exakt der bisherigen dezenten Abstimmung entsprechen.
+- **Effekt-Vordergrund:** 0–100 %, voreingestellt 70 %. 0 % liefert mit v3 beim alten Vergleichseffekt sampleidentisches Output zu v2; 100 % steuert bis zum Faktor 5 für Event-Transienten. Wenn wirklich ein Impuls ausgelöst wird, sinkt der Motorsound über dessen kurze Ausklingzeit bei maximalem Effekt-Vordergrund um höchstens ca. 58 %. Originaler Motor-Worklet v4 und finales Peak-Limit bleiben unverändert.
+- **Auspuffdämpfung:** für maximale Offensivität nahe 0 % einstellen.
+- **GPS-Effekt-Empfindlichkeit:** Standard (alte Schwellen und Cooldowns), Sport (voreingestellt, leichter auslösbar), Extrem (Experiment, kann GPS-Fehlauslösungen hervorbringen). Echte virtuelle Gear-Changes sind weiterhin für automatische Hochschalt-/Runterschalt-Effekte erforderlich; RPM/GPS-Werte werden durch diese Einstellung nicht verändert.
+- **Schubknallen:** Sport/Extrem verwenden eine kurze Erinnerung an vorausgegangene positive Beschleunigung (Sport 1,6 s, Extrem 2,4 s), statt ausschließlich die Last des unmittelbar vorherigen GPS-Fixes. Die Standard-Variante benutzt weiterhin die bisherigen Bedingungen.
+- **Schutz:** Nur nach gültigem GPS, bei Geschwindigkeitsminimum und nach Sperrzeiten. Kein neuer Effekt bei ungültigem Fix. Schubknallen erst nach Lastabfall und ausreichender jüngster Last. Output-Limiter bleibt bei max. ±0,965.
+- **Maximaler Hörtest (nur im Stand einstellen):** \`Schalthärte 100 %\`, \`Abgasimpulse 100 %\`, \`Effekt-Vordergrund 100 %\`, \`Auspuffdämpfung 0 %\`, \`GPS-Empfindlichkeit Extrem\`; Automatik-Schaltungen und Automatik-Schubknallen eingeschaltet und Bypass aus.
+- **Validierung:** In Worklet-Simulationen sind v2 und v3 bei \`effectBoost=1\` über alle getesteten Effekte sampleidentisch. Für dynamisches Hybrid-PCM mit Lautstärkefaktor 2, Masterfaktor 2,7 und finalem Output-Limiter stieg der Effektkontrast (RMS-Abstand vom identischen Lauf ohne Effekt) bei Maximal-Boost um ca. 18 % (Upshift), 44 % (Downshift), 32 % (Overrun). Das sind digitale Simulationswerte, keine psychoakustische Messung. Test der GPS-Modi mit virtuellem Getriebe und Lastwechsel: Standard kein Pop bei −0,75 m/s², Sport/Extrem je ein Pop; bei gleichem GPS-Fix-Verlauf. Die Motorwiedergabe bleibt bei Regleranpassungen unverändert aktiv.
+
+Achtung: Der Test mit hoher Effekt-Präsenz kann im Fahrzeug sehr auffällige Transienten erzeugen. Fahrzeuglautstärke zunächst niedrig einstellen. Die Haupt-Voltune-App wurde noch nicht geändert.
