@@ -106,7 +106,14 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <p>Live-Daten aus dem bestehenden Voltune-GPS-Modul. Das virtuelle Getriebe reagiert auf Geschwindigkeit und Beschleunigung.</p>
 <div class="buttons"><button class="primary" id="gpsStart">▶ Live-Fahrt starten</button><button id="gpsStop" disabled>■ GPS beenden</button></div>
 <div class="control checkboxline"><input id="autoShifts" type="checkbox" checked><label for="autoShifts">Schaltvorgänge automatisch vertonen</label></div>
-<div class="control checkboxline"><input id="autoPops" type="checkbox" checked><label for="autoPops">Schubknallen bei deutlichem Gaswegnehmen (vorsichtig)</label></div>
+<div class="control checkboxline"><input id="autoPops" type="checkbox" checked><label for="autoPops">Schubknallen beim deutlichen Gaswegnehmen</label></div>
+<div class="control"><label for="gpsEffectMode">GPS-Effekt-Empfindlichkeit</label>
+<select id="gpsEffectMode">
+<option value="standard">Standard · bisherige Erkennung</option>
+<option value="sport" selected>Sport · öfter, aber mit Sperrzeiten</option>
+<option value="extreme">Extrem · sehr empfindlich</option>
+</select></div>
+<div class="small">Nur die Erkennung der automatischen Effekte wird angepasst, nicht die virtuelle Ganglogik. Sport/Extrem merken sich eine Beschleunigungsphase kurz für spätere Schubimpulse. Bei Extrem sind Fehlauslösungen durch GPS-Schwankungen eher möglich.</div>
 <div class="small">Virtuelles Getriebe: 6.500 RPM, Schalten bis 6.000 RPM, Gangreichweite 270 km/h. <strong>GPS-Geschwindigkeit bleibt ungeglättet; virtuelle RPM und Last werden kontinuierlich nachgeführt.</strong> Kein echtes Pedal-/CAN-Signal.</div>
 <div class="buttons">
  <div><div class="small">GPS-Geschwindigkeit</div><div class="readout"><span id="gpsSpeed">–</span> <span style="font-size:12px">km/h</span></div></div>
@@ -146,6 +153,8 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <hr>
 <div class="control"><label for="shiftStrength">Schalthärte <output id="shiftText">50 %</output></label><input id="shiftStrength" type="range" min="0" max="100" value="50"></div>
 <div class="control"><label for="popStrength">Abgasimpulse <output id="popText">50 %</output></label><input id="popStrength" type="range" min="0" max="100" value="50"></div>
+<div class="control"><label for="effectFocus">Effekt-Vordergrund <output id="effectFocusText">70 %</output></label><input id="effectFocus" type="range" min="0" max="100" step="1" value="70"></div>
+<div class="small"><strong>0 % = alter Event-Sound</strong>, 70 % = viel deutlicher, 100 % = maximaler Event-Vordergrund im Test. Bei echten Impulsen tritt der Motor kurz zurück, damit Knaller nicht im lauten Motor untergehen. Der finale Ausgangslimiter bleibt aktiv.</div>
 <div class="small">0 % = Effekt aus, <strong>50 % = bisherige dezente Abstimmung</strong>, 100 % = absichtlich übertrieben. Der Auspuffdämpfungsregler steuert weiterhin nur die Klangfarbe.</div>
 <div class="control"><label for="muffling">Auspuffdämpfung <output id="mufflingText">55 %</output></label><input id="muffling" type="range" min="0" max="100" value="55"></div>
 <div class="control checkboxline"><input id="bypass" type="checkbox"><label for="bypass">Neue Effekte vollständig überbrücken (A/B)</label></div>
@@ -176,6 +185,7 @@ let demoFrame=0,demoStart=0,demoFlags=0,demoOverrideUntil=0;
 let timeouts=[];
 let gpsRunning=false,gpsLastFix=0,gpsLastGood=0,gpsLastSpeed=null;
 let gpsPreviousGear=null,gpsPreviousLoad=.13,gpsLastShift=0,gpsLastPop=0;
+let gpsRecentAccelAt=0,gpsRecentAccelLoad=.13;
 let gpsWatchdog=0,gpsStaleReported=false,gpsCurrentRpm=null;
 let gpsTargetRpm=850,gpsTargetLoad=.13,gpsTargetsValid=false;
 let gpsDisplayRpm=850,gpsDisplayLoad=.13,gpsVisualFrame=0,gpsVisualLast=0;
@@ -274,7 +284,7 @@ const driveConfig={maxRpm:6500,gearRange:270,shiftRpm:6000,gearsEnabled:true,dyn
 const track=(fn,delay)=>{const t=setTimeout(fn,delay);timeouts.push(t);};
 const status=(msg)=>{$("status").textContent=msg;};
 function syncUI(){
- for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["musicBoost","musicBoostText"," dB"],["amgHighs","amgHighsText"," %"],["evBlend","evBlendText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
+ for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["musicBoost","musicBoostText"," dB"],["amgHighs","amgHighsText"," %"],["evBlend","evBlendText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["effectFocus","effectFocusText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
  $("musicBoostText").textContent="+"+$("musicBoost").value+" dB";
  $("readRpm").textContent=$("rpm").value;
  $("rpmMeter").style.width=clamp(Number($("rpm").value)/8500*100,0,100)+"%";
@@ -303,6 +313,7 @@ function apply(){
  events.parameters.get("shiftLevel").setTargetAtTime(eventScale($("shiftStrength").value,.7,1.75),at,.03);
  events.parameters.get("popLevel").setTargetAtTime(eventScale($("popStrength").value,.65,2.0),at,.03);
  events.parameters.get("muffling").setTargetAtTime(Number($("muffling").value)/100,at,.03);
+ events.parameters.get("effectBoost").setTargetAtTime(1+4*Number($("effectFocus").value)/100,at,.04);
  // 100 % nutzt den maximalen, final spitzenbegrenzten Browser-Pegel.
  // Der Musik-Boost beeinflusst nur die Bereiche unter Vollaussteuerung:
  // 100 % ist immer gleich maximal, unabhängig vom Boost-Schieberegler.
@@ -567,11 +578,11 @@ async function start(){
   ctx=new Context({latencyHint:"interactive"});
   const ready=ctx.resume();
   await ctx.audioWorklet.addModule("./js/physical-engine-worklet-v4.js?v=4");
-  await ctx.audioWorklet.addModule("./js/physical-events-worklet-v2.js?v=2");
+  await ctx.audioWorklet.addModule("./js/physical-events-worklet-v3.js?v=3");
   await ctx.audioWorklet.addModule("./js/physical-output-limiter-v1.js?v=1");
   await ready;
   engine=new AudioWorkletNode(ctx,"voltune-physical-engine-v4",{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
-  events=new AudioWorkletNode(ctx,"voltune-events-v2",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
+  events=new AudioWorkletNode(ctx,"voltune-events-v3",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
   engine.port.postMessage({type:"preset",value:$("preset").value});
   events.port.postMessage({type:"bypass",value:$("bypass").checked});
   amgEq=ctx.createBiquadFilter();amgEq.type="highshelf";amgEq.frequency.value=1200;amgEq.gain.value=0;
@@ -689,6 +700,7 @@ function stopGps(){
  }
  gpsRunning=false;gpsLastFix=0;gpsLastGood=0;gpsLastSpeed=null;
  gpsPreviousGear=null;gpsPreviousLoad=.13;gpsStaleReported=false;gpsCurrentRpm=null;
+ gpsRecentAccelAt=0;gpsRecentAccelLoad=.13;
  gpsTargetsValid=false;gpsVisualLast=0;
  if(gpsVisualFrame)cancelAnimationFrame(gpsVisualFrame);
  gpsVisualFrame=0;
@@ -739,25 +751,53 @@ function onGpsUpdate(data){
  const previousGear=gpsPreviousGear;
  const oldLoad=gpsPreviousLoad;
  gpsPreviousGear=gear;gpsPreviousLoad=demand;
- // GPS ist unscharf: nur bei guten, frischen Fixes und
- // mit Cooldowns automatisch vertonen.
- if(previousGear!==null && gear!==previousGear
-    && speed>=22 && now-gpsLastShift>1300 && $("autoShifts").checked){
-   const type=gear>previousGear?"upshift":"downshift";
-   // Im Schubbetrieb leiseres Zwischengas; niemals Raufschalten
-   // bei Geschwindigkeitszittern als massiven Knall interpretieren.
-   if(Number($("shiftStrength").value)>0){
-    sendEvent(type,clamp(.45+Math.abs(accel)*.15,.35,.88),"GPS Automatik");
-    status("GPS-Getriebe "+previousGear+" → "+gear+" · "+(type==="upshift"?"Hochschalten":"Runterschalten"));
-   }
-   gpsLastShift=now;
+ // Nur die Trigger werden empfindlicher; keine Änderung der
+ // GPS-Geschwindigkeit, Gear- oder RPM-Berechnung.
+ const sensitivity=$("gpsEffectMode").value;
+ const standard=sensitivity==="standard",extreme=sensitivity==="extreme";
+ const minShiftSpeed=standard?22:extreme?13:17;
+ const shiftCooldown=standard?1300:extreme?650:900;
+ if(previousGear!==null&&gear!==previousGear&&speed>=minShiftSpeed
+   &&now-gpsLastShift>shiftCooldown&&$("autoShifts").checked){
+  const type=gear>previousGear?"upshift":"downshift";
+  if(Number($("shiftStrength").value)>0){
+   const intensity=standard?clamp(.45+Math.abs(accel)*.15,.35,.88)
+     :clamp(.68+Math.abs(accel)*.12,.62,1);
+   sendEvent(type,intensity,"GPS Automatik");
+   status("GPS-Getriebe "+previousGear+" → "+gear+" · "+
+     (type==="upshift"?"Hochschalten":"Runterschalten"));
+  }
+  gpsLastShift=now;
  }
+ // Die bisherige Schub-Erkennung verlangte einen Lastwechsel zwischen
+ // zwei unmittelbar aufeinanderfolgenden GPS-Fixes. In Sport/Extrem
+ // bleibt die jüngste echte Beschleunigungsphase kurz vorgemerkt.
+ if(accel>=.28&&speed>=12){
+  gpsRecentAccelAt=now;
+  gpsRecentAccelLoad=Math.max(gpsRecentAccelLoad*.92,demand);
+ }
+ const windowMs=extreme?2400:1600;
+ const recentlyAccelerated=gpsRecentAccelAt>0&&now-gpsRecentAccelAt<=windowMs;
+ const beforeLoad=standard?oldLoad:
+  recentlyAccelerated?Math.max(oldLoad,gpsRecentAccelLoad):oldLoad;
+ const minPopSpeed=standard?38:extreme?20:28;
+ const maxDecel=standard?-1:extreme?-.38:-.62;
+ const minLoad=standard?.36:extreme?.27:.31;
+ const popCooldown=standard?3200:extreme?1400:1900;
+ const postShiftDelay=standard?700:extreme?250:400;
  if($("autoPops").checked&&Number($("popStrength").value)>0
-    &&speed>=38&&accel<=-1.0&&oldLoad>=.36&&demand<=.1
-    &&now-gpsLastPop>3200&&now-gpsLastShift>700){
-   sendEvent("overrun",clamp(.45+Math.abs(accel)*.11,.45,.85),"GPS Automatik");
-   gpsLastPop=now;
-   status("GPS: deutlicher Lastabfall – kurzer Schubimpuls.");
+   &&speed>=minPopSpeed&&accel<=maxDecel&&beforeLoad>=minLoad
+   &&demand<=.1&&now-gpsLastPop>popCooldown
+   &&now-gpsLastShift>postShiftDelay){
+  const intensity=standard?clamp(.45+Math.abs(accel)*.11,.45,.85)
+   :clamp(.66+Math.abs(accel)*.15,.65,1);
+  sendEvent("overrun",intensity,"GPS Automatik");
+  gpsLastPop=now;
+  gpsRecentAccelAt=0;gpsRecentAccelLoad=.13;
+  status("GPS: Lastabfall · Schubimpuls ("+
+    (standard?"Standard":extreme?"Extrem":"Sport")+").");
+ }else if(!recentlyAccelerated&&now-gpsRecentAccelAt>windowMs){
+  gpsRecentAccelLoad=.13;
  }
  setGpsMotorTargets(rpm,demand,previousGear!==null&&previousGear!==gear);
  if(now-lastSampleLogged>=1000){
@@ -779,6 +819,7 @@ async function startGps(){
  }
  window.VoltuneDrivetrain.reset();
  gpsPreviousGear=null;gpsLastSpeed=null;gpsLastGood=0;gpsLastFix=0;
+ gpsRecentAccelAt=0;gpsRecentAccelLoad=.13;
  gpsLastShift=performance.now();gpsLastPop=performance.now();
  lastSampleLogged=0;lastInvalidLogged=0;
  gpsTargetsValid=false;gpsVisualLast=0;
@@ -821,7 +862,7 @@ $("bypass").addEventListener("change",()=>{
  if(events)events.port.postMessage({type:"bypass",value:$("bypass").checked});
  status($("bypass").checked?"Neue Effekte überbrückt – Basismotor läuft.":"Neue Effekte aktiviert.");
 });
-for(const id of ["rpm","load","volume","musicBoost","amgHighs","evBlend","shiftStrength","popStrength","muffling"]){
+for(const id of ["rpm","load","volume","musicBoost","amgHighs","evBlend","shiftStrength","popStrength","effectFocus","muffling"]){
  $(id).addEventListener("input",()=>{
   // Keine laufende Demo oder GPS-Fahrt mehr unterbrechen!
   // RPM/Last sind im manuellen Demo-Modus für 2 Sekunden übersteuerbar.
