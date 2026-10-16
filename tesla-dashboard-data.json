@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-16T20:01:48+02:00",
+  "checked_at": "2026-10-16T22:54:42+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -17,7 +17,7 @@
     "dataset_url": "https://suc-tracker.eu/data/europe.json",
     "schema_version": 2,
     "generated_at": "2026-10-09T19:22:47.424Z",
-    "checked_at": "2026-10-16T20:01:48+02:00",
+    "checked_at": "2026-10-16T22:54:42+02:00",
     "station_count": 1784,
     "matched_stations": 616
   },
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-16T20:01:48+02:00",
+    "checked_at": "2026-10-16T22:54:42+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.12,
-    "diesel": 2.233,
-    "e5_updated_at": "2026-10-16T19:30+02:00",
-    "diesel_updated_at": "2026-10-16T19:30+02:00",
+    "e5": 2.125,
+    "diesel": 2.242,
+    "e5_updated_at": "2026-10-16T22:20+02:00",
+    "diesel_updated_at": "2026-10-16T22:20+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-16T20:01:48+02:00",
+    "checked_at": "2026-10-16T22:54:42+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 353.05,
+    "price": 354.72,
     "currency": "USD",
-    "market_time": "2026-10-16T20:01:52+02:00",
+    "market_time": "2026-10-16T22:00:01+02:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-16T20:01:48+02:00",
+    "checked_at": "2026-10-16T22:54:42+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.4175,
-    "min": 0.35,
+    "average": 0.3725,
+    "min": 0.26,
     "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-16T20:01:48+02:00"
+    "calculated_at": "2026-10-16T22:54:42+02:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,11 @@
   ],
   "news": [
     {
+      "title": "Slovakia Becomes 9th European Country to Approve Tesla FSD",
+      "url": "https://www.notateslaapp.com/news/4838/slovakia-becomes-9th-european-country-to-approve-tesla-fsd",
+      "published_at": "2026-10-16T21:02:00+02:00"
+    },
+    {
       "title": "Tesla Roadster Event Recap: It Flies, Flips, and Hits 0-60 in 0.81s",
       "url": "https://www.notateslaapp.com/news/4837/tesla-roadster-event-recap-it-flies-flips-and-hits-0-60-in-081s",
       "published_at": "2026-10-16T06:15:00+02:00"
@@ -24479,11 +24484,6 @@
       "title": "You Can Now Earn Money by Sharing Your Starlink Connection",
       "url": "https://www.notateslaapp.com/news/4828/you-can-now-earn-money-by-sharing-your-starlink-connection",
       "published_at": "2026-10-15T00:55:00+02:00"
-    },
-    {
-      "title": "Tesla Rolls Out FSD V14 Lite to Legacy Model S/X for First Time",
-      "url": "https://www.notateslaapp.com/news/4827/tesla-rolls-out-fsd-v14-lite-to-legacy-model-sx-for-first-time",
-      "published_at": "2026-10-14T23:44:00+02:00"
     }
   ],
   "regional_news": [
@@ -24561,10 +24561,10 @@
     }
   ],
   "errors": {},
-  "superchargers_updated_at": "2026-10-16T20:01:48+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-16T20:01:48+02:00",
-  "news_updated_at": "2026-10-16T20:01:48+02:00",
-  "regional_news_updated_at": "2026-10-16T20:01:48+02:00",
-  "fuel_prices_updated_at": "2026-10-16T20:01:48+02:00",
-  "tesla_stock_updated_at": "2026-10-16T20:01:48+02:00"
+  "superchargers_updated_at": "2026-10-16T22:54:42+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-16T22:54:42+02:00",
+  "news_updated_at": "2026-10-16T22:54:42+02:00",
+  "regional_news_updated_at": "2026-10-16T22:54:42+02:00",
+  "fuel_prices_updated_at": "2026-10-16T22:54:42+02:00",
+  "tesla_stock_updated_at": "2026-10-16T22:54:42+02:00"
 }
