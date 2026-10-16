@@ -94,3 +94,28 @@ Informationsquellen:
 - Tesla Model 3 Handbuch: https://www.tesla.com/ownersmanual/2017_2023_model3/en_ae/GUID-DEB259CC-ABAC-4BFC-8D10-B7B1BBCFCB1F.html
 - Browser Media Session: https://developer.mozilla.org/en-US/docs/Web/API/MediaSession/setActionHandler
 - Rupteur-Produktbeschreibung: https://rupteur.app/de/
+
+
+## Entscheidung: optionale Lenkradsteuerung, Hintergrundbetrieb und Anzeige (16.10.2026)
+
+- **Lenkradsteuerung:** Später als **frei zuschaltbarer Betriebsmodus** in Voltune übernehmen, sofern die Tesla-Tests den Empfang von Medienbefehlen bestätigen. Der Nutzer akzeptiert ausdrücklich, dass dabei die Tesla-Musik pausieren kann. Normaler Betrieb parallel zur Musik bleibt als Alternative erhalten.
+- **Engine-Auswahl:** Voltune Original bleibt vollständig erhalten. Physical Engine mit **Hybrid EV + V8** als separate Engine dazu; weitere neue Profile später möglich.
+- **Regler:** Gemeinsame GPS-, Getriebe-, Start/Stopp- und Master-Lautstärke-Regler immer sichtbar. Engine-spezifische Regler nur bei aktivem Engine-Typ zeigen; ausgeblendete Einstellungen behalten ihre Werte. Keine doppelte Audioausgabe.
+- **Priorität vor der Integration:** Audio- und GPS-Hintergrundfähigkeit des Tesla-Browsers separat testen. Tesla dokumentiert grundsätzlich weiterlaufendes Browser-Audio nach dem Minimieren, dies garantiert aber nicht weiterlaufende WebAudio-, AudioWorklet- oder GPS-Verarbeitung.
+
+### Medien- und Hintergrund-Diagnose
+
+Die Testseite `voltune-dev/tesla-media-diagnose.html` enthält fünf getrennte Audiomodi:
+- **A:** HTML-WAV-Audio (`audio.src`), nativer Mediaplayer.
+- **B:** WebAudio-Oszillator über `MediaStreamAudioDestinationNode` an HTML-Audio.
+- **C:** Direkter WebAudio-Oszillator über `AudioContext.destination`.
+- **D:** Echter Hybrid EV + V8 (Physical Engine v0.4) via AudioWorklet und MediaStream an HTML-Audio.
+- **E:** Echter Hybrid direkt über AudioWorklet sowie ein leiser nativer HTML-WAV-Medienanker.
+
+MediaSession-Aktionen Play/Pause/Next/Previous werden gezählt. Hintergrundprüfung vergleicht `visibilitychange`, Fokusverlust, Audiostatus, AudioContext-Zeit, tatsächliche Worklet-Audiorender-Zeit (`js/tesla-background-monitor-v1.js`), JavaScript-Timerlücken und optionale GPS-Fixes. Die Seite speichert keine GPS-Koordinaten; Fotobericht und lokal gesicherte Vergleichsläufe.
+
+**Testablauf:** im geparkten Tesla einen Modus starten, bei D/E drei Sekunden für den Render-Monitor warten, Hintergrundtest vormerken, Browser für 20–30 Sekunden minimieren, wieder öffnen, tatsächliche Hörbarkeit (Ja/Nein) eintragen und Bericht fotografieren. Die Modi A–E getrennt durchtesten und den GPS-Test ggf. zusätzlich starten. Fokusverlust allein ist ein schwächeres Signal als `document.hidden`.
+
+**Einschränkung:** Ein Tesla-Browser, der Medienbefehle oder GPS-Updates im Hintergrund nicht weiterleitet, kann durch reine JavaScript-Handler nicht gezwungen werden. Audiowiedergabe allein reicht für einen wirklich dynamischen Voltune-Motorsound nicht aus.
+
+**Die normale Voltune-App und ihre Audioengine wurden bei diesen Tests nicht verändert.**
