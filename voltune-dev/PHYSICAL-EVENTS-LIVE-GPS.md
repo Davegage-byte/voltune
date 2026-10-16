@@ -167,3 +167,24 @@ Im GPS-Events-Fahrtest wurde der bestehende Effect-Prozessor v0.2 **nicht übers
 - **Validierung:** In Worklet-Simulationen sind v2 und v3 bei \`effectBoost=1\` über alle getesteten Effekte sampleidentisch. Für dynamisches Hybrid-PCM mit Lautstärkefaktor 2, Masterfaktor 2,7 und finalem Output-Limiter stieg der Effektkontrast (RMS-Abstand vom identischen Lauf ohne Effekt) bei Maximal-Boost um ca. 18 % (Upshift), 44 % (Downshift), 32 % (Overrun). Das sind digitale Simulationswerte, keine psychoakustische Messung. Test der GPS-Modi mit virtuellem Getriebe und Lastwechsel: Standard kein Pop bei −0,75 m/s², Sport/Extrem je ein Pop; bei gleichem GPS-Fix-Verlauf. Die Motorwiedergabe bleibt bei Regleranpassungen unverändert aktiv.
 
 Achtung: Der Test mit hoher Effekt-Präsenz kann im Fahrzeug sehr auffällige Transienten erzeugen. Fahrzeuglautstärke zunächst niedrig einstellen. Die Haupt-Voltune-App wurde noch nicht geändert.
+
+
+## Motorpräsenz und hörbare Lautstärke bei Musik (16.10.2026)
+
+Nutzerfahrbericht aus Tesla: 105,0 km/h GPS-Spitze, 10,7 Hz im Mittel, 23 Hoch-/16 Runterschaltungen und 13 Schubknalle (automatische Eventzahlen sind diagnostisch; auffallend viele Gangwechsel können GPS-/Gang-Jitter bedeuten). V8 Hybrid neben Tesla-Musik kaum wahrnehmbar, andere Presets ebenfalls etwas zu leise.
+
+### Spektrale Ursache
+Ein Offline-Test des originalen Physical-Engine-v4-Signals bei ca. 1500, 2800 und 4000 RPM, Last 0,40, zeigte:
+- Hybrid/V8: Großteil der Energie unter 250 Hz, nur sehr geringe Pegel zwischen 500 und 2000 Hz.
+- AMG/GTI: deutlich mehr Motorenergie zwischen 500 und 2000 Hz.
+- Reines Master-Gain kann dies nicht kompensieren, sobald Kompression und finaler Peak-Limiter arbeiten. Basslastige Signale werden neben Musik stark maskiert.
+
+### Isolierte Korrektur für den GPS-Fahrtest
+- Neue separate Worklet-Datei \`js/physical-presence-worklet-v1.js\` im Soundgraphen **zwischen** dem vorhandenen AMG-Highshelf und dem bestehenden Hybrid-Profile-Gain.
+- Erzeugt aus den vorhandenen Motorwellenformen durch sanfte Sättigung harmonische Anteile, filtert Tiefbass durch **drei 365-Hz-Hochpässe** aus dem Zusatzsignal und beschränkt die Präsenz mit einem **2,4-kHz-Tiefpass**. Das Originalsignal wird parallel im selben Worklet unverändert addiert.
+- Unterschiedliche Gewichte pro Preset: Hybrid 1,5, V8 1,2, weitere tief klingende Motoren moderat; AMG/GTI/Italia nur gering. Keine neuen unabhängigen Pfeiftöne, Original-Physical-Engine v4 und Events v3 unverändert.
+- UI-Regler **„Motorpräsenz bei Musik“** 0–100 %, Standard **75 %**, Wirkung live ohne Audiostopp. 0 % entspricht der ungeänderten Motorbasis. Profilwechsel per Bildschirm oder Tesla-Scrollrad aktualisieren beide Worklets.
+- Die allgemeine Lautstärkekurve wurde im GPS-Fahrtest von \`3.8*volume^1.65\` auf \`4.2*volume^1.52\` geändert (unveränderte Musik-Boost-Funktion). Damit ca. 2–3 dB mehr in mittleren Stellungen, am Maximum bleibt der finale Sample-Peak-Limiter das physikalische Limit. **Keine** Aufhebung der finalen Spitzenbegrenzung.
+- Technischer Syntaktik-/Mock-Test: 4 Worklets gestartet, kontinuierliche GPS-RPM, Presence-Automation 75→100 %, Presetwechsel per Bildschirm und mittigem Tesla-MediaSession-Klick, stabiler direkter Audioausgang und GPS-Prozess. Die neuen Obertonfilter wurden außerdem spektral mit simuliertem Hybrid-V4-Signal untersucht; der Subbass bleibt wesentlich unverändert, die zuvor fehlenden Mitten werden deutlich ergänzt. 0-%-Bypass liefert samplegleich den unveränderten Eingang.
+- **Offen:** Subjektive Klangprobe im Tesla mit und ohne Musik. Obertonpräsenz kann bei 100 % zu rau wirken. In diesem Fall Präsenzregler reduzieren; die eigentliche Voltune-Hauptapp ist weiterhin unverändert.
+
