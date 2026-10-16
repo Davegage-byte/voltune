@@ -127,6 +127,27 @@ MediaSession-Aktionen Play/Pause/Next/Previous werden gezählt. Hintergrundprüf
 - **Neue abschließende Stereo-Schutzstufe:** `js/physical-output-limiter-v1.js` hinter dem gemeinsamen Ausgangsgain und *vor* normalem Browser-Ausgang bzw. MediaStream-Medienbrücke. Digitales Sample-Peak-Limit ±0,965 mit 75 ms Gain-Recovery, keine Änderung der v0.4-Motor-Worklet-Profile.
 - **Lautstärkekurve:** Gain = `3.8 * (volume/100)^1.65 * 10^((boostDb * (1-volume/100))/20)`. 100 % ergibt immer 3,8 vor dem Limiter, unabhängig vom Boost; bei niedrigeren Reglerwerten unterstützt Musik-Boost 0 bis +12 dB zusätzliche Verstärkung.
 - **Hybrid EV + V8** behält seinen separaten Faktor 2 vor dem bestehenden Event-Prozessor. Andere neun Soundprofile werden nicht einzeln tonal verändert.
-- **Tesla-Medienmodus:** ebenfalls nach dem Output-Limiter abgegriffen; Umleitung zu MediaStream umgeht die Schutzstufe nicht.
+- **Tesla-Medienmodus:** seit 16.10.2026 Test E statt MediaStream-Umleitung: Der vom Output-Limiter geschützte Motor bleibt direkt mit `AudioContext.destination` verbunden; ein separates, leises, 60 Sekunden langes HTML-WAV in Schleife aktiviert die Tesla-Medienquelle.
 - **Validierung:** beide Testseiten mit simuliertem AudioGraph gestartet, alle drei Worklets geladen, Reglerwerte 0/25/50/100 % und Tesla-Stream-Umschaltung geprüft. 10 Profile bei simulierten 3200 RPM, Last 0,55 und 25/100 % durch Motor-/Events-/Output-Worklets gerendert; digitale Ausgangsspitzen aller zehn Profile bei 100 % max. 0,965 und alle Samples endlich.
 - **Einschränkung:** Peak-Begrenzung ist keine Garantie für subjektiv unverzerrte Wiedergabe bei Extrempegeln (starke Dynamikbegrenzung möglich). Die Tesla-Audiohardware und Betriebssystemlautstärke bleiben separat; in-car Test nötig. Die bestehende Voltune-Hauptapp und das alte Physical-Engine-v0.4-Referenzlabor bleiben unverändert.
+
+## Erfolgreicher Tesla-Test E und Übernahme ins GPS-Labor (16.10.2026)
+
+- **Im Tesla bestätigt:** Der Hybrid-Worklet-Sound aus Modus E („Motor + Medienanker“) war bei minimiertem Browser ununterbrochen hörbar. Eine Auswertung zeigte etwa 23,2 Sekunden markierten Test und 22,0 Sekunden fortschreitende Worklet-Renderzeit.
+- **Mini-Player:** Tesla zeigte die Browser-Medienquelle, pausierte dabei jedoch die normale Tesla-Musik. Musik-Parallelbetrieb und Mediensteuerung gleichzeitig sind derzeit nicht bestätigt.
+- **Mittiger Scrollradklick:** Die Testdiagnose registrierte 8 Play-/Pause-Medienbefehle. Seitlich Links/Rechts für Titelwechsel lieferte keine Befehle; der Tesla-Mini-Player behandelte den Medienanker offenbar als einzelnen Titel.
+- **GPS:** Bei einem anderen Minimier-/Wiederöffnen-Versuch erhöhte sich der GPS-Gesamtzähler nach Nutzerbeobachtung ungefähr von 400 auf 480, obwohl „GPS bei versteckter Seite“ 0 anzeigte. Das ist ein starkes Indiz für weiterlaufende GPS-Callbacks; nicht als exakt zeitgestempelter Hidden-Nachweis zu werten. Der Test E mit 23,2 Sekunden hatte GPS nicht aktiviert.
+
+### GPS-Labor: erfolgreicher Audio-Pfad aus E
+
+- Option **„Tesla-Medienmodus E aktivieren (mittiger Lenkradklick)“** im `physical-events-live-v1.html`. Standardmäßig **aus**.
+- Physischer Mittelklick → MediaSession `play`/`pause` → nächstes der 10 Soundprofile (mit Rundlauf), geschützt gegen schnelle doppelte Meldungen.
+- Dieselbe Physical Engine und derselbe Output-Limiter sind weiterhin **direkt** an `AudioContext.destination` angeschlossen. **Keine** Weiterleitung in ein HTML-Audioelement; kein Worklet-/GPS-Neustart beim Umschalten.
+- Separates leises natives HTML-Audioelement spielt einen 60-Sekunden-WAV-Medienanker in Schleife (`volume=.025`). Wie Test E soll dadurch der Tesla-Mini-Player aktiv werden und Hintergrund-Audio weiterlaufen.
+- Aktivierung erfolgt per direktem Nutzerklick ohne vorgeschaltetes `await`, damit der Tesla-Browser `audio.play()` zulässt.
+- Eine Play-/Pause-Aktion soll den Motor nicht stoppen; ein eventuell pausierter Medienanker wird wieder gestartet. Ausschalten entfernt MediaSession-Handler und WAV-Quelle, lässt aber GPS und WebAudio-Motor weiterlaufen.
+- Die Bildschirm-Tasten für vorheriges/nächstes Soundprofil bleiben verfügbar; die seitlichen Lenkrad-Next/Previous-Befehle sind ausdrücklich **nicht bestätigt**.
+- **Verifiziert mit simulierten Browser-/Audio-/GPS-Objekten:** Modulstart mit GPS, Medienanker-Aktivierung, 4 Handler, Pause/Play-Doppelsignal, Profilwechsel, Medienanker-Wiederanlauf und Deaktivierung bei weiterlaufendem GPS und unverändertem direktem Soundgraphen.
+- **Noch offen:** E-Medienanker direkt *im GPS-Labor* am echten Tesla ausprobieren. Der Test-E-Erfolg in der Diagnoseseite garantiert nicht identisches Verhalten in der Laborkonfiguration.
+
+Die eigentliche Voltune-App wird erst nach weiterer Abstimmung integriert. Ihre alten Klangregler sollen nur bei ausgewählter alter Audioengine erscheinen; zusätzliche Physical-Engine-Regler nur bei der neuen Audioengine. Gemeinsame GPS-/Getriebe-/Lautstärkeregelung bleibt unabhängig.
