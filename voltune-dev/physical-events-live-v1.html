@@ -73,7 +73,9 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 <div class="control"><label for="load">Virtuelle Motorlast <output id="loadText">65 %</output></label><input id="load" type="range" min="0" max="100" value="65"></div>
 <div class="control"><label for="volume">Gesamtlautstärke <output id="volumeText">25 %</output></label><input id="volume" type="range" min="0" max="100" value="25"></div>
 <div class="control"><label for="musicBoost">Musik-Boost (unterhalb 100 %) <output id="musicBoostText">+8 dB</output></label><input id="musicBoost" type="range" min="0" max="12" step="1" value="8"></div>
-<div class="small"><strong>100 % = maximale pegelbegrenzte Browser-Aussteuerung.</strong> Keine starre 90-%-Sperre mehr. Der Musik-Boost wirkt in niedrigeren Reglerbereichen; bei 100 % ist schon die höchste Verstärkung eingestellt. Alle zehn Profile werden lauter, Hybrid behält seinen Bonus. <strong>Achtung:</strong> Fahrzeuglautstärke beim ersten Test niedrig halten und langsam erhöhen. Tesla-Musik wird nicht verändert.</div>
+<div class="control"><label for="motorPresence">Motorpräsenz bei Musik <output id="motorPresenceText">75 %</output></label><input id="motorPresence" type="range" min="0" max="100" step="1" value="75"></div>
+<div class="small"><strong>Neu:</strong> 0 % = bisheriger Motor ohne zusätzliche Obertöne; 75 % = kräftigere Durchsetzung bei Musik; 100 % = starke Obertonpräsenz. Der Hybrid und der einfache V8 profitieren besonders, AMG/GTI werden nur leicht angepasst. Den tiefen Grundsound behalten wir. Bei zu rauem Klang diesen Regler verringern.</div>
+<div class="small"><strong>100 % = pegelbegrenzte Vollaussteuerung.</strong> Alle zehn Sounds erhalten mehr Pegel bei mittleren Lautstärkeeinstellungen. Den sehr tiefen Hybrid macht die neue Obertonpräsenz bei Musik besser wahrnehmbar, ohne die Motorbasis auszutauschen. Der Musik-Boost wirkt unterhalb von 100 %. Der Hybrid behält seinen Bonus. <strong>Vorsicht:</strong> Vor der Fahrt im Stand einstellen; Lautstärke zunächst niedrig halten.</div>
 <div class="control" id="hybridWrap">
  <label for="evBlend">Hybrid EV-Anteil <output id="evBlendText">25 %</output></label>
  <input id="evBlend" type="range" min="0" max="100" value="25">
@@ -177,7 +179,7 @@ footer{margin-top:21px;color:var(--muted);font-size:13px;display:flex;gap:9px;fl
 "use strict";
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
-let ctx=null,engine=null,events=null,master=null,amgEq=null,profileGain=null,outputLimiter=null,busy=false;
+let ctx=null,engine=null,presenceNode=null,events=null,master=null,amgEq=null,profileGain=null,outputLimiter=null,busy=false;
 let steeringOn=false,steeringAudio=null,steeringUrl=null,steeringCount=0;
 let lastSteeringAt=-999999,steeringKeyListener=false;
 const STEERING_GUARD_MS=260;
@@ -284,7 +286,7 @@ const driveConfig={maxRpm:6500,gearRange:270,shiftRpm:6000,gearsEnabled:true,dyn
 const track=(fn,delay)=>{const t=setTimeout(fn,delay);timeouts.push(t);};
 const status=(msg)=>{$("status").textContent=msg;};
 function syncUI(){
- for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["musicBoost","musicBoostText"," dB"],["amgHighs","amgHighsText"," %"],["evBlend","evBlendText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["effectFocus","effectFocusText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
+ for(const [key,out,unit] of [["rpm","rpmText"," RPM"],["load","loadText"," %"],["volume","volumeText"," %"],["musicBoost","musicBoostText"," dB"],["motorPresence","motorPresenceText"," %"],["amgHighs","amgHighsText"," %"],["evBlend","evBlendText"," %"],["shiftStrength","shiftText"," %"],["popStrength","popText"," %"],["effectFocus","effectFocusText"," %"],["muffling","mufflingText"," %"]])$(out).textContent=$(key).value+unit;
  $("musicBoostText").textContent="+"+$("musicBoost").value+" dB";
  $("readRpm").textContent=$("rpm").value;
  $("rpmMeter").style.width=clamp(Number($("rpm").value)/8500*100,0,100)+"%";
@@ -310,6 +312,7 @@ function apply(){
   gpsRunning&&gpsTargetsValid?gpsTargetLoad:Number($("load").value)/100,
   at,gpsRunning?.12:.035);
  engine.parameters.get("evBlend").setTargetAtTime(Number($("evBlend").value)/100,at,.035);
+ if(presenceNode)presenceNode.parameters.get("presence").setTargetAtTime(Number($("motorPresence").value)/100,at,.075);
  events.parameters.get("shiftLevel").setTargetAtTime(eventScale($("shiftStrength").value,.7,1.75),at,.03);
  events.parameters.get("popLevel").setTargetAtTime(eventScale($("popStrength").value,.65,2.0),at,.03);
  events.parameters.get("muffling").setTargetAtTime(Number($("muffling").value)/100,at,.03);
@@ -320,7 +323,9 @@ function apply(){
  const volume=clamp(Number($("volume").value)/100,0,1);
  const boostDb=clamp(Number($("musicBoost").value),0,12);
  const boost=Math.pow(10,(boostDb*(1-volume))/20);
- const drive=Math.pow(volume,1.65)*3.8*boost;
+ // Bei mittleren Reglerwerten ca. 2–3 dB mehr als zuvor.
+ // Bei voller Aussteuerung greift derselbe finale Stereo-Limiter.
+ const drive=Math.pow(volume,1.52)*4.2*boost;
  master.gain.setTargetAtTime(drive,at,.06);
  // AMG-Hochtonabsenkung ist kein Umbau am Preset, sondern ein schaltbares EQ.
  amgEq.gain.setTargetAtTime($("preset").value==="amg"?-11*Number($("amgHighs").value)/100:0,at,.055);
@@ -386,6 +391,7 @@ function setProfile(value,origin="Bildschirm"){
  $("preset").value=value;
  cancelPending();
  if(engine)engine.port.postMessage({type:"preset",value});
+ if(presenceNode)presenceNode.port.postMessage({type:"preset",value});
  apply();profileMetadata();
  if(steeringOn){
   const label=$("preset").selectedOptions[0].textContent;
@@ -578,12 +584,15 @@ async function start(){
   ctx=new Context({latencyHint:"interactive"});
   const ready=ctx.resume();
   await ctx.audioWorklet.addModule("./js/physical-engine-worklet-v4.js?v=4");
+  await ctx.audioWorklet.addModule("./js/physical-presence-worklet-v1.js?v=1");
   await ctx.audioWorklet.addModule("./js/physical-events-worklet-v3.js?v=3");
   await ctx.audioWorklet.addModule("./js/physical-output-limiter-v1.js?v=1");
   await ready;
   engine=new AudioWorkletNode(ctx,"voltune-physical-engine-v4",{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
+  presenceNode=new AudioWorkletNode(ctx,"voltune-physical-presence-v1",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
   events=new AudioWorkletNode(ctx,"voltune-events-v3",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
   engine.port.postMessage({type:"preset",value:$("preset").value});
+  presenceNode.port.postMessage({type:"preset",value:$("preset").value});
   events.port.postMessage({type:"bypass",value:$("bypass").checked});
   amgEq=ctx.createBiquadFilter();amgEq.type="highshelf";amgEq.frequency.value=1200;amgEq.gain.value=0;
   const limiter=ctx.createDynamicsCompressor();
@@ -595,9 +604,10 @@ async function start(){
   outputLimiter=new AudioWorkletNode(ctx,"voltune-physical-output-limiter-v1",{
    numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]
   });
-  engine.connect(amgEq).connect(profileGain).connect(events).connect(limiter)
+  engine.connect(amgEq).connect(presenceNode).connect(profileGain).connect(events).connect(limiter)
    .connect(master).connect(outputLimiter).connect(ctx.destination);
   engine.onprocessorerror=()=>status("Fehler: Motorsound-Worklet gestoppt.");
+  presenceNode.onprocessorerror=()=>status("Fehler: Motorpräsenz-Worklet gestoppt.");
   events.onprocessorerror=()=>status("Fehler: Ereignis-Worklet gestoppt.");
   outputLimiter.onprocessorerror=()=>status("Fehler: Ausgangslimiter gestoppt.");
   apply();
@@ -607,7 +617,7 @@ async function start(){
   status("Startfehler: "+(error.message||error));
   disableSteering();
   if(ctx){try{await ctx.close();}catch(_){}}
-  ctx=null;engine=null;events=null;master=null;amgEq=null;profileGain=null;outputLimiter=null;$("start").disabled=false;
+  ctx=null;engine=null;presenceNode=null;events=null;master=null;amgEq=null;profileGain=null;outputLimiter=null;$("start").disabled=false;
  }finally{busy=false;}
 }
 async function stop(){
@@ -621,7 +631,7 @@ async function stop(){
   }
   await ctx.close();status("Sound gestoppt.");
  }catch(error){status("Stopfehler: "+(error.message||error));}
- finally{ctx=null;engine=null;events=null;master=null;amgEq=null;profileGain=null;outputLimiter=null;busy=false;$("start").disabled=false;}
+ finally{ctx=null;engine=null;presenceNode=null;events=null;master=null;amgEq=null;profileGain=null;outputLimiter=null;busy=false;$("start").disabled=false;}
 }
 function up(){
  if(!engine||gpsRunning)return;cancelDemo();cancelPending();
@@ -862,7 +872,7 @@ $("bypass").addEventListener("change",()=>{
  if(events)events.port.postMessage({type:"bypass",value:$("bypass").checked});
  status($("bypass").checked?"Neue Effekte überbrückt – Basismotor läuft.":"Neue Effekte aktiviert.");
 });
-for(const id of ["rpm","load","volume","musicBoost","amgHighs","evBlend","shiftStrength","popStrength","effectFocus","muffling"]){
+for(const id of ["rpm","load","volume","musicBoost","motorPresence","amgHighs","evBlend","shiftStrength","popStrength","effectFocus","muffling"]){
  $(id).addEventListener("input",()=>{
   // Keine laufende Demo oder GPS-Fahrt mehr unterbrechen!
   // RPM/Last sind im manuellen Demo-Modus für 2 Sekunden übersteuerbar.
