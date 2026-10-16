@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#091521">
-<title>Voltune · Tesla-Medien-Diagnose</title>
+<title>Voltune · Tesla Medien- und Hintergrundtest</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;background:#091521;color:#eaf3fd}
 *{box-sizing:border-box}body{margin:0}main{max-width:740px;margin:auto;padding:24px 16px 60px}
@@ -22,21 +22,33 @@ button:disabled{opacity:.5;cursor:not-allowed}.buttons{display:grid;grid-templat
 #events{max-height:260px;overflow:auto;list-style:none;padding:0;margin:0}
 #events li{padding:8px 2px;border-bottom:1px solid #344d64;word-break:break-word;font-size:13px}
 #audio{width:100%;min-height:35px;margin-top:12px}a{color:#9bd8f8}
+.modes{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0}
+.modes button{text-align:left}
+.modes button .small{display:block;margin-top:4px;font-weight:400}
+.modes button.active{border-color:#84d9ff;background:#175778}
+#results li{line-height:1.4;padding:10px;border-bottom:1px solid #33516d}
+#results{padding-left:18px}
+.good{color:#9fe0b0}.caution{color:#efc680}
+@media(min-width:650px){.modes{grid-template-columns:1fr 1fr}}
+
 </style>
 </head>
 <body>
 <main>
-<h1>Voltune · Tesla Medien-Test</h1>
-<p>Diagnose für das linke Scrollrad: Erkennt der Tesla-Browser eine Webseite als aktive Medienquelle und kommen die Play/Pause-Befehle dort an?</p>
-<p class="warning"><strong>Nur im geparkten Fahrzeug ausprobieren.</strong> Diese Seite erzeugt einen leisen Testton. Wenn Tesla den Browser als Medienquelle übernimmt, wird deine laufende Musik möglicherweise pausiert. Die normale Voltune-App bleibt unangetastet.</p>
+<h1>Voltune · Tesla Medien- und Hintergrundtest</h1>
+<p>Vergleiche mehrere Audio-Ausgaben: Welche wird als Medienquelle erkannt, empfängt das linke Scrollrad und spielt bei minimiertem Tesla-Browser weiter?</p>
+<p class="warning"><strong>Nur im geparkten Fahrzeug bedienen und testen.</strong> Nach dem Start den Browser minimieren, 20–30 Sekunden nicht bedienen und danach zurückkehren. Der Browser kann im Hintergrund vollständig angehalten werden – keine Webseite kann seine Betriebssystemregeln zuverlässig umgehen. Die Testmodi können Tesla-Musik pausieren. Die normale Voltune-App bleibt unverändert.</p>
 <section class="card">
-<h2>1. Medienquelle testen</h2>
-<p class="small">Versuche zuerst den echten HTML-Audio-Player. Danach kannst du den WebAudio-Stream vergleichen, den wir im Voltune-GPS-Labor verwenden.</p>
-<div class="buttons">
-<button id="htmlMode" class="primary">A · HTML-Audio starten</button>
-<button id="streamMode">B · WebAudio-Stream starten</button>
+<h2>1. Audio-Modus auswählen</h2>
+<p class="small">Immer <strong>nur ein Modus gleichzeitig</strong>. A und B entsprechen den bisherigen Tests, C–E prüfen weitere Hintergrund-Varianten. D und E nutzen die echte Physical Engine (Hybrid EV + V8), nicht nur einen Sinuston.</p>
+<div class="modes">
+ <button id="htmlMode" class="primary"><strong>A · HTML-Audio</strong><span class="small">Echte WAV-Wiedergabe – Tesla-Medienplayer-Kandidat</span></button>
+ <button id="streamMode"><strong>B · WebAudio → Audioelement</strong><span class="small">WebAudio-Oszillator über MediaStream</span></button>
+ <button id="directMode"><strong>C · WebAudio direkt</strong><span class="small">Oszillator ohne HTML-Mediaplayer</span></button>
+ <button id="motorStreamMode"><strong>D · Voltune-Motor → Audioelement</strong><span class="small">Hybrid-Worklet via MediaStream-Medienplayer</span></button>
+ <button id="motorCarrierMode"><strong>E · Voltune-Motor + Medienanker</strong><span class="small">Direkter Hybrid-Worklet-Ausgang + leiser HTML-Audio-Anker</span></button>
 </div>
-<div class="buttons one"><button id="stopMode">■ Testton stoppen</button></div>
+<div class="buttons one"><button id="stopMode">■ Audiotest stoppen</button></div>
 <audio id="audio" controls playsinline loop></audio>
 <div id="status" class="status">Bereit. Erst einen Modus starten.</div>
 </section>
@@ -69,9 +81,45 @@ button:disabled{opacity:.5;cursor:not-allowed}.buttons{display:grid;grid-templat
 <div class="buttons one"><button id="reset">Diagnosezähler zurücksetzen</button></div>
 </section>
 <section class="card">
-<h2>4. Ergebnis fotografieren</h2>
-<p class="small">Nach dem Test diesen Abschnitt einfach mit dem Handy fotografieren. Keine Standortdaten oder Diagnoseeinträge werden an einen Server geschickt.</p>
+<h2>4. Hintergrundbetrieb testen</h2>
+<p>Nach dem Audiostart auf <strong>„Hintergrundtest vormerken“</strong> tippen, den Tesla-Browser minimieren und 20–30 Sekunden später zurückkehren. <strong>War der Ton weiterhin zu hören?</strong> Das bitte zusätzlich unten festhalten; reine Browser-Zähler beweisen kein hörbares Audio.</p>
+<div class="buttons one"><button id="armBackground" class="primary">▶ Hintergrundtest vormerken</button></div>
+<div class="buttons">
+ <button id="audibleYes">Ton lief weiter ✓</button>
+ <button id="audibleNo">Ton war weg ✕</button>
+</div>
+<div class="stats">
+ <div class="stat">Hintergrundzeit<strong id="hiddenSeconds">0 s</strong></div>
+ <div class="stat">AudioContext<strong id="contextState">–</strong></div>
+ <div class="stat">HTML-Audio<strong id="playerState">–</strong></div>
+ <div class="stat">Worklet gerendert<strong id="renderSeconds">–</strong></div>
+ <div class="stat">Größte Timerpause<strong id="maxGap">0 s</strong></div>
+ <div class="stat">Browserzustand<strong id="pageState">sichtbar</strong></div>
+</div>
+<div class="status" id="bgStatus">Noch kein Hintergrundtest. Bei C–E überwachen wir zusätzlich tatsächlich gerenderte Audio-Samples.</div>
+<p class="small">Hinweis: Ob GPS-Daten im Hintergrund ankommen, ist eine eigene Frage. Auch bei hörbarem Ton kann die Positionsüberwachung aussetzen. Deshalb separat testen.</p>
+<h2>GPS-Hintergrundtest (optional)</h2>
+<div class="buttons">
+ <button id="gpsBegin">GPS-Messung starten</button>
+ <button id="gpsEnd">GPS-Messung stoppen</button>
+</div>
+<div class="stats">
+ <div class="stat">GPS-Meldungen gesamt<strong id="gpsCount">0</strong></div>
+ <div class="stat">Bei versteckter Seite<strong id="gpsHiddenCount">0</strong></div>
+</div>
+<div class="small" id="gpsStatus">Nicht gestartet. Es werden keine Standortkoordinaten gespeichert oder übertragen. Im Stand kann GPS naturgemäß selten aktualisiert werden.</div>
+<h2>Vergleich bisheriger Durchläufe</h2>
+<ol id="results"><li>Keine Hintergrundläufe ausgewertet.</li></ol>
+</section>
+<section class="card">
+<h2>5. Diagnose fotografieren</h2>
+<p class="small">Nach dem Zurückkehren fotografieren. Ergebnisdaten (ohne GPS-Koordinaten) werden zusätzlich lokal im Tesla-Browser gesichert, falls die Seite neu geladen wird. Ob Tesla den lokalen Speicher behält, ist nicht garantiert.</p>
 <div class="status" id="report">Audio: aus · Tesla-Mini-Player: unbekannt · Lenkradbefehle: 0</div>
+<p class="small" id="savedReport">Kein lokal gesicherter Bericht vorhanden.</p>
+<div class="buttons">
+ <button id="reloadSaved">Letzten Bericht laden</button>
+ <button id="clearSaved">Lokale Testergebnisse löschen</button>
+</div>
 </section>
 <p class="small"><a href="./physical-events-live-v1.html">← Zurück zum Voltune GPS-Soundtest</a></p>
 </main>
@@ -79,19 +127,34 @@ button:disabled{opacity:.5;cursor:not-allowed}.buttons{display:grid;grid-templat
 (()=>{
 "use strict";
 const $=id=>document.getElementById(id);
-let ctx=null,osc=null,sink=null,blobUrl=null,mode="aus";
-let clickCount=0,sideCount=0,keyCount=0,handlers=0,teslaRecognized="unbekannt";
-let lastActionAt=0;
-const audio=$("audio");
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const audio=$("audio"),modes=["htmlMode","streamMode","directMode","motorStreamMode","motorCarrierMode"];
+const names={htmlMode:"A · HTML-Audio",streamMode:"B · WebAudio-Stream",directMode:"C · WebAudio direkt",
+ motorStreamMode:"D · Motor via Stream",motorCarrierMode:"E · Motor + Medienanker"};
+const STORE="voltune.tesla.media.background.v2";
+let ctx=null,osc=null,sink=null,motor=null,meter=null,blobUrl=null,mode="aus",generation=0;
+let clickCount=0,sideCount=0,keyCount=0,handlers=0,teslaRecognized="unbekannt",lastActionAt=-1e6;
+let gpsId=null,gpsCount=0,gpsHiddenCount=0,gpsLastAt=0,gpsLastAccuracy=null,gpsError="";
+let workletSeconds=null,workletReportedAt=0,lastTimerTick=Date.now(),maxTimerGap=0;
+let armed=false,hiddenStarted=0,hiddenDuration=0,hiddenSamples=null,lastBackground=null;
+let runHistory=[],audible="noch nicht bewertet",lastSavedReport="",savedReloaded=false;
 const trace=[];
+const now=()=>Date.now();
+const seconds=ms=>(ms/1000).toFixed(1)+" s";
+function persist(){
+ try{localStorage.setItem(STORE,JSON.stringify({
+  updatedAt:new Date().toISOString(),runHistory:runHistory.slice(-12),
+  lastBackground,mode,teslaRecognized,clickCount,sideCount,keyCount,
+  gpsCount,gpsHiddenCount,maxTimerGap,trace:trace.slice(0,10)
+ }));}catch(_){}
+}
 function note(message){
  const item=new Date().toLocaleTimeString("de-DE")+" · "+message;
  trace.unshift(item);
- if(trace.length>12)trace.length=12;
- const root=$("events");
- root.replaceChildren();
+ if(trace.length>16)trace.length=16;
+ const root=$("events");root.replaceChildren();
  for(const entry of trace){const li=document.createElement("li");li.textContent=entry;root.appendChild(li);}
- render();
+ render();persist();
 }
 function render(){
  $("clickCount").textContent=String(clickCount);
@@ -99,145 +162,392 @@ function render(){
  $("keyCount").textContent=String(keyCount);
  $("handlerCount").textContent=handlers+"/4";
  $("recognition").textContent="Tesla-Mini-Player: "+teslaRecognized;
+ $("gpsCount").textContent=String(gpsCount);
+ $("gpsHiddenCount").textContent=String(gpsHiddenCount);
+ $("contextState").textContent=ctx?ctx.state:"–";
+ $("playerState").textContent=audio.paused?"pausiert":"spielt";
+ $("renderSeconds").textContent=workletSeconds===null?"–":workletSeconds.toFixed(1)+" s";
+ $("hiddenSeconds").textContent=seconds(hiddenDuration+(hiddenStarted?Math.max(0,now()-hiddenStarted):0));
+ $("maxGap").textContent=seconds(maxTimerGap);
+ $("pageState").textContent=document.hidden?"versteckt":"sichtbar";
+ for(const id of modes)$(id).classList.toggle("active",names[id]===mode);
+ const rows=$("results");rows.replaceChildren();
+ if(!runHistory.length){const li=document.createElement("li");li.textContent="Keine Hintergrundläufe ausgewertet.";rows.appendChild(li);}
+ for(const run of runHistory.slice(-8).reverse()){
+  const li=document.createElement("li");
+  li.textContent=run.mode+" · "+seconds(run.hiddenMs)+" versteckt · "+
+   "gehörter Ton: "+run.audible+" · AudioContext: "+run.ctxState+
+   " · WebAudio-Zeit: "+(run.ctxDelta===null?"–":seconds(run.ctxDelta*1000))+
+   " · Worklet: "+(run.renderDelta===null?"–":seconds(run.renderDelta*1000))+
+   " · GPS im Hintergrund: "+run.gpsHiddenDelta+
+   " · größte Timerlücke: "+seconds(run.maxGap);
+  rows.appendChild(li);
+ }
+ const result=lastBackground;
+ const summary=result?
+  " · Letzter Hintergrundlauf: "+result.mode+" / "+seconds(result.hiddenMs)+
+  " / Ton "+result.audible+" / Worklet "+
+  (result.renderDelta===null?"nicht gemessen":seconds(result.renderDelta*1000))+
+  " / GPS-Meldungen "+result.gpsHiddenDelta:"";
  $("report").textContent="Audio: "+mode+" · Tesla-Mini-Player: "+teslaRecognized+
-  " · Klick: "+clickCount+" · Links/Rechts: "+sideCount+" · Tasten-Events: "+keyCount+
-  " · MediaSession: "+handlers+"/4";
+  " · Scrollrad-Klick: "+clickCount+" · Links/Rechts: "+sideCount+
+  " · Key-Events: "+keyCount+" · MediaSession-Handler: "+handlers+"/4"+
+  " · GPS-Meldungen gesamt: "+gpsCount+summary;
 }
 function action(name,source,real=true){
  if(real){
-  // Manche Tesla-/Chromium-Versionen senden in kurzer Folge play und pause.
-  const now=performance.now();
-  if(now-lastActionAt<100){note("Doppelmeldung "+name+" (ignoriert)");return;}
-  lastActionAt=now;
+  const stamp=performance.now();
+  if(stamp-lastActionAt<150){note("Doppelmeldung "+name+" ignoriert");return;}
+  lastActionAt=stamp;
   if(name==="play"||name==="pause")clickCount++;
   else sideCount++;
  }
  note((real?"ECHT ":"TEST ")+source+" → "+name);
- if(real&&(name==="play"||name==="pause")&&audio.paused){
-   audio.play().catch(err=>note("Wiederanlauf fehlgeschlagen: "+err.message));
+ if(real&&(name==="play"||name==="pause")&&audio.paused&&audio.srcObject||false){
+  // Medienstream kann nach Tesla-Pause wieder in die Wiedergabe gesetzt werden.
+  const p=audio.play();if(p?.catch)p.catch(error=>note("Medien-Wiederanlauf: "+error.message));
  }
  try{if(navigator.mediaSession)navigator.mediaSession.playbackState="playing";}catch(_){}
 }
 function onKey(event){
  const key=event.key||event.code||"";
- const mapping={MediaPlayPause:"play",MediaPlay:"play",MediaPause:"pause",
- MediaTrackNext:"nexttrack",MediaNextTrack:"nexttrack",
- MediaTrackPrevious:"previoustrack",MediaPreviousTrack:"previoustrack"};
+ const mapping={MediaPlayPause:"play",MediaPlay:"play",MediaPause:"pause",MediaTrackNext:"nexttrack",
+  MediaNextTrack:"nexttrack",MediaTrackPrevious:"previoustrack",MediaPreviousTrack:"previoustrack"};
  const value=mapping[key]||({176:"nexttrack",177:"previoustrack",179:"play"})[event.keyCode];
  if(!value)return;
- keyCount++;
- action(value,"Keyboard "+key);
+ keyCount++;action(value,"Keyboard "+key);
  if(event.preventDefault)event.preventDefault();
 }
 function register(){
  handlers=0;
- if(!("mediaSession" in navigator)||typeof navigator.mediaSession.setActionHandler!=="function"){
+ if(!navigator.mediaSession||typeof navigator.mediaSession.setActionHandler!=="function"){
   note("MediaSession API nicht verfügbar");
  }else{
   for(const name of ["play","pause","nexttrack","previoustrack"]){
    try{navigator.mediaSession.setActionHandler(name,()=>action(name,"MediaSession"));handlers++;}
-   catch(error){note("Handler "+name+" nicht verfügbar");}
+   catch(_){note("Handler "+name+" wird nicht unterstützt");}
   }
   if(typeof window.MediaMetadata==="function"){
-   try{navigator.mediaSession.metadata=new MediaMetadata({
-    title:"Voltune Tesla Medien-Test",artist:"Browser-Medienerkennung",album:"Diagnose"});
-   }catch(_){}
+   try{navigator.mediaSession.metadata=new window.MediaMetadata({
+    title:"Voltune Hintergrund-/Lenkradtest",artist:"Voltune · Tesla-Browser",album:mode});}catch(_){}
   }
   try{navigator.mediaSession.playbackState="playing";}catch(_){}
  }
- $("capabilities").textContent=
-  "MediaSession: "+(navigator.mediaSession?"vorhanden":"nicht vorhanden")+
-  " · AudioContext: "+(window.AudioContext||window.webkitAudioContext?"vorhanden":"nicht vorhanden")+
-  " · HTML-Audio: vorhanden";
+ $("capabilities").textContent="MediaSession: "+(navigator.mediaSession?"vorhanden":"fehlt")+
+  " · AudioContext: "+(window.AudioContext||window.webkitAudioContext?"vorhanden":"fehlt")+
+  " · AudioWorklet: "+(window.AudioWorkletNode?"vorhanden":"fehlt")+
+  " · GPS: "+(navigator.geolocation?"vorhanden":"fehlt");
  render();
 }
 function makeTone(){
- const rate=22050,length=rate*3,buffer=new ArrayBuffer(44+length*2),view=new DataView(buffer);
- const ascii=(at,text)=>{for(let i=0;i<text.length;i++)view.setUint8(at+i,text.charCodeAt(i));};
+ // 60 Sekunden echtes WAV statt 3-s-Loop: Nach dem Zurückkommen kann
+ // die Position bei einem 20–30-s-Test sinnvoll verglichen werden.
+ const rate=11025,length=rate*60,buffer=new ArrayBuffer(44+length*2),view=new DataView(buffer);
+ const ascii=(at,str)=>{for(let i=0;i<str.length;i++)view.setUint8(at+i,str.charCodeAt(i));};
  ascii(0,"RIFF");view.setUint32(4,36+length*2,true);ascii(8,"WAVE");
  ascii(12,"fmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);
  view.setUint16(22,1,true);view.setUint32(24,rate,true);
  view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);
  ascii(36,"data");view.setUint32(40,length*2,true);
  for(let i=0;i<length;i++){
-  const t=i/rate;
-  const sound=(Math.sin(2*Math.PI*180*t)*.16+Math.sin(2*Math.PI*270*t)*.04)*
-    Math.min(1,i/150)*Math.min(1,(length-i)/150);
-  view.setInt16(44+i*2,Math.round(Math.max(-1,Math.min(1,sound))*32767),true);
+  const t=i/rate,env=Math.min(1,i/500,(length-i)/500);
+  const sound=(Math.sin(2*Math.PI*180*t)*.16+Math.sin(2*Math.PI*270*t)*.04)*env;
+  view.setInt16(44+i*2,Math.round(clamp(sound,-1,1)*32767),true);
  }
  return new Blob([buffer],{type:"audio/wav"});
 }
+function useHtmlTone(vol){
+ blobUrl=URL.createObjectURL(makeTone());
+ audio.loop=true;audio.src=blobUrl;audio.volume=vol;
+ return audio.play(); // Aufruf im selben echten Nutzerklick!
+}
+function capture(){
+ return {wall:now(),mediaTime:Number(audio.currentTime)||0,contextTime:ctx?ctx.currentTime:null,
+  rendered:workletSeconds,gpsHidden:gpsHiddenCount,ctxState:ctx?ctx.state:"–",
+  mediaPaused:audio.paused};
+}
+function backgroundResult(){
+ if(!armed||!hiddenSamples||!hiddenStarted)return;
+ const end=capture(),hiddenMs=Math.max(0,now()-hiddenStarted);
+ hiddenDuration+=hiddenMs;
+ hiddenStarted=0;
+ const before=hiddenSamples;
+ const delta=(v,w)=>Number.isFinite(v)&&Number.isFinite(w)?Math.max(0,v-w):null;
+ const result={
+  mode,hiddenMs,mediaDelta:delta(end.mediaTime,before.mediaTime),
+  ctxDelta:delta(end.contextTime,before.contextTime),
+  renderDelta:delta(end.rendered,before.rendered),
+  gpsHiddenDelta:Math.max(0,end.gpsHidden-before.gpsHidden),
+  ctxState:end.ctxState,mediaPaused:end.mediaPaused,maxGap:maxTimerGap,
+  audible:"noch nicht bewertet",date:new Date().toLocaleString("de-DE")
+ };
+ runHistory.push(result);if(runHistory.length>12)runHistory.shift();
+ lastBackground=result;audible="noch nicht bewertet";
+ hiddenSamples=null;armed=false;
+ $("bgStatus").textContent="Zurückgekehrt: "+seconds(hiddenMs)+" versteckt; "+
+  "WebAudio-Zeit: "+(result.ctxDelta===null?"–":seconds(result.ctxDelta*1000))+
+  "; Worklet-Samples: "+(result.renderDelta===null?"–":seconds(result.renderDelta*1000))+
+  "; GPS-Meldungen in verborgenem Zustand: "+result.gpsHiddenDelta+
+  ". Jetzt Ton hörbar / nicht hörbar bewerten.";
+ note("Hintergrundtest abgeschlossen: "+result.mode+" / "+seconds(hiddenMs));
+ persist();render();
+}
+function visibilityUpdate(kind){
+ if(document.hidden){
+  if(!hiddenStarted){
+   hiddenStarted=now();
+   if(armed){hiddenSamples=capture();note("Browser versteckt ("+kind+")");}
+   persist();
+  }
+ }else{
+  if(hiddenStarted){if(armed)backgroundResult();else{hiddenDuration+=now()-hiddenStarted;hiddenStarted=0;}}
+  note("Browser sichtbar ("+kind+")");
+  render();
+ }
+}
 function stop(){
- // Audio.play() muss im selben Nutzerklick stattfinden. Deshalb gibt
- // es vor dem Neustart keinen await/async-Schritt im Cleanup.
+ generation++;
+ if(armed){armed=false;hiddenSamples=null;hiddenStarted=0;note("Unvollständiger Hintergrundtest abgebrochen");}
  try{audio.pause();audio.removeAttribute("src");audio.srcObject=null;audio.load();}catch(_){}
  if(osc){try{osc.stop();}catch(_){}try{osc.disconnect();}catch(_){}osc=null;}
- if(ctx){try{const closed=ctx.close();if(closed?.catch)closed.catch(()=>{});}catch(_){}ctx=null;sink=null;}
+ if(motor){try{motor.disconnect();}catch(_){}motor=null;}
+ if(meter){try{meter.disconnect();}catch(_){}meter=null;}
+ const old=ctx;ctx=null;sink=null;
+ if(old){try{const task=old.close();if(task?.catch)task.catch(()=>{});}catch(_){}}
  if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null;}
- mode="aus";
+ mode="aus";workletSeconds=null;
  $("status").textContent="Testton gestoppt.";
  try{if(navigator.mediaSession)navigator.mediaSession.playbackState="none";}catch(_){}
  render();
 }
-async function playHtml(){
- stop();
- mode="HTML-Audio";
+function initContext(){
+ const Context=window.AudioContext||window.webkitAudioContext;
+ if(!Context)throw Error("AudioContext nicht verfügbar");
+ ctx=new Context({latencyHint:"playback"});
+ ctx.addEventListener?.("statechange",()=>{note("AudioContext: "+ctx?.state);});
+ const task=ctx.resume();if(task?.catch)task.catch(error=>note("AudioContext resume: "+error.message));
+ return ctx;
+}
+function oscillator(to,vol){
+ osc=ctx.createOscillator();const amp=ctx.createGain();
+ osc.frequency.value=180;amp.gain.value=vol;
+ osc.connect(amp).connect(to);osc.start();
+}
+function playingStatus(text){
+ $("status").textContent=text;
+ note(mode+" gestartet; MediaSession bereit, Hintergrundtest kann beginnen");
+ register();
+}
+async function monitorGraph(context,source,destination,token){
+ // Reale Audiorender-Zeit des Worklet-Threads statt nur JS-Timer.
  try{
-  blobUrl=URL.createObjectURL(makeTone());
-  audio.src=blobUrl;audio.loop=true;audio.volume=.55;
-  await audio.play();
-  register();
-  $("status").textContent="HTML-Audio spielt. Ist Browser unten links als Medienquelle zu sehen?";
-  note("HTML-Audio erfolgreich gestartet");
+  if(typeof window.AudioWorkletNode!=="function"||!context.audioWorklet)throw Error("AudioWorklet fehlt");
+  await context.audioWorklet.addModule("./js/tesla-background-monitor-v1.js?v=1");
+  if(token!==generation)return;
+  meter=new AudioWorkletNode(context,"voltune-background-monitor-v1");
+  meter.port.onmessage=event=>{
+   if(token!==generation)return;
+   const val=Number(event.data?.renderSeconds);
+   if(Number.isFinite(val)){
+    workletSeconds=val;workletReportedAt=now();
+    if(!document.hidden)render();
+    persist();
+   }
+  };
+  source.connect(meter).connect(destination);
+  note("Audio-Render-Monitor aktiv");
  }catch(error){
-  mode="Fehler";
-  $("status").textContent="HTML-Audio fehlgeschlagen: "+error.message;
-  note("HTML-Audio Fehler: "+error.message);
+  if(token!==generation)return;
+  source.connect(destination);
+  note("Monitor nicht verfügbar: "+error.message+"; Audiotest läuft dennoch");
  }
+}
+function playHtml(){
+ stop();mode=names.htmlMode;
+ try{
+  const promise=useHtmlTone(.55);
+  playingStatus("HTML-WAV gestartet. Im Stand Browser minimieren.");
+  promise.catch(error=>{$("status").textContent="HTML-Audio-Fehler: "+error.message;note(error.message);});
+ }catch(error){note("HTML-Audio-Fehler: "+error.message);$("status").textContent=error.message;}
+}
+function playStream(){
+ stop();mode=names.streamMode;
+ try{
+  initContext();
+  if(!ctx.createMediaStreamDestination)throw Error("MediaStreamDestination fehlt");
+  sink=ctx.createMediaStreamDestination();
+  oscillator(sink,.028);
+  audio.srcObject=sink.stream;audio.volume=1;
+  const promise=audio.play();
+  playingStatus("WebAudio über HTML-Audioelement. Jetzt Browser minimieren.");
+  promise.catch(error=>{$("status").textContent="MediaStream-Fehler: "+error.message;note(error.message);});
+ }catch(error){note("WebAudio-Stream-Fehler: "+error.message);$("status").textContent=error.message;}
+}
+function playDirect(){
+ stop();mode=names.directMode;
+ try{
+  initContext();
+  oscillator(ctx.destination,.028);
+  playingStatus("WebAudio direkt, ohne HTML-Medienplayer. Browser minimieren.");
+ }catch(error){note("WebAudio-Fehler: "+error.message);$("status").textContent=error.message;}
+}
+async function playMotor(viaStream){
+ stop();mode=viaStream?names.motorStreamMode:names.motorCarrierMode;
+ const token=generation;
+ try{
+  initContext();const c=ctx;
+  if(typeof window.AudioWorkletNode!=="function"||!c.audioWorklet)throw Error("AudioWorklet nicht unterstützt");
+  if(viaStream){
+   if(!c.createMediaStreamDestination)throw Error("MediaStreamDestination fehlt");
+   sink=c.createMediaStreamDestination();
+   // Kurz vorladen, damit media.play() aus direktem Nutzerklick erfolgt.
+   oscillator(sink,.0008);
+   audio.srcObject=sink.stream;audio.volume=1;
+  }else{
+   const carrier=useHtmlTone(.025);carrier.catch(error=>note("Medienanker: "+error.message));
+  }
+  if(viaStream){
+   const p=audio.play();p.catch(error=>note("MediaStream: "+error.message));
+  }
+  register();
+  $("status").textContent="Audioelement gestartet. Physical-Engine-Worklet wird geladen …";
+  await c.audioWorklet.addModule("./js/physical-engine-worklet-v4.js?v=4");
+  if(token!==generation)return;
+  motor=new AudioWorkletNode(c,"voltune-physical-engine-v4",{
+   numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]
+  });
+  motor.port.postMessage({type:"preset",value:"hybrid"});
+  motor.parameters.get("rpm").setValueAtTime(3100,c.currentTime);
+  motor.parameters.get("load").setValueAtTime(.56,c.currentTime);
+  motor.parameters.get("evBlend").setValueAtTime(.25,c.currentTime);
+  const gain=c.createGain();gain.gain.value=.30;
+  motor.connect(gain);
+  if(osc){try{osc.stop();osc.disconnect();}catch(_){}osc=null;}
+  await monitorGraph(c,gain,viaStream?sink:c.destination,token);
+  if(token!==generation)return;
+  $("status").textContent=viaStream?
+   "Echter Voltune-Hybrid läuft über HTML-Audio-Medienstream.":
+   "Echter Voltune-Hybrid spielt direkt; leiser HTML-WAV hält die Medienquelle aktiv.";
+  note("Physical Engine + Render-Monitor gestartet");
+ }catch(error){
+  if(token!==generation)return;
+  $("status").textContent="Motor-Testfehler: "+error.message;
+  note("Motor-Testfehler: "+error.message);
+ }
+}
+function armBackground(){
+ if(mode==="aus"||mode==="Fehler"){
+  $("bgStatus").textContent="Zuerst Audio A–E starten.";
+  return;
+ }
+ armed=true;hiddenStarted=0;hiddenSamples=null;hiddenDuration=0;
+ maxTimerGap=0;lastTimerTick=now();
+ $("bgStatus").textContent="Bereit! Tesla-Browser jetzt minimieren, etwa 20–30 Sekunden warten und zurückkehren. Audiotest laufen lassen.";
+ note("Hintergrundtest vorbereitet für "+mode);
+}
+function rateAudible(value){
+ audible=value;
+ if(lastBackground){lastBackground.audible=value;persist();}
+ $("bgStatus").textContent="Hörprüfung: "+value+". "+(lastBackground?
+  "Mit dem nächsten Audiomodus fortfahren.":"Erst den Browser minimieren und zurückkehren.");
  render();
 }
-async function playStream(){
- stop();
- mode="WebAudio-Stream";
- try{
-  const Context=window.AudioContext||window.webkitAudioContext;
-  if(!Context)throw Error("AudioContext nicht verfügbar");
-  ctx=new Context();
-  if(!ctx.createMediaStreamDestination)throw Error("MediaStreamDestination nicht verfügbar");
-  sink=ctx.createMediaStreamDestination();
-  osc=ctx.createOscillator();const amp=ctx.createGain();
-  osc.frequency.value=180;amp.gain.value=.025;osc.connect(amp).connect(sink);
-  osc.start();
-  audio.srcObject=sink.stream;audio.volume=1;
-  await audio.play();
-  await ctx.resume();
-  register();
-  $("status").textContent="WebAudio-Stream spielt. Hat Tesla diesen Modus als Medienquelle erkannt?";
-  note("WebAudio-Stream erfolgreich gestartet");
- }catch(error){
-  mode="Fehler";
-  $("status").textContent="WebAudio-Stream fehlgeschlagen: "+error.message;
-  note("WebAudio-Stream Fehler: "+error.message);
+function startGps(){
+ if(gpsId!==null){$("gpsStatus").textContent="GPS läuft bereits.";return;}
+ if(!navigator.geolocation?.watchPosition){
+  $("gpsStatus").textContent="Geolocation API fehlt.";return;
  }
- render();
+ gpsError="";
+ $("gpsStatus").textContent="GPS-Freigabe und erste Meldung abwarten …";
+ try{
+  gpsId=navigator.geolocation.watchPosition(position=>{
+   gpsCount++;
+   if(document.hidden)gpsHiddenCount++;
+   gpsLastAt=now();
+   gpsLastAccuracy=Number.isFinite(position.coords?.accuracy)?
+    Math.round(position.coords.accuracy):null;
+   if(!document.hidden)render();
+   $("gpsStatus").textContent="GPS aktiv. Letzte Genauigkeit: "+(gpsLastAccuracy===null?"–":gpsLastAccuracy+" m")+
+    " · Letzter Fix: "+new Date().toLocaleTimeString("de-DE")+
+    " · keine Koordinaten gespeichert.";
+   persist();
+  },error=>{
+   gpsError=error.message||"Keine Positionsdaten";
+   $("gpsStatus").textContent="GPS: "+gpsError;
+   note("GPS-Fehler: "+gpsError);
+  },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+ }catch(error){gpsId=null;$("gpsStatus").textContent="GPS-Startfehler: "+error.message;}
+}
+function stopGps(){
+ if(gpsId!==null&&navigator.geolocation?.clearWatch){
+  try{navigator.geolocation.clearWatch(gpsId);}catch(_){}
+ }
+ gpsId=null;
+ $("gpsStatus").textContent="GPS gestoppt. Fixes: "+gpsCount+", bei versteckter Seite: "+gpsHiddenCount+
+  ". Keine Koordinaten aufgezeichnet.";
+ persist();render();
+}
+function saved(){
+ try{
+  const data=JSON.parse(localStorage.getItem(STORE)||"null");
+  if(!data){$("savedReport").textContent="Kein lokal gespeicherter Bericht.";return;}
+  const run=data.lastBackground;
+  $("savedReport").textContent="Lokaler Stand "+new Date(data.updatedAt).toLocaleString("de-DE")+
+   " · "+(run?run.mode+": "+seconds(run.hiddenMs)+" Hintergrund; Ton: "+run.audible+
+   "; GPS versteckt: "+run.gpsHiddenDelta:"kein abgeschlossener Hintergrundtest");
+  // Restaurierung nur der Test-Ergebnisse, nie automatischer Audio-/GPS-Start!
+  if(runHistory.length===0&&Array.isArray(data.runHistory)){
+   runHistory=data.runHistory;lastBackground=run||null;
+   render();
+  }
+ }catch(_){$("savedReport").textContent="Lokaler Speicher nicht verfügbar.";}
 }
 $("htmlMode").addEventListener("click",playHtml);
 $("streamMode").addEventListener("click",playStream);
+$("directMode").addEventListener("click",playDirect);
+$("motorStreamMode").addEventListener("click",()=>playMotor(true));
+$("motorCarrierMode").addEventListener("click",()=>playMotor(false));
 $("stopMode").addEventListener("click",stop);
-$("visibleYes").addEventListener("click",()=>{teslaRecognized="JA";note("Nutzer: Medienquelle im Tesla sichtbar");});
-$("visibleNo").addEventListener("click",()=>{teslaRecognized="NEIN";note("Nutzer: Medienquelle nicht sichtbar");});
+$("visibleYes").addEventListener("click",()=>{teslaRecognized="JA";note("Tesla-Mini-Player gesehen");});
+$("visibleNo").addEventListener("click",()=>{teslaRecognized="NEIN";note("Tesla-Mini-Player NICHT gesehen");});
 $("testClick").addEventListener("click",()=>action("play","Bildschirmtaste",false));
 $("testNext").addEventListener("click",()=>action("nexttrack","Bildschirmtaste",false));
+$("armBackground").addEventListener("click",armBackground);
+$("audibleYes").addEventListener("click",()=>rateAudible("JA"));
+$("audibleNo").addEventListener("click",()=>rateAudible("NEIN"));
+$("gpsBegin").addEventListener("click",startGps);
+$("gpsEnd").addEventListener("click",stopGps);
+$("reloadSaved").addEventListener("click",saved);
+$("clearSaved").addEventListener("click",()=>{
+ try{localStorage.removeItem(STORE);}catch(_){}
+ runHistory=[];lastBackground=null;
+ $("savedReport").textContent="Lokale Ergebnisse gelöscht.";render();
+});
 $("reset").addEventListener("click",()=>{
- clickCount=0;sideCount=0;keyCount=0;lastActionAt=0;trace.length=0;
- teslaRecognized="unbekannt";note("Diagnose zurückgesetzt");
+ clickCount=0;sideCount=0;keyCount=0;lastActionAt=-1e6;trace.length=0;
+ teslaRecognized="unbekannt";note("Lenkrad-Diagnose zurückgesetzt");
 });
 window.addEventListener("keydown",onKey,true);
-audio.addEventListener("error",()=>note("Audioelement hat einen Fehler gemeldet"));
-audio.addEventListener("pause",()=>note("HTML-Audio wurde pausiert"));
-audio.addEventListener("playing",()=>note("HTML-Audio spielt"));
-document.addEventListener("visibilitychange",()=>note("Browser sichtbar: "+!document.hidden));
-render();
+window.addEventListener("pagehide",()=>{persist();if(armed&&!hiddenStarted){hiddenStarted=now();hiddenSamples=capture();}persist();});
+window.addEventListener("pageshow",()=>{if(!document.hidden&&hiddenStarted)backgroundResult();saved();});
+document.addEventListener("visibilitychange",()=>visibilityUpdate("visibilitychange"));
+document.addEventListener("freeze",()=>{note("Browser freeze");persist();});
+document.addEventListener("resume",()=>note("Browser resume"));
+window.addEventListener("blur",()=>{note("Browser-Fokus verloren");});
+window.addEventListener("focus",()=>{note("Browser-Fokus wieder da");});
+audio.addEventListener("error",()=>note("Audioelement meldet einen Fehler"));
+audio.addEventListener("pause",()=>{if(mode!=="aus")note("Audioelement pausiert");});
+audio.addEventListener("playing",()=>{if(mode!=="aus")note("Audioelement spielt");});
+audio.addEventListener("waiting",()=>{if(mode!=="aus")note("Audioelement wartet");});
+setInterval(()=>{
+ const current=now(),gap=current-lastTimerTick;lastTimerTick=current;
+ // 1-s-Tick kann im Hintergrund stark gedrosselt werden.
+ if(gap>maxTimerGap)maxTimerGap=gap;
+ if(gap>3500)note("JavaScript-Timerlücke "+seconds(gap));
+ if(!document.hidden)render();
+ if(armed||gpsId!==null)persist();
+},1000);
+saved();render();
 })();
 </script>
 </body></html>
