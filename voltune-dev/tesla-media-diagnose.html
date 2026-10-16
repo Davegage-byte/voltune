@@ -136,7 +136,7 @@ let ctx=null,osc=null,sink=null,motor=null,meter=null,blobUrl=null,mode="aus",ge
 let clickCount=0,sideCount=0,keyCount=0,handlers=0,teslaRecognized="unbekannt",lastActionAt=-1e6;
 let gpsId=null,gpsCount=0,gpsHiddenCount=0,gpsLastAt=0,gpsLastAccuracy=null,gpsError="";
 let workletSeconds=null,workletReportedAt=0,lastTimerTick=Date.now(),maxTimerGap=0;
-let armed=false,hiddenStarted=0,hiddenDuration=0,hiddenSamples=null,lastBackground=null;
+let armed=false,hiddenStarted=0,hiddenDuration=0,hiddenSamples=null,lastBackground=null,hiddenReason="";
 let runHistory=[],audible="noch nicht bewertet",lastSavedReport="",savedReloaded=false;
 const trace=[];
 const now=()=>Date.now();
@@ -144,7 +144,8 @@ const seconds=ms=>(ms/1000).toFixed(1)+" s";
 function persist(){
  try{localStorage.setItem(STORE,JSON.stringify({
   updatedAt:new Date().toISOString(),runHistory:runHistory.slice(-12),
-  lastBackground,mode,teslaRecognized,clickCount,sideCount,keyCount,
+  lastBackground,pending:armed?{mode,detection:hiddenReason,startedAt:now()}:null,
+  mode,teslaRecognized,clickCount,sideCount,keyCount,
   gpsCount,gpsHiddenCount,maxTimerGap,trace:trace.slice(0,10)
  }));}catch(_){}
 }
@@ -180,6 +181,7 @@ function render(){
    " · WebAudio-Zeit: "+(run.ctxDelta===null?"–":seconds(run.ctxDelta*1000))+
    " · Worklet: "+(run.renderDelta===null?"–":seconds(run.renderDelta*1000))+
    " · GPS im Hintergrund: "+run.gpsHiddenDelta+
+   " · Erkennung: "+run.detection+
    " · größte Timerlücke: "+seconds(run.maxGap);
   rows.appendChild(li);
  }
@@ -203,7 +205,7 @@ function action(name,source,real=true){
   else sideCount++;
  }
  note((real?"ECHT ":"TEST ")+source+" → "+name);
- if(real&&(name==="play"||name==="pause")&&audio.paused&&audio.srcObject||false){
+ if(real&&(name==="play"||name==="pause")&&audio.paused&&(audio.srcObject||audio.src)){
   // Medienstream kann nach Tesla-Pause wieder in die Wiedergabe gesetzt werden.
   const p=audio.play();if(p?.catch)p.catch(error=>note("Medien-Wiederanlauf: "+error.message));
  }
@@ -274,7 +276,8 @@ function backgroundResult(){
  const before=hiddenSamples;
  const delta=(v,w)=>Number.isFinite(v)&&Number.isFinite(w)?Math.max(0,v-w):null;
  const result={
-  mode,hiddenMs,mediaDelta:delta(end.mediaTime,before.mediaTime),
+  mode,hiddenMs,detection:hiddenReason||"unbekannt",
+  mediaDelta:delta(end.mediaTime,before.mediaTime),
   ctxDelta:delta(end.contextTime,before.contextTime),
   renderDelta:delta(end.rendered,before.rendered),
   gpsHiddenDelta:Math.max(0,end.gpsHidden-before.gpsHidden),
@@ -283,7 +286,7 @@ function backgroundResult(){
  };
  runHistory.push(result);if(runHistory.length>12)runHistory.shift();
  lastBackground=result;audible="noch nicht bewertet";
- hiddenSamples=null;armed=false;
+ hiddenSamples=null;armed=false;hiddenReason="";
  $("bgStatus").textContent="Zurückgekehrt: "+seconds(hiddenMs)+" versteckt; "+
   "WebAudio-Zeit: "+(result.ctxDelta===null?"–":seconds(result.ctxDelta*1000))+
   "; Worklet-Samples: "+(result.renderDelta===null?"–":seconds(result.renderDelta*1000))+
@@ -296,8 +299,11 @@ function visibilityUpdate(kind){
  if(document.hidden){
   if(!hiddenStarted){
    hiddenStarted=now();
+   hiddenReason="visibilitychange";
    if(armed){hiddenSamples=capture();note("Browser versteckt ("+kind+")");}
    persist();
+  }else if(armed){
+   hiddenReason="visibilitychange (nach Fokusverlust)";
   }
  }else{
   if(hiddenStarted){if(armed)backgroundResult();else{hiddenDuration+=now()-hiddenStarted;hiddenStarted=0;}}
@@ -440,7 +446,7 @@ function armBackground(){
   $("bgStatus").textContent="Zuerst Audio A–E starten.";
   return;
  }
- armed=true;hiddenStarted=0;hiddenSamples=null;hiddenDuration=0;
+ armed=true;hiddenStarted=0;hiddenSamples=null;hiddenDuration=0;hiddenReason="";
  maxTimerGap=0;lastTimerTick=now();
  $("bgStatus").textContent="Bereit! Tesla-Browser jetzt minimieren, etwa 20–30 Sekunden warten und zurückkehren. Audiotest laufen lassen.";
  note("Hintergrundtest vorbereitet für "+mode);
@@ -462,7 +468,7 @@ function startGps(){
  try{
   gpsId=navigator.geolocation.watchPosition(position=>{
    gpsCount++;
-   if(document.hidden)gpsHiddenCount++;
+   if(document.hidden||(armed&&hiddenStarted))gpsHiddenCount++;
    gpsLastAt=now();
    gpsLastAccuracy=Number.isFinite(position.coords?.accuracy)?
     Math.round(position.coords.accuracy):null;
@@ -492,9 +498,10 @@ function saved(){
   const data=JSON.parse(localStorage.getItem(STORE)||"null");
   if(!data){$("savedReport").textContent="Kein lokal gespeicherter Bericht.";return;}
   const run=data.lastBackground;
+  const interrupted=data.pending?" · ACHTUNG: Letzter Test nicht abgeschlossen (Seite womöglich neu gestartet).":"";
   $("savedReport").textContent="Lokaler Stand "+new Date(data.updatedAt).toLocaleString("de-DE")+
    " · "+(run?run.mode+": "+seconds(run.hiddenMs)+" Hintergrund; Ton: "+run.audible+
-   "; GPS versteckt: "+run.gpsHiddenDelta:"kein abgeschlossener Hintergrundtest");
+   "; GPS versteckt: "+run.gpsHiddenDelta:"kein abgeschlossener Hintergrundtest")+interrupted;
   // Restaurierung nur der Test-Ergebnisse, nie automatischer Audio-/GPS-Start!
   if(runHistory.length===0&&Array.isArray(data.runHistory)){
    runHistory=data.runHistory;lastBackground=run||null;
@@ -533,8 +540,19 @@ window.addEventListener("pageshow",()=>{if(!document.hidden&&hiddenStarted)backg
 document.addEventListener("visibilitychange",()=>visibilityUpdate("visibilitychange"));
 document.addEventListener("freeze",()=>{note("Browser freeze");persist();});
 document.addEventListener("resume",()=>note("Browser resume"));
-window.addEventListener("blur",()=>{note("Browser-Fokus verloren");});
-window.addEventListener("focus",()=>{note("Browser-Fokus wieder da");});
+window.addEventListener("blur",()=>{
+ // Tesla-QtWebEngine kann beim Minimieren nur Fokus verlieren, ohne
+ // document.hidden zu setzen. Als zweite, schwächere Diagnose erfassen.
+ if(armed&&!document.hidden&&!hiddenStarted){
+  hiddenStarted=now();hiddenSamples=capture();hiddenReason="nur Fokusverlust";
+  note("Hintergrund-Fallback: Fokus verloren (visibility unverändert)");
+ }
+ note("Browser-Fokus verloren");
+});
+window.addEventListener("focus",()=>{
+ if(armed&&hiddenStarted&&!document.hidden)backgroundResult();
+ note("Browser-Fokus wieder da");
+});
 audio.addEventListener("error",()=>note("Audioelement meldet einen Fehler"));
 audio.addEventListener("pause",()=>{if(mode!=="aus")note("Audioelement pausiert");});
 audio.addEventListener("playing",()=>{if(mode!=="aus")note("Audioelement spielt");});
