@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T14:00:03.820484Z",
+  "generatedAt": "2026-10-17T08:08:14.309386Z",
   "sounds": [
     {
       "id": "524de4a6db50",
@@ -1019,6 +1019,87 @@
       "duration": 2.252
     },
     {
+      "id": "044b86fe68fb",
+      "name": "Amazing Grace - Analog Horror",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Amazing Grace - Analog Horror.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 695928,
+      "duration": 10.871
+    },
+    {
+      "id": "f9b08382421d",
+      "name": "Classic Horror Piano",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Classic Horror Piano.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 459742,
+      "duration": 5.21
+    },
+    {
+      "id": "436fa94f2978",
+      "name": "Dark Ambient Chime",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Dark Ambient Chime.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 729218,
+      "duration": 11.391
+    },
+    {
+      "id": "a7010881e6d3",
+      "name": "Discord Halloween Chime",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Discord Halloween Chime.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 786620,
+      "duration": 8.918
+    },
+    {
+      "id": "f1d62fc163a4",
+      "name": "Distant Owl Cry",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Distant Owl Cry.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 958542,
+      "duration": 10.867
+    },
+    {
+      "id": "c35649f90847",
+      "name": "Evil Laugh",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Evil Laugh.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 705102,
+      "duration": 7.993
+    },
+    {
+      "id": "2153ea632e37",
+      "name": "FNAF - Ambient Noise",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/FNAF - Ambient Noise.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 720198,
+      "duration": 8.163
+    },
+    {
+      "id": "7382c09f5f13",
+      "name": "FNAF - Animatronic at Door",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/FNAF - Animatronic at Door.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 290396,
+      "duration": 3.291
+    },
+    {
+      "id": "e54de15b05b8",
+      "name": "FNAF 2 - Music Box",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/FNAF 2 - Music Box.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 842896,
+      "duration": 9.554
+    },
+    {
       "id": "d507f11ab792",
       "name": "Halloween Clock",
       "category": "Halloween",
@@ -1028,6 +1109,15 @@
       "duration": 10.148
     },
     {
+      "id": "f3e5d8e409e2",
+      "name": "Halloween Piano",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Halloween Piano.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 739676,
+      "duration": 8.385
+    },
+    {
       "id": "91351a96604a",
       "name": "Halloween Scary",
       "category": "Halloween",
@@ -1035,6 +1125,150 @@
       "addedAt": "2026-10-07T22:09:28+02:00",
       "size": 389114,
       "duration": 4.409
+    },
+    {
+      "id": "d654b8a874c1",
+      "name": "Halloween Thunder",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Halloween Thunder.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 163756,
+      "duration": 3.712
+    },
+    {
+      "id": "3c0e2c92b67a",
+      "name": "Haunted Clock",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Haunted Clock.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 633946,
+      "duration": 7.185
+    },
+    {
+      "id": "0e589e9c0990",
+      "name": "Horror Lullaby",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Horror Lullaby.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 599144,
+      "duration": 6.792
+    },
+    {
+      "id": "bdf2b908d4cc",
+      "name": "Horror Stinger",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Horror Stinger.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 823426,
+      "duration": 9.334
+    },
+    {
+      "id": "813b1d028b5a",
+      "name": "Left 4 Dead - Hunter Spawn Cue",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Left 4 Dead - Hunter Spawn Cue.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 526414,
+      "duration": 5.968
+    },
+    {
+      "id": "a5623d599066",
+      "name": "Little Girl Calling for Mom",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Little Girl Calling for Mom.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 486290,
+      "duration": 5.511
+    },
+    {
+      "id": "a9b124fea84f",
+      "name": "Michael Myers - Halloween Theme",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Michael Myers - Halloween Theme.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 559390,
+      "duration": 6.341
+    },
+    {
+      "id": "7f589eff572a",
+      "name": "Old Clock Gong",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Old Clock Gong.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 847582,
+      "duration": 13.24
+    },
+    {
+      "id": "9ada7c000711",
+      "name": "Old Creaking Door",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Old Creaking Door.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 712028,
+      "duration": 8.072
+    },
+    {
+      "id": "811251c9a12a",
+      "name": "SCP - Alert Sound",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/SCP - Alert Sound.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 240590,
+      "duration": 2.727
+    },
+    {
+      "id": "891e880ebf65",
+      "name": "Screamer",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Screamer.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 288846,
+      "duration": 3.274
+    },
+    {
+      "id": "d3f681336474",
+      "name": "Spooky Tree",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Spooky Tree.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 198266,
+      "duration": 2.064
+    },
+    {
+      "id": "17ed49a572a5",
+      "name": "Terrifying Presence",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Terrifying Presence.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 732750,
+      "duration": 11.448
+    },
+    {
+      "id": "7d8528cf343d",
+      "name": "Thunder Sound Effect",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Thunder Sound Effect.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 629070,
+      "duration": 7.131
+    },
+    {
+      "id": "1be6f1b66abd",
+      "name": "VHS Horror Noise",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/VHS Horror Noise.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 707020,
+      "duration": 8.014
+    },
+    {
+      "id": "8b8c928ca510",
+      "name": "Witches Laughing",
+      "category": "Halloween",
+      "path": "lockchimes/Halloween/Witches Laughing.wav",
+      "addedAt": "2026-10-17T08:08:14.309386Z",
+      "size": 220882,
+      "duration": 2.502
     },
     {
       "id": "05d558ce2255",
