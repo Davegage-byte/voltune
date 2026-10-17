@@ -57,7 +57,7 @@ jobs:
               raise SystemExit(f"Expected 26 input files, found {len(files)}")
 
           mapping = {
-              "Alte T#U00fcr Halloween.mp3": "Old Creaking Door.wav",
+              "Alte Tür Halloween.mp3": "Old Creaking Door.wav",
               "Classic Horror Klavier.wav": "Classic Horror Piano.wav",
               "Discord Halloween.wav": "Discord Halloween Chime.wav",
               "Evil Laugh Halloween.mp3": "Evil Laugh.wav",
