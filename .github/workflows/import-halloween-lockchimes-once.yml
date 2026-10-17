@@ -1,0 +1,207 @@
+name: Import Halloween LockChimes once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-halloween-lockchimes-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install audio tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Download Halloween archive
+        env:
+          HALLOWEEN_ARCHIVE_URL: "https://sdmntprukwest.oaiusercontent.com/files/00000000-72d0-8243-8977-4be91fcd3b3f/raw?se=2026-10-17T08%3A11%3A01Z&sp=r&sv=2026-02-06&sr=b&scid=586a4bb8-bd59-53df-805d-8f6f979862ce&skoid=002823aa-689d-47ca-9347-108c20f4f00d&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-17T06%3A10%3A39Z&ske=2026-10-18T06%3A10%3A39Z&sks=b&skv=2026-02-06&sig=BgHrtW7J57eE4vwDJseE4Bw0NHJBqWk5F5TZ9fiQJQo%3D"
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output /tmp/HALLOWEEN.zip "$HALLOWEEN_ARCHIVE_URL"
+          unzip -t /tmp/HALLOWEEN.zip >/dev/null
+
+      - name: Convert, rename and validate Halloween sounds
+        shell: python
+        run: |
+          import json
+          import os
+          import shutil
+          import subprocess
+          import zipfile
+          from pathlib import Path
+
+          archive = Path("/tmp/HALLOWEEN.zip")
+          work = Path("/tmp/halloween-import")
+          source = work / "source"
+          target = Path("lockchimes/Halloween")
+          shutil.rmtree(work, ignore_errors=True)
+          source.mkdir(parents=True)
+          target.mkdir(parents=True, exist_ok=True)
+
+          with zipfile.ZipFile(archive) as z:
+              z.extractall(source)
+
+          files = [p for p in source.rglob("*") if p.is_file()]
+          if len(files) != 26:
+              raise SystemExit(f"Expected 26 input files, found {len(files)}")
+
+          mapping = {
+              "Alte T#U00fcr Halloween.mp3": "Old Creaking Door.wav",
+              "Classic Horror Klavier.wav": "Classic Horror Piano.wav",
+              "Discord Halloween.wav": "Discord Halloween Chime.wav",
+              "Evil Laugh Halloween.mp3": "Evil Laugh.wav",
+              "Fnaf Ambient Noise.wav": "FNAF - Ambient Noise.wav",
+              "Halloween Alte Uhr Gong.wav": "Old Clock Gong.wav",
+              "Halloween Klavier.mp3": "Halloween Piano.wav",
+              "Halloween Sound Effekt.mp3": "Horror Stinger.wav",
+              "Horror Lullaby.mp3": "Horror Lullaby.wav",
+              "Left 4 Dead Halloween Hunter Spawn Cue.mp3": "Left 4 Dead - Hunter Spawn Cue.wav",
+              "Michael Myers Halloween Theme.mp3": "Michael Myers - Halloween Theme.wav",
+              "Mommy Horror Stimme.wav": "Little Girl Calling for Mom.wav",
+              "SCP Alert Sound.mp3": "SCP - Alert Sound.wav",
+              "Screamer-Halloween.mp3": "Screamer.wav",
+              "Spooky Tree.mp3": "Spooky Tree.wav",
+              "Terrifying Presence.mp3": "Terrifying Presence.wav",
+              "VHS Horror Noise.wav": "VHS Horror Noise.wav",
+              "Windah Horror Basudara.wav": "Dark Ambient Chime.wav",
+              "Witches Laughing.mp3": "Witches Laughing.wav",
+              "amazing grace analog horror.wav": "Amazing Grace - Analog Horror.wav",
+              "fnaf 2 music box.wav": "FNAF 2 - Music Box.wav",
+              "halloween fnaf animatronic-in-door.mp3": "FNAF - Animatronic at Door.wav",
+              "halloween thunder.mp3": "Halloween Thunder.wav",
+              "halloween-clock.wav": "Haunted Clock.wav",
+              "spino horror.mp3": "Distant Owl Cry.wav",
+              "thunder-sound-effect.mp3": "Thunder Sound Effect.wav",
+          }
+
+          by_name = {p.name: p for p in files}
+          missing = sorted(set(mapping) - set(by_name))
+          extra = sorted(set(by_name) - set(mapping))
+          if missing or extra:
+              raise SystemExit(f"Archive mismatch. Missing={missing}, Extra={extra}")
+
+          created = []
+          for src_name, dst_name in mapping.items():
+              src = by_name[src_name]
+              probe = json.loads(subprocess.check_output([
+                  "ffprobe","-v","error","-show_entries",
+                  "format=duration:stream=sample_rate,channels",
+                  "-of","json",str(src)
+              ], text=True))
+              duration = float(probe["format"]["duration"])
+              stream = (probe.get("streams") or [{}])[0]
+              sample_rate = int(stream.get("sample_rate") or 44100)
+
+              target_rate = sample_rate
+              estimated_size = 44 + duration * target_rate * 2
+              if estimated_size >= 1_000_000:
+                  target_rate = 32000
+
+              dst = target / dst_name
+              subprocess.check_call([
+                  "ffmpeg","-y","-v","error","-i",str(src),
+                  "-ac","1","-ar",str(target_rate),"-c:a","pcm_s16le",str(dst)
+              ])
+
+              verify = json.loads(subprocess.check_output([
+                  "ffprobe","-v","error","-show_entries",
+                  "format=duration:stream=codec_name,sample_rate,channels",
+                  "-of","json",str(dst)
+              ], text=True))
+              out_stream = verify["streams"][0]
+              size = dst.stat().st_size
+              if out_stream.get("codec_name") != "pcm_s16le":
+                  raise SystemExit(f"{dst_name}: not PCM s16le")
+              if int(out_stream.get("channels") or 0) != 1:
+                  raise SystemExit(f"{dst_name}: not mono")
+              if size >= 1_000_000:
+                  raise SystemExit(f"{dst_name}: {size} bytes is not below 1 MB")
+              created.append((dst_name, size, int(out_stream["sample_rate"]), float(verify["format"]["duration"])))
+
+          if len(created) != 26:
+              raise SystemExit(f"Expected 26 outputs, got {len(created)}")
+
+          print("Created Halloween sounds:")
+          for row in created:
+              print(row)
+
+      - name: Rebuild LockChime manifest
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import subprocess
+          import wave
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path.cwd()
+          audio_root = root / "lockchimes"
+          output = root / "lockchimes-data.json"
+          now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+          def first_added_at(relative_path):
+              result = subprocess.run(
+                  ["git", "log", "--follow", "--diff-filter=A", "--format=%aI", "--", relative_path],
+                  cwd=root, capture_output=True, text=True, check=False
+              )
+              dates = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+              return dates[-1] if dates else now
+
+          def wav_duration(path):
+              try:
+                  with wave.open(str(path), "rb") as wav:
+                      rate = wav.getframerate()
+                      return round(wav.getnframes() / rate, 3) if rate else None
+              except (wave.Error, EOFError):
+                  return None
+
+          sounds = []
+          for path in sorted(audio_root.rglob("*.wav"), key=lambda p: p.as_posix().lower()):
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(root).as_posix()
+              folder = path.parent.relative_to(audio_root).as_posix()
+              category = "Ohne Kategorie" if folder == "." else folder.replace("/", " / ")
+              sounds.append({
+                  "id": hashlib.sha1(relative.encode("utf-8")).hexdigest()[:12],
+                  "name": path.stem,
+                  "category": category,
+                  "path": relative,
+                  "addedAt": first_added_at(relative),
+                  "size": path.stat().st_size,
+                  "duration": wav_duration(path),
+              })
+
+          output.write_text(json.dumps({
+              "generatedAt": now,
+              "sounds": sounds,
+          }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          halloween = [s for s in sounds if s["category"] == "Halloween"]
+          if len(halloween) != 29:
+              raise SystemExit(f"Expected 29 Halloween sounds after import, found {len(halloween)}")
+          print(f"Manifest contains {len(sounds)} total sounds and {len(halloween)} Halloween sounds.")
+
+      - name: Remove one-time workflow
+        run: rm -f .github/workflows/import-halloween-lockchimes-once.yml
+
+      - name: Commit Halloween sounds
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A lockchimes/Halloween lockchimes-data.json .github/workflows/import-halloween-lockchimes-once.yml
+          git commit -m "Add 26 Halloween LockChimes" -m "Add 26 curated Halloween sounds with clear names under lockchimes/Halloween. Convert all inputs to mono PCM WAV, keep every file below 1 MB, use 32 kHz only where required for size, and refresh the LockChime manifest with durations and added dates."
+          git push
