@@ -70,6 +70,7 @@
     physicalStatus:$("physicalStatus"),physicalTeslaMedia:$("physicalTeslaMedia"),
     physicalEvBlend:$("physicalEvBlend"),physicalAmgHighs:$("physicalAmgHighs"),
     physicalPresence:$("physicalPresence"),physicalMusicBoost:$("physicalMusicBoost"),
+    physicalAccelDynamics:$("physicalAccelDynamics"),
     physicalShift:$("physicalShift"),physicalPops:$("physicalPops"),
     physicalFocus:$("physicalFocus"),physicalMuffling:$("physicalMuffling"),
     physicalSensitivity:$("physicalSensitivity"),
@@ -1753,6 +1754,7 @@ const PHYSICAL_CONTROLS=[
  ["physicalAmgHighs","physicalAmgHighsLabel"," %"],
  ["physicalPresence","physicalPresenceLabel"," %"],
  ["physicalMusicBoost","physicalMusicBoostLabel"," dB"],
+ ["physicalAccelDynamics","physicalAccelDynamicsLabel"," dB"],
  ["physicalShift","physicalShiftLabel"," %"],
  ["physicalPops","physicalPopsLabel"," %"],
  ["physicalFocus","physicalFocusLabel"," %"],
@@ -1762,7 +1764,9 @@ function getPhysicalSettings(){
  return {
   preset:ui.physicalPreset.value,evBlend:Number(ui.physicalEvBlend.value),
   amgHighs:Number(ui.physicalAmgHighs.value),presence:Number(ui.physicalPresence.value),
-  musicBoost:Number(ui.physicalMusicBoost.value),shiftStrength:Number(ui.physicalShift.value),
+  musicBoost:Number(ui.physicalMusicBoost.value),
+  accelDynamics:Number(ui.physicalAccelDynamics.value),
+  shiftStrength:Number(ui.physicalShift.value),
   popStrength:Number(ui.physicalPops.value),effectFocus:Number(ui.physicalFocus.value),
   muffling:Number(ui.physicalMuffling.value),sensitivity:ui.physicalSensitivity.value,
   teslaMedia:ui.physicalTeslaMedia.checked,volume:Number(ui.volume.value)
@@ -1772,7 +1776,8 @@ function restorePhysicalSettings(saved){
  if(!saved||typeof saved!=="object")return;
  const map={physicalPreset:"preset",physicalEvBlend:"evBlend",
   physicalAmgHighs:"amgHighs",physicalPresence:"presence",
-  physicalMusicBoost:"musicBoost",physicalShift:"shiftStrength",
+  physicalMusicBoost:"musicBoost",physicalAccelDynamics:"accelDynamics",
+  physicalShift:"shiftStrength",
   physicalPops:"popStrength",physicalFocus:"effectFocus",
   physicalMuffling:"muffling",physicalSensitivity:"sensitivity"};
  for(const [id,key] of Object.entries(map)){
@@ -4159,7 +4164,7 @@ VoltunePhysicalAudio.onProfileChange(preset=>{
 });
 for(const id of ["physicalPreset","physicalSensitivity","physicalTeslaMedia",
  "physicalEvBlend","physicalAmgHighs","physicalPresence","physicalMusicBoost",
- "physicalShift","physicalPops","physicalFocus","physicalMuffling"]){
+ "physicalAccelDynamics","physicalShift","physicalPops","physicalFocus","physicalMuffling"]){
  ui[id].addEventListener(id==="physicalPreset"||id==="physicalSensitivity"||id==="physicalTeslaMedia"?"change":"input",()=>{
   VoltunePhysicalAudio.setConfig(getPhysicalSettings());
   syncEngineUI();
