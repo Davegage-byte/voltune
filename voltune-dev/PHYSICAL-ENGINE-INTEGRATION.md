@@ -41,3 +41,20 @@ Der Medienanker startet synchron im Nutzerklick beim Start der gewählten Engine
 - Ein sofortiges, unterbrechungsfreies *Crossfade* beim Umschalten der gesamten Engine wurde **noch nicht** umgesetzt: Die Audioengine wird beendet und die neue gestartet. GPS bleibt dabei aktiv.
 - Die Debugwerte Base/Invert/Drive/Reku sind derzeit Legacy-spezifisch. Sie sollen nicht als Physical-Frequenzdiagnose interpretiert werden.
 - Künftige Tests: erneuter Hörtest mit der neuen Integration (Lautstärke, dynamische Schalt-/Schub-Effekte, Lenkrad-Klick, GPS im Hintergrund) und Sichtung auffälliger Gangwechselanzahlen im Fahrbericht.
+
+
+## Neue Beschleunigungsdynamik (19.10.2026)
+
+Der Regler **„Beschleunigungsdynamik“** steht innerhalb von Physical Engine bei den anderen neuen Motorreglern. \`physicalAccelDynamics\` hat einen Bereich von **0 bis 12 dB**, Standard **6 dB**. Er wird live und dauerhaft als \`physicalSettings.accelDynamics\` gespeichert; die Legacy-Engine bleibt unverändert.
+
+Betriebslogik in \`js/physical-audio.js\`:
+
+- Für die Dynamik wird die **bereits von Voltune berechnete Beschleunigung** genutzt; keine zusätzliche GPS-Anfrage, kein zusätzlicher Tachosignalfilter.
+- Werte unter **+0,3 m/s²** gelten als Konstantfahrt. Ab ungefähr **+2,5 m/s²** wird die maximale Anhebung erreicht. Dazwischen eine sanfte Smoothstep-Kurve.
+- Zeitliches Nachführen des Beschleunigungssignals mit ca. **160 ms beim Beschleunigen**, **520 ms beim Nachlassen** sowie **65 ms Audio-Gain-Automation** gegen hörbare Pegelsprünge.
+- Der Reglerwert beschreibt die **Differenz** zwischen Konstantfahrt und kräftiger Beschleunigung: bei 6 dB etwa **−3 dB Konstantfahrt** und **+3 dB kräftige Beschleunigung** relativ zum vorherigen festen Pegel. Somit wird nicht einfach dauerhaft lauter gefahren. Bei 0 dB bleibt die Gain-Stufe exakt auf 1×.
+- Eine zusätzliche Gain-Node steht **nach dem Event-Kompressor und vor Master-Gain sowie Peak-Limiter**. Sie beeinflusst den gesamten Physical-Sound, einschließlich transienter Effekte. Der vorhandene digitale Peak-Limiter bleibt unverändert; an seiner Pegelgrenze kann die hörbare Anhebung kleiner ausfallen als der Sollwert.
+- Dynamik gilt ausschließlich für Physical Engine, unabhängig vom gewählten Motorprofil. Kein Einfluss auf Virtuell-RPM/Gänge/GPS/Launch.
+- Beim Sound-Neustart und \`resetDrivingState()\` wird der Beschleunigungsspeicher zurückgesetzt. Bestehende Installationseinstellungen ohne Feld \`accelDynamics\` nutzen den UI-Standard 6 dB.
+
+**Technischer Mock-Test:** bei 6 dB lief der Regelbereich von 0,7079× (Konstantfahrt) bis 1,4107× (kräftige Beschleunigung); Rückkehr nach 2,5 Sekunden auf ca. 0,7119×. Bei 0 dB exakt 1×, bei maximal 12 dB ca. 0,5× bis 2,0×. Ein paralleler Mute-Test bestätigte Master-Gain 0. Ein echter Hörtest im Tesla mit wechselnder Beschleunigung steht noch aus.
