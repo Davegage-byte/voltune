@@ -12,10 +12,9 @@ class VoltuneShiftAccentV1 extends AudioWorkletProcessor {
   const sr=sampleRate;
   this.sr=sr;this.seed=0xa6bd28c1;
   this.samplesLeft=0;this.elapsed=0;this.eventIntensity=0;this.up=true;
-  this.low=[0,0];this.mid=[0,0];this.prev=[0,0];this.ring=[0,0];
+  this.low=[0,0];this.mid=[0,0];this.prev=[0,0];
   this.hpCoef=Math.exp(-2*Math.PI*360/sr);
   this.lpCoef=1-Math.exp(-2*Math.PI*2300/sr);
-  this.dcCoef=Math.exp(-2*Math.PI*35/sr);
   this.resD=Math.exp(-2*Math.PI*680/sr);
   this.strength=.7;
   this.smooth=1-Math.exp(-1/(sr*.022));
@@ -58,8 +57,7 @@ class VoltuneShiftAccentV1 extends AudioWorkletProcessor {
     const ringPhase=2*Math.PI*(this.up?610:485)*t + (ch===1?.35:0);
     const body=Math.sin(ringPhase)*Math.exp(-t/(this.up?.021:.026));
     const sample=(.77*this.mid[ch]+.23*body)*envelope*
-       this.eventIntensity*Math.pow(this.strength,1.10)*.68;
-    const highpassed=sample-this.ring[ch]+this.dcCoef*this.ring[ch];
+       this.eventIntensity*Math.pow(this.strength,1.10)*.56;
     // Main output is intentionally modest; audible midrange bite without
     // constantly feeding the final peak limiter.
     if(ch===0)l[i]=Math.max(-.25,Math.min(.25,sample));
