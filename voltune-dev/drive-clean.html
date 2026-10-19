@@ -247,7 +247,7 @@ html[data-theme="light"] #startupOverlay {
     <div class="cleanActions">
       <div id="cleanMasterSlot" class="cleanMasterSlot" aria-label="Master-Lautstärke"></div>
       <div id="cleanDemoSlot" class="cleanDemoSlot"></div>
-      <button id="cleanSettingsToggle" class="cleanAction" type="button" aria-expanded="false" aria-controls="cleanSettingsClose">
+      <button id="cleanSettingsToggle" class="cleanAction" type="button" aria-expanded="false" aria-controls="cleanSettingsPanel">
         <span aria-hidden="true">☷</span> Einstellungen
       </button>
       <a class="cleanAction" href="./index.html" title="Bisherige Voltune-Dev-Ansicht öffnen">Editor ↗</a>
@@ -432,7 +432,7 @@ html[data-theme="light"] #startupOverlay {
   </div>
 </details>
   
-  <div class="controls">
+  <div id="cleanSettingsPanel" class="controls" aria-label="Motor- und Fahreinstellungen">
 
     <div class="manual debugOnly">
       <div class="top">
