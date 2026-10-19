@@ -20,16 +20,18 @@ body.cleanDrive .v2SettingsHeading{display:none;}
    Grid auto tracks in the fixed overlay were compressing cards: sliders,
    selects and all Physical Engine controls were clipped on mobile. */
 body.cleanDrive.v2-settings-open main>.controls{
- display:block!important;position:fixed;z-index:1021;right:18px;top:78px;bottom:16px;
+ display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ gap:12px!important;grid-template-columns:none!important;grid-template-rows:none!important;
+ position:fixed;z-index:1021;right:18px;top:78px;bottom:16px;
  width:min(920px,calc(100vw - 36px));height:auto;min-height:0;max-height:none;
- padding:18px;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ box-sizing:border-box;padding:18px;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;
  overscroll-behavior:contain;scroll-behavior:smooth;
  background:var(--panel,#11151c);border:1px solid var(--line,#344);border-radius:17px;
  box-shadow:0 25px 100px rgba(0,0,0,.5);
 }
 body.cleanDrive.v2-settings-open main>.controls > *{
  box-sizing:border-box;width:100%;max-width:100%;height:auto;min-height:0;
- margin:0 0 12px;align-self:auto;overflow:visible;
+ flex:0 0 auto!important;grid-column:auto;align-self:stretch;margin:0;overflow:visible;
 }
 body.cleanDrive.v2-settings-open main>.controls > .control,
 body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel{
@@ -39,6 +41,8 @@ body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel{
 body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel:not([hidden]){
  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));
  align-content:start;align-items:stretch;grid-auto-rows:max-content;gap:10px;
+ height:max-content!important;max-height:none!important;
+ overflow:visible!important;
 }
 body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel > *{
  min-height:0;max-height:none;
@@ -216,8 +220,7 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
 .v2SmallBtn{background:transparent;border:1px solid var(--v-line);border-radius:10px;color:var(--v-muted);
  font-size:11px;letter-spacing:.08em;padding:10px 13px;min-height:40px;transition:color .2s,border-color .2s}
 .v2SmallBtn:hover{color:var(--v-cyan);border-color:var(--v-cyan)}
-.v2Footnote{position:static;transform:none;flex:0 0 100%;text-align:center;margin-top:0;
- font-size:9px;line-height:1.4;letter-spacing:.06em;color:var(--v-dim);white-space:normal;opacity:.8}
+
 @media (max-width:1150px){
  .v2Cockpit{padding:18px 20px;grid-template-rows:auto minmax(350px,1fr) auto}
  .v2Deck{grid-template-columns:minmax(120px,.68fr) minmax(350px,2.5fr) minmax(100px,.62fr)}
@@ -253,7 +256,7 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
  .v2Buttons{justify-content:center}.v2ModeCluster{justify-content:space-around}
  .v2Volume{width:100%;max-width:440px;margin:auto}
  .v2SecondaryActions{justify-content:center}
- .v2Footnote{position:static;transform:none;text-align:center;white-space:normal}
+
  body.cleanDrive.v2-settings-open main>.controls{top:77px;padding:13px}
  body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel:not([hidden]){grid-template-columns:minmax(0,1fr)}
  .v2SettingsIntro{flex-direction:column;align-items:stretch}
