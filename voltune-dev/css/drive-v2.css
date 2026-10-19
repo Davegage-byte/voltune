@@ -75,8 +75,17 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
 .v2RightNum.green{color:var(--v-green)}
 .v2RightNum.amber{color:var(--v-amber)}
 .v2RightFoot{font-size:10px;letter-spacing:.19em;color:var(--v-muted);margin-top:5px}
-.v2CarMini{width:110px;max-width:70%;opacity:.62}
+/* Die Spur bleibt unbewegt; nur die Karosserie weicht sanft um max. 7px aus. */
+.v2CarMini{width:110px;max-width:70%;opacity:.77;overflow:visible}
 .v2CarMini path,.v2CarMini rect,.v2CarMini ellipse{fill:none;stroke:var(--v-dim);stroke-width:1.5}
+.v2CarBody{will-change:transform;transform:translate3d(0,0,0)}
+.v2CarMini .v2CarGlow{opacity:0;pointer-events:none}
+.v2CarMini .v2CarGlow ellipse{stroke:none;fill-opacity:.13}
+.v2CarMini .v2CarGlow path{stroke-width:2.6;stroke-linecap:round;fill:none}
+.v2CarMini .v2CarFrontGlow ellipse{fill:var(--v-amber)}
+.v2CarMini .v2CarFrontGlow path{stroke:var(--v-amber);filter:drop-shadow(0 0 4px var(--v-amber))}
+.v2CarMini .v2CarRearGlow ellipse{fill:var(--v-cyan)}
+.v2CarMini .v2CarRearGlow path{stroke:var(--v-cyan);filter:drop-shadow(0 0 4px var(--v-cyan))}
 .v2Gauge{width:100%;max-width:850px;aspect-ratio:1;position:relative;justify-self:center;display:grid;place-items:center;min-width:0;max-height:min(75vh,850px);}
 .v2Gauge svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .v2Gauge .v2Ring{stroke:var(--v-line);stroke-width:1.1;fill:none}
