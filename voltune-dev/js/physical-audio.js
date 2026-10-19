@@ -6,6 +6,10 @@
 window.VoltunePhysicalAudio = (() => {
  "use strict";
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
+ // Temporärer Hörvergleich: reiner -3-dB-Pegeltrim zwischen
+ // Kompressor und finalem Peak-Limiter. Kein EQ-/Engine-/Effekt-Eingriff.
+ // Nicht als Nutzereinstellung speichern, damit ein Rollback leicht bleibt.
+ const TEST_OUTPUT_TRIM_DB=-3;
  const defaults={
   preset:"hybrid",evBlend:25,amgHighs:55,presence:75,
   musicBoost:8,accelDynamics:6,shiftStrength:70,shiftCut:25,popStrength:75,
@@ -159,7 +163,8 @@ window.VoltunePhysicalAudio = (() => {
   config.volume=clamp(value,0,100);
   if(!ctx||!master)return;
   const volume=config.volume/100,boost=clamp(config.musicBoost,0,12);
-  const g=Math.pow(volume,1.52)*4.2*Math.pow(10,(boost*(1-volume))/20);
+  const baseGain=Math.pow(volume,1.52)*4.2*Math.pow(10,(boost*(1-volume))/20);
+  const g=baseGain*Math.pow(10,TEST_OUTPUT_TRIM_DB/20);
   master.gain.setTargetAtTime(muted?0:g,ctx.currentTime,.060);
  }
  function setMuted(value,volume){
