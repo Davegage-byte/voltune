@@ -247,7 +247,7 @@ $("v2JumpPhysical").addEventListener("click",()=>{
   engineSelect?.focus?.({preventScroll:true});
   $("v2JumpPhysical").textContent="Soundengine oben auf Physical Engine umstellen ↑";
  }else{
-  $("v2JumpPhysical").textContent="Physical Engine / V8 geöffnet ✓";
+  $("v2JumpPhysical").textContent="Zum V8 / Physical Engine ↓";
  }
 });
 $("soundEngineSelect").addEventListener("change",()=>{
