@@ -2002,8 +2002,10 @@ function applyPersistentSettings(settings) {
     animationsEnabled
   );
   restorePhysicalSettings(settings.physicalSettings);
-  if(settings.soundEngine==="physical"||settings.soundEngine==="legacy")
-   ui.soundEngineSelect.value=settings.soundEngine;
+  // Older saved configs lack soundEngine: preserve their original sound.
+  // Once a choice exists, always load it instead of the first-visit default.
+  ui.soundEngineSelect.value=
+   settings.soundEngine==="physical"?"physical":"legacy";
   VoltuneAudio.selectEngine(ui.soundEngineSelect.value);
 }
   
@@ -4219,9 +4221,11 @@ const savedSettings =
   VoltuneStorage.loadSettings();
 
 if (savedSettings) {
-  applyPersistentSettings(
-    savedSettings
-  );
+  applyPersistentSettings(savedSettings);
+} else {
+  // Only completely new visitors get Hybrid EV + V8 by default.
+  ui.soundEngineSelect.value="physical";
+  VoltuneAudio.selectEngine("physical");
 }
 
   loadOverrunSoundList();
