@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-19T08:05:03+02:00",
+  "checked_at": "2026-10-19T14:58:22+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-19T08:05:03+02:00",
+    "checked_at": "2026-10-19T14:58:22+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.114,
-    "diesel": 2.214,
-    "e5_updated_at": "2026-10-19T07:40+02:00",
-    "diesel_updated_at": "2026-10-19T07:40+02:00",
+    "e5": 2.137,
+    "diesel": 2.25,
+    "e5_updated_at": "2026-10-19T14:30+02:00",
+    "diesel_updated_at": "2026-10-19T14:30+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-19T08:05:03+02:00",
+    "checked_at": "2026-10-19T14:58:22+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-19T08:05:03+02:00",
+    "checked_at": "2026-10-19T14:58:22+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3531,
-    "min": 0.26,
+    "average": 0.4175,
+    "min": 0.35,
     "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-19T08:05:03+02:00"
+    "calculated_at": "2026-10-19T14:58:22+02:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,11 @@
   ],
   "news": [
     {
+      "title": "Tesla is Delaying Some Model Y L Orders in the U.S.",
+      "url": "https://www.notateslaapp.com/news/4849/tesla-is-delaying-some-model-y-l-orders-in-the-us",
+      "published_at": "2026-10-19T14:32:00+02:00"
+    },
+    {
       "title": "Musk Confirms Bigger Text Option Coming to Tesla Screens",
       "url": "https://www.notateslaapp.com/news/4847/musk-confirms-bigger-text-option-coming-to-tesla-screens",
       "published_at": "2026-10-18T21:42:00+02:00"
@@ -24479,11 +24484,6 @@
       "title": "Watch Tesla FSD Clear a Path for an Ambulance at a Red Light [VIDEO]",
       "url": "https://www.notateslaapp.com/news/4841/watch-tesla-fsd-clear-a-path-for-an-ambulance-at-a-red-light-video",
       "published_at": "2026-10-17T00:14:00+02:00"
-    },
-    {
-      "title": "New Tesla Roadster Specs: Battery, Range, Speed, Trims, and More",
-      "url": "https://www.notateslaapp.com/news/4840/new-tesla-roadster-specs-battery-range-speed-trims-and-more",
-      "published_at": "2026-10-16T23:01:00+02:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xf5 in position 3: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xad in position 2: invalid start byte"
   },
-  "superchargers_updated_at": "2026-10-19T08:05:03+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-19T08:05:03+02:00",
-  "news_updated_at": "2026-10-19T08:05:03+02:00",
-  "regional_news_updated_at": "2026-10-19T08:05:03+02:00",
-  "fuel_prices_updated_at": "2026-10-19T08:05:03+02:00",
-  "tesla_stock_updated_at": "2026-10-19T08:05:03+02:00"
+  "superchargers_updated_at": "2026-10-19T14:58:22+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-19T14:58:22+02:00",
+  "news_updated_at": "2026-10-19T14:58:22+02:00",
+  "regional_news_updated_at": "2026-10-19T14:58:22+02:00",
+  "fuel_prices_updated_at": "2026-10-19T14:58:22+02:00",
+  "tesla_stock_updated_at": "2026-10-19T14:58:22+02:00"
 }
