@@ -18,7 +18,7 @@ window.VoltunePhysicalAudio = (() => {
   effectFocus:26,muffling:20,sensitivity:"sport",teslaMedia:false,teslaEq:false
  };
  let config={...defaults},ctx=null,engine=null,presence=null,events=null,
-  profileGain=null,eq=null,master=null,accelGain=null,output=null,
+  profileGain=null,eq=null,master=null,accelGain=null,output=null,outputMeter=null,meterData=null,
   teslaEqBass=null,teslaEqPresence=null,teslaEqDry=null,teslaEqWet=null,
   carrier=null,carrierUrl=null,
   active=false,muted=false,generation=0,lastAccelTime=0,lastAccelLoad=.13,
@@ -240,6 +240,12 @@ window.VoltunePhysicalAudio = (() => {
    compressor.connect(teslaEqBass).connect(teslaEqPresence)
     .connect(teslaEqWet).connect(accelGain);
    accelGain.connect(master).connect(output).connect(audioContext.destination);
+   // Read-only signal tap AFTER the final limiter. No sound-path change.
+   outputMeter=audioContext.createAnalyser();
+   outputMeter.fftSize=1024;
+   outputMeter.smoothingTimeConstant=.5;
+   meterData=new Float32Array(outputMeter.fftSize);
+   output.connect(outputMeter);
    const error=()=>console.warn("Voltune Physical Engine Worklet processing failed");
    for(const node of [engine,presence,events,output])node.onprocessorerror=error;
    active=true;muted=false;resetDrivingState();apply();
@@ -252,7 +258,7 @@ window.VoltunePhysicalAudio = (() => {
   ++generation;
   cleanupCarrier();
   const old=ctx;
-  ctx=null;engine=null;presence=null;events=null;output=null;eq=null;
+  ctx=null;engine=null;presence=null;events=null;output=null;outputMeter=null;meterData=null;eq=null;
   master=null;accelGain=null;profileGain=null;active=false;
   teslaEqBass=null;teslaEqPresence=null;teslaEqDry=null;teslaEqWet=null;
   if(old)try{old.close()?.catch?.(()=>{});}catch(_){}
@@ -310,6 +316,13 @@ window.VoltunePhysicalAudio = (() => {
   apply();
   return null; // Legacy-only sound-layer debug should not be fabricated.
  }
+ function getOutputMeter(){
+   if(!isStarted()||muted||!outputMeter||!meterData)return 0;
+   outputMeter.getFloatTimeDomainData(meterData);
+   let sum=0;
+   for(let i=0;i<meterData.length;i++)sum+=meterData[i]*meterData[i];
+   return clamp(Math.sqrt(sum/meterData.length)*3,0,1);
+ }
  function testEvent(type){
   if(!["upshift","downshift","overrun"].includes(type))return;
   sendEvent(type,.95);
@@ -318,7 +331,7 @@ window.VoltunePhysicalAudio = (() => {
  function triggerTurboFlutter(){/* Legacy turbo flutter does not belong here. */}
  return {start,stop,isStarted,setMuted,isMuted,setMasterVolume,update,resetDrivingState,
   triggerShiftBurble,triggerDownshiftBlip,triggerOverrun,triggerBov,triggerTurboFlutter,testEvent,
-  setProfile,setConfig,getConfig,onProfileChange,presetList,names};
+  setProfile,setConfig,getConfig,onProfileChange,presetList,names,getOutputMeter};
 })();
 window.VoltuneAudioRouter = (() => {
  const original=window.VoltuneAudio,physical=window.VoltunePhysicalAudio;
