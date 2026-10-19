@@ -366,25 +366,25 @@ html[data-theme="light"] #startupOverlay {
         <span id="speedTestLabel">0 km/h</span>
       </div>
       <input id="speedTest" type="range" min="0" max="270" step="1" value="0">
-      <small>0–270 km/h. Beim Bewegen wird die Demo pausiert. Schnell hochziehen erzeugt Beschleunigung, schnell runterziehen Reku/BOV.</small>
+      <small>Simuliert Tempo und Beschleunigung ohne echte GPS-Fahrt.</small>
     </div>
     
     <div class="control control-neutral control-master">
       <div class="top"><span>Master-Lautstärke</span><span id="volumeLabel">32 %</span></div>
       <input id="volume" type="range" min="0" max="100" value="32">
         <small class="controlHint">
-          Gesamtlautstärke aller Voltune-Sounds
+          Regelt die Lautstärke des Motorsounds.
         </small>
     </div>
 
     
 <div class="control control-neutral" id="soundEngineControl">
- <div class="top"><span>Soundengine</span><span id="soundEngineLabel">Voltune Original</span></div>
+ <div class="top"><span>Soundengine</span><span id="soundEngineLabel">Physical Engine</span></div>
  <select id="soundEngineSelect" aria-label="Soundengine auswählen">
   <option value="legacy">Voltune Original · bisherige Sounds</option>
-  <option value="physical">Physical Engine · Hybrid EV + V8</option>
+  <option value="physical" selected>Physical Engine · Hybrid EV + V8</option>
  </select>
- <small class="controlHint">Nur eine Engine ist gleichzeitig aktiv. Die Original-Einstellungen bleiben gespeichert.</small>
+ <small class="controlHint">Beim ersten Besuch startet der Hybrid; später zählt deine gespeicherte Auswahl.</small>
 </div>
 
 
@@ -447,13 +447,13 @@ html[data-theme="light"] #startupOverlay {
       </div>
 
       <small class="controlHint" id="legacySoundProfileHint">
-        Jede Klanggruppe kann unabhängig gewählt werden. Neue Varianten erscheinen später automatisch in diesen Listen.
+        Wähle den Klang für Stand, Fahren, Beschleunigen und Bremsen.
       </small>
     </div>
 
 <section id="physicalEnginePanel" class="control control-neutral" hidden>
  <div class="top"><strong>Physical Engine</strong><span id="physicalStatus">Hybrid EV + V8</span></div>
- <p class="engineNotice">Die Physical Engine nutzt Voltunes GPS und Getriebe. Nur die hier sichtbaren Klangregler wirken auf den neuen Motor.</p>
+ <p class="engineNotice">Diese Regler verändern den Motorsound; GPS und Getriebe bleiben unverändert.</p>
  <div class="control"><div class="top"><label for="physicalPreset">Motorsound</label></div>
   <select id="physicalPreset">
    <option value="hybrid">Hybrid EV + V8</option><option value="amg">V8 AMG</option>
@@ -461,21 +461,31 @@ html[data-theme="light"] #startupOverlay {
    <option value="v8">V8 Crossplane</option><option value="v4">V4</option>
    <option value="v6">V6</option><option value="v12">V12</option>
    <option value="i5">Reihenfünfzylinder</option><option value="ev">Elektro-Synth</option>
-  </select></div>
- <div class="control" id="physicalHybridControls"><div class="top"><span>Hybrid EV-Anteil</span><span id="physicalEvBlendLabel">25 %</span></div><input id="physicalEvBlend" type="range" min="0" max="100" value="25"></div>
- <div class="control" id="physicalAmgControls" hidden><div class="top"><span>AMG-Höhen dämpfen</span><span id="physicalAmgHighsLabel">55 %</span></div><input id="physicalAmgHighs" type="range" min="0" max="100" value="55"></div>
- <div class="control"><div class="top"><span>Motorpräsenz bei Musik</span><span id="physicalPresenceLabel">75 %</span></div><input id="physicalPresence" type="range" min="0" max="100" value="75"></div>
- <div class="control"><div class="top"><span>Musik-Boost</span><span id="physicalMusicBoostLabel">+8 dB</span></div><input id="physicalMusicBoost" type="range" min="0" max="12" value="8"></div>
+  </select>
+  <small class="controlHint">Wähle aus, nach welchem Motor Voltune klingen soll.</small></div>
+ <div class="control" id="physicalHybridControls"><div class="top"><span>Hybrid EV-Anteil</span><span id="physicalEvBlendLabel">25 %</span></div><input id="physicalEvBlend" type="range" min="0" max="100" value="25">
+  <small class="controlHint">Mischt den Elektroklang zum tiefen V8-Motorsound.</small></div>
+ <div class="control" id="physicalAmgControls" hidden><div class="top"><span>AMG-Höhen dämpfen</span><span id="physicalAmgHighsLabel">55 %</span></div><input id="physicalAmgHighs" type="range" min="0" max="100" value="55">
+  <small class="controlHint">Macht die hohen, scharfen AMG-Klanganteile leiser.</small></div>
+ <div class="control"><div class="top"><span>Motorpräsenz bei Musik</span><span id="physicalPresenceLabel">75 %</span></div><input id="physicalPresence" type="range" min="0" max="100" value="75">
+  <small class="controlHint">Macht den Motor durch zusätzliche Obertöne hörbarer.</small></div>
+ <div class="control"><div class="top"><span>Musik-Boost</span><span id="physicalMusicBoostLabel">+8 dB</span></div><input id="physicalMusicBoost" type="range" min="0" max="12" value="8">
+  <small class="controlHint">Verstärkt Voltune bei niedrigerer Master-Lautstärke.</small></div>
  <div class="control"><div class="top"><label for="physicalAccelDynamics">Beschleunigungsdynamik</label><span id="physicalAccelDynamicsLabel">6 dB</span></div>
   <input id="physicalAccelDynamics" type="range" min="0" max="12" step="1" value="6">
-  <small>Regelt, wie viel lauter der Motorsound bei kräftigem Beschleunigen gegenüber gleichmäßiger Fahrt wird. 0 dB = keine automatische Lautstärkeänderung, 6 dB = deutlich, 12 dB = stark. Die Lautstärke steigt und fällt weich. Wir senken die Konstantfahrt etwas ab und heben die Beschleunigung entsprechend an, statt den Ausgangslimiter einfach zu überfahren.</small>
+  <small class="controlHint">Macht den Motor beim Beschleunigen lauter als bei Konstantfahrt.</small>
  </div>
- <div class="control"><div class="top"><span>Schalthärte</span><span id="physicalShiftLabel">70 %</span></div><input id="physicalShift" type="range" min="0" max="100" value="70"></div>
- <div class="control"><div class="top"><span>Schubknallen</span><span id="physicalPopsLabel">75 %</span></div><input id="physicalPops" type="range" min="0" max="100" value="75"></div>
- <div class="control"><div class="top"><span>Effekt-Vordergrund</span><span id="physicalFocusLabel">70 %</span></div><input id="physicalFocus" type="range" min="0" max="100" value="70"></div>
- <div class="control"><div class="top"><span>Auspuffdämpfung</span><span id="physicalMufflingLabel">35 %</span></div><input id="physicalMuffling" type="range" min="0" max="100" value="35"></div>
+ <div class="control"><div class="top"><span>Schalthärte</span><span id="physicalShiftLabel">70 %</span></div><input id="physicalShift" type="range" min="0" max="100" value="70">
+  <small class="controlHint">Regelt die Stärke der Geräusche beim Schalten.</small></div>
+ <div class="control"><div class="top"><span>Schubknallen</span><span id="physicalPopsLabel">75 %</span></div><input id="physicalPops" type="range" min="0" max="100" value="75">
+  <small class="controlHint">Regelt, wie kräftig das Schubknallen beim Verzögern klingt.</small></div>
+ <div class="control"><div class="top"><span>Effekt-Vordergrund</span><span id="physicalFocusLabel">70 %</span></div><input id="physicalFocus" type="range" min="0" max="100" value="70">
+  <small class="controlHint">Hebt Knaller kurz hervor, indem der Motor etwas leiser wird.</small></div>
+ <div class="control"><div class="top"><span>Auspuffdämpfung</span><span id="physicalMufflingLabel">35 %</span></div><input id="physicalMuffling" type="range" min="0" max="100" value="35">
+  <small class="controlHint">Dämpft den Auspuffklang und macht die Effekte weicher.</small></div>
  <div class="control"><div class="top"><label for="physicalSensitivity">GPS-Effekt-Empfindlichkeit</label></div>
-  <select id="physicalSensitivity"><option value="standard">Standard</option><option value="sport" selected>Sport</option><option value="extreme">Extrem</option></select></div>
+  <select id="physicalSensitivity"><option value="standard">Standard</option><option value="sport" selected>Sport</option><option value="extreme">Extrem</option></select>
+  <small class="controlHint">Bestimmt, wie leicht die GPS-Automatik Schubknallen auslöst.</small></div>
 <div class="control">
  <div class="top"><span>Effekte testen (nur im Stand)</span></div>
  <div class="buttons">
@@ -483,9 +493,10 @@ html[data-theme="light"] #startupOverlay {
   <button id="physicalTestDown" type="button">⬇ Runterschalten</button>
   <button id="physicalTestPop" type="button">✦ Schubknallen</button>
  </div>
+ <small class="controlHint">Spiele Schalt- und Schubgeräusche im Stand zur Probe ab.</small>
  </div>
  <div class="control"><label for="physicalTeslaMedia"><input id="physicalTeslaMedia" type="checkbox"> Tesla-Medienmodus E / mittiger Lenkradklick</label>
-  <small>Beim Start: leiser Medienanker, Tesla-Musik wird pausiert. Ohne Medienmodus kann Tesla-Musik parallel laufen. Mittelklick wechselt das Physical-Profil.</small>
+  <small class="controlHint">Schaltet Sounds per Lenkrad um, pausiert aber die Tesla-Musik.</small>
  </div>
 </section>
 
@@ -524,7 +535,7 @@ html[data-theme="light"] #startupOverlay {
   </div>
 
   <small class="controlHint">
-    Unterer und oberer Frequenzbereich des Grundsounds
+    Bestimmt, wie tief oder hoch der Grundsound klingt.
   </small>
 
 </div>
@@ -545,34 +556,34 @@ html[data-theme="light"] #startupOverlay {
   >
 
   <small class="controlHint">
-    Reduziert den Fahrsound bei gleichbleibender Geschwindigkeit
+    Macht den Motor bei gleichmäßiger Fahrt leiser.
   </small>
 </div>
     
     <div class="control control-rpm">
       <div class="top"><span>Drehzahl-Pitch</span><span id="pitchLabel">2.1×</span></div>
       <input id="pitch" type="range" min="8" max="35" value="21">
-      <small class="controlHint">Bestimmt, wie stark die Tonhöhe mit der Drehzahl ansteigt</small>
+      <small class="controlHint">Legt fest, wie stark der Ton mit der Drehzahl höher wird.</small>
     </div>
 
     <div class="control control-rpm">
       <div class="top"><span>Getriebe-Reichweite</span><span id="gearRangeLabel">270 km/h</span></div>
       <input id="gearRange" type="range" min="80" max="300" step="1" value="270">
-      <small class="controlHint">Verteilt die sechs virtuellen Gänge über den Geschwindigkeitsbereich</small>
+      <small class="controlHint">Bestimmt, wie weit die virtuellen Gänge reichen.</small>
     </div>
 
     <div class="control control-rpm">
       <div class="top"><span>Max. virtuelle Drehzahl</span><span id="maxRpmLabel">6500 RPM</span></div>
       <input id="maxRpm" type="range" min="3000" max="9000" step="100" value="6500">
         <small class="controlHint">
-          Legt die maximale virtuelle Motordrehzahl fest
+          Begrenzt, wie hoch der virtuelle Motor drehen darf.
         </small>
     </div>
 
     <div class="control control-rpm">
       <div class="top"><span>Schalt-Drehzahl</span><span id="shiftRpmLabel">6000 RPM</span></div>
       <input id="shiftRpm" type="range" min="1500" max="6500" step="100" value="6000">
-      <small class="controlHint">Oberes Schaltziel bei sportlicher Fahrweise und Vollgas</small>
+      <small class="controlHint">Bestimmt, wann bei hoher Last hochgeschaltet wird.</small>
     </div>
 
     <div class="control control-rpm">
@@ -600,7 +611,7 @@ html[data-theme="light"] #startupOverlay {
       >
     
       <small class="controlHint">
-        Lautstärke des Schaltblubberns beim Hochschalten
+        Regelt den kurzen Schaltknall beim Hochschalten.
       </small>
     </div>
 
@@ -630,7 +641,7 @@ html[data-theme="light"] #startupOverlay {
       >
     
       <small class="controlHint">
-        Lautstärke des kurzen Zwischengasstoßes beim Zurückschalten
+        Regelt das kurze Aufheulen beim Runterschalten.
       </small>
     </div>    
     
@@ -638,7 +649,7 @@ html[data-theme="light"] #startupOverlay {
       <div class="top"><span>Grundsound-Layer</span><span id="baseVolLabel">65 %</span></div>
       <input id="baseVol" type="range" min="0" max="100" value="65">
         <small class="controlHint">
-          Lautstärke des grundlegenden Motorsounds
+          Regelt den gleichmäßigen Grundsound des Motors.
         </small>
     </div>
 
@@ -646,7 +657,7 @@ html[data-theme="light"] #startupOverlay {
       <div class="top"><span>Inverter-Layer</span><span id="inverterLabel">42 %</span></div>
       <input id="inverter" type="range" min="0" max="100" value="42">
         <small class="controlHint">
-          Lautstärke des hochfrequenten Elektro- und Inverterklangs
+          Regelt das hohe Surren des Elektroantriebs.
         </small>
     </div>
 
@@ -654,7 +665,7 @@ html[data-theme="light"] #startupOverlay {
       <div class="top"><span>Beschleunigungs-Layer</span><span id="driveLabel">55 %</span></div>
       <input id="drive" type="range" min="0" max="100" value="55">
         <small class="controlHint">
-          Zusätzlicher Sound bei positiver Beschleunigung
+          Mischt beim Beschleunigen einen kräftigeren Klang hinzu.
         </small>
     </div>
 
@@ -662,7 +673,7 @@ html[data-theme="light"] #startupOverlay {
       <div class="top"><span>Reku-Layer</span><span id="regenLabel">48 %</span></div>
       <input id="regen" type="range" min="0" max="100" value="48">
         <small class="controlHint">
-          Zusätzlicher Sound beim Verzögern durch Rekuperation
+          Regelt den zusätzlichen Klang beim Abbremsen.
         </small>
     </div>
 
@@ -670,7 +681,7 @@ html[data-theme="light"] #startupOverlay {
       <div class="top"><span>Luft/Textur-Layer</span><span id="airLabel">30 %</span></div>
       <input id="air" type="range" min="0" max="100" value="30">
         <small class="controlHint">
-          Fügt dem Fahrsound Luft, Rauschen und zusätzliche Textur hinzu
+          Mischt leises Wind- und Rauschgeräusch hinzu.
         </small>
     </div>
 
@@ -690,7 +701,7 @@ html[data-theme="light"] #startupOverlay {
       </div>
       <input id="bov" type="range" min="0" max="100" value="60">
         <small class="controlHint">
-          Lautstärke des Entladungsgeräuschs beim Lupfen
+          Regelt den Druckablass beim Gaswegnehmen.
         </small>
     </div>
 
@@ -719,7 +730,7 @@ html[data-theme="light"] #startupOverlay {
   >
 
   <small class="controlHint">
-    Lautstärke des Turbo-Flutters beim Lupfen
+    Regelt das flatternde Turbogeräusch beim Gaswegnehmen.
   </small>
 </div>
     
@@ -757,7 +768,7 @@ html[data-theme="light"] #startupOverlay {
       >
     
       <small class="controlHint">
-        Lautstärke von Knurren und Nachblubbern nach stärkerer Last
+        Regelt Knallen und Nachblubbern beim Gaswegnehmen.
       </small>
     </div>
     
