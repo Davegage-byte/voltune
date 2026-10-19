@@ -105,3 +105,24 @@ Der Nutzer hat am Android-Handy folgende Werte als vorläufige **Erststartwerte*
 | GPS-Effekt-Empfindlichkeit | Sport (unverändert) |
 
 Technisch angepasst wurden nur die `defaults` in `js/physical-audio.js` sowie die anfänglichen Beschriftungen und Slider-Werte in `index.html`. Master-Lautstärke (32 %), AMG-spezifische Höhen (55 %), Tesla-Medienmodus (deaktiviert) und die temporäre −3-dB-Testabsenkung bleiben unverändert. Die vorhandene `voltune.settings.v1`-Wiederherstellung hat weiterhin Vorrang: **keine Überschreibung bestehender Nutzerwerte**. Die Parameter des Klanggenerators, der Kompressor, die Effekte und die Limiter wurden nicht angepasst.
+
+
+## Tesla-Premium-EQ (experimenteller A/B-Schalter, 19.10.2026)
+
+**Forschung, nicht exakte 2022-Kalibrierung.**
+Für ein Tesla Model 3 Performance von 2022 wurde kein belastbarer, über mehrere Mikrofonpositionen reproduzierter Frequenzgang gefunden. Die Quellen sind vor allem ältere Premium-Systeme und deshalb nur qualitativ übertragbar:
+
+- Frequenzgang-/Sweep-Messungen am Model 3 Premium von 2019: deutliche 40–60-Hz-Energie, Abfall unter 40 Hz, eine schmale auffällige Lücke um 95–100 Hz. Die Autoren weisen selbst auf einfache Messtechnik und mögliche Interieurvibrationen hin: https://www.travisllado.com/2019/01/tesla-model-3-stereo-part-2-audio.html
+- Eine frühere Model-3-Premium-Aufnahme-/Messkurve (2018) weist ebenfalls Bassbetonung und geringere Energie in den oberen Mitten auf. Diskussion betont starkes Risiko durch Mikrofonposition, vor allem für die oberen Mitten: https://www.reddit.com/r/teslamotors/comments/7rseih/model_3_premium_audio_frequency_response/
+- 2021er Model-3-LR-Erfahrungsbericht eines Audioproduzenten bewertet die Abstimmung durchaus als ausgewogen; nicht alle Systeme und Jahrgänge sind gleich: https://www.itmedia.co.jp/news/article/2308/06/1230806058/
+
+**Umsetzung nur in Physical Engine:** UI-Kontrollfeld „Tesla-EQ (Hörtest)“, Checkbox „EQ einschalten“, ab Werk **Aus**. Die Checkbox wird unter dem bestehenden Physical-Settings-Objekt als Boolean \`teslaEq\` gespeichert und beim nächsten Start wiederhergestellt. Umschalten ist während einer Fahrt bzw. laufenden Audioausgabe **ohne Neustart** möglich (im Fahrzeug nur bei sicherer Gelegenheit bedienen).
+
+**Milde EQ-Testkurve:**
+- Parametrisches Peaking-Filter bei **55 Hz**, **−2,5 dB**, **Q 0,85**. Vorsichtige Reduktion der basslastigen Zone, kein Subbassboost.
+- Parametrisches Peaking-Filter bei **1.400 Hz**, **+1,0 dB**, **Q 0,75**. Kleine, bewusst subjektive Präsenzkorrektur, keine invertierte 2018er Fahrzeugkurve.
+- Absichtlich **keine** Anhebung der 95–100-Hz-Senke, da diese raum-/phasenauslöschungsbedingt sein kann und EQ dort wenig hilft oder Verzerrung erhöht.
+- Der EQ liegt **hinter dem Motor-/Event-Kompressor**, vor den gemeinsamen Beschleunigungs-, Master- und finalen Limiter-Stufen. Ein getrennter direkter Dry-Signalweg und ein gefilterter Wet-Signalweg werden mit 14-ms-Zielglättung wechselseitig geschaltet. EQ **Aus** = Dry 1, Wet 0, garantiert ohne zusätzliche EQ-Filterbearbeitung. EQ **Ein** = Dry 0, Wet 1. Die eigentlichen Motor-/Eventklänge, −3-dB-Testabsenkung, Master, Tesla-Medienanker und der Limiter bleiben unverändert.
+- Dieser Schalter verändert **nur das Voltune-Audiosignal**, nicht den Tesla-Fahrzeug-EQ und nicht native Tesla-Musik.
+
+**Prüfung:** JavaScript-Syntax, DOM-Referenzen, Default-Aus, gespeicherte boolesche Settings, vier Worklets, Start/Stop, beide Biquad-Koeffizienten, korrekte parallele Graphen und Live-Umschalten Aus→Ein→Aus ohne zweiten AudioContext im Mock bestanden. Kein belastbarer akustischer Test im tatsächlichen 2022er Fahrzeug bis zum Nutzerhörtest.
