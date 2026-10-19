@@ -2486,6 +2486,14 @@ ui.gpsSmoothAccel.textContent =
       ui.gpsStatus.textContent = "aktiv";
       ui.gpsStatus.className = "okText";
       if (soundActive) setRunStatus("active", "GPS AKTIV");
+      // Tesla lässt unter Umständen GPS-Callbacks im Hintergrund laufen,
+      // während requestAnimationFrame stillsteht. In diesem Fall nur
+      // für Physical Engine die Audio-Drehzahl aus dem GPS-Fix aktualisieren.
+      // Wenn normale Frames laufen, bleibt der gemeinsame Fahrloop Chef.
+      if(soundActive&&VoltuneAudio.getEngine()==="physical"
+        &&performance.now()-lastActiveRenderAt>300){
+       updateVoltuneSound(gpsSpeedKmh,gpsAccel);
+      }
     
       const state =
         gpsAccel > 0.22
@@ -2606,6 +2614,7 @@ ui.gpsSmoothAccel.textContent =
     );
   }
 
+  let lastActiveRenderAt=performance.now();
   function renderVisual(speedKmh, accel, state) {
     ui.speed.textContent = Math.round(speedKmh);
     ui.accel.textContent = accel.toFixed(2);
@@ -3046,6 +3055,7 @@ function updateControllerDrive(now) {
   }
 
   function loop(now) {
+    lastActiveRenderAt=now;
     // ZUERST den nächsten Frame sichern.
     // Dadurch kann ein einzelner Browser-/Debugfehler
     // den Fahrloop nie wieder dauerhaft beenden.
