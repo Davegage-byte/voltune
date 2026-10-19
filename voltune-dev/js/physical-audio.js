@@ -10,10 +10,12 @@ window.VoltunePhysicalAudio = (() => {
  // Kompressor und finalem Peak-Limiter. Kein EQ-/Engine-/Effekt-Eingriff.
  // Nicht als Nutzereinstellung speichern, damit ein Rollback leicht bleibt.
  const TEST_OUTPUT_TRIM_DB=-3;
+ // Vorläufige Erststartwerte aus dem Handy-Hörtest am 19.10.2026.
+ // Nutzerwerte aus dem vorhandenen Storage haben stets Vorrang.
  const defaults={
-  preset:"hybrid",evBlend:25,amgHighs:55,presence:75,
-  musicBoost:8,accelDynamics:6,shiftStrength:70,shiftCut:25,popStrength:75,
-  effectFocus:70,muffling:35,sensitivity:"sport",teslaMedia:false
+  preset:"hybrid",evBlend:55,amgHighs:55,presence:60,
+  musicBoost:0,accelDynamics:5,shiftStrength:50,shiftCut:0,popStrength:40,
+  effectFocus:26,muffling:20,sensitivity:"sport",teslaMedia:false
  };
  let config={...defaults},ctx=null,engine=null,presence=null,events=null,
   profileGain=null,eq=null,master=null,accelGain=null,output=null,carrier=null,carrierUrl=null,
