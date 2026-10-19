@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<script>
+  (() => {
+    const THEME_MODE_KEY =
+      "voltune.themeMode";
+
+    const VALID_THEME_MODES = [
+      "auto",
+      "dark",
+      "light"
+    ];
+
+    let themeMode =
+      "auto";
+
+    try {
+      const savedThemeMode =
+        localStorage.getItem(
+          THEME_MODE_KEY
+        );
+
+      if (
+        VALID_THEME_MODES.includes(
+          savedThemeMode
+        )
+      ) {
+        themeMode =
+          savedThemeMode;
+      }
+    } catch (error) {
+      console.warn(
+        "Theme-Modus konnte nicht geladen werden:",
+        error
+      );
+    }
+
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+
+    const resolvedTheme =
+      themeMode === "auto"
+        ? (
+            prefersDark
+              ? "dark"
+              : "light"
+          )
+        : themeMode;
+
+    document.documentElement.dataset.theme =
+      resolvedTheme;
+
+    document.documentElement.dataset.themeMode =
+      themeMode;
+  })();
+</script>
+
+<style>
+
+#startupOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  background: rgba(5, 7, 10, 0.96);
+  pointer-events: none;
+}
+
+html[data-theme="light"] #startupOverlay {
+  background: rgba(238, 241, 245, 0.96);
+}
+  </style>
+<title>Voltune Drive · Clean Cockpit</title>
+
+  
+<link rel="stylesheet" href="css/voltune.css?v=physical-help-20261019">
+<link rel="stylesheet" href="css/launch.css">
+<link rel="stylesheet" href="css/drive-clean.css?v=drive-clean-v1-20261019">
+
+</head>
+<body class="cleanDrive">
+
+  <div
+    id="startupOverlay"
+    aria-hidden="true"
+  >
+    <div id="startupGlow"></div>
+  
+    <div id="startupRing"></div>
+  
+    <div id="startupLogo">
+      VOLTUNE
+    </div>
+  </div>
+
+<canvas
+  id="accelerationFx"
+  aria-hidden="true"
+  style="
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+  "
+></canvas>
+
+<main>
+  
+<div class="sideRail">
+
+  <div class="driveHud">
+
+    <div class="driveHudInfo">
+
+      <div class="driveHudItem driveHudSpeed debugOnly">
+        <span class="label">Tempo</span>
+
+        <div class="driveHudSpeedValue">
+          <b id="speed">0</b>
+          <small>km/h</small>
+        </div>
+      </div>
+
+      <div class="driveHudItem driveHudGear">
+        <div
+          id="gpsStartSlot"
+          class="gpsStartSlot"
+        ></div>
+
+        <span class="label">Gang</span>
+        <b id="gearDisplay">–</b>
+      </div>
+
+      <div class="driveHudItem driveHudRpm">
+        <span class="label">Drehzahl</span>
+        <b id="rpmDisplay">0 RPM</b>
+      </div>
+
+    </div>
+
+    <div class="bar rpmBar">
+      <div id="speedBar"></div>
+
+      <span
+        id="downshiftMarker"
+        class="rpmMarker rpmMarkerDown"
+        title="Rückschaltziel"
+      ></span>
+
+      <span
+        id="shiftMarker"
+        class="rpmMarker rpmMarkerUp"
+        title="Hochschaltziel"
+      ></span>
+    </div>
+
+    <div id="runStatus" class="runStatus" data-state="ready" aria-live="polite">
+      <span class="runStatusDot" aria-hidden="true"></span>
+      <span id="runStatusText">BEREIT</span>
+    </div>
+
+  </div>
+
+  <div class="driveModeGroup">
+    <div class="driveModeTitle">
+      Fahrmodus
+    </div>
+
+    <button
+      id="driveModeNormal"
+      class="driveModeBtn active"
+      data-drive-mode="normal"
+    >
+      Normal
+    </button>
+
+    <button
+      id="driveModeSport"
+      class="driveModeBtn"
+      data-drive-mode="sport"
+    >
+      Sport
+    </button>
+
+    <button
+      id="driveModeMadness"
+      class="driveModeBtn"
+      data-drive-mode="madness"
+    >
+      Wahnsinn
+    </button>
+  </div>
+
+<div class="controlGroup">
+  <div class="controlGroupTitle">
+    Steuerung
+  </div>
+
+  <div class="buttons sideButtons">
+    <button id="gps" class="mainStartButton">Start</button>
+
+    <button id="stop">STOP</button>
+    <button id="mute">Stumm</button>
+    <button id="launch" type="button">Launch</button>
+
+    <div class="controlSubgroup controlSubgroupOptions">
+      <div class="controlSubgroupTitle">Optionen</div>
+      <button id="easyBov" class="featureBtn">EasyBOV</button>
+      <button id="gears" class="featureBtn active">Gänge</button>
+      <button id="dynamicShift" class="featureBtn active">Dynamik</button>
+      <button id="animations" class="featureBtn active">Animationen</button>
+    </div>
+
+    <div class="controlSubgroup controlSubgroupSystem">
+      <div class="controlSubgroupTitle">System</div>
+      <button id="theme" class="featureBtn" type="button">Theme: Auto</button>
+      <button id="debug" aria-pressed="false">Debug</button>
+      <button id="start" class="debugOnly">Demo Start</button>
+      <button id="controller" class="debugOnly">Controller</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+<section id="cleanCockpit" class="cleanCockpit" data-status="ready" aria-label="Voltune Fahrcockpit">
+  <header class="cleanHead">
+    <div class="cleanBrand">
+      <div class="cleanBrandMark" aria-hidden="true">V</div>
+      <div>
+        <div class="cleanBrandName">VOLTUNE</div>
+        <div class="cleanBrandSub">DRIVE · LIVE COCKPIT</div>
+      </div>
+    </div>
+    <div class="cleanActions">
+      <div id="cleanMasterSlot" class="cleanMasterSlot" aria-label="Master-Lautstärke"></div>
+      <div id="cleanDemoSlot" class="cleanDemoSlot"></div>
+      <button id="cleanSettingsToggle" class="cleanAction" type="button" aria-expanded="false" aria-controls="cleanSettingsClose">
+        <span aria-hidden="true">☷</span> Einstellungen
+      </button>
+      <a class="cleanAction" href="./index.html" title="Bisherige Voltune-Dev-Ansicht öffnen">Editor ↗</a>
+    </div>
+  </header>
+  <div class="cleanTopline">
+    <span>FAHRDATEN · LIVE</span>
+    <span class="cleanStatus">
+      <span class="cleanStatusDot" aria-hidden="true"></span>
+      <span id="cleanRunStatus" role="status">BEREIT</span>
+    </span>
+  </div>
+  <div class="cleanHero">
+    <div class="cleanSpeedZone">
+      <div class="cleanEyebrow">Geschwindigkeit</div>
+      <div class="cleanSpeedReadout">
+        <strong id="cleanSpeed" class="cleanSpeedNumber" aria-label="Geschwindigkeit">0</strong>
+        <span class="cleanSpeedUnit">km/h</span>
+      </div>
+      <div id="cleanState" class="cleanSpeedSub">BEREIT ZUM START</div>
+    </div>
+    <div class="cleanStack">
+      <article class="cleanMetric">
+        <span class="cleanEyebrow">Virtueller Gang</span>
+        <strong id="cleanGear" class="cleanGearValue">1</strong>
+      </article>
+      <article class="cleanMetric">
+        <span class="cleanEyebrow">Motordrehzahl</span>
+        <div class="cleanRpmRow">
+          <strong id="cleanRpm" class="cleanRpmValue">0</strong>
+          <span class="cleanRpmUnit">RPM</span>
+        </div>
+        <div class="cleanRpmTrack" aria-hidden="true"><span id="cleanRpmFill" class="cleanRpmFill"></span></div>
+      </article>
+    </div>
+  </div>
+  <div class="cleanDynamics">
+    <article id="cleanAccelCard" class="cleanDynCard accel">
+      <div class="cleanDynTitle">Beschleunigung</div>
+      <div class="cleanDynValue"><span id="cleanAccelValue">0,00</span><small>m/s²</small></div>
+      <div class="cleanDynBar" aria-hidden="true"><span id="cleanAccelFill" class="cleanDynFill"></span></div>
+    </article>
+    <article id="cleanBrakeCard" class="cleanDynCard brake">
+      <div class="cleanDynTitle">Verzögerung / Reku</div>
+      <div class="cleanDynValue"><span id="cleanBrakeValue">0,00</span><small>m/s²</small></div>
+      <div class="cleanDynBar" aria-hidden="true"><span id="cleanBrakeFill" class="cleanDynFill"></span></div>
+    </article>
+  </div>
+  <footer class="cleanFoot">
+    <span>FAHRMODUS <span id="cleanMode" class="cleanFootAccent">NORMAL</span></span>
+    <span>BALKEN BIS 4 m/s² · GPS / DEMO · VOLTUNE PHYSICAL ENGINE</span>
+  </footer>
+</section>
+<div id="cleanBackdrop" hidden></div>
+<div class="cleanSettingsHeading" id="cleanSettingsHeading">
+  <span>Motor- und Fahreinstellungen</span>
+  <button id="cleanSettingsClose" type="button">Schließen ✕</button>
+</div>
+
+<div class="debugCore debugOnly">
+<div class="stateBox">
+  <div class="label">Fahrzustand</div>
+  <div class="state" id="state">Bereit</div>
+  <div class="accel"><span id="accel">0.00</span> m/s²</div>
+
+  <div class="meter">
+    <div><span class="label">Base</span><b id="baseHz">55 Hz</b></div>
+    <div><span class="label">Inverter</span><b id="invHz">240 Hz</b></div>
+    <div><span class="label">Drive</span><b id="drivePct">0 %</b></div>
+    <div><span class="label">Reku</span><b id="regenPct">0 %</b></div>
+    <div><span class="label">Ladedruck</span><b id="bovPressureDisplay">0 %</b></div>
+    <div><span class="label">Schaltziel</span><b id="shiftTargetDisplay">–</b></div>
+    <div>
+      <span class="label">Rückschaltziel</span>
+      <b id="downshiftTargetDisplay">–</b>
+    </div>
+    <div>
+      <span class="label">Fahrstil</span>
+      <b id="drivingStyleDisplay">0.00</b>
+    </div>
+  </div>
+</div>
+
+    <div class="gpsPanel triggerDebugPanel">
+      <div class="gpsItem"><span class="label">Profil</span><b id="debugTriggerProfile">Normal</b></div>
+      <div class="gpsItem"><span class="label">Audio m/s²</span><b id="debugAudioAccel">0.00 m/s²</b></div>
+      <div class="gpsItem"><span class="label">Lastabfall</span><b id="debugAccelDrop">0.00 m/s²</b></div>
+      <div class="gpsItem"><span class="label">Letzter Effekt</span><b id="debugLastEffect">–</b></div>
+      <div class="gpsItem"><span class="label">BOV</span><b id="debugBovArmed">–</b></div>
+      <div class="gpsItem"><span class="label">BOV Peak</span><b id="debugBovPeak">0.00 m/s²</b></div>
+      <div class="gpsItem"><span class="label">Schubknall</span><b id="debugOverrunArmed">–</b></div>
+      <div class="gpsItem"><span class="label">Schub Peak</span><b id="debugOverrunPeak">0.00 m/s²</b></div>
+      <div class="gpsItem"><span class="label">Schub Load / Drop</span><b id="debugOverrunThreshold">0.00 / 0.00</b></div>
+    </div>
+</div>
+
+<details class="debugFold debugOnly">
+  <summary><span>GPS</span><small>Status · Rohdaten · Glättung</small></summary>
+  <div class="debugFoldBody">
+    <div class="gpsPanel">
+      <div class="gpsItem"><span class="label">GPS-Status</span><b id="gpsStatus">nicht gestartet</b></div>
+      <div class="gpsItem"><span class="label">Genauigkeit</span><b id="gpsAccuracy">–</b></div>
+      <div class="gpsItem"><span class="label">GPS-Rate</span><b id="gpsHz">0.0 Hz</b></div>
+      <div class="gpsItem"><span class="label">Kontext</span><b id="secureContext">–</b></div>
+      </div>
+
+    <div class="gpsPanel">
+      <div class="gpsItem">
+        <span class="label">Raw Speed</span>
+          <b id="gpsRawSpeed">0.0 km/h</b>
+        </div>
+      
+        <div class="gpsItem">
+          <span class="label">Smooth Speed</span>
+          <b id="gpsSmoothSpeed">0.0 km/h</b>
+        </div>
+      
+        <div class="gpsItem">
+          <span class="label">Raw m/s²</span>
+          <b id="gpsRawAccel">0.00 m/s²</b>
+        </div>
+      
+        <div class="gpsItem">
+          <span class="label">Smooth m/s²</span>
+          <b id="gpsSmoothAccel">0.00 m/s²</b>
+        </div>
+      </div>
+  </div>
+</details>
+
+<details class="debugFold debugOnly">
+  <summary><span>Controller</span><small>Gamepad · Pedale · Achsen</small></summary>
+  <div class="debugFoldBody">
+    <div class="gpsPanel">
+      <div class="gpsItem">
+        <span class="label">Controller</span>
+          <b id="gamepadStatus">nicht verbunden</b>
+        </div>
+      
+        <div class="gpsItem">
+          <span class="label">LT</span>
+          <b id="gamepadLT">0.00</b>
+        </div>
+      
+        <div class="gpsItem">
+          <span class="label">RT</span>
+          <b id="gamepadRT">0.00</b>
+        </div>
+      
+        <div class="gpsItem">
+          <span class="label">Achse 0 / 1</span>
+          <b id="gamepadAxes">0.00 / 0.00</b>
+        </div>
+      </div>
+  </div>
+</details>
+
+<details class="debugFold debugOnly">
+  <summary><span>Browser / Viewport</span><small>Größe · Skalierung · Pixel Ratio</small></summary>
+  <div class="debugFoldBody">
+  <div class="gpsPanel">
+  <div class="gpsItem">
+    <span class="label">Viewport</span>
+    <b id="viewportSize">–</b>
+  </div>
+
+  <div class="gpsItem">
+    <span class="label">Visual Viewport</span>
+    <b id="visualViewportSize">–</b>
+  </div>
+
+  <div class="gpsItem">
+    <span class="label">Viewport Scale</span>
+    <b id="visualViewportScale">–</b>
+  </div>
+
+  <div class="gpsItem">
+    <span class="label">Pixel Ratio</span>
+    <b id="devicePixelRatio">–</b>
+  </div>
+</div>
+  </div>
+</details>
+  
+  <div class="controls">
+
+    <div class="manual debugOnly">
+      <div class="top">
+        <span>Test-Geschwindigkeit</span>
+        <span id="speedTestLabel">0 km/h</span>
+      </div>
+      <input id="speedTest" type="range" min="0" max="270" step="1" value="0">
+      <small>Simuliert Tempo und Beschleunigung ohne echte GPS-Fahrt.</small>
+    </div>
+    
+    <div class="control control-neutral control-master">
+      <div class="top"><span>Master-Lautstärke</span><span id="volumeLabel">32 %</span></div>
+      <input id="volume" type="range" min="0" max="100" value="32">
+        <small class="controlHint">
+          Regelt die Lautstärke des Motorsounds.
+        </small>
+    </div>
+
+    
+<div class="control control-neutral" id="soundEngineControl">
+ <div class="top"><span>Soundengine</span><span id="soundEngineLabel">Physical Engine</span></div>
+ <select id="soundEngineSelect" aria-label="Soundengine auswählen">
+  <option value="legacy">Voltune Original · bisherige Sounds</option>
+  <option value="physical" selected>Physical Engine · Hybrid EV + V8</option>
+ </select>
+ <small class="controlHint">Beim ersten Besuch startet der Hybrid; später zählt deine gespeicherte Auswahl.</small>
+</div>
+
+
+<div class="control control-neutral control-sound-profiles">
+      <div class="top soundProfileTop">
+        <span>Sound-Profile</span>
+
+        <span class="soundProfileActions">
+          <span class="soundProfileStatus">Live-Auswahl</span>
+
+          <button
+            id="quickDemoStart"
+            class="quickDemoStart"
+            type="button"
+            title="Temporärer Demo-Start für Soundtests"
+          >▶ Demo Start · B240924-0925</button>
+        </span>
+      </div>
+
+      <div class="soundProfileGrid" id="legacySoundProfileRows">
+        <label class="soundProfileItem soundProfileIdle">
+          <span>Stand</span>
+          <select
+            id="idleSoundProfile"
+            aria-label="Stand-Sound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+
+        <label class="soundProfileItem soundProfileDrive">
+          <span>Fahren</span>
+          <select
+            id="driveSoundProfile"
+            aria-label="Fahrsound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+
+        <label class="soundProfileItem soundProfileAccel">
+          <span>Beschleunigen</span>
+          <select
+            id="accelSoundProfile"
+            aria-label="Beschleunigungssound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+
+        <label class="soundProfileItem soundProfileRegen">
+          <span>Reku</span>
+          <select
+            id="regenSoundProfile"
+            aria-label="Reku-Sound auswählen"
+          >
+            <option value="voltune1">Voltune 1</option>
+          </select>
+        </label>
+      </div>
+
+      <small class="controlHint" id="legacySoundProfileHint">
+        Wähle den Klang für Stand, Fahren, Beschleunigen und Bremsen.
+      </small>
+    </div>
+
+<section id="physicalEnginePanel" class="control control-neutral" hidden>
+ <div class="top"><strong>Physical Engine</strong><span id="physicalStatus">Hybrid EV + V8</span></div>
+ <p class="engineNotice">Diese Regler verändern den Motorsound; GPS und Getriebe bleiben unverändert.</p>
+ <div class="control"><div class="top"><label for="physicalPreset">Motorsound</label></div>
+  <select id="physicalPreset">
+   <option value="hybrid">Hybrid EV + V8</option><option value="amg">V8 AMG</option>
+   <option value="gti">Golf GTI</option><option value="italia">V12 Italia</option>
+   <option value="v8">V8 Crossplane</option><option value="v4">V4</option>
+   <option value="v6">V6</option><option value="v12">V12</option>
+   <option value="i5">Reihenfünfzylinder</option><option value="ev">Elektro-Synth</option>
+  </select>
+  <small class="controlHint">Wähle aus, nach welchem Motor Voltune klingen soll.</small></div>
+ <div class="control" id="physicalHybridControls"><div class="top"><span>Hybrid EV-Anteil</span><span id="physicalEvBlendLabel">55 %</span></div><input id="physicalEvBlend" type="range" min="0" max="100" value="55">
+  <small class="controlHint">Mischt den Elektroklang zum tiefen V8-Motorsound.</small></div>
+ <div class="control" id="physicalAmgControls" hidden><div class="top"><span>AMG-Höhen dämpfen</span><span id="physicalAmgHighsLabel">55 %</span></div><input id="physicalAmgHighs" type="range" min="0" max="100" value="55">
+  <small class="controlHint">Macht die hohen, scharfen AMG-Klanganteile leiser.</small></div>
+ <div class="control"><div class="top"><span>Motorpräsenz bei Musik</span><span id="physicalPresenceLabel">60 %</span></div><input id="physicalPresence" type="range" min="0" max="100" value="60">
+  <small class="controlHint">Macht den Motor durch zusätzliche Obertöne hörbarer.</small></div>
+ <div class="control" id="physicalTeslaEqControls">
+  <div class="top"><label for="physicalTeslaEq">Tesla-EQ (Hörtest)</label><span id="physicalTeslaEqLabel">Aus</span></div>
+  <label for="physicalTeslaEq"><input id="physicalTeslaEq" type="checkbox">
+   EQ einschalten</label>
+  <small class="controlHint">Senkt den Bass bei 55 Hz etwas ab und hebt die Mitten leicht an – ein Test auf Basis älterer Model-3-Messungen.</small>
+ </div>
+ <div class="control"><div class="top"><span>Musik-Boost</span><span id="physicalMusicBoostLabel">+0 dB</span></div><input id="physicalMusicBoost" type="range" min="0" max="12" value="0">
+  <small class="controlHint">Verstärkt Voltune bei niedrigerer Master-Lautstärke.</small></div>
+ <div class="control"><div class="top"><label for="physicalAccelDynamics">Beschleunigungsdynamik</label><span id="physicalAccelDynamicsLabel">5 dB</span></div>
+  <input id="physicalAccelDynamics" type="range" min="0" max="12" step="1" value="5">
+  <small class="controlHint">Macht den Motor beim Beschleunigen lauter als bei Konstantfahrt.</small>
+ </div>
+ <div class="control"><div class="top"><label for="physicalShift">Schaltknall</label><span id="physicalShiftLabel">50 %</span></div><input id="physicalShift" type="range" min="0" max="100" value="50">
+  <small class="controlHint">Regelt, wie kräftig es beim Schalten knallt.</small></div>
+ <div class="control"><div class="top"><label for="physicalShiftCut">Schaltunterbrechung</label><span id="physicalShiftCutLabel">0 %</span></div><input id="physicalShiftCut" type="range" min="0" max="100" step="1" value="0">
+  <small class="controlHint">Macht den Motor beim Hochschalten kurz leiser – unabhängig vom Schaltknall.</small></div>
+ <div class="control"><div class="top"><span>Schubknallen</span><span id="physicalPopsLabel">40 %</span></div><input id="physicalPops" type="range" min="0" max="100" value="40">
+  <small class="controlHint">Regelt, wie kräftig das Schubknallen beim Verzögern klingt.</small></div>
+ <div class="control"><div class="top"><span>Effekt-Vordergrund</span><span id="physicalFocusLabel">26 %</span></div><input id="physicalFocus" type="range" min="0" max="100" value="26">
+  <small class="controlHint">Hebt Knaller kurz hervor, indem der Motor etwas leiser wird.</small></div>
+ <div class="control"><div class="top"><span>Auspuffdämpfung</span><span id="physicalMufflingLabel">20 %</span></div><input id="physicalMuffling" type="range" min="0" max="100" value="20">
+  <small class="controlHint">Dämpft den Auspuffklang und macht die Effekte weicher.</small></div>
+ <div class="control"><div class="top"><label for="physicalSensitivity">GPS-Effekt-Empfindlichkeit</label></div>
+  <select id="physicalSensitivity"><option value="standard">Standard</option><option value="sport" selected>Sport</option><option value="extreme">Extrem</option></select>
+  <small class="controlHint">Bestimmt, wie leicht die GPS-Automatik Schubknallen auslöst.</small></div>
+<div class="control">
+ <div class="top"><span>Effekte testen (nur im Stand)</span></div>
+ <div class="buttons">
+  <button id="physicalTestUp" type="button">⬆ Hochschalten</button>
+  <button id="physicalTestDown" type="button">⬇ Runterschalten</button>
+  <button id="physicalTestPop" type="button">✦ Schubknallen</button>
+ </div>
+ <small class="controlHint">Spiele Schalt- und Schubgeräusche im Stand zur Probe ab.</small>
+ </div>
+ <div class="control"><label for="physicalTeslaMedia"><input id="physicalTeslaMedia" type="checkbox"> Tesla-Medienmodus E / mittiger Lenkradklick</label>
+  <small class="controlHint">Schaltet Sounds per Lenkrad um, pausiert aber die Tesla-Musik.</small>
+ </div>
+</section>
+
+<div class="control control-driving control-frequency">
+
+  <div class="top">
+    <span>Grundfrequenz</span>
+
+    <span class="frequencyValues">
+      <span id="baseLabel">35 Hz</span>
+      <span>–</span>
+      <span id="maxBaseLabel">70 Hz</span>
+    </span>
+  </div>
+
+  <div class="dualRange">
+
+    <input
+      id="base"
+      type="range"
+      min="20"
+      max="150"
+      step="1"
+      value="35"
+    >
+
+    <input
+      id="maxBase"
+      type="range"
+      min="20"
+      max="150"
+      step="1"
+      value="70"
+    >
+
+  </div>
+
+  <small class="controlHint">
+    Bestimmt, wie tief oder hoch der Grundsound klingt.
+  </small>
+
+</div>
+
+<div class="control control-driving">
+  <div class="top">
+    <span>Konstantfahrt-Dämpfung</span>
+    <span id="cruiseDampingLabel">70 %</span>
+  </div>
+
+  <input
+    id="cruiseDamping"
+    type="range"
+    min="0"
+    max="100"
+    step="1"
+    value="70"
+  >
+
+  <small class="controlHint">
+    Macht den Motor bei gleichmäßiger Fahrt leiser.
+  </small>
+</div>
+    
+    <div class="control control-rpm">
+      <div class="top"><span>Drehzahl-Pitch</span><span id="pitchLabel">2.1×</span></div>
+      <input id="pitch" type="range" min="8" max="35" value="21">
+      <small class="controlHint">Legt fest, wie stark der Ton mit der Drehzahl höher wird.</small>
+    </div>
+
+    <div class="control control-rpm">
+      <div class="top"><span>Getriebe-Reichweite</span><span id="gearRangeLabel">270 km/h</span></div>
+      <input id="gearRange" type="range" min="80" max="300" step="1" value="270">
+      <small class="controlHint">Bestimmt, wie weit die virtuellen Gänge reichen.</small>
+    </div>
+
+    <div class="control control-rpm">
+      <div class="top"><span>Max. virtuelle Drehzahl</span><span id="maxRpmLabel">6500 RPM</span></div>
+      <input id="maxRpm" type="range" min="3000" max="9000" step="100" value="6500">
+        <small class="controlHint">
+          Begrenzt, wie hoch der virtuelle Motor drehen darf.
+        </small>
+    </div>
+
+    <div class="control control-rpm">
+      <div class="top"><span>Schalt-Drehzahl</span><span id="shiftRpmLabel">6000 RPM</span></div>
+      <input id="shiftRpm" type="range" min="1500" max="6500" step="100" value="6000">
+      <small class="controlHint">Bestimmt, wann bei hoher Last hochgeschaltet wird.</small>
+    </div>
+
+    <div class="control control-rpm">
+      <div class="top">
+        <span>DSG-Furzen</span>
+      
+        <span class="effectControlActions">
+          <span id="shiftBurbleLabel">60 %</span>
+          <button
+            id="testShiftBurble"
+            class="effectTestBtn"
+            type="button"
+            title="DSG-Furzen testen"
+          >▶</button>
+        </span>
+      </div>
+    
+      <input
+        id="shiftBurble"
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value="60"
+      >
+    
+      <small class="controlHint">
+        Regelt den kurzen Schaltknall beim Hochschalten.
+      </small>
+    </div>
+
+    <div class="control control-driving">
+      <div class="top">
+        <span>Rückschalt-Blip</span>
+    
+        <span class="effectControlActions">
+          <span id="downshiftBlipLabel">55 %</span>
+    
+          <button
+            id="testDownshiftBlip"
+            class="effectTestBtn"
+            type="button"
+            title="Rückschalt-Blip testen"
+          >▶</button>
+        </span>
+      </div>
+    
+      <input
+        id="downshiftBlip"
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value="55"
+      >
+    
+      <small class="controlHint">
+        Regelt das kurze Aufheulen beim Runterschalten.
+      </small>
+    </div>    
+    
+    <div class="control control-driving">
+      <div class="top"><span>Grundsound-Layer</span><span id="baseVolLabel">65 %</span></div>
+      <input id="baseVol" type="range" min="0" max="100" value="65">
+        <small class="controlHint">
+          Regelt den gleichmäßigen Grundsound des Motors.
+        </small>
+    </div>
+
+    <div class="control control-driving">
+      <div class="top"><span>Inverter-Layer</span><span id="inverterLabel">42 %</span></div>
+      <input id="inverter" type="range" min="0" max="100" value="42">
+        <small class="controlHint">
+          Regelt das hohe Surren des Elektroantriebs.
+        </small>
+    </div>
+
+    <div class="control control-accel">
+      <div class="top"><span>Beschleunigungs-Layer</span><span id="driveLabel">55 %</span></div>
+      <input id="drive" type="range" min="0" max="100" value="55">
+        <small class="controlHint">
+          Mischt beim Beschleunigen einen kräftigeren Klang hinzu.
+        </small>
+    </div>
+
+    <div class="control control-regen">
+      <div class="top"><span>Reku-Layer</span><span id="regenLabel">48 %</span></div>
+      <input id="regen" type="range" min="0" max="100" value="48">
+        <small class="controlHint">
+          Regelt den zusätzlichen Klang beim Abbremsen.
+        </small>
+    </div>
+
+    <div class="control control-driving">
+      <div class="top"><span>Luft/Textur-Layer</span><span id="airLabel">30 %</span></div>
+      <input id="air" type="range" min="0" max="100" value="30">
+        <small class="controlHint">
+          Mischt leises Wind- und Rauschgeräusch hinzu.
+        </small>
+    </div>
+
+    <div class="control control-accel">
+      <div class="top">
+        <span>BOV/Entladung-Layer</span>
+      
+        <span class="effectControlActions">
+          <span id="bovLabel">60 %</span>
+          <button
+            id="testBov"
+            class="effectTestBtn"
+            type="button"
+            title="BOV testen"
+          >▶</button>
+        </span>
+      </div>
+      <input id="bov" type="range" min="0" max="100" value="60">
+        <small class="controlHint">
+          Regelt den Druckablass beim Gaswegnehmen.
+        </small>
+    </div>
+
+<div class="control control-accel">
+  <div class="top">
+    <span>Turbo Flutter</span>
+  
+    <span class="effectControlActions">
+      <span id="turboFlutterLabel">40 %</span>
+      <button
+        id="testTurboFlutter"
+        class="effectTestBtn"
+        type="button"
+        title="Turbo Flutter testen"
+      >▶</button>
+    </span>
+  </div>
+
+  <input
+    id="turboFlutter"
+    type="range"
+    min="0"
+    max="100"
+    step="1"
+    value="40"
+  >
+
+  <small class="controlHint">
+    Regelt das flatternde Turbogeräusch beim Gaswegnehmen.
+  </small>
+</div>
+    
+    <div class="control control-accel">
+      <div class="top">
+        <span>Schubknallen</span>
+      
+        <span class="effectControlActions">
+          <span id="overrunLabel">50 %</span>
+          <button
+            id="testOverrun"
+            class="effectTestBtn"
+            type="button"
+            title="Schubknallen testen"
+          >▶</button>
+        </span>
+      </div>
+
+      <select
+        id="overrunSound"
+        aria-label="Schubknall-Sound auswählen"
+      >
+        <option value="synthetic">
+          Voltune Standard
+        </option>
+      </select>
+      
+      <input
+        id="overrun"
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value="50"
+      >
+    
+      <small class="controlHint">
+        Regelt Knallen und Nachblubbern beim Gaswegnehmen.
+      </small>
+    </div>
+    
+  </div>
+
+  <div class="note debugOnly">
+    Demo-Testfahrt mit Idle, Anrollen, Konstantfahrt, sanfter bis starker Beschleunigung,
+    Kickdown, Lupfen, Highspeed, Rekuperation und Rückschaltungen.
+    Der manuelle Geschwindigkeitsregler arbeitet als Zielgeschwindigkeit und simuliert
+    Beschleunigen und Verzögern automatisch.
+  </div>
+</main>
+
+<script>
+  (() => {
+    // Eine gemeinsame Versions-ID pro Seitenaufruf.
+    // Die Dateien werden weiterhin frisch geladen,
+    // aber ein einzelner Netzfehler legt Voltune
+    // nicht mehr dauerhaft bis zum nächsten Reload lahm.
+    const VOLTUNE_BUILD =
+      "B240924-0925";
+
+    window.VOLTUNE_BUILD =
+      VOLTUNE_BUILD;
+
+    const devVersion =
+      `${VOLTUNE_BUILD}-${Date.now()}`;
+
+    const scripts = [
+      "js/drivetrain.js",
+      "js/gps.js",
+      "js/audio.js",
+      "js/physical-audio.js",
+      "js/storage.js",
+      "js/startup.js",
+      "js/launch.js",
+      "js/app.js",
+      "js/drive-clean.js"
+    ];
+
+    const MAX_ATTEMPTS = 4;
+    const LOAD_TIMEOUT_MS = 12000;
+
+    function showBootError(fileName) {
+      console.error(
+        "Voltune Boot fehlgeschlagen:",
+        fileName
+      );
+
+      const button =
+        document.getElementById(
+          "quickDemoStart"
+        );
+
+      if (button) {
+        button.textContent =
+          "⚠ Startfehler · erneut laden";
+
+        button.title =
+          `Script konnte nicht geladen werden: ${fileName}`;
+      }
+
+      const statusText =
+        document.getElementById(
+          "runStatusText"
+        );
+
+      if (statusText) {
+        statusText.textContent =
+          "STARTFEHLER";
+      }
+    }
+
+    function loadScript(
+      index,
+      attempt = 1
+    ) {
+      if (index >= scripts.length) {
+        return;
+      }
+
+      const fileName =
+        scripts[index];
+
+      const script =
+        document.createElement("script");
+
+      let settled = false;
+
+      const timeoutId =
+        window.setTimeout(
+          () => {
+            if (settled) {
+              return;
+            }
+
+            settled = true;
+            script.remove();
+
+            console.warn(
+              `Voltune Script-Timeout (${attempt}/${MAX_ATTEMPTS}):`,
+              fileName
+            );
+
+            if (
+              attempt <
+              MAX_ATTEMPTS
+            ) {
+              window.setTimeout(
+                () => {
+                  loadScript(
+                    index,
+                    attempt + 1
+                  );
+                },
+                250 * attempt
+              );
+            } else {
+              showBootError(
+                fileName
+              );
+            }
+          },
+          LOAD_TIMEOUT_MS
+        );
+
+      script.src =
+        `${fileName}?v=${devVersion}&try=${attempt}`;
+
+      script.onload = () => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+
+        window.clearTimeout(
+          timeoutId
+        );
+
+        loadScript(
+          index + 1,
+          1
+        );
+      };
+
+      script.onerror = () => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+
+        window.clearTimeout(
+          timeoutId
+        );
+
+        script.remove();
+
+        console.warn(
+          `Voltune Script-Ladefehler (${attempt}/${MAX_ATTEMPTS}):`,
+          fileName
+        );
+
+        if (
+          attempt <
+          MAX_ATTEMPTS
+        ) {
+          window.setTimeout(
+            () => {
+              loadScript(
+                index,
+                attempt + 1
+              );
+            },
+            250 * attempt
+          );
+        } else {
+          showBootError(
+            fileName
+          );
+        }
+      };
+
+      document.body.appendChild(
+        script
+      );
+    }
+
+    loadScript(0);
+  })();
+</script>
+  
+</body>
+</html>
