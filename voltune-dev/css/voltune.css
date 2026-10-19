@@ -3185,3 +3185,45 @@ html[data-theme="light"] .runStatus[data-state="stopped"] .runStatusDot{
   background:#cf4f4f;
   box-shadow:0 0 8px rgba(207,79,79,.26);
 }
+
+/* Physical Engine: compact full-width responsive controls (Oct 2026) */
+.controls{grid-template-columns:repeat(3,minmax(0,1fr))}
+.controls>.control{min-width:0}
+.controls>#physicalEnginePanel{
+  grid-column:1/-1;display:grid;min-width:0;gap:10px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:stretch;margin:0;padding:14px;
+  border:1px solid rgba(87,172,234,.42)
+}
+#physicalEnginePanel[hidden],#physicalHybridControls[hidden],
+#physicalAmgControls[hidden],[data-voltune-legacy="true"][hidden],
+.featureBtn[hidden],#legacySoundProfileRows[hidden],
+#legacySoundProfileHint[hidden]{display:none!important}
+#physicalEnginePanel>.top,#physicalEnginePanel>.engineNotice{grid-column:1/-1}
+#physicalEnginePanel>.top{margin:0}
+#physicalEnginePanel .control{min-width:0;margin:0;padding:11px 12px}
+#physicalEnginePanel .control>input[type=range]{
+  --range-accent:var(--blue);--range-track:#5b626b;
+  display:block;width:100%
+}
+html[data-theme="light"] #physicalEnginePanel .control>input[type=range]{
+  --range-accent:#2d80c3;--range-track:#c4ccd5
+}
+#physicalEnginePanel select,#soundEngineSelect{
+  width:100%;min-width:0;min-height:42px
+}
+#physicalEnginePanel small,.engineNotice{
+  display:block;font-size:13px;opacity:.8;line-height:1.45
+}
+#physicalEnginePanel .buttons{display:flex;flex-wrap:wrap;gap:8px}
+#physicalEnginePanel .buttons button{
+  flex:1 1 auto;min-width:120px;white-space:normal
+}
+@media(max-width:1050px){
+  .controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .controls>#physicalEnginePanel{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .controls{grid-template-columns:minmax(0,1fr)}
+  .controls>#physicalEnginePanel{grid-template-columns:minmax(0,1fr)}
+}
