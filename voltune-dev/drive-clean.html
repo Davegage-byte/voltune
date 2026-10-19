@@ -352,7 +352,7 @@ html[data-theme="light"] #startupOverlay {
   </footer>
 </section>
 <div id="v2Shade" hidden></div>
-<div class="v2SettingsHeading" id="v2SettingsHeading"><strong>VOLLTUNE · EINSTELLUNGEN</strong><button id="v2SettingsClose" type="button">Schließen ✕</button></div>
+<div class="v2SettingsHeading" id="v2SettingsHeading"><strong>VOLTUNE · EINSTELLUNGEN</strong><button id="v2SettingsClose" type="button">Schließen ✕</button></div>
 
 <div class="debugCore debugOnly">
 <div class="stateBox">
@@ -480,6 +480,11 @@ html[data-theme="light"] #startupOverlay {
 </details>
   
   <div id="cleanSettingsPanel" class="controls" aria-label="Motor- und Fahreinstellungen">
+  <div class="control control-neutral" id="v2PowerCalibrationPanel">
+    <div class="top"><span>kW/PS-Schätzmodell · Korrekturfaktor</span><span id="v2PowerFactorLabel">1,00 ×</span></div>
+    <input id="v2PowerFactor" type="range" min="0.50" max="1.50" step="0.01" value="1.00" aria-label="Korrekturfaktor für geschätzte Leistung">
+    <small class="controlHint">Nur für die Anzeige. Wenn wir echte Tesla-kW-Werte verglichen haben, können wir hier die Schätzung kalibrieren. Standard 1,00.</small>
+  </div>
 
     <div class="manual debugOnly">
       <div class="top">
