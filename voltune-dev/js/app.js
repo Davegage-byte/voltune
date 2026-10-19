@@ -4145,6 +4145,13 @@ ui.soundEngineSelect.addEventListener("change",async()=>{
  }
  scheduleSettingsSave();
 });
+for(const [id,type] of [["physicalTestUp","upshift"],["physicalTestDown","downshift"],["physicalTestPop","overrun"]]){
+ document.getElementById(id).addEventListener("click",async()=>{
+  if(ui.soundEngineSelect.value!=="physical")return;
+  if(!await ensureVoltuneAudio())return;
+  VoltunePhysicalAudio.testEvent(type);
+ });
+}
 VoltunePhysicalAudio.onProfileChange(preset=>{
  ui.physicalPreset.value=preset;
  syncEngineUI();
