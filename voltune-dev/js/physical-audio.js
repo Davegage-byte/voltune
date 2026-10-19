@@ -15,10 +15,12 @@ window.VoltunePhysicalAudio = (() => {
  const defaults={
   preset:"hybrid",evBlend:55,amgHighs:55,presence:60,
   musicBoost:0,accelDynamics:5,shiftStrength:50,shiftCut:0,popStrength:40,
-  effectFocus:26,muffling:20,sensitivity:"sport",teslaMedia:false
+  effectFocus:26,muffling:20,sensitivity:"sport",teslaMedia:false,teslaEq:false
  };
  let config={...defaults},ctx=null,engine=null,presence=null,events=null,
-  profileGain=null,eq=null,master=null,accelGain=null,output=null,carrier=null,carrierUrl=null,
+  profileGain=null,eq=null,master=null,accelGain=null,output=null,
+  teslaEqBass=null,teslaEqPresence=null,teslaEqDry=null,teslaEqWet=null,
+  carrier=null,carrierUrl=null,
   active=false,muted=false,generation=0,lastAccelTime=0,lastAccelLoad=.13,
   prevLoad=.13,lastPop=0,lastShift=0,lastSpeed=0,lastValidAt=0,lastEventTime=0,
   accelerationEnvelope=0,accelEnvelopeTime=0;
@@ -143,6 +145,14 @@ window.VoltunePhysicalAudio = (() => {
   accelerationEnvelope+=(target-accelerationEnvelope)*(1-Math.exp(-dt/tau));
   applyAccelerationGain();
  }
+ // Experimenteller A/B-EQ aus älteren Model-3-Premium-Messungen.
+ // Trockener Weg bleibt bei deaktiviertem EQ exakt der bisherige Pfad.
+ function applyTeslaEq(){
+  if(!ctx||!teslaEqDry||!teslaEqWet)return;
+  const enabled=!!config.teslaEq,at=ctx.currentTime;
+  teslaEqDry.gain.setTargetAtTime(enabled?0:1,at,.014);
+  teslaEqWet.gain.setTargetAtTime(enabled?1:0,at,.014);
+ }
  function apply(){
   if(!ctx||ctx.state!=="running"||!engine||!events)return;
   const at=ctx.currentTime;
@@ -160,6 +170,7 @@ window.VoltunePhysicalAudio = (() => {
   profileGain.gain.setTargetAtTime(config.preset==="hybrid"?2:1,at,.08);
   setMasterVolume(config.volume??32);
   applyAccelerationGain();
+  applyTeslaEq();
  }
  function setMasterVolume(value){
   config.volume=clamp(value,0,100);
@@ -210,11 +221,25 @@ window.VoltunePhysicalAudio = (() => {
    const compressor=audioContext.createDynamicsCompressor();
    compressor.threshold.value=-11;compressor.knee.value=4;compressor.ratio.value=7;
    compressor.attack.value=.003;compressor.release.value=.12;
+   // Test-Kennlinie, keine exakte Fahrzeugkalibrierung für Baujahr 2022:
+   // kleine 55-Hz-Absenkung und sehr dezente obere Mittenpräsenz.
+   teslaEqBass=audioContext.createBiquadFilter();
+   teslaEqBass.type="peaking";teslaEqBass.frequency.value=55;
+   teslaEqBass.Q.value=.85;teslaEqBass.gain.value=-2.5;
+   teslaEqPresence=audioContext.createBiquadFilter();
+   teslaEqPresence.type="peaking";teslaEqPresence.frequency.value=1400;
+   teslaEqPresence.Q.value=.75;teslaEqPresence.gain.value=1;
+   teslaEqDry=audioContext.createGain();teslaEqDry.gain.value=config.teslaEq?0:1;
+   teslaEqWet=audioContext.createGain();teslaEqWet.gain.value=config.teslaEq?1:0;
    accelGain=audioContext.createGain();accelGain.gain.value=1;
    master=audioContext.createGain();master.gain.value=0;
    engine.connect(eq).connect(presence).connect(profileGain)
-    .connect(events).connect(compressor).connect(accelGain)
-    .connect(master).connect(output).connect(audioContext.destination);
+    .connect(events).connect(compressor);
+   // Die Dry-Strecke ist das unveränderte Originalsignal nach dem Kompressor.
+   compressor.connect(teslaEqDry).connect(accelGain);
+   compressor.connect(teslaEqBass).connect(teslaEqPresence)
+    .connect(teslaEqWet).connect(accelGain);
+   accelGain.connect(master).connect(output).connect(audioContext.destination);
    const error=()=>console.warn("Voltune Physical Engine Worklet processing failed");
    for(const node of [engine,presence,events,output])node.onprocessorerror=error;
    active=true;muted=false;resetDrivingState();apply();
@@ -229,6 +254,7 @@ window.VoltunePhysicalAudio = (() => {
   const old=ctx;
   ctx=null;engine=null;presence=null;events=null;output=null;eq=null;
   master=null;accelGain=null;profileGain=null;active=false;
+  teslaEqBass=null;teslaEqPresence=null;teslaEqDry=null;teslaEqWet=null;
   if(old)try{old.close()?.catch?.(()=>{});}catch(_){}
  }
  function resetDrivingState(){
