@@ -4,7 +4,7 @@ Stand: 19.10.2026
 
 ## Ziel und Grundprinzip
 
-Voltune Original und die im Tesla bewährte Physical Engine sind nun in der regulären Voltune-Dev-App \`index.html\` auswählbar. Beim Start ist **Voltune Original** voreingestellt. Der Legacy-Audiocode \`js/audio.js\` wurde nicht verändert.
+Voltune Original und die im Tesla bewährte Physical Engine sind nun in der regulären Voltune-Dev-App \`index.html\` auswählbar. Für **Erstbesucher ohne gespeicherte Einstellungen** ist **Physical Engine / Hybrid EV + V8** vorausgewählt; gespeicherte Engine- und Reglerwerte haben Vorrang. Der Legacy-Audiocode \`js/audio.js\` wurde nicht verändert.
 
 ### Architektur
 
@@ -58,3 +58,12 @@ Betriebslogik in \`js/physical-audio.js\`:
 - Beim Sound-Neustart und \`resetDrivingState()\` wird der Beschleunigungsspeicher zurückgesetzt. Bestehende Installationseinstellungen ohne Feld \`accelDynamics\` nutzen den UI-Standard 6 dB.
 
 **Technischer Mock-Test:** bei 6 dB lief der Regelbereich von 0,7079× (Konstantfahrt) bis 1,4107× (kräftige Beschleunigung); Rückkehr nach 2,5 Sekunden auf ca. 0,7119×. Bei 0 dB exakt 1×, bei maximal 12 dB ca. 0,5× bis 2,0×. Ein paralleler Mute-Test bestätigte Master-Gain 0. Ein echter Hörtest im Tesla mit wechselnder Beschleunigung steht noch aus.
+
+## Kurze Reglerhilfen und neue Erststart-Voreinstellung (19.10.2026)
+
+- Jede Physical-Engine-Einstellung einschließlich der Motorauswahl, GPS-Empfindlichkeit, Effekttesttasten und des Tesla-Medienmodus hat direkt darunter **einen kurzen verständlichen Hilfesatz**. Der lange Hilfetext zur Beschleunigungsdynamik wurde auf einen Satz gekürzt.
+- Die vorhandenen Original-Regler und gemeinsamen Geschwindigkeits-/Getriebe-/Lautstärkeregler erhielten ebenfalls kurze, klarere Erklärungen; Schriftgröße und Lesbarkeit der Hinweise wurden verbessert.
+- **Neu ohne gespeicherte Voltune-Einstellungen:** `soundEngineSelect` und `VoltuneAudio`-Router starten mit `physical`. Die Motorpreset-Voreinstellung ist `hybrid`. Andere Physical-Reglerwerte bleiben vorerst wie bisher, bis sie gemeinsam im Fahrzeug abgestimmt werden.
+- **Bestehende Einstellungen:** Wenn `voltune.settings.v1` vorhanden ist, wird die darin hinterlegte Engine ausgewählt. Ältere Konfigurationen ohne `soundEngine` bleiben absichtlich bei `legacy`. Laufende Benutzeränderungen werden wie bisher gespeichert und beim nächsten Start wiederhergestellt.
+- **Wichtig:** Dies wählt nur die Soundengine vor, die eigentliche Audioausgabe beginnt weiterhin erst durch eine Nutzeraktion (Start/Demo); keine automatische Wiedergabe beim Seitenaufruf.
+- CSS wird durch eine aktualisierte Version der Stylesheet-URL neu geladen, um veraltete Hilfetextdarstellung im Tesla-Browser zu vermeiden.
