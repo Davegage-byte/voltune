@@ -20,7 +20,21 @@ const getRpm=()=>Number(String(old.rpm?.textContent||"0").match(/\d[\d.,]*/)?.[0
 const ready=()=>!!(window.VoltuneAudio&&window.VoltuneAudio.isStarted());
 const getMode=()=>old.modeMadness.classList.contains("active")?"WAHNSINN":
  old.modeSport.classList.contains("active")?"SPORT":"NORMAL";
-const strings={normal:"NORMAL",sport:"SPORT",madness:"WAHNSINN"};
+// Independent visual calibration: does NOT alter engine or audio.
+const factorInput=$("v2PowerFactor"),factorLabel=$("v2PowerFactorLabel");
+const FACTOR_KEY="voltune.drive.powerFactor.v1";
+try{
+ const saved=Number(localStorage.getItem(FACTOR_KEY));
+ if(Number.isFinite(saved)&&saved>=.5&&saved<=1.5)factorInput.value=saved.toFixed(2);
+}catch(_){}
+const powerFactor=()=>clamp(Number(factorInput.value)||1,.5,1.5);
+const updateFactor=()=>{
+ factorLabel.textContent=powerFactor().toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" ×";
+ lastVisual="";schedulePaint();
+ try{localStorage.setItem(FACTOR_KEY,powerFactor().toFixed(2));}catch(_){}
+};
+factorInput.addEventListener("input",updateFactor);
+factorLabel.textContent=powerFactor().toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" ×";
 const changeMode=(mode)=>{
  ({normal:old.modeNormal,sport:old.modeSport,madness:old.modeMadness})[mode].click();
 };
@@ -67,7 +81,7 @@ function paint(){
  paintRequested=false;
  if(document.hidden)return;
  const s=current(),active=ready(),monitor=active&&(phase==="running"||phase==="selftest");
- const snap=[s.speed,s.a,s.rpm,s.gear,s.mode,s.status,active,phase,s.maxRpm].join("|");
+ const snap=[s.speed,s.a,s.rpm,s.gear,s.mode,s.status,active,phase,s.maxRpm,powerFactor()].join("|");
  if(snap===lastVisual)return;
  lastVisual=snap;
  output.speed.textContent=String(s.speed);
@@ -102,7 +116,7 @@ function paint(){
  // Lateral acceleration is NOT derivable from GPS speed/longitudinal alone.
  // Do not fabricate a lateral-G dot or data until a validated heading/gyro is available.
  output.gDot.setAttribute("cx","110");
- const kw=monitor?estimatedPower(s.speed,s.a):0;
+ const kw=monitor?estimatedPower(s.speed,s.a)*powerFactor():0;
  output.powerKw.textContent=String(Math.round(kw));
  output.powerPs.textContent=String(Math.round(kw*1.35962));
  const hasGps=String($("gpsStatus")?.textContent||"").toLowerCase().includes("aktiv") ||
