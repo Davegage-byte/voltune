@@ -14,6 +14,7 @@ const output={speed:$("v2Speed"),gear:$("v2Gear"),rpm:$("v2Rpm"),mode:$("v2ModeT
  rpmArc:$("v2RpmArc"),accelArc:$("v2AccelArc"),regenArc:$("v2RegenArc"),
  gDot:$("v2GDot"),longG:$("v2LongG"),powerKw:$("v2PowerKw"),powerPs:$("v2PowerPs"),
  accelPct:$("v2AccelPct"),regenPct:$("v2RegenPct"),accelRaw:$("v2AccelRaw"),regenRaw:$("v2RegenRaw")};
+const car={body:$("v2CarBody"),front:$("v2CarFrontGlow"),rear:$("v2CarRearGlow")};
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const getNum=el=>{const x=String(el?.textContent||"").replace(",",".").match(/[-+]?\d+(?:\.\d+)?/);return x?Number(x[0])||0:0};
 const getRpm=()=>Number(String(old.rpm?.textContent||"0").match(/\d[\d.,]*/)?.[0].replace(/[.,]/g,""))||0;
@@ -40,6 +41,28 @@ const changeMode=(mode)=>{
 };
 const setPhase=phase=>{cockpit.dataset.phase=phase};
 let phase="idle",lastGear="",lastVisual="",testTimer=0,paintRequested=false,booting=false,lastVU=0;
+// Nur visuelle Darstellung aus den bestehenden Längsbeschleunigungswerten.
+const reduceCarMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||false;
+let carAccel=0,carY=0,carFront=0,carRear=0,lastCarFrame=0;
+function animateCar(timestamp){
+ const dt=lastCarFrame?clamp((timestamp-lastCarFrame)/1000,.001,.12):.045;
+ lastCarFrame=timestamp;
+ const a=clamp(carAccel,-8,8);
+ const strength=clamp((Math.abs(a)-.18)/3.5,0,1);
+ // Plus: etwas nach unten, Heck in Cyan. Minus: nach oben, Front in Amber.
+ const targetY=reduceCarMotion?0:Math.sign(a)*7*strength;
+ const targetFront=a<-.18?strength*.85:0;
+ const targetRear=a>.18?strength*.85:0;
+ const response=1-Math.exp(-dt/(Math.abs(targetY)<Math.abs(carY)?.37:.21));
+ const glowResponse=1-Math.exp(-dt/.19);
+ carY+=(targetY-carY)*response;
+ carFront+=(targetFront-carFront)*glowResponse;
+ carRear+=(targetRear-carRear)*glowResponse;
+ if(targetY===0&&Math.abs(carY)<.02)carY=0;
+ car.body.style.transform="translate3d(0,"+carY.toFixed(2)+"px,0)";
+ car.front.style.opacity=carFront.toFixed(3);
+ car.rear.style.opacity=carRear.toFixed(3);
+}
 function phaseTo(value){phase=value;setPhase(value);}
 const arcs=[output.rpmArc,output.accelArc,output.regenArc].map(el=>{
  const length=el.getTotalLength();el.style.strokeDasharray="0 "+length;return {el,length};
@@ -81,6 +104,7 @@ function paint(){
  paintRequested=false;
  if(document.hidden)return;
  const s=current(),active=ready(),monitor=active&&(phase==="running"||phase==="selftest");
+ carAccel=active&&phase==="running"?s.a:0;
  const snap=[s.speed,s.a,s.rpm,s.gear,s.mode,s.status,active,phase,s.maxRpm,powerFactor()].join("|");
  if(snap===lastVisual)return;
  lastVisual=snap;
@@ -277,6 +301,7 @@ function tick(timestamp){
   vuLevel+=(target-vuLevel)*(target>vuLevel?.52:.14);
   $("v2VuStatus").textContent=physical?"LIVE-PEGEL":"";
   drawVolume();
+  animateCar(timestamp);
   // Keep the clock correct without creating another interval.
   if(timestamp%1000<60){
    $("v2Clock").textContent=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
