@@ -70,6 +70,7 @@
     physicalStatus:$("physicalStatus"),physicalTeslaMedia:$("physicalTeslaMedia"),
     physicalEvBlend:$("physicalEvBlend"),physicalAmgHighs:$("physicalAmgHighs"),
     physicalPresence:$("physicalPresence"),physicalMusicBoost:$("physicalMusicBoost"),
+    physicalTeslaEq:$("physicalTeslaEq"),physicalTeslaEqLabel:$("physicalTeslaEqLabel"),
     physicalAccelDynamics:$("physicalAccelDynamics"),
     physicalShift:$("physicalShift"),physicalShiftCut:$("physicalShiftCut"),physicalPops:$("physicalPops"),
     physicalFocus:$("physicalFocus"),physicalMuffling:$("physicalMuffling"),
@@ -1770,7 +1771,8 @@ function getPhysicalSettings(){
   shiftStrength:Number(ui.physicalShift.value),shiftCut:Number(ui.physicalShiftCut.value),
   popStrength:Number(ui.physicalPops.value),effectFocus:Number(ui.physicalFocus.value),
   muffling:Number(ui.physicalMuffling.value),sensitivity:ui.physicalSensitivity.value,
-  teslaMedia:ui.physicalTeslaMedia.checked,volume:Number(ui.volume.value)
+  teslaMedia:ui.physicalTeslaMedia.checked,teslaEq:ui.physicalTeslaEq.checked,
+  volume:Number(ui.volume.value)
  };
 }
 function restorePhysicalSettings(saved){
@@ -1789,6 +1791,7 @@ function restorePhysicalSettings(saved){
   }
  }
  if(typeof saved.teslaMedia==="boolean")ui.physicalTeslaMedia.checked=saved.teslaMedia;
+ if(typeof saved.teslaEq==="boolean")ui.physicalTeslaEq.checked=saved.teslaEq;
 }
 function syncEngineUI(){
  const physical=ui.soundEngineSelect.value==="physical";
@@ -1813,6 +1816,7 @@ function syncEngineUI(){
  document.getElementById("physicalHybridControls").hidden=ui.physicalPreset.value!=="hybrid";
  document.getElementById("physicalAmgControls").hidden=ui.physicalPreset.value!=="amg";
  ui.physicalStatus.textContent=window.VoltunePhysicalAudio.names[ui.physicalPreset.value]||"Hybrid EV + V8";
+ ui.physicalTeslaEqLabel.textContent=ui.physicalTeslaEq.checked?"Ein":"Aus";
  for(const [id,label,unit] of PHYSICAL_CONTROLS){
    document.getElementById(label).textContent=
     (id==="physicalMusicBoost"?"+":"")+ui[id].value+unit;
@@ -4169,10 +4173,10 @@ VoltunePhysicalAudio.onProfileChange(preset=>{
  syncEngineUI();
  scheduleSettingsSave();
 });
-for(const id of ["physicalPreset","physicalSensitivity","physicalTeslaMedia",
+for(const id of ["physicalPreset","physicalSensitivity","physicalTeslaMedia","physicalTeslaEq",
  "physicalEvBlend","physicalAmgHighs","physicalPresence","physicalMusicBoost",
  "physicalAccelDynamics","physicalShift","physicalShiftCut","physicalPops","physicalFocus","physicalMuffling"]){
- ui[id].addEventListener(id==="physicalPreset"||id==="physicalSensitivity"||id==="physicalTeslaMedia"?"change":"input",()=>{
+ ui[id].addEventListener(id==="physicalPreset"||id==="physicalSensitivity"||id==="physicalTeslaMedia"||id==="physicalTeslaEq"?"change":"input",()=>{
   VoltunePhysicalAudio.setConfig(getPhysicalSettings());
   syncEngineUI();
   scheduleSettingsSave();
