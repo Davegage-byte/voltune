@@ -112,7 +112,8 @@ function paint(){
  output.regenRaw.textContent=fBrake.toFixed(2)+" m/s²";
  const longitudinal=s.a/9.80665;
  output.longG.textContent=(longitudinal>0?"+":"")+longitudinal.toFixed(2);
- output.gDot.setAttribute("cy",String(110-84*clamp(longitudinal,-1,1)));
+ // Motorsport-G-Meter: Beschleunigen = unten, Bremsen = oben.
+  output.gDot.setAttribute("cy",String(110+84*clamp(longitudinal,-1,1)));
  // Lateral acceleration is NOT derivable from GPS speed/longitudinal alone.
  // Do not fabricate a lateral-G dot or data until a validated heading/gyro is available.
  output.gDot.setAttribute("cx","110");
