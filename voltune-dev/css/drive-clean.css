@@ -117,6 +117,11 @@ body.cleanDrive .cleanActions .control-master input[type=range] {width:100%;marg
   display:flex;flex-direction:column;gap:8px;min-width:0;
 }
 .cleanMetric .cleanEyebrow{font-size:11px}
+.cleanCockpit.cleanShifting .cleanGearValue{animation:cleanGearPulse .22s ease-out}
+@keyframes cleanGearPulse{
+  0%{color:var(--cd-primary);text-shadow:0 0 24px rgba(110,210,255,.35);transform:translateY(-4px)}
+  100%{color:var(--cd-text);text-shadow:none;transform:translateY(0)}
+}
 .cleanGearValue {font-weight:850;font-size:clamp(80px,8.2vw,136px);line-height:.95;letter-spacing:-.055em;white-space:nowrap}
 .cleanRpmRow {display:flex;align-items:baseline;gap:12px;white-space:nowrap}
 .cleanRpmValue{font-size:clamp(35px,4.5vw,70px);letter-spacing:-.065em;font-weight:840;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -219,4 +224,5 @@ body.cleanDrive.clean-settings-open .cleanSettingsHeading{display:flex}
 }
 @media(prefers-reduced-motion:reduce){
  .cleanDynFill{transition:none}
+ .cleanCockpit.cleanShifting .cleanGearValue{animation:none}
 }
