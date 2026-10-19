@@ -150,7 +150,7 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
 @keyframes v2GaugeTest{0%,100%{filter:brightness(1)}45%{filter:brightness(1.5) drop-shadow(0 0 8px rgba(var(--v-rgb),.45))}}
 .v2Cockpit[data-phase="stopped"] .v2Speed,.v2Cockpit[data-phase="idle"] .v2Speed{color:var(--v-dim)}
 .v2Cockpit[data-phase="running"] .v2Speed{color:var(--v-ink)}
-.v2Bottom{padding-top:16px;border-top:1px solid var(--v-line);gap:18px;position:relative;z-index:5}
+.v2Bottom{padding-top:16px;border-top:1px solid var(--v-line);gap:14px 18px;position:relative;z-index:5;flex-wrap:wrap}
 .v2Buttons{display:flex;align-items:center;gap:16px;min-width:0}
 .v2Cockpit button.v2Round{
  width:var(--v2-round-size);height:var(--v2-round-size);
@@ -189,8 +189,8 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
 .v2SmallBtn{background:transparent;border:1px solid var(--v-line);border-radius:10px;color:var(--v-muted);
  font-size:11px;letter-spacing:.08em;padding:10px 13px;min-height:40px;transition:color .2s,border-color .2s}
 .v2SmallBtn:hover{color:var(--v-cyan);border-color:var(--v-cyan)}
-.v2Footnote{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:9px;
- letter-spacing:.06em;color:var(--v-dim);white-space:nowrap;opacity:.8}
+.v2Footnote{position:static;transform:none;flex:0 0 100%;text-align:center;margin-top:0;
+ font-size:9px;line-height:1.4;letter-spacing:.06em;color:var(--v-dim);white-space:normal;opacity:.8}
 @media (max-width:1150px){
  .v2Cockpit{padding:18px 20px;grid-template-rows:auto minmax(350px,1fr) auto}
  .v2Deck{grid-template-columns:minmax(120px,.68fr) minmax(350px,2.5fr) minmax(100px,.62fr)}
@@ -232,7 +232,7 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
  .v2SettingsIntro button{width:100%}
 }
 @media(max-height:750px) and (min-width:761px){
- .v2Cockpit{padding:12px 27px;gap:6px;grid-template-rows:38px minmax(280px,1fr) 78px}
+ .v2Cockpit{padding:12px 27px;gap:6px;grid-template-rows:38px minmax(280px,1fr) auto}
  .v2Gauge{max-height:calc(100vh - 130px)}
  .v2Side{gap:10px}
  .v2Bottom{padding-top:7px}
