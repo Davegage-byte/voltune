@@ -79,12 +79,12 @@ html[data-theme="light"] #startupOverlay {
   background: rgba(238, 241, 245, 0.96);
 }
   </style>
-<title>Voltune Drive · Clean Cockpit</title>
+<title>Voltune Drive 2.0 · Live Cockpit</title>
 
   
 <link rel="stylesheet" href="css/voltune.css?v=physical-help-20261019">
 <link rel="stylesheet" href="css/launch.css">
-<link rel="stylesheet" href="css/drive-clean.css?v=drive-clean-v1-20261019">
+<link rel="stylesheet" href="css/drive-v2.css?v=drive-v2-20261019">
 
 </head>
 <body class="cleanDrive">
@@ -235,77 +235,124 @@ html[data-theme="light"] #startupOverlay {
 </div>
 
 
-<section id="cleanCockpit" class="cleanCockpit" data-status="ready" aria-label="Voltune Fahrcockpit">
-  <header class="cleanHead">
-    <div class="cleanBrand">
-      <div class="cleanBrandMark" aria-hidden="true">V</div>
-      <div>
-        <div class="cleanBrandName">VOLTUNE</div>
-        <div class="cleanBrandSub">DRIVE · LIVE COCKPIT</div>
-      </div>
-    </div>
-    <div class="cleanActions">
-      <div id="cleanMasterSlot" class="cleanMasterSlot" aria-label="Master-Lautstärke"></div>
-      <div id="cleanDemoSlot" class="cleanDemoSlot"></div>
-      <button id="cleanSettingsToggle" class="cleanAction" type="button" aria-expanded="false" aria-controls="cleanSettingsPanel">
-        <span aria-hidden="true">☷</span> Einstellungen
-      </button>
-      <a class="cleanAction" href="./index.html" title="Bisherige Voltune-Dev-Ansicht öffnen">Editor ↗</a>
+<section class="v2Cockpit" id="v2Cockpit" data-phase="idle" aria-label="Voltune Drive Cockpit">
+  <header class="v2Top">
+    <div class="v2Brand"><div class="v2Wordmark">VOLTUNE</div><div class="v2Subtitle">D R I V E</div></div>
+    <div class="v2TopRight">
+      <span class="v2Status" id="v2GpsStatus"><span class="v2Lamp"></span><span id="v2GpsLabel">GPS BEREIT</span></span>
+      <span class="v2Status v2AudioStatus" id="v2AudioStatus"><span class="v2Lamp"></span><span id="v2AudioLabel">AUDIO AUS</span></span>
+      <span class="v2Clock" id="v2Clock">--:--</span>
+      <button class="v2TopButton" id="v2Theme" title="Light / Dark / Auto" aria-label="Darstellung umschalten">☼</button>
+      <button class="v2TopButton" id="v2Settings" title="Alle Einstellungen" aria-label="Einstellungen öffnen" aria-expanded="false" aria-controls="cleanSettingsPanel">⚙</button>
     </div>
   </header>
-  <div class="cleanTopline">
-    <span>FAHRDATEN · LIVE</span>
-    <span class="cleanStatus">
-      <span class="cleanStatusDot" aria-hidden="true"></span>
-      <span id="cleanRunStatus" role="status">BEREIT</span>
-    </span>
-  </div>
-  <div class="cleanHero">
-    <div class="cleanSpeedZone">
-      <div class="cleanEyebrow">Geschwindigkeit</div>
-      <div class="cleanSpeedReadout">
-        <strong id="cleanSpeed" class="cleanSpeedNumber" aria-label="Geschwindigkeit">0</strong>
-        <span class="cleanSpeedUnit">km/h</span>
+  <div class="v2Deck">
+    <aside class="v2Side v2SideLeft" aria-label="Fahrdynamik und Leistung">
+      <div class="v2GBlock">
+        <svg class="v2GDisc" viewBox="0 0 220 220" role="img" aria-label="G-Kräfte-Diagramm mit Längsbeschleunigung">
+          <circle class="ring" cx="110" cy="110" r="84"/>
+          <circle class="ring" cx="110" cy="110" r="57"/>
+          <circle class="ring" cx="110" cy="110" r="28"/>
+          <path class="axis" d="M 17 110 H 203 M 110 17 V 203"/>
+          <text text-anchor="middle" x="110" y="12">+1.0 G</text>
+          <text text-anchor="middle" x="110" y="218">-1.0 G</text>
+          <text text-anchor="start" x="5" y="98">-1</text>
+          <text text-anchor="end" x="215" y="98">+1</text>
+          <circle id="v2GDot" class="g-dot" cx="110" cy="110" r="6"/>
+        </svg>
+        <div class="v2GCaption">LÄNGS-G <span id="v2LongG">0.00</span> G</div>
+        <div class="v2GHint">QUER-G <span id="v2LatG">—</span></div>
       </div>
-      <div id="cleanState" class="cleanSpeedSub">BEREIT ZUM START</div>
+      <div class="v2Power" aria-live="off">
+        <span class="value" id="v2PowerKw">0</span><span class="unit">kW</span>
+        <span class="value" id="v2PowerPs">0</span><span class="unit">PS</span>
+        <span class="v2PowerLabel">GESCHÄTZTE LEISTUNG</span>
+      </div>
+    </aside>
+    <div class="v2Gauge">
+      <svg viewBox="0 0 800 800" aria-hidden="true">
+        <circle class="v2Ring" cx="400" cy="400" r="268"/>
+        <circle class="v2Ring" cx="400" cy="400" r="250" stroke-opacity=".45"/>
+        <circle class="v2Ring" cx="400" cy="400" r="322" stroke-opacity=".48"/>
+        <g id="v2GeneratedTicks"></g>
+        <path class="v2ArcTrack" d="M 194 645 A 320 320 0 1 1 606 645"/>
+        <path id="v2RpmArc" class="v2ArcProgress" d="M 194 645 A 320 320 0 1 1 606 645"/>
+        <path class="v2ArcTrack" d="M 178 595 A 286 286 0 0 1 178 205"/>
+        <path class="v2ArcTrack" d="M 622 595 A 286 286 0 0 0 622 205"/>
+        <path id="v2AccelArc" class="v2ArcProgress" d="M 178 595 A 286 286 0 0 1 178 205"/>
+        <path id="v2RegenArc" class="v2ArcProgress v2ArcGreen" d="M 622 595 A 286 286 0 0 0 622 205"/>
+        <text x="255" y="106" class="v2Ticks">0</text>
+        <text x="393" y="58" class="v2Ticks">RPM</text>
+        <text x="544" y="106" class="v2Ticks">MAX</text>
+        <line x1="400" x2="400" y1="67" y2="93" stroke="var(--v-muted)" stroke-width="1"/>
+      </svg>
+      <div class="v2Hub">
+        <div class="v2Mode" id="v2ModeText">NORMAL</div>
+        <strong class="v2Speed" id="v2Speed">0</strong>
+        <span class="v2SpeedUnit">km/h</span>
+        <div class="v2Divider"></div>
+        <strong class="v2Gear" id="v2Gear">1</strong>
+        <span class="v2RpmText"><span id="v2Rpm">0</span> RPM</span>
+      </div>
+      <div class="v2BootMask" id="v2BootMask">
+        <button id="v2Start" type="button" class="v2Start" aria-label="Voltune mit GPS und Motorsound starten">
+          <span class="v2StartSymbol" aria-hidden="true">⏻</span>
+          <span id="v2StartLabel">START</span>
+          <small>GPS + MOTOR</small>
+        </button>
+      </div>
     </div>
-    <div class="cleanStack">
-      <article class="cleanMetric">
-        <span class="cleanEyebrow">Virtueller Gang</span>
-        <strong id="cleanGear" class="cleanGearValue">1</strong>
-      </article>
-      <article class="cleanMetric">
-        <span class="cleanEyebrow">Motordrehzahl</span>
-        <div class="cleanRpmRow">
-          <strong id="cleanRpm" class="cleanRpmValue">0</strong>
-          <span class="cleanRpmUnit">RPM</span>
-        </div>
-        <div class="cleanRpmTrack" aria-hidden="true"><span id="cleanRpmFill" class="cleanRpmFill"></span></div>
-      </article>
+    <aside class="v2Side v2SideRight" aria-label="Beschleunigung und Rekuperation">
+      <div class="v2RightMetric">
+        <div class="v2RightNum green" id="v2AccelPct">0%</div>
+        <div class="v2RightFoot">BESCHLEUNIGUNG</div>
+        <div class="v2NoData" id="v2AccelRaw">0.00 m/s²</div>
+      </div>
+      <svg class="v2CarMini" viewBox="0 0 124 190" aria-hidden="true">
+        <path d="M 15 3 L 2 186 M 109 3 L 122 186"/>
+        <path d="M 45 22 C 33 28 31 50 30 84 L 27 132 Q 28 159 41 164 L 83 164 Q 96 159 97 132 L 94 84 C 93 50 91 28 79 22 Q 62 16 45 22 Z"/>
+        <path d="M 38 59 Q 62 44 86 59 L 88 103 Q 62 115 36 103 Z M 32 130 Q 62 139 92 130"/>
+        <path d="M 39 163 Q 62 174 85 163" stroke="var(--v-cyan)" stroke-width="2"/>
+      </svg>
+      <div class="v2RightMetric">
+        <div class="v2RightNum amber" id="v2RegenPct">0%</div>
+        <div class="v2RightFoot">VERZÖGERUNG / REKU</div>
+        <div class="v2NoData" id="v2RegenRaw">0.00 m/s²</div>
+      </div>
+    </aside>
+  </div>
+  <footer class="v2Bottom">
+    <div class="v2Buttons">
+      <div class="v2ControlsMini">
+        <div><button id="v2Restart" class="v2Round active" type="button" title="GPS / Motor starten">⏻</button><div class="v2ActionLabel">START</div></div>
+        <div><button id="v2Stop" class="v2Round" type="button" title="Sound und GPS stoppen">■</button><div class="v2ActionLabel">STOP</div></div>
+        <div><button id="v2Mute" class="v2Round" type="button" title="Stumm / Ton an">◖̸</button><div class="v2ActionLabel">MUTE</div></div>
+      </div>
     </div>
-  </div>
-  <div class="cleanDynamics">
-    <article id="cleanAccelCard" class="cleanDynCard accel">
-      <div class="cleanDynTitle">Beschleunigung</div>
-      <div class="cleanDynValue"><span id="cleanAccelValue">0,00</span><small>m/s²</small></div>
-      <div class="cleanDynBar" aria-hidden="true"><span id="cleanAccelFill" class="cleanDynFill"></span></div>
-    </article>
-    <article id="cleanBrakeCard" class="cleanDynCard brake">
-      <div class="cleanDynTitle">Verzögerung / Reku</div>
-      <div class="cleanDynValue"><span id="cleanBrakeValue">0,00</span><small>m/s²</small></div>
-      <div class="cleanDynBar" aria-hidden="true"><span id="cleanBrakeFill" class="cleanDynFill"></span></div>
-    </article>
-  </div>
-  <footer class="cleanFoot">
-    <span>FAHRMODUS <span id="cleanMode" class="cleanFootAccent">NORMAL</span></span>
-    <span>BALKEN BIS 4 m/s² · GPS / DEMO · VOLTUNE PHYSICAL ENGINE</span>
+    <nav class="v2ModeCluster" aria-label="Fahrmodus">
+      <button type="button" id="v2Normal" class="active">NORMAL</button>
+      <button type="button" id="v2Sport">SPORT</button>
+      <button type="button" id="v2Madness">WAHNSINN</button>
+    </nav>
+    <div class="v2Volume">
+      <div class="v2VolumeBody">
+        <div class="v2VolumeHeader"><span>MASTER VOLUME</span><span id="v2VuStatus">SIGNAL</span></div>
+        <button type="button" id="v2VolumeTrack" class="v2VolumeTrack" role="slider" aria-label="Master-Lautstärke" aria-valuemin="0" aria-valuemax="100" aria-valuenow="32" tabindex="0">
+          <span class="v2VolumeBars" id="v2VolumeBars"></span>
+          <span class="v2VolumeMarker" id="v2VolumeMarker"></span>
+        </button>
+      </div>
+      <output id="v2VolumeValue" class="v2VolumeValue">32%</output>
+    </div>
+    <div class="v2SecondaryActions">
+      <button id="v2Demo" type="button" class="v2SmallBtn" title="Demo-Testfahrt">DEMO</button>
+      <button id="v2Launch" type="button" class="v2SmallBtn" title="Launch Mode">LAUNCH</button>
+    </div>
+    <div class="v2Footnote">kW / PS: MODELLSCHÄTZUNG · LÄNGS-G: GPS · QUER-G: SENSOR NOCH NICHT VERFÜGBAR</div>
   </footer>
 </section>
-<div id="cleanBackdrop" hidden></div>
-<div class="cleanSettingsHeading" id="cleanSettingsHeading">
-  <span>Motor- und Fahreinstellungen</span>
-  <button id="cleanSettingsClose" type="button">Schließen ✕</button>
-</div>
+<div id="v2Shade" hidden></div>
+<div class="v2SettingsHeading" id="v2SettingsHeading"><strong>VOLLTUNE · EINSTELLUNGEN</strong><button id="v2SettingsClose" type="button">Schließen ✕</button></div>
 
 <div class="debugCore debugOnly">
 <div class="stateBox">
@@ -888,7 +935,7 @@ html[data-theme="light"] #startupOverlay {
       "js/startup.js",
       "js/launch.js",
       "js/app.js",
-      "js/drive-clean.js"
+      "js/drive-v2.js"
     ];
 
     const MAX_ATTEMPTS = 4;
