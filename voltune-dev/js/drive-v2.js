@@ -235,6 +235,24 @@ function showSettings(visible){
 settings.addEventListener("click",()=>showSettings(true));
 $("v2SettingsClose").addEventListener("click",()=>showSettings(false));
 shade.addEventListener("click",()=>showSettings(false));
+// Direct navigation to the existing Physical Engine controls, without changing
+// the user's selected sound engine or any stored sound parameters.
+$("v2JumpPhysical").addEventListener("click",()=>{
+ const engineSelect=$("soundEngineSelect");
+ const physical=$("physicalEnginePanel");
+ const destination=physical&&!physical.hidden?physical:$("soundEngineControl");
+ const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ destination?.scrollIntoView?.({behavior:reduced?"instant":"smooth",block:"start"});
+ if(physical?.hidden){
+  engineSelect?.focus?.({preventScroll:true});
+  $("v2JumpPhysical").textContent="Soundengine oben auf Physical Engine umstellen ↑";
+ }else{
+  $("v2JumpPhysical").textContent="Physical Engine / V8 geöffnet ✓";
+ }
+});
+$("soundEngineSelect").addEventListener("change",()=>{
+ $("v2JumpPhysical").textContent="Zum V8 / Physical Engine ↓";
+});
 document.addEventListener("keydown",event=>{
  if(event.key==="Escape"&&document.body.classList.contains("v2-settings-open"))showSettings(false);
 });
