@@ -56,7 +56,10 @@
  function paint(){
   pending=false;
   const speed=bound(Math.round(number(source.speed)),0,500);
-  const rpm=bound(Math.round(number(source.rpm)),0,16000);
+  // RPM sind ganze Zahlen; Tausenderpunkte auf deutschsprachigen
+  // Geräten dürfen nicht als Dezimalpunkt interpretiert werden.
+  const rpmDigits=text(source.rpm).match(/\d[\d.,]*/)?.[0].replace(/[.,]/g,"")||"0";
+  const rpm=bound(Number(rpmDigits)||0,0,16000);
   const maxRpm=bound(Number($("maxRpm")?.value)||6500,1000,16000);
   const gear=text(source.gear)||"1";
   const a=bound(number(source.accel),-20,20);
