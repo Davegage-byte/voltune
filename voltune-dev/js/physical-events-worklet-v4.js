@@ -25,7 +25,9 @@ class VoltuneEventsV4 extends AudioWorkletProcessor{
   this.echoC=1-Math.exp(-2*Math.PI*650/sr);
   this.dcCoef=Math.exp(-2*Math.PI*17/sr);
   this.dcL=0;this.dcR=0;this.lastL=0;this.lastR=0;
-  this.side=[this.makeSide(.014,95,220),this.makeSide(.017,109,265)];
+  // Two independent resonance banks: changing pop level cannot change shifts.
+  this.sideShift=[this.makeSide(.014,95,220),this.makeSide(.017,109,265)];
+  this.sidePop=[this.makeSide(.014,95,220),this.makeSide(.017,109,265)];
   this.port.onmessage=e=>{
    const m=e.data||{};const amount=Number.isFinite(m.intensity)?Math.max(0,Math.min(1,m.intensity)):.8;
    if(m.type==="bypass"){this.bypass=!!m.value;}
@@ -47,11 +49,27 @@ class VoltuneEventsV4 extends AudioWorkletProcessor{
    bass:res(hz1,72),body:res(hz2,140)};
  }
  random(){let x=this.seed;x^=x<<13;x^=x>>>17;x^=x<<5;this.seed=x>>>0;return this.seed/2147483648-1;}
- impulse(k,amp){
-  this.side[k].fast+=amp;this.side[k].slow+=amp;
+ impulse(k,amp,kind){
+  const side=(kind==="shift"?this.sideShift:this.sidePop)[k];
+  side.fast+=amp;side.slow+=amp;
   this.focus=Math.max(this.focus,Math.min(1,.72+.25*amp));
  }
  resonance(r,p){const y=r.a*r.x-r.b*r.y+r.d*p;r.y=r.x;r.x=y;return y;}
+ processSide(s){
+  s.fast*=this.fastD;s.slow*=this.slowD;
+  const p=Math.max(0,s.slow-s.fast);
+  s.lo+=this.lowC*(p-s.lo);s.mid+=this.midC*(p-s.mid);
+  const echo=s.pipe[s.at];
+  s.reflect+=this.echoC*(echo-s.reflect);
+  s.pipe[s.at]=Math.tanh(p*.8+echo*.4);
+  s.at=s.at+1===s.pipe.length?0:s.at+1;
+  const lowRing=this.resonance(s.bass,p);
+  const midRing=this.resonance(s.body,s.mid-s.lo);
+  const open=1-this.muffling;
+  const body=.92*s.lo+1.75*lowRing+(.23+open*.38)*(s.mid-s.lo)+
+   (.35+open*.18)*midRing+(.25+open*.15)*s.reflect;
+  return Math.tanh(body*5.5)*.78;
+ }
  process(inputs,outputs,params){
   const o=outputs[0];if(!o||!o[0])return true;
   const l=o[0],r=o[1]||l,ins=inputs[0],a=ins&&ins[0],b=ins&&(ins[1]||ins[0]);
@@ -83,8 +101,8 @@ class VoltuneEventsV4 extends AudioWorkletProcessor{
      if(t>.033&&!this.shiftFired){
       const intensity=this.shiftLevel/.7;
       if(intensity>.001){
-       this.impulse(0,.50*this.shiftIntensity*intensity);
-       this.impulse(1,.18*this.shiftIntensity*intensity);
+       this.impulse(0,.50*this.shiftIntensity*intensity,"shift");
+       this.impulse(1,.18*this.shiftIntensity*intensity,"shift");
       }
       this.shiftFired=true;
      }
@@ -93,8 +111,8 @@ class VoltuneEventsV4 extends AudioWorkletProcessor{
      if(t>.025&&!this.shiftFired){
       const intensity=this.shiftLevel/.7;
       if(intensity>.001){
-       this.impulse(0,.16*this.shiftIntensity*intensity);
-       this.impulse(1,.13*this.shiftIntensity*intensity);
+       this.impulse(0,.16*this.shiftIntensity*intensity,"shift");
+       this.impulse(1,.13*this.shiftIntensity*intensity,"shift");
       }
       this.shiftFired=true;
      }
@@ -103,40 +121,29 @@ class VoltuneEventsV4 extends AudioWorkletProcessor{
    }
    if(this.popsLeft&&--this.nextPop<=0){
     const amp=(.60+.95*this.popIntensity)*(.82+.18*(this.random()+1)/2)*Math.exp(-this.popIndex*.26);
-    this.impulse(this.popIndex%2,amp);this.impulse((this.popIndex+1)%2,amp*.25);
+    this.impulse(this.popIndex%2,amp,"pop");this.impulse((this.popIndex+1)%2,amp*.25,"pop");
     this.popsLeft--;this.popIndex++;
     this.nextPop=Math.round(this.sr*(.10+.08*(this.random()+1)/2+(this.popIndex-1)*.018));
    }
-   let transL=0,transR=0;
-   for(let k=0;k<2;k++){
-    const s=this.side[k];
-    s.fast*=this.fastD;s.slow*=this.slowD;
-    const p=Math.max(0,s.slow-s.fast);
-    s.lo+=this.lowC*(p-s.lo);s.mid+=this.midC*(p-s.mid);
-    const echo=s.pipe[s.at];
-    s.reflect+=this.echoC*(echo-s.reflect);
-    s.pipe[s.at]=Math.tanh(p*.8+echo*.4);
-    s.at=s.at+1===s.pipe.length?0:s.at+1;
-    const lowRing=this.resonance(s.bass,p);
-    const midRing=this.resonance(s.body,s.mid-s.lo);
-    const open=1-this.muffling;
-    const body=.92*s.lo+1.75*lowRing+(.23+open*.38)*(s.mid-s.lo)+(.35+open*.18)*midRing+(.25+open*.15)*s.reflect;
-    const fx=Math.tanh(body*5.5)*.78;
-    if(k===0)transL=fx;else transR=fx;
-   }
+   const shiftL=this.processSide(this.sideShift[0]);
+   const shiftR=this.processSide(this.sideShift[1]);
+   const popL=this.processSide(this.sidePop[0]);
+   const popR=this.processSide(this.sidePop[1]);
    // Bei 0/0 ist der Event-Prozessor samplegenau deaktiviert:
    // keine Färbung durch Sättigung, keine DC-Filterung am Eingang.
    if(this.shiftLevel<.0001&&this.popLevel<.0001){
     l[i]=il;if(r!==l)r[i]=ir;continue;
    }
-   // Effekt-Boost wirkt nur auf erzeugte Transienten; der
-   // Motor wird bei einem echten Effekt kurz in den Hintergrund gesetzt.
-   // Bei Boost=1 bleibt das Signal exakt wie in v0.2.
+   // Schaltknall und Schubknallen have distinct loudness controls.
+   // Foreground ducking remains separately adjustable for both effects.
    const presence=Math.max(0,Math.min(1,(this.effectBoost-1)/4));
    const duck=1-.58*presence*this.focus;
-   const mix=this.popLevel*this.effectBoost;
-   const rawL=il*gain*duck+(transL*.86+transR*.14)*mix;
-   const rawR=ir*gain*duck+(transR*.86+transL*.14)*mix;
+   const shiftMix=.65*this.effectBoost;
+   const popMix=this.popLevel*this.effectBoost;
+   const rawL=il*gain*duck+(shiftL*.86+shiftR*.14)*shiftMix+
+    (popL*.86+popR*.14)*popMix;
+   const rawR=ir*gain*duck+(shiftR*.86+shiftL*.14)*shiftMix+
+    (popR*.86+popL*.14)*popMix;
    // Peak-Limiter mit sanfter Sättigung und DC-Entfernung.
    const sl=Math.tanh(rawL*1.04),sr=Math.tanh(rawR*1.04);
    const hl=sl-this.lastL+this.dcCoef*this.dcL;
