@@ -469,6 +469,12 @@ html[data-theme="light"] #startupOverlay {
   <small class="controlHint">Macht die hohen, scharfen AMG-Klanganteile leiser.</small></div>
  <div class="control"><div class="top"><span>Motorpräsenz bei Musik</span><span id="physicalPresenceLabel">60 %</span></div><input id="physicalPresence" type="range" min="0" max="100" value="60">
   <small class="controlHint">Macht den Motor durch zusätzliche Obertöne hörbarer.</small></div>
+ <div class="control" id="physicalTeslaEqControls">
+  <div class="top"><label for="physicalTeslaEq">Tesla-EQ (Hörtest)</label><span id="physicalTeslaEqLabel">Aus</span></div>
+  <label for="physicalTeslaEq"><input id="physicalTeslaEq" type="checkbox">
+   EQ einschalten</label>
+  <small class="controlHint">Senkt den Bass bei 55 Hz etwas ab und hebt die Mitten leicht an – ein Test auf Basis älterer Model-3-Messungen.</small>
+ </div>
  <div class="control"><div class="top"><span>Musik-Boost</span><span id="physicalMusicBoostLabel">+0 dB</span></div><input id="physicalMusicBoost" type="range" min="0" max="12" value="0">
   <small class="controlHint">Verstärkt Voltune bei niedrigerer Master-Lautstärke.</small></div>
  <div class="control"><div class="top"><label for="physicalAccelDynamics">Beschleunigungsdynamik</label><span id="physicalAccelDynamicsLabel">5 dB</span></div>
