@@ -309,10 +309,21 @@ html[data-theme="light"] #startupOverlay {
         <div class="v2NoData" id="v2AccelRaw">0.00 m/s²</div>
       </div>
       <svg class="v2CarMini" viewBox="0 0 124 190" aria-hidden="true">
+        <!-- Die Fahrspur bleibt stehen, nur die Karosserie bewegt sich minimal. -->
         <path d="M 15 3 L 2 186 M 109 3 L 122 186"/>
-        <path d="M 45 22 C 33 28 31 50 30 84 L 27 132 Q 28 159 41 164 L 83 164 Q 96 159 97 132 L 94 84 C 93 50 91 28 79 22 Q 62 16 45 22 Z"/>
-        <path d="M 38 59 Q 62 44 86 59 L 88 103 Q 62 115 36 103 Z M 32 130 Q 62 139 92 130"/>
-        <path d="M 39 163 Q 62 174 85 163" stroke="var(--v-cyan)" stroke-width="2"/>
+        <g id="v2CarBody" class="v2CarBody">
+          <path d="M 45 22 C 33 28 31 50 30 84 L 27 132 Q 28 159 41 164 L 83 164 Q 96 159 97 132 L 94 84 C 93 50 91 28 79 22 Q 62 16 45 22 Z"/>
+          <path d="M 38 59 Q 62 44 86 59 L 88 103 Q 62 115 36 103 Z M 32 130 Q 62 139 92 130"/>
+          <path d="M 39 163 Q 62 174 85 163"/>
+          <g id="v2CarFrontGlow" class="v2CarGlow v2CarFrontGlow">
+            <ellipse cx="62" cy="23" rx="24" ry="10"/>
+            <path d="M 44 23 Q 62 15 80 23"/>
+          </g>
+          <g id="v2CarRearGlow" class="v2CarGlow v2CarRearGlow">
+            <ellipse cx="62" cy="165" rx="30" ry="11"/>
+            <path d="M 39 163 Q 62 174 85 163"/>
+          </g>
+        </g>
       </svg>
       <div class="v2RightMetric">
         <div class="v2RightNum amber" id="v2RegenPct">0%</div>
