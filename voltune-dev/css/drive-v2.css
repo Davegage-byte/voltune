@@ -16,12 +16,39 @@ body.cleanDrive .sideRail {position:absolute!important;left:-10000px!important;t
 body.cleanDrive main>.debugCore,body.cleanDrive main>.debugFold,body.cleanDrive main>.note{display:none!important;}
 body.cleanDrive main>.controls{display:none!important;}
 body.cleanDrive .v2SettingsHeading{display:none;}
+/* Settings are a vertical SCROLL DOCUMENT, not a fixed-height CSS grid.
+   Grid auto tracks in the fixed overlay were compressing cards: sliders,
+   selects and all Physical Engine controls were clipped on mobile. */
 body.cleanDrive.v2-settings-open main>.controls{
- display:grid!important;position:fixed;z-index:1021;right:18px;top:78px;bottom:16px;
- width:min(920px,calc(100vw - 36px));padding:18px;overflow-y:auto;
- grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:12px;
+ display:block!important;position:fixed;z-index:1021;right:18px;top:78px;bottom:16px;
+ width:min(920px,calc(100vw - 36px));height:auto;min-height:0;max-height:none;
+ padding:18px;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ overscroll-behavior:contain;scroll-behavior:smooth;
  background:var(--panel,#11151c);border:1px solid var(--line,#344);border-radius:17px;
  box-shadow:0 25px 100px rgba(0,0,0,.5);
+}
+body.cleanDrive.v2-settings-open main>.controls > *{
+ box-sizing:border-box;width:100%;max-width:100%;height:auto;min-height:0;
+ margin:0 0 12px;align-self:auto;overflow:visible;
+}
+body.cleanDrive.v2-settings-open main>.controls > .control,
+body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel{
+ height:auto!important;min-height:min-content;max-height:none!important;
+ overflow:visible!important;
+}
+body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel:not([hidden]){
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));
+ align-content:start;align-items:stretch;grid-auto-rows:max-content;gap:10px;
+}
+body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel > *{
+ min-height:0;max-height:none;
+}
+body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel .control{
+ height:auto;min-height:max-content;overflow:visible;
+}
+body.cleanDrive.v2-settings-open main>.controls > .control input[type="range"],
+body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel input[type="range"]{
+ display:block;visibility:visible;opacity:1;
 }
 /* The full settings drawer intentionally includes the original master slider too. */
 body.cleanDrive.v2-settings-open main>.controls>.control-master{display:block!important;}
@@ -227,7 +254,8 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
  .v2Volume{width:100%;max-width:440px;margin:auto}
  .v2SecondaryActions{justify-content:center}
  .v2Footnote{position:static;transform:none;text-align:center;white-space:normal}
- body.cleanDrive.v2-settings-open main>.controls{grid-template-columns:1fr;top:77px}
+ body.cleanDrive.v2-settings-open main>.controls{top:77px;padding:13px}
+ body.cleanDrive.v2-settings-open main>.controls > #physicalEnginePanel:not([hidden]){grid-template-columns:minmax(0,1fr)}
  .v2SettingsIntro{flex-direction:column;align-items:stretch}
  .v2SettingsIntro button{width:100%}
 }
