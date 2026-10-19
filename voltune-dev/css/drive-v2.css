@@ -1,0 +1,200 @@
+/* Voltune Drive 2.0 — standalone dashboard. Existing audio & fullscreen FX untouched. */
+body.cleanDrive {
+ --v-bg:#050608; --v-ink:#f2f6fa; --v-muted:#89949e; --v-dim:#4c5865;
+ --v-line:rgba(168,183,199,.19);--v-cyan:#63d8fb;--v-green:#6fecb5;--v-amber:#f4b66f;
+ --v-rgb:99,216,251;
+ background:var(--v-bg)!important;color:var(--v-ink);overflow-x:hidden;
+}
+html[data-theme="light"] body.cleanDrive {
+ --v-bg:#f7fafc;--v-ink:#152737;--v-muted:#607183;--v-dim:#9eacb8;
+ --v-line:rgba(33,66,91,.21);--v-cyan:#087fab;--v-green:#00865c;--v-amber:#a96523;
+ --v-rgb:8,127,171;background:var(--v-bg)!important;
+}
+body.cleanDrive main {width:100%;max-width:none;margin:0;padding:0;min-height:100dvh;display:block;}
+/* Keep originals working in the DOM; hide their inherited layout rather than deleting them. */
+body.cleanDrive .sideRail {position:absolute!important;left:-10000px!important;top:0!important;visibility:hidden!important;pointer-events:none!important;width:170px!important;max-height:none!important;}
+body.cleanDrive main>.debugCore,body.cleanDrive main>.debugFold,body.cleanDrive main>.note{display:none!important;}
+body.cleanDrive main>.controls{display:none!important;}
+body.cleanDrive .v2SettingsHeading{display:none;}
+body.cleanDrive.v2-settings-open main>.controls{
+ display:grid!important;position:fixed;z-index:1021;right:18px;top:78px;bottom:16px;
+ width:min(920px,calc(100vw - 36px));padding:18px;overflow-y:auto;
+ grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:12px;
+ background:var(--panel,#11151c);border:1px solid var(--line,#344);border-radius:17px;
+ box-shadow:0 25px 100px rgba(0,0,0,.5);
+}
+body.cleanDrive.v2-settings-open main>.controls>.control-master{display:none!important;}
+body.cleanDrive.v2-settings-open .v2SettingsHeading{
+ position:fixed;z-index:1022;right:18px;top:14px;width:min(920px,calc(100vw - 36px));
+ min-height:54px;display:flex;align-items:center;justify-content:space-between;
+ padding:8px 14px;border-radius:13px;background:var(--panel,#11151c);
+ border:1px solid var(--line,#344);color:var(--text,#f2f4f8);
+}
+.v2SettingsHeading button{min-height:36px;padding:8px 12px;border-radius:9px;background:var(--panel2,#182230);color:var(--text,#fff);border:1px solid var(--line,#344)}
+#v2Shade[hidden]{display:none!important}
+#v2Shade{position:fixed;z-index:1020;inset:0;background:rgba(0,0,0,.68)}
+body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;position:fixed;right:22px;top:16px;pointer-events:none;opacity:0;}
+.v2Cockpit{width:100%;min-height:100dvh;display:grid;grid-template-rows:auto minmax(390px,1fr) auto;
+ padding:clamp(18px,2.8vw,46px) clamp(18px,3.7vw,64px) clamp(18px,2.65vw,40px);
+ gap:clamp(12px,2vh,26px);position:relative;isolation:isolate;overflow:hidden;
+ background:radial-gradient(ellipse 45% 55% at 50% 45%,rgba(var(--v-rgb),.038),transparent 75%),var(--v-bg);
+ color:var(--v-ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+.v2Cockpit *, .v2Cockpit *::before,.v2Cockpit *::after{box-sizing:border-box}
+.v2Cockpit button{font-family:inherit;cursor:pointer;}
+.v2Top,.v2Bottom{display:flex;align-items:center;justify-content:space-between;gap:22px;min-width:0;}
+.v2Wordmark{font-size:clamp(14px,1.35vw,23px);font-weight:680;letter-spacing:.52em;white-space:nowrap}
+.v2Subtitle{font-size:clamp(9px,.75vw,12px);color:var(--v-muted);letter-spacing:.48em;margin-top:7px}
+.v2TopRight{display:flex;align-items:center;gap:16px;font-size:11px;color:var(--v-muted);letter-spacing:.12em}
+.v2TopRight>*+*{border-left:1px solid var(--v-line);padding-left:16px}
+.v2Status{display:flex;gap:8px;align-items:center;text-transform:uppercase;white-space:nowrap}
+.v2Lamp{width:7px;height:7px;border-radius:50%;background:var(--v-dim);transition:background .35s,box-shadow .35s}
+.v2Status.ok .v2Lamp{background:var(--v-cyan);box-shadow:0 0 9px rgba(var(--v-rgb),.6)}
+.v2Status.err .v2Lamp{background:#e86e70}
+.v2Clock{font-size:clamp(13px,1.3vw,20px);color:var(--v-ink);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.v2TopButton{font-size:13px;border:0;background:transparent;color:var(--v-muted);min-height:42px;padding:7px;transition:color .2s}
+.v2TopButton:hover,.v2TopButton:focus-visible{color:var(--v-cyan)}
+.v2Deck{display:grid;grid-template-columns:minmax(150px,.75fr) minmax(460px,2.65fr) minmax(145px,.8fr);align-items:center;gap:clamp(2px,1vw,20px);min-height:0;position:relative;}
+.v2Side{display:flex;flex-direction:column;gap:clamp(20px,4vh,54px);align-items:center;justify-content:center;z-index:2;min-width:0}
+.v2SmallLabel{color:var(--v-muted);font-size:clamp(10px,.75vw,13px);letter-spacing:.27em;text-transform:uppercase;font-weight:600}
+.v2Power{display:grid;grid-template-columns:auto auto;gap:2px 13px;align-items:baseline;text-align:right;}
+.v2Power .value{font-size:clamp(31px,3.2vw,57px);letter-spacing:-.07em;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.12}
+.v2Power .unit{font-size:clamp(12px,1vw,18px);color:var(--v-muted)}
+.v2PowerLabel{grid-column:1/-1;text-align:center;margin-top:8px;color:var(--v-dim);font-size:10px;letter-spacing:.25em}
+.v2GBlock{width:min(100%,205px)}
+.v2GDisc{width:100%;aspect-ratio:1;display:block;overflow:visible;color:var(--v-muted)}
+.v2GDisc .ring,.v2GDisc .axis{fill:none;stroke:var(--v-line);stroke-width:.7}
+.v2GDisc .axis{stroke-width:.55}
+.v2GDisc text{fill:var(--v-muted);font:9px system-ui}
+.v2GDisc .g-dot{fill:var(--v-cyan);filter:drop-shadow(0 0 4px var(--v-cyan));transition:transform .16s ease}
+.v2GCaption{text-align:center;margin-top:4px;color:var(--v-muted);font-size:10px;letter-spacing:.19em}
+.v2GCaption span{color:var(--v-ink)}
+.v2GHint{text-align:center;margin-top:8px;font-size:10px;color:var(--v-dim)}
+.v2RightMetric{width:100%;text-align:left;padding-left:12px}
+.v2RightNum{font-size:clamp(26px,3vw,44px);letter-spacing:-.03em;font-weight:500;font-variant-numeric:tabular-nums}
+.v2RightNum.green{color:var(--v-green)}
+.v2RightNum.amber{color:var(--v-amber)}
+.v2RightFoot{font-size:10px;letter-spacing:.19em;color:var(--v-muted);margin-top:5px}
+.v2CarMini{width:110px;max-width:70%;opacity:.62}
+.v2CarMini path,.v2CarMini rect,.v2CarMini ellipse{fill:none;stroke:var(--v-dim);stroke-width:1.5}
+.v2Gauge{width:100%;max-width:850px;aspect-ratio:1;position:relative;justify-self:center;display:grid;place-items:center;min-width:0;max-height:min(75vh,850px);}
+.v2Gauge svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.v2Gauge .v2Ring{stroke:var(--v-line);stroke-width:1.1;fill:none}
+.v2Gauge .v2ArcTrack{stroke:var(--v-line);stroke-width:3.6;fill:none;stroke-linecap:round}
+.v2Gauge .v2ArcProgress{fill:none;stroke:var(--v-cyan);stroke-width:3.8;stroke-linecap:round;stroke-dasharray:0 1000;filter:drop-shadow(0 0 5px rgba(var(--v-rgb),.52));transition:stroke-dasharray .17s linear}
+.v2Gauge .v2ArcGreen{stroke:var(--v-green)}
+.v2Gauge .v2FineTick{stroke:var(--v-line);stroke-width:1}
+.v2Gauge .v2Ticks{fill:var(--v-muted);font-size:13px;font-family:inherit}
+.v2Gauge .v2Hub{position:relative;z-index:3;width:67%;height:67%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center;user-select:none;}
+.v2Gauge .v2Mode{font-size:clamp(12px,1.5vw,23px);letter-spacing:.32em;color:var(--v-cyan);margin-bottom:clamp(14px,2.4vh,34px);font-weight:490}
+.v2Gauge .v2Speed{font-size:clamp(116px,14vw,260px);font-weight:340;letter-spacing:-.07em;line-height:.89;font-variant-numeric:tabular-nums;white-space:nowrap;padding-right:.08em;transition:filter .3s,transform .3s;min-width:0}
+.v2Gauge .v2SpeedUnit{color:var(--v-muted);font-size:clamp(17px,1.55vw,27px);margin-top:12px;letter-spacing:.02em}
+.v2Gauge .v2Divider{height:1px;background:var(--v-line);width:55%;margin:clamp(12px,2.1vh,28px) 0}
+.v2Gauge .v2Gear{font-size:clamp(62px,6vw,105px);font-weight:450;line-height:1;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.v2Gauge .v2RpmText{color:var(--v-muted);font-size:clamp(11px,.94vw,16px);letter-spacing:.12em;margin-top:9px}
+.v2Gauge .v2GearFlash{animation:v2GearFlash .38s ease-out}
+@keyframes v2GearFlash {0%{color:var(--v-cyan);text-shadow:0 0 24px rgba(var(--v-rgb),.8);transform:scale(1.17)}100%{color:var(--v-ink);text-shadow:none;transform:scale(1)}}
+.v2Gauge .v2BootMask{position:absolute;inset:-3%;z-index:9;display:grid;place-items:center;transition:opacity .62s ease,transform .62s ease,visibility .62s;pointer-events:none;}
+.v2BootMask::before{content:"";position:absolute;inset:13%;border-radius:50%;background:radial-gradient(circle,var(--v-bg) 44%,transparent 73%);pointer-events:none}
+.v2Start{width:min(43%,245px);aspect-ratio:1;border-radius:50%;border:1px solid rgba(var(--v-rgb),.58);
+ background:radial-gradient(circle,rgba(var(--v-rgb),.09),transparent 72%),var(--v-bg);
+ color:var(--v-ink);font-size:clamp(15px,1.55vw,23px);font-weight:660;letter-spacing:.18em;
+ box-shadow:0 0 0 10px rgba(var(--v-rgb),.035),0 0 35px rgba(var(--v-rgb),.07);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;
+ z-index:2;pointer-events:auto;transition:transform .28s,box-shadow .28s,border-color .28s;
+}
+.v2Start:hover{transform:scale(1.035);box-shadow:0 0 0 13px rgba(var(--v-rgb),.05),0 0 42px rgba(var(--v-rgb),.17)}
+.v2Start:focus-visible{outline:3px solid var(--v-cyan);outline-offset:6px}
+.v2StartSymbol{font-size:clamp(28px,3vw,43px);line-height:1;color:var(--v-cyan)}
+.v2Start small{color:var(--v-muted);letter-spacing:.21em;font-size:9px}
+.v2Cockpit[data-phase="running"] .v2BootMask,
+.v2Cockpit[data-phase="selftest"] .v2BootMask{opacity:0;transform:scale(1.12);visibility:hidden;}
+.v2Cockpit[data-phase="starting"] .v2Start{animation:v2StartPulse .9s ease-in-out infinite}
+@keyframes v2StartPulse{50%{box-shadow:0 0 0 19px rgba(var(--v-rgb),.085),0 0 52px rgba(var(--v-rgb),.2)}}
+.v2Cockpit[data-phase="selftest"] .v2ArcProgress{transition:stroke-dasharray 1.25s cubic-bezier(.12,.65,.2,1)}
+.v2Cockpit[data-phase="selftest"] .v2Gauge{animation:v2GaugeTest 1.45s ease-in-out}
+@keyframes v2GaugeTest{0%,100%{filter:brightness(1)}45%{filter:brightness(1.5) drop-shadow(0 0 8px rgba(var(--v-rgb),.45))}}
+.v2Cockpit[data-phase="stopped"] .v2Speed,.v2Cockpit[data-phase="idle"] .v2Speed{color:var(--v-dim)}
+.v2Cockpit[data-phase="running"] .v2Speed{color:var(--v-ink)}
+.v2Bottom{padding-top:16px;border-top:1px solid var(--v-line);gap:18px;position:relative;z-index:5}
+.v2Buttons{display:flex;align-items:center;gap:16px;min-width:0}
+.v2Round{width:58px;height:58px;flex:none;border-radius:50%;border:1px solid var(--v-line);
+ color:var(--v-muted);background:transparent;display:grid;place-items:center;
+ font-size:19px;transition:color .2s,border-color .2s,transform .2s,box-shadow .2s}
+.v2Round:hover{color:var(--v-ink);border-color:var(--v-cyan);transform:translateY(-2px)}
+.v2Round:focus-visible,.v2Modes button:focus-visible,.v2VolumeTrack:focus-visible{outline:2px solid var(--v-cyan);outline-offset:4px}
+.v2Round.active{color:var(--v-green);border-color:var(--v-green)}
+.v2ControlsMini{display:flex;align-items:center;gap:6px}
+.v2ActionLabel{text-align:center;font-size:9px;color:var(--v-muted);letter-spacing:.13em;margin-top:7px}
+.v2ModeCluster{display:flex;justify-content:center;gap:clamp(10px,2vw,37px);flex:1;min-width:0}
+.v2ModeCluster button{border:0;border-bottom:2px solid var(--v-line);color:var(--v-muted);
+ background:transparent;padding:12px 16px;min-width:85px;letter-spacing:.16em;font-size:11px;font-weight:630;
+ transition:color .22s,border-color .22s,text-shadow .22s,transform .22s}
+.v2ModeCluster button:hover{color:var(--v-ink)}
+.v2ModeCluster button.active{border-color:var(--v-cyan);color:var(--v-cyan);text-shadow:0 0 12px rgba(var(--v-rgb),.22)}
+.v2Volume{display:flex;align-items:center;gap:12px;width:min(27vw,375px);min-width:215px}
+.v2VolumeBody{flex:1;min-width:0}
+.v2VolumeHeader{display:flex;align-items:center;justify-content:space-between;font-size:10px;letter-spacing:.21em;color:var(--v-muted);margin-bottom:8px}
+.v2VolumeTrack{width:100%;height:30px;touch-action:none;cursor:ew-resize;position:relative;border-radius:5px;
+ background:transparent;border:0;display:block;padding:0;overflow:hidden}
+.v2VolumeBars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;pointer-events:none}
+.v2VolumeBar{flex:1;background:var(--v-line);height:35%;min-width:1px;border-radius:1px;transition:background .06s,height .08s}
+.v2VolumeBar.filled{background:var(--v-cyan)}
+.v2VolumeBar.vu{background:var(--v-green)}
+.v2VolumeMarker{position:absolute;top:1px;bottom:1px;left:32%;border-left:2px solid var(--v-ink);pointer-events:none;filter:drop-shadow(0 0 4px var(--v-cyan))}
+.v2VolumeValue{font-size:23px;font-weight:500;min-width:64px;text-align:right;font-variant-numeric:tabular-nums}
+.v2NoData{color:var(--v-dim);font-size:11px;letter-spacing:.08em}
+.v2SecondaryActions{display:flex;gap:12px;align-items:center}
+.v2SmallBtn{background:transparent;border:1px solid var(--v-line);border-radius:10px;color:var(--v-muted);
+ font-size:11px;letter-spacing:.08em;padding:10px 13px;min-height:40px;transition:color .2s,border-color .2s}
+.v2SmallBtn:hover{color:var(--v-cyan);border-color:var(--v-cyan)}
+.v2Footnote{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:9px;
+ letter-spacing:.06em;color:var(--v-dim);white-space:nowrap;opacity:.8}
+@media (max-width:1150px){
+ .v2Cockpit{padding:18px 20px;grid-template-rows:auto minmax(350px,1fr) auto}
+ .v2Deck{grid-template-columns:minmax(120px,.68fr) minmax(350px,2.5fr) minmax(100px,.62fr)}
+ .v2Gauge .v2Speed{font-size:clamp(102px,13vw,190px)}
+ .v2Gauge .v2Gear{font-size:clamp(56px,6vw,86px)}
+ .v2Volume{min-width:160px;width:220px}
+ .v2Round{width:45px;height:45px}
+ .v2ModeCluster{gap:4px}
+ .v2ModeCluster button{min-width:75px;padding:11px 8px}
+ .v2Bottom{gap:8px}
+}
+@media (max-width:760px){
+ .v2Cockpit{min-height:100dvh;display:flex;flex-direction:column;gap:14px;padding:17px 13px 22px}
+ .v2Wordmark{font-size:15px;letter-spacing:.3em}.v2Subtitle{font-size:9px}
+ .v2TopRight{gap:9px}.v2TopRight>*+*{padding-left:9px}
+ .v2TopRight .v2AudioStatus{display:none}.v2Clock{font-size:14px}
+ .v2Deck{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,.9fr);grid-template-areas:"gauge gauge" "left right";
+ gap:8px;align-items:center}
+ .v2Gauge{grid-area:gauge;width:min(100%,540px);max-height:none}
+ .v2Gauge .v2Speed{font-size:clamp(110px,23vw,176px)}
+ .v2Gauge .v2Gear{font-size:clamp(52px,13vw,88px)}
+ .v2Gauge .v2Mode{font-size:11px;margin-bottom:8px}
+ .v2Gauge .v2SpeedUnit{font-size:17px;margin-top:3px}
+ .v2Gauge .v2RpmText{font-size:10px;margin-top:3px}
+ .v2Gauge .v2Divider{margin:9px 0}
+ .v2Side{gap:8px}.v2SideLeft{grid-area:left;flex-direction:row;justify-content:space-evenly}
+ .v2SideRight{grid-area:right;flex-direction:row;justify-content:space-evenly}
+ .v2GBlock{width:95px}.v2GHint{display:none}.v2GCaption{font-size:8px}
+ .v2Power .value{font-size:24px}.v2Power .unit{font-size:11px}.v2PowerLabel{font-size:8px}
+ .v2RightMetric{padding:0}.v2RightNum{font-size:24px}.v2RightFoot{font-size:8px}.v2CarMini{display:none}
+ .v2Bottom{display:grid;grid-template-columns:1fr;gap:10px;padding:15px 0 0}
+ .v2Buttons{justify-content:center}.v2ModeCluster{justify-content:space-around}
+ .v2Volume{width:100%;max-width:440px;margin:auto}
+ .v2SecondaryActions{justify-content:center}
+ .v2Footnote{position:static;transform:none;text-align:center;white-space:normal}
+ body.cleanDrive.v2-settings-open main>.controls{grid-template-columns:1fr;top:77px}
+}
+@media(max-height:750px) and (min-width:761px){
+ .v2Cockpit{padding:12px 27px;gap:6px;grid-template-rows:38px minmax(280px,1fr) 78px}
+ .v2Gauge{max-height:calc(100vh - 130px)}
+ .v2Side{gap:10px}
+ .v2Bottom{padding-top:7px}
+ .v2Round{width:40px;height:40px}
+ .v2ActionLabel{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .v2Cockpit *, .v2Cockpit *::before, .v2Cockpit *::after{animation:none!important;transition:none!important}
+}
