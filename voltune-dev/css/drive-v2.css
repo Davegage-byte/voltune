@@ -23,7 +23,24 @@ body.cleanDrive.v2-settings-open main>.controls{
  background:var(--panel,#11151c);border:1px solid var(--line,#344);border-radius:17px;
  box-shadow:0 25px 100px rgba(0,0,0,.5);
 }
-body.cleanDrive.v2-settings-open main>.controls>.control-master{display:none!important;}
+/* The full settings drawer intentionally includes the original master slider too. */
+body.cleanDrive.v2-settings-open main>.controls>.control-master{display:block!important;}
+.v2SettingsIntro{
+ grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;
+ min-width:0;padding:15px 17px;border-radius:12px;
+ border:1px solid rgba(var(--v-rgb),.23);
+ background:rgba(var(--v-rgb),.07);color:var(--text,#f4f7fb);
+}
+.v2SettingsIntro strong{font-size:16px}
+.v2SettingsIntro p{margin:6px 0 0;color:var(--muted,#9ca9b6);font-size:13px;line-height:1.5}
+.v2SettingsIntro button{
+ flex:none;min-height:44px;padding:10px 15px;border-radius:10px;
+ color:var(--v-cyan);background:var(--panel2,#171d26);
+ border:1px solid rgba(var(--v-rgb),.47);font-size:12px;font-weight:700;
+}
+.v2SettingsIntro button:hover,.v2SettingsIntro button:focus-visible{border-color:var(--v-cyan)}
+body.cleanDrive.v2-settings-open main>.controls #physicalEnginePanel,
+body.cleanDrive.v2-settings-open main>.controls #soundEngineControl{scroll-margin-top:16px;}
 body.cleanDrive.v2-settings-open .v2SettingsHeading{
  position:fixed;z-index:1022;right:18px;top:14px;width:min(920px,calc(100vw - 36px));
  min-height:54px;display:flex;align-items:center;justify-content:space-between;
@@ -54,6 +71,14 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
 .v2Clock{font-size:clamp(13px,1.3vw,20px);color:var(--v-ink);font-variant-numeric:tabular-nums;letter-spacing:.04em}
 .v2TopButton{font-size:13px;border:0;background:transparent;color:var(--v-muted);min-height:42px;padding:7px;transition:color .2s}
 .v2TopButton:hover,.v2TopButton:focus-visible{color:var(--v-cyan)}
+.v2TopRight .v2SettingsButton{
+ display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ white-space:nowrap;letter-spacing:.01em;font-size:12px;font-weight:700;
+ min-height:44px;padding:7px 9px;color:var(--v-ink);border-radius:9px;
+}
+.v2SettingsButton svg{flex:none}
+.v2SettingsButton:hover{background:rgba(var(--v-rgb),.08)}
+.v2Cockpit{--v2-round-size:58px}
 .v2Deck{display:grid;grid-template-columns:minmax(150px,.75fr) minmax(460px,2.65fr) minmax(145px,.8fr);align-items:center;gap:clamp(2px,1vw,20px);min-height:0;position:relative;}
 .v2Side{display:flex;flex-direction:column;gap:clamp(20px,4vh,54px);align-items:center;justify-content:center;z-index:2;min-width:0}
 .v2SmallLabel{color:var(--v-muted);font-size:clamp(10px,.75vw,13px);letter-spacing:.27em;text-transform:uppercase;font-weight:600}
@@ -127,9 +152,16 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
 .v2Cockpit[data-phase="running"] .v2Speed{color:var(--v-ink)}
 .v2Bottom{padding-top:16px;border-top:1px solid var(--v-line);gap:18px;position:relative;z-index:5}
 .v2Buttons{display:flex;align-items:center;gap:16px;min-width:0}
-.v2Round{width:58px;height:58px;flex:none;border-radius:50%;border:1px solid var(--v-line);
+.v2Cockpit button.v2Round{
+ width:var(--v2-round-size);height:var(--v2-round-size);
+ min-width:var(--v2-round-size);min-height:var(--v2-round-size);
+ max-width:var(--v2-round-size);max-height:var(--v2-round-size);
+ aspect-ratio:1/1;box-sizing:border-box;padding:0;line-height:1;flex:none;
+ border-radius:50%;border:1px solid var(--v-line);
  color:var(--v-muted);background:transparent;display:grid;place-items:center;
- font-size:19px;transition:color .2s,border-color .2s,transform .2s,box-shadow .2s}
+ transition:color .2s,border-color .2s,transform .2s,box-shadow .2s
+}
+.v2Round svg{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .v2Round:hover{color:var(--v-ink);border-color:var(--v-cyan);transform:translateY(-2px)}
 .v2Round:focus-visible,.v2Modes button:focus-visible,.v2VolumeTrack:focus-visible{outline:2px solid var(--v-cyan);outline-offset:4px}
 .v2Round.active{color:var(--v-green);border-color:var(--v-green)}
@@ -165,7 +197,8 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
  .v2Gauge .v2Speed{font-size:clamp(102px,13vw,190px)}
  .v2Gauge .v2Gear{font-size:clamp(56px,6vw,86px)}
  .v2Volume{min-width:160px;width:220px}
- .v2Round{width:45px;height:45px}
+ .v2Cockpit{--v2-round-size:45px}
+ .v2SettingsButton span{display:none}
  .v2ModeCluster{gap:4px}
  .v2ModeCluster button{min-width:75px;padding:11px 8px}
  .v2Bottom{gap:8px}
@@ -195,13 +228,15 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
  .v2SecondaryActions{justify-content:center}
  .v2Footnote{position:static;transform:none;text-align:center;white-space:normal}
  body.cleanDrive.v2-settings-open main>.controls{grid-template-columns:1fr;top:77px}
+ .v2SettingsIntro{flex-direction:column;align-items:stretch}
+ .v2SettingsIntro button{width:100%}
 }
 @media(max-height:750px) and (min-width:761px){
  .v2Cockpit{padding:12px 27px;gap:6px;grid-template-rows:38px minmax(280px,1fr) 78px}
  .v2Gauge{max-height:calc(100vh - 130px)}
  .v2Side{gap:10px}
  .v2Bottom{padding-top:7px}
- .v2Round{width:40px;height:40px}
+ .v2Cockpit{--v2-round-size:44px}
  .v2ActionLabel{display:none}
 }
 @media(prefers-reduced-motion:reduce){
