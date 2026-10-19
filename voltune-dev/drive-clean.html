@@ -243,7 +243,12 @@ html[data-theme="light"] #startupOverlay {
       <span class="v2Status v2AudioStatus" id="v2AudioStatus"><span class="v2Lamp"></span><span id="v2AudioLabel">AUDIO AUS</span></span>
       <span class="v2Clock" id="v2Clock">--:--</span>
       <button class="v2TopButton" id="v2Theme" title="Light / Dark / Auto" aria-label="Darstellung umschalten">☼</button>
-      <button class="v2TopButton" id="v2Settings" title="Alle Einstellungen" aria-label="Einstellungen öffnen" aria-expanded="false" aria-controls="cleanSettingsPanel">⚙</button>
+      <button class="v2TopButton v2SettingsButton" id="v2Settings" title="Alle Einstellungen einschließlich V8-/Physical-Engine-Regler" aria-label="Alle Einstellungen öffnen" aria-expanded="false" aria-controls="cleanSettingsPanel">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10 2.7h4l.7 2.2 1.7.9 2.2-.6 2 3.5-1.6 1.6v2l1.6 1.6-2 3.5-2.2-.6-1.7.9-.7 2.2h-4l-.7-2.2-1.7-.9-2.2.6-2-3.5 1.6-1.6v-2L3.4 8.7l2-3.5 2.2.6 1.7-.9z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg><span>Einstellungen</span>
+      </button>
     </div>
   </header>
   <div class="v2Deck">
@@ -335,9 +340,15 @@ html[data-theme="light"] #startupOverlay {
   <footer class="v2Bottom">
     <div class="v2Buttons">
       <div class="v2ControlsMini">
-        <div><button id="v2Restart" class="v2Round active" type="button" title="GPS / Motor starten">⏻</button><div class="v2ActionLabel">START</div></div>
-        <div><button id="v2Stop" class="v2Round" type="button" title="Sound und GPS stoppen">■</button><div class="v2ActionLabel">STOP</div></div>
-        <div><button id="v2Mute" class="v2Round" type="button" title="Stumm / Ton an">◖̸</button><div class="v2ActionLabel">MUTE</div></div>
+        <div><button id="v2Restart" class="v2Round active" type="button" title="GPS / Motor starten" aria-label="Start">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v9.5"/><path d="M7.25 5.5a8 8 0 1 0 9.5 0"/></svg>
+        </button><div class="v2ActionLabel">START</div></div>
+        <div><button id="v2Stop" class="v2Round" type="button" title="Sound und GPS stoppen" aria-label="Stop">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+        </button><div class="v2ActionLabel">STOP</div></div>
+        <div><button id="v2Mute" class="v2Round" type="button" title="Stumm / Ton an" aria-label="Stumm schalten">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l6 6M22 9l-6 6"/></svg>
+        </button><div class="v2ActionLabel">MUTE</div></div>
       </div>
     </div>
     <nav class="v2ModeCluster" aria-label="Fahrmodus">
@@ -363,7 +374,10 @@ html[data-theme="light"] #startupOverlay {
   </footer>
 </section>
 <div id="v2Shade" hidden></div>
-<div class="v2SettingsHeading" id="v2SettingsHeading"><strong>VOLTUNE · EINSTELLUNGEN</strong><button id="v2SettingsClose" type="button">Schließen ✕</button></div>
+<div class="v2SettingsHeading" id="v2SettingsHeading">
+  <strong>VOLTUNE · ALLE EINSTELLUNGEN</strong>
+  <button id="v2SettingsClose" type="button">Schließen ✕</button>
+</div>
 
 <div class="debugCore debugOnly">
 <div class="stateBox">
@@ -490,7 +504,11 @@ html[data-theme="light"] #startupOverlay {
   </div>
 </details>
   
-  <div id="cleanSettingsPanel" class="controls" aria-label="Motor- und Fahreinstellungen">
+  <div id="cleanSettingsPanel" class="controls" aria-label="Alle Motor- und Fahreinstellungen">
+  <div class="v2SettingsIntro">
+    <div><strong>Motor- und Fahreinstellungen</strong><p>Alle bisherigen Regler bleiben erhalten. Die V8- und Hybrid-Einstellungen findest du unter <b>Physical Engine</b>.</p></div>
+    <button id="v2JumpPhysical" type="button">Zum V8 / Physical Engine ↓</button>
+  </div>
   <div class="control control-neutral" id="v2PowerCalibrationPanel">
     <div class="top"><span>kW/PS-Schätzmodell · Korrekturfaktor</span><span id="v2PowerFactorLabel">1,00 ×</span></div>
     <input id="v2PowerFactor" type="range" min="0.50" max="1.50" step="0.01" value="1.00" aria-label="Korrekturfaktor für geschätzte Leistung">
