@@ -8,13 +8,14 @@ window.VoltunePhysicalAudio = (() => {
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
  const defaults={
   preset:"hybrid",evBlend:25,amgHighs:55,presence:75,
-  musicBoost:8,shiftStrength:70,popStrength:75,
+  musicBoost:8,accelDynamics:6,shiftStrength:70,popStrength:75,
   effectFocus:70,muffling:35,sensitivity:"sport",teslaMedia:false
  };
  let config={...defaults},ctx=null,engine=null,presence=null,events=null,
-  profileGain=null,eq=null,master=null,output=null,carrier=null,carrierUrl=null,
+  profileGain=null,eq=null,master=null,accelGain=null,output=null,carrier=null,carrierUrl=null,
   active=false,muted=false,generation=0,lastAccelTime=0,lastAccelLoad=.13,
-  prevLoad=.13,lastPop=0,lastShift=0,lastSpeed=0,lastValidAt=0,lastEventTime=0;
+  prevLoad=.13,lastPop=0,lastShift=0,lastSpeed=0,lastValidAt=0,lastEventTime=0,
+  accelerationEnvelope=0,accelEnvelopeTime=0;
  const presetList=["hybrid","amg","gti","italia","v8","v4","v6","v12","i5","ev"];
  const names={hybrid:"Hybrid EV + V8",amg:"V8 AMG",gti:"Golf GTI",italia:"V12 Italia",
   v8:"V8 Crossplane",v4:"V4",v6:"V6",v12:"V12",i5:"Reihenfünfzylinder",ev:"EV"};
@@ -115,6 +116,27 @@ window.VoltunePhysicalAudio = (() => {
  }
  function getConfig(){return {...config};}
  function onProfileChange(cb){gearCallback=cb;}
+ // Regelbereich: 0–12 dB PegelUNTERSCHIED zwischen Konstantfahrt
+ // und starker Beschleunigung. Symmetrische Absenkung/Anhebung
+ // erhält mehr Headroom als reine 12-dB-Verstärkung.
+ function applyAccelerationGain(){
+  if(!ctx||!accelGain)return;
+  const differenceDb=clamp(config.accelDynamics,0,12);
+  const deltaDb=differenceDb*(accelerationEnvelope-.5);
+  accelGain.gain.setTargetAtTime(Math.pow(10,deltaDb/20),ctx.currentTime,.065);
+ }
+ function updateAccelerationEnvelope(accel){
+  const positive=clamp(accel,0,6);
+  const normalized=clamp((positive-.3)/2.2,0,1);
+  // Sanfter Übergang und Rauschfilter: kein Pumpen je GPS-Sample.
+  const target=normalized*normalized*(3-2*normalized);
+  const now=performance.now();
+  const dt=accelEnvelopeTime>0?clamp((now-accelEnvelopeTime)/1000,0,.2):.016;
+  accelEnvelopeTime=now;
+  const tau=target>accelerationEnvelope?.16:.52;
+  accelerationEnvelope+=(target-accelerationEnvelope)*(1-Math.exp(-dt/tau));
+  applyAccelerationGain();
+ }
  function apply(){
   if(!ctx||ctx.state!=="running"||!engine||!events)return;
   const at=ctx.currentTime;
@@ -130,6 +152,7 @@ window.VoltunePhysicalAudio = (() => {
   eq.gain.setTargetAtTime(config.preset==="amg"?-11*clamp(config.amgHighs,0,100)/100:0,at,.055);
   profileGain.gain.setTargetAtTime(config.preset==="hybrid"?2:1,at,.08);
   setMasterVolume(config.volume??32);
+  applyAccelerationGain();
  }
  function setMasterVolume(value){
   config.volume=clamp(value,0,100);
@@ -179,9 +202,11 @@ window.VoltunePhysicalAudio = (() => {
    const compressor=audioContext.createDynamicsCompressor();
    compressor.threshold.value=-11;compressor.knee.value=4;compressor.ratio.value=7;
    compressor.attack.value=.003;compressor.release.value=.12;
+   accelGain=audioContext.createGain();accelGain.gain.value=1;
    master=audioContext.createGain();master.gain.value=0;
    engine.connect(eq).connect(presence).connect(profileGain)
-    .connect(events).connect(compressor).connect(master).connect(output).connect(audioContext.destination);
+    .connect(events).connect(compressor).connect(accelGain)
+    .connect(master).connect(output).connect(audioContext.destination);
    const error=()=>console.warn("Voltune Physical Engine Worklet processing failed");
    for(const node of [engine,presence,events,output])node.onprocessorerror=error;
    active=true;muted=false;resetDrivingState();apply();
@@ -195,12 +220,14 @@ window.VoltunePhysicalAudio = (() => {
   cleanupCarrier();
   const old=ctx;
   ctx=null;engine=null;presence=null;events=null;output=null;eq=null;
-  master=null;profileGain=null;active=false;
+  master=null;accelGain=null;profileGain=null;active=false;
   if(old)try{old.close()?.catch?.(()=>{});}catch(_){}
  }
  function resetDrivingState(){
   prevLoad=.13;lastAccelTime=0;lastAccelLoad=.13;lastPop=performance.now();
   lastShift=performance.now();lastEventTime=0;lastValidAt=0;lastSpeed=0;REF.rpm=850;REF.load=.13;
+  accelerationEnvelope=0;accelEnvelopeTime=0;
+  applyAccelerationGain();
  }
  function sendEvent(type,intensity){
   if(!active||muted||!events)return;
@@ -223,6 +250,7 @@ window.VoltunePhysicalAudio = (() => {
    speed=clamp(data.speedKmh,0,300),now=performance.now();
   const load=accel>=.2?clamp(.24+accel*.28,.24,.94):accel<=-.3?.055:speed<=2?.13:.24;
   REF.rpm=rpm;REF.load=load;
+  updateAccelerationEnvelope(accel);
   // 1.6 s acceleration history: proven Sport mode from the isolated GPS lab.
   const sensitivity=config.sensitivity;
   if(accel>=.28&&speed>=12){
