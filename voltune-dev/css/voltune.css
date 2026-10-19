@@ -3227,3 +3227,18 @@ html[data-theme="light"] #physicalEnginePanel .control>input[type=range]{
   .controls{grid-template-columns:minmax(0,1fr)}
   .controls>#physicalEnginePanel{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Ein Satz direkt unter jedem Regler: auch im Tesla gut lesbar. */
+.controls .controlHint {
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.4;
+  margin-top:7px;
+}
+#physicalEnginePanel .controlHint {
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.4;
+  opacity:1;
+  margin-top:7px;
+}
