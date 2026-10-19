@@ -10,7 +10,7 @@ Voltune Original und die im Tesla bewährte Physical Engine sind nun in der regu
 
 - \`js/physical-audio.js\`: Neue Physical-Audioengine und Proxy-Router \`window.VoltuneAudio\`. Die Original-API bleibt als \`window.VoltuneOriginalAudio\` verfügbar. Nur die gewählte Engine läuft.
 - \`js/drivetrain.js\`, \`js/gps.js\`: Gemeinsame Fahrlogik, gemeinsam berechnete virtuelle RPM, Gangwechsel und GPS. Keine zweite GPS-Positionsüberwachung und kein zweites Getriebe für Physical Engine.
-- Physical Engine enthält das unveränderte Worklet \`physical-engine-worklet-v4.js\`, \`physical-presence-worklet-v1.js\`, \`physical-events-worklet-v3.js\` und \`physical-output-limiter-v1.js\`. Soundgraph: Motor -> AMG-Equalizer -> harmonische Präsenz -> Hybrid-Profil-Gain -> Event-Worklet -> Kompressor -> gemeinsames Gain -> Stereo-Peak-Limiter -> AudioContext.destination.
+- Physical Engine enthält das unveränderte Worklet \`physical-engine-worklet-v4.js\`, \`physical-presence-worklet-v1.js\`, \`physical-events-worklet-v4.js\` und \`physical-output-limiter-v1.js\`. Soundgraph: Motor -> AMG-Equalizer -> harmonische Präsenz -> Hybrid-Profil-Gain -> Event-Worklet -> Kompressor -> gemeinsames Gain -> Stereo-Peak-Limiter -> AudioContext.destination.
 - Legacy-Events \`triggerShiftBurble\`, \`triggerDownshiftBlip\` werden im Router passend auf Physical-Events \`upshift\` und \`downshift\` abgebildet. Überrun/Schubknallen wird zusätzlich mit Sport-Empfindlichkeit und kurzem Beschleunigungs-Gedächtnis geprüft. Physikalische GPS-/Getriebelogik bleibt im Haupt-App-Controller.
 - Wird \`requestAnimationFrame\` beim Minimieren des Tesla-Browsers angehalten, werden eintreffende GPS-Callbacks nach mindestens 300 ms ohne Renderframe direkt an die **Physical Engine** weitergegeben. In aktiven Frames bleibt der bestehende Voltune-Fahrloop zuständig.
 - Muting, Mastervolume, Start/Stop und Launch greifen über das bestehende \`VoltuneAudio\`-Interface auf die gewählte Engine zu. Keine doppelte Wiedergabe.
@@ -67,3 +67,16 @@ Betriebslogik in \`js/physical-audio.js\`:
 - **Bestehende Einstellungen:** Wenn `voltune.settings.v1` vorhanden ist, wird die darin hinterlegte Engine ausgewählt. Ältere Konfigurationen ohne `soundEngine` bleiben absichtlich bei `legacy`. Laufende Benutzeränderungen werden wie bisher gespeichert und beim nächsten Start wiederhergestellt.
 - **Wichtig:** Dies wählt nur die Soundengine vor, die eigentliche Audioausgabe beginnt weiterhin erst durch eine Nutzeraktion (Start/Demo); keine automatische Wiedergabe beim Seitenaufruf.
 - CSS wird durch eine aktualisierte Version der Stylesheet-URL neu geladen, um veraltete Hilfetextdarstellung im Tesla-Browser zu vermeiden.
+
+
+## Physikalischer Schaltknall und Motorunterbrechung (19.10.2026)
+
+Die ursprüngliche Schalthärte steuerte sowohl Knall als auch einen sehr starken, kurzen Motor-Pegeleinbruch. Die Haupt-App verwendet jetzt das neue \`js/physical-events-worklet-v4.js\`. Die alte Event-Engine v3 im GPS-Labor bleibt als Referenz erhalten.
+
+- **Schaltknall** (\`physicalShift\` / \`shiftStrength\`): Intensität der Schaltgeräusche, frühere Reglereinstellung und gespeicherte Werte bleiben erhalten.
+- **Schaltunterbrechung** (\`physicalShiftCut\` / \`shiftCut\`): neu, 0–100 %, Standard **25 %**. Die Hochschalt-Pause des Motors wird unabhängig von der Knalllautstärke dosiert. Bei voller Intensität entspricht der Wert der maximalen kurzen prozentualen Absenkung (höchstens 97 %); bei schwächerem Schalten fällt die Pause geringer aus.
+- **Schubknallen** (\`physicalPops\` / \`popStrength\`): von der Lautstärke des Schaltknalls unabhängig. In der Event-Engine v4 besitzen Schalt- und Schubimpulse eigene Resonanzbänke; dadurch kann Pop-Lautstärke nicht mehr versehentlich Schaltknalle verstärken oder abschalten.
+- **Effekt-Vordergrund** bleibt ein dritter unabhängiger Effekt: Er betont Knaller und duckt den Motor beim Ereignis zusätzlich. Deshalb kann auch bei Schaltunterbrechung 0 % ein kurzer Pegelrückgang auftreten, wenn der Effekt-Vordergrund hoch steht. Die Pause vollständig vermeiden: beide Regler niedrig stellen.
+- \`shiftCut\` wird wie die anderen Physical-Werte live eingestellt und gespeichert. Bei bestehenden Speicherständen ohne \`shiftCut\` greift der neue UI-Standard von 25 %. Keine Änderungen am Original-Audiogenerator, Getriebe oder GPS.
+
+**Tests:** JavaScript-Syntax, DOM-Verknüpfung, Audioprozessor mit unabhängigen Schaltknall-/Schubknall-Pegeln, Schalt-Cut 0/25/100 %, AudioContext-Mock, Trigger und Stop überprüft. Getrennte Schalt-/Schubstärken zeigten in den isolierten Audiosimulationen jeweils 0 RMS-Differenz zum Vergleich, in dem nur die andere Effektstärke verändert wurde. Der echte Fahrzeug-Hörtest steht noch aus.
