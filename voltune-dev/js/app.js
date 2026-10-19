@@ -1793,6 +1793,7 @@ function syncEngineUI(){
  const physical=ui.soundEngineSelect.value==="physical";
  ui.soundEngineLabel.textContent=physical?"Physical Engine":"Voltune Original";
  ui.physicalEnginePanel.hidden=!physical;
+  ui.physicalEnginePanel.parentElement.classList.toggle("physical-mode",physical);
  document.querySelector("#legacySoundProfileRows").hidden=physical;
  document.querySelector("#legacySoundProfileHint").hidden=physical;
  // Demo-Start bleibt bei beiden Engines im gemeinsamen Kopf zugänglich.
@@ -1811,8 +1812,11 @@ function syncEngineUI(){
  document.getElementById("physicalHybridControls").hidden=ui.physicalPreset.value!=="hybrid";
  document.getElementById("physicalAmgControls").hidden=ui.physicalPreset.value!=="amg";
  ui.physicalStatus.textContent=window.VoltunePhysicalAudio.names[ui.physicalPreset.value]||"Hybrid EV + V8";
- for(const [id,label,unit] of PHYSICAL_CONTROLS)document.getElementById(label).textContent=
-  (id==="physicalMusicBoost"?"+":"")+ui[id].value+unit;
+ for(const [id,label,unit] of PHYSICAL_CONTROLS){
+   document.getElementById(label).textContent=
+    (id==="physicalMusicBoost"?"+":"")+ui[id].value+unit;
+   updateRangeProgress(ui[id]);
+  }
 }
 
 function getPersistentSettings() {
