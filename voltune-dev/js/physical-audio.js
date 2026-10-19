@@ -248,10 +248,14 @@ window.VoltunePhysicalAudio = (() => {
   apply();
   return null; // Legacy-only sound-layer debug should not be fabricated.
  }
+ function testEvent(type){
+  if(!["upshift","downshift","overrun"].includes(type))return;
+  sendEvent(type,.95);
+ }
  function triggerBov(){/* Legacy BOV does not belong to Physical Engine. */}
  function triggerTurboFlutter(){/* Legacy turbo flutter does not belong here. */}
  return {start,stop,isStarted,setMuted,isMuted,setMasterVolume,update,resetDrivingState,
-  triggerShiftBurble,triggerDownshiftBlip,triggerOverrun,triggerBov,triggerTurboFlutter,
+  triggerShiftBurble,triggerDownshiftBlip,triggerOverrun,triggerBov,triggerTurboFlutter,testEvent,
   setProfile,setConfig,getConfig,onProfileChange,presetList,names};
 })();
 window.VoltuneAudioRouter = (() => {
