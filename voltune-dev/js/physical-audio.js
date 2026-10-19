@@ -8,7 +8,7 @@ window.VoltunePhysicalAudio = (() => {
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
  const defaults={
   preset:"hybrid",evBlend:25,amgHighs:55,presence:75,
-  musicBoost:8,accelDynamics:6,shiftStrength:70,popStrength:75,
+  musicBoost:8,accelDynamics:6,shiftStrength:70,shiftCut:25,popStrength:75,
   effectFocus:70,muffling:35,sensitivity:"sport",teslaMedia:false
  };
  let config={...defaults},ctx=null,engine=null,presence=null,events=null,
@@ -146,6 +146,7 @@ window.VoltunePhysicalAudio = (() => {
   engine.parameters.get("evBlend").setTargetAtTime(clamp(config.evBlend,0,100)/100,at,.035);
   presence.parameters.get("presence").setTargetAtTime(clamp(config.presence,0,100)/100,at,.075);
   events.parameters.get("shiftLevel").setTargetAtTime(level(config.shiftStrength,.7,1.75),at,.03);
+  events.parameters.get("shiftCut").setTargetAtTime(clamp(config.shiftCut,0,100)/100,at,.035);
   events.parameters.get("popLevel").setTargetAtTime(level(config.popStrength,.65,2),at,.03);
   events.parameters.get("effectBoost").setTargetAtTime(1+4*clamp(config.effectFocus,0,100)/100,at,.04);
   events.parameters.get("muffling").setTargetAtTime(clamp(config.muffling,0,100)/100,at,.03);
@@ -180,7 +181,7 @@ window.VoltunePhysicalAudio = (() => {
    const ready=audioContext.resume();
    beginCarrier();
    const files=["physical-engine-worklet-v4.js?v=4","physical-presence-worklet-v1.js?v=1",
-    "physical-events-worklet-v3.js?v=3","physical-output-limiter-v1.js?v=1"];
+    "physical-events-worklet-v4.js?v=4","physical-output-limiter-v1.js?v=1"];
    for(const name of files){
     await audioContext.audioWorklet.addModule("./js/"+name);
     if(token!==generation)throw Error("Engine-Start abgebrochen");
@@ -191,7 +192,7 @@ window.VoltunePhysicalAudio = (() => {
     {numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
    presence=new AudioWorkletNode(audioContext,"voltune-physical-presence-v1",
     {numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
-   events=new AudioWorkletNode(audioContext,"voltune-events-v3",
+   events=new AudioWorkletNode(audioContext,"voltune-events-v4",
     {numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
    output=new AudioWorkletNode(audioContext,"voltune-physical-output-limiter-v1",
     {numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
