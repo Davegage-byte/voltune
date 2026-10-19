@@ -79,7 +79,16 @@ html[data-theme="light"] #startupOverlay {
   background: rgba(238, 241, 245, 0.96);
 }
   </style>
-<title>Voltune Sound Test GPS v6</title>
+<title>Voltune Sound Test GPS v6 · Hybrid</title>
+<style>
+ #physicalEnginePanel[hidden], #physicalHybridControls[hidden],
+ #physicalAmgControls[hidden], [data-voltune-legacy="true"][hidden],
+ #legacySoundProfileRows[hidden], #legacySoundProfileHint[hidden] {display:none!important}
+ #physicalEnginePanel{border:1px solid rgba(87,172,234,.42);border-radius:12px;padding:14px;margin:14px 0}
+ #physicalEnginePanel select,#soundEngineSelect{width:100%;min-height:42px}
+ #physicalEnginePanel .control{margin:12px 0}
+ #physicalEnginePanel small,.engineNotice{font-size:13px;opacity:.8;line-height:1.45}
+ </style>
   
 <link rel="stylesheet" href="css/voltune.css">
 <link rel="stylesheet" href="css/launch.css">
@@ -376,7 +385,42 @@ html[data-theme="light"] #startupOverlay {
         </small>
     </div>
 
-    <div class="control control-neutral control-sound-profiles">
+    
+<div class="control control-neutral" id="soundEngineControl">
+ <div class="top"><span>Soundengine</span><span id="soundEngineLabel">Voltune Original</span></div>
+ <select id="soundEngineSelect" aria-label="Soundengine auswählen">
+  <option value="legacy">Voltune Original · bisherige Sounds</option>
+  <option value="physical">Physical Engine · Hybrid EV + V8</option>
+ </select>
+ <small class="controlHint">Nur eine Engine ist gleichzeitig aktiv. Die Original-Einstellungen bleiben gespeichert.</small>
+</div>
+<section id="physicalEnginePanel" class="control control-neutral" hidden>
+ <div class="top"><strong>Physical Engine</strong><span id="physicalStatus">Hybrid EV + V8</span></div>
+ <p class="engineNotice">Die Physical Engine nutzt Voltunes GPS und Getriebe. Nur die hier sichtbaren Klangregler wirken auf den neuen Motor.</p>
+ <div class="control"><div class="top"><label for="physicalPreset">Motorsound</label></div>
+  <select id="physicalPreset">
+   <option value="hybrid">Hybrid EV + V8</option><option value="amg">V8 AMG</option>
+   <option value="gti">Golf GTI</option><option value="italia">V12 Italia</option>
+   <option value="v8">V8 Crossplane</option><option value="v4">V4</option>
+   <option value="v6">V6</option><option value="v12">V12</option>
+   <option value="i5">Reihenfünfzylinder</option><option value="ev">Elektro-Synth</option>
+  </select></div>
+ <div class="control" id="physicalHybridControls"><div class="top"><span>Hybrid EV-Anteil</span><span id="physicalEvBlendLabel">25 %</span></div><input id="physicalEvBlend" type="range" min="0" max="100" value="25"></div>
+ <div class="control" id="physicalAmgControls" hidden><div class="top"><span>AMG-Höhen dämpfen</span><span id="physicalAmgHighsLabel">55 %</span></div><input id="physicalAmgHighs" type="range" min="0" max="100" value="55"></div>
+ <div class="control"><div class="top"><span>Motorpräsenz bei Musik</span><span id="physicalPresenceLabel">75 %</span></div><input id="physicalPresence" type="range" min="0" max="100" value="75"></div>
+ <div class="control"><div class="top"><span>Musik-Boost</span><span id="physicalMusicBoostLabel">+8 dB</span></div><input id="physicalMusicBoost" type="range" min="0" max="12" value="8"></div>
+ <div class="control"><div class="top"><span>Schalthärte</span><span id="physicalShiftLabel">70 %</span></div><input id="physicalShift" type="range" min="0" max="100" value="70"></div>
+ <div class="control"><div class="top"><span>Schubknallen</span><span id="physicalPopsLabel">75 %</span></div><input id="physicalPops" type="range" min="0" max="100" value="75"></div>
+ <div class="control"><div class="top"><span>Effekt-Vordergrund</span><span id="physicalFocusLabel">70 %</span></div><input id="physicalFocus" type="range" min="0" max="100" value="70"></div>
+ <div class="control"><div class="top"><span>Auspuffdämpfung</span><span id="physicalMufflingLabel">35 %</span></div><input id="physicalMuffling" type="range" min="0" max="100" value="35"></div>
+ <div class="control"><div class="top"><label for="physicalSensitivity">GPS-Effekt-Empfindlichkeit</label></div>
+  <select id="physicalSensitivity"><option value="standard">Standard</option><option value="sport" selected>Sport</option><option value="extreme">Extrem</option></select></div>
+ <div class="control"><label for="physicalTeslaMedia"><input id="physicalTeslaMedia" type="checkbox"> Tesla-Medienmodus E / mittiger Lenkradklick</label>
+  <small>Beim Start: leiser Medienanker, Tesla-Musik wird pausiert. Ohne Medienmodus kann Tesla-Musik parallel laufen. Mittelklick wechselt das Physical-Profil.</small>
+ </div>
+</section>
+
+<div class="control control-neutral control-sound-profiles">
       <div class="top soundProfileTop">
         <span>Sound-Profile</span>
 
@@ -392,7 +436,7 @@ html[data-theme="light"] #startupOverlay {
         </span>
       </div>
 
-      <div class="soundProfileGrid">
+      <div class="soundProfileGrid" id="legacySoundProfileRows">
         <label class="soundProfileItem soundProfileIdle">
           <span>Stand</span>
           <select
@@ -434,7 +478,7 @@ html[data-theme="light"] #startupOverlay {
         </label>
       </div>
 
-      <small class="controlHint">
+      <small class="controlHint" id="legacySoundProfileHint">
         Jede Klanggruppe kann unabhängig gewählt werden. Neue Varianten erscheinen später automatisch in diesen Listen.
       </small>
     </div>
@@ -740,6 +784,7 @@ html[data-theme="light"] #startupOverlay {
       "js/drivetrain.js",
       "js/gps.js",
       "js/audio.js",
+      "js/physical-audio.js",
       "js/storage.js",
       "js/startup.js",
       "js/launch.js",
