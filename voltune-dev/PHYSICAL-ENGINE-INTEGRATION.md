@@ -80,3 +80,17 @@ Die ursprüngliche Schalthärte steuerte sowohl Knall als auch einen sehr starke
 - \`shiftCut\` wird wie die anderen Physical-Werte live eingestellt und gespeichert. Bei bestehenden Speicherständen ohne \`shiftCut\` greift der neue UI-Standard von 25 %. Keine Änderungen am Original-Audiogenerator, Getriebe oder GPS.
 
 **Tests:** JavaScript-Syntax, DOM-Verknüpfung, Audioprozessor mit unabhängigen Schaltknall-/Schubknall-Pegeln, Schalt-Cut 0/25/100 %, AudioContext-Mock, Trigger und Stop überprüft. Getrennte Schalt-/Schubstärken zeigten in den isolierten Audiosimulationen jeweils 0 RMS-Differenz zum Vergleich, in dem nur die andere Effektstärke verändert wurde. Der echte Fahrzeug-Hörtest steht noch aus.
+
+## Schaltknall präsenter bei geringer Schaltunterbrechung (19.10.2026)
+
+**Problem:** Der Schaltknall ist im Fahrzeug bei geringer Schaltunterbrechung kaum hörbar. Der Impuls durchläuft bisher zusammen mit dem Motor den Kompressor (−11 dB, Ratio 7:1).
+
+**Lösung:** Eine zusätzliche, kurze Schalt-Akzent-Engine (js/physical-shift-accent-worklet-v1.js) ergänzt die vorhandenen Events. Sie wird hinter dem Motor-Kompressor in die Audiosignalkette gemischt, durchläuft aber weiterhin denselben Beschleunigungs-Gain, Master-Gain (einschließlich des −3-dB-Tests) und finalen Ausgangslimiter.
+
+- Die bestehenden Motorworklets, der Original-Schaltknall aus v4, Schaltunterbrechung, Effekt-Vordergrund, Equalizer, Kompressor und alle gespeicherten Reglerwerte bleiben unverändert.
+- Nur Hoch-/Runterschalten löst den neuen Akzent aus, Schubknallen nicht.
+- Der bestehende Schaltknall-Regler steuert auch die Stärke des Akzents; bei 0 % ist der Akzent stumm. Keine neuen Bedienelemente.
+- Die Akzente sind 75–92 ms lang, bestehen aus gefilterter Abgas-Transientenstruktur und enthalten keinen dauerhaften Ton. Der Akzent ändert den Grundsound während der restlichen Fahrt nicht.
+- Beim Motorstopp/Enginewechsel wird auch die Zusatz-Engine geschlossen.
+
+**Prüfung:** Fünf Worklets im AudioContext-Mock geladen; Routing hinter dem Kompressor geprüft, Trigger für Hoch-/Runterschalten und Nicht-Trigger für Schubknallen geprüft. Akzent bei 0 % stumm; bei 70 % erzeugt er in der isolierten Audio-Simulation einen Spitzenwert von ca. 0,159 vor dem Master. Finale digitale Sample-Grenze ±0,965 bleibt erhalten. Subjektiver Tesla-Hörtest ausstehend.
