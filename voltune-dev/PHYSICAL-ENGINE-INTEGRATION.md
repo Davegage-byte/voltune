@@ -84,3 +84,24 @@ Die ursprüngliche Schalthärte steuerte sowohl Knall als auch einen sehr starke
 ## Rücknahme des zusätzlichen Schalt-Akzents (19.10.2026)
 
 Der kurze, zusätzliche Schalt-Akzent hinter dem Motor-Kompressor wurde nach einem negativen Tesla-Hörtest **vollständig zurückgenommen**. Das temporäre `physical-shift-accent-worklet-v1.js` wurde gelöscht; die Haupt-App verwendet wieder die vorherige Audioverbindung mit vier Worklets und ausschließlich dem Schaltklang der bestehenden Event-Engine v4. Getrennter Schaltknall- und Schaltunterbrechungsregler, Motorcharakteristik, Reglerwerte und die −3-dB-Testabsenkung bleiben unverändert. Es gibt keinen zusätzlichen Nach-Kompressor-Schaltimpuls mehr.
+
+
+## Vorläufige Hybrid-Standardwerte aus dem Handy-Hörtest (19.10.2026)
+
+Der Nutzer hat am Android-Handy folgende Werte als vorläufige **Erststartwerte** ausgewählt. Finale Abstimmung im Tesla steht noch aus:
+
+| Physical-Einstellung | Vorläufiger Standard |
+|---|---:|
+| Motorsound | Hybrid EV + V8 |
+| Hybrid EV-Anteil | 55 % |
+| Motorpräsenz bei Musik | 60 % |
+| Musik-Boost | +0 dB |
+| Beschleunigungsdynamik | 5 dB |
+| Schaltknall | 50 % |
+| Schaltunterbrechung | 0 % |
+| Schubknallen | 40 % |
+| Effekt-Vordergrund | 26 % |
+| Auspuffdämpfung | 20 % |
+| GPS-Effekt-Empfindlichkeit | Sport (unverändert) |
+
+Technisch angepasst wurden nur die `defaults` in `js/physical-audio.js` sowie die anfänglichen Beschriftungen und Slider-Werte in `index.html`. Master-Lautstärke (32 %), AMG-spezifische Höhen (55 %), Tesla-Medienmodus (deaktiviert) und die temporäre −3-dB-Testabsenkung bleiben unverändert. Die vorhandene `voltune.settings.v1`-Wiederherstellung hat weiterhin Vorrang: **keine Überschreibung bestehender Nutzerwerte**. Die Parameter des Klanggenerators, der Kompressor, die Effekte und die Limiter wurden nicht angepasst.
