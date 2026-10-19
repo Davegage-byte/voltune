@@ -410,6 +410,10 @@ html[data-theme="light"] #startupOverlay {
  <div class="control" id="physicalAmgControls" hidden><div class="top"><span>AMG-Höhen dämpfen</span><span id="physicalAmgHighsLabel">55 %</span></div><input id="physicalAmgHighs" type="range" min="0" max="100" value="55"></div>
  <div class="control"><div class="top"><span>Motorpräsenz bei Musik</span><span id="physicalPresenceLabel">75 %</span></div><input id="physicalPresence" type="range" min="0" max="100" value="75"></div>
  <div class="control"><div class="top"><span>Musik-Boost</span><span id="physicalMusicBoostLabel">+8 dB</span></div><input id="physicalMusicBoost" type="range" min="0" max="12" value="8"></div>
+ <div class="control"><div class="top"><label for="physicalAccelDynamics">Beschleunigungsdynamik</label><span id="physicalAccelDynamicsLabel">6 dB</span></div>
+  <input id="physicalAccelDynamics" type="range" min="0" max="12" step="1" value="6">
+  <small>Regelt, wie viel lauter der Motorsound bei kräftigem Beschleunigen gegenüber gleichmäßiger Fahrt wird. 0 dB = keine automatische Lautstärkeänderung, 6 dB = deutlich, 12 dB = stark. Die Lautstärke steigt und fällt weich. Wir senken die Konstantfahrt etwas ab und heben die Beschleunigung entsprechend an, statt den Ausgangslimiter einfach zu überfahren.</small>
+ </div>
  <div class="control"><div class="top"><span>Schalthärte</span><span id="physicalShiftLabel">70 %</span></div><input id="physicalShift" type="range" min="0" max="100" value="70"></div>
  <div class="control"><div class="top"><span>Schubknallen</span><span id="physicalPopsLabel">75 %</span></div><input id="physicalPops" type="range" min="0" max="100" value="75"></div>
  <div class="control"><div class="top"><span>Effekt-Vordergrund</span><span id="physicalFocusLabel">70 %</span></div><input id="physicalFocus" type="range" min="0" max="100" value="70"></div>
