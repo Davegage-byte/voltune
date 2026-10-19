@@ -65,6 +65,14 @@
     
     speedTest:$("speedTest"), speedTestLabel:$("speedTestLabel"),
     volume:$("volume"), base:$("base"), maxBase:$("maxBase"), pitch:$("pitch"),
+    soundEngineSelect:$("soundEngineSelect"),soundEngineLabel:$("soundEngineLabel"),
+    physicalEnginePanel:$("physicalEnginePanel"),physicalPreset:$("physicalPreset"),
+    physicalStatus:$("physicalStatus"),physicalTeslaMedia:$("physicalTeslaMedia"),
+    physicalEvBlend:$("physicalEvBlend"),physicalAmgHighs:$("physicalAmgHighs"),
+    physicalPresence:$("physicalPresence"),physicalMusicBoost:$("physicalMusicBoost"),
+    physicalShift:$("physicalShift"),physicalPops:$("physicalPops"),
+    physicalFocus:$("physicalFocus"),physicalMuffling:$("physicalMuffling"),
+    physicalSensitivity:$("physicalSensitivity"),
     cruiseDamping:$("cruiseDamping"),
     gearRange:$("gearRange"),
     maxRpm:$("maxRpm"),
@@ -1736,9 +1744,77 @@ function setRpmMarker(
   };
 }
 
+
+// Physical Engine: dieselbe Fahrlogik, aber eigene Soundregler.
+// Bei inaktivem Sound bleibt die Auswahl gespeichert; das alte
+// Audio-Modul wird niemals überschrieben oder parallel gestartet.
+const PHYSICAL_CONTROLS=[
+ ["physicalEvBlend","physicalEvBlendLabel"," %"],
+ ["physicalAmgHighs","physicalAmgHighsLabel"," %"],
+ ["physicalPresence","physicalPresenceLabel"," %"],
+ ["physicalMusicBoost","physicalMusicBoostLabel"," dB"],
+ ["physicalShift","physicalShiftLabel"," %"],
+ ["physicalPops","physicalPopsLabel"," %"],
+ ["physicalFocus","physicalFocusLabel"," %"],
+ ["physicalMuffling","physicalMufflingLabel"," %"]
+];
+function getPhysicalSettings(){
+ return {
+  preset:ui.physicalPreset.value,evBlend:Number(ui.physicalEvBlend.value),
+  amgHighs:Number(ui.physicalAmgHighs.value),presence:Number(ui.physicalPresence.value),
+  musicBoost:Number(ui.physicalMusicBoost.value),shiftStrength:Number(ui.physicalShift.value),
+  popStrength:Number(ui.physicalPops.value),effectFocus:Number(ui.physicalFocus.value),
+  muffling:Number(ui.physicalMuffling.value),sensitivity:ui.physicalSensitivity.value,
+  teslaMedia:ui.physicalTeslaMedia.checked,volume:Number(ui.volume.value)
+ };
+}
+function restorePhysicalSettings(saved){
+ if(!saved||typeof saved!=="object")return;
+ const map={physicalPreset:"preset",physicalEvBlend:"evBlend",
+  physicalAmgHighs:"amgHighs",physicalPresence:"presence",
+  physicalMusicBoost:"musicBoost",physicalShift:"shiftStrength",
+  physicalPops:"popStrength",physicalFocus:"effectFocus",
+  physicalMuffling:"muffling",physicalSensitivity:"sensitivity"};
+ for(const [id,key] of Object.entries(map)){
+  const element=ui[id],value=saved[key];
+  if(element&&value!==undefined&&value!==null){
+   if(element.tagName==="SELECT"&&!Array.from(element.options).some(x=>x.value===String(value)))continue;
+   element.value=String(value);
+  }
+ }
+ if(typeof saved.teslaMedia==="boolean")ui.physicalTeslaMedia.checked=saved.teslaMedia;
+}
+function syncEngineUI(){
+ const physical=ui.soundEngineSelect.value==="physical";
+ ui.soundEngineLabel.textContent=physical?"Physical Engine":"Voltune Original";
+ ui.physicalEnginePanel.hidden=!physical;
+ document.querySelector("#legacySoundProfileRows").hidden=physical;
+ document.querySelector("#legacySoundProfileHint").hidden=physical;
+ // Demo-Start bleibt bei beiden Engines im gemeinsamen Kopf zugänglich.
+ const title=document.querySelector(".soundProfileTop > span");
+ if(title)title.textContent=physical?"Testfahrt starten":"Sound-Profile";
+ const legacyControlIds=[
+  "base","maxBase","cruiseDamping","pitch","shiftBurble","downshiftBlip",
+  "baseVol","inverter","drive","regen","air","bov","turboFlutter",
+  "overrun","overrunSound"
+ ];
+ for(const id of legacyControlIds){
+  const node=ui[id]?.closest(".control");
+  if(node){node.dataset.voltuneLegacy="true";node.hidden=physical;}
+ }
+ ui.easyBov.hidden=physical;
+ document.getElementById("physicalHybridControls").hidden=ui.physicalPreset.value!=="hybrid";
+ document.getElementById("physicalAmgControls").hidden=ui.physicalPreset.value!=="amg";
+ ui.physicalStatus.textContent=window.VoltunePhysicalAudio.names[ui.physicalPreset.value]||"Hybrid EV + V8";
+ for(const [id,label,unit] of PHYSICAL_CONTROLS)document.getElementById(label).textContent=
+  (id==="physicalMusicBoost"?"+":"")+ui[id].value+unit;
+}
+
 function getPersistentSettings() {
   return {
     volume: Number(ui.volume.value),
+    soundEngine:ui.soundEngineSelect.value,
+    physicalSettings:getPhysicalSettings(),
     baseFrequency: Number(ui.base.value),
     maxBaseFrequency: Number(ui.maxBase.value),
     pitch: Number(ui.pitch.value),
@@ -1916,10 +1992,16 @@ function applyPersistentSettings(settings) {
     "active",
     animationsEnabled
   );
+  restorePhysicalSettings(settings.physicalSettings);
+  if(settings.soundEngine==="physical"||settings.soundEngine==="legacy")
+   ui.soundEngineSelect.value=settings.soundEngine;
+  VoltuneAudio.selectEngine(ui.soundEngineSelect.value);
 }
   
 async function ensureVoltuneAudio() {
   try {
+    if(ui.soundEngineSelect.value==="physical")
+     VoltunePhysicalAudio.setConfig(getPhysicalSettings());
     if (ui.quickDemoStart) {
       ui.quickDemoStart.textContent =
         "Audio startet …";
@@ -4032,6 +4114,42 @@ if (
     });
   });
 
+
+ui.soundEngineSelect.addEventListener("change",async()=>{
+ const next=ui.soundEngineSelect.value;
+ // A fresh AudioContext is started only via this explicit user gesture.
+ // The physical module creates its optional HTML carrier synchronously.
+ VoltuneAudio.selectEngine(next);
+ VoltunePhysicalAudio.setConfig(getPhysicalSettings());
+ syncEngineUI();
+ if(soundActive){
+  // Keep GPS and drivetrain alive, but only one audio engine exists.
+  const ok=await ensureVoltuneAudio();
+  if(ok){
+   VoltuneAudio.resetDrivingState();
+   setRunStatus("active",next==="physical"?"PHYSICAL ENGINE":"VOLTUNE ORIGINAL");
+  }else{
+   soundActive=false;
+   setRunStatus("error","AUDIO-STARTFEHLER");
+  }
+ }
+ scheduleSettingsSave();
+});
+VoltunePhysicalAudio.onProfileChange(preset=>{
+ ui.physicalPreset.value=preset;
+ syncEngineUI();
+ scheduleSettingsSave();
+});
+for(const id of ["physicalPreset","physicalSensitivity","physicalTeslaMedia",
+ "physicalEvBlend","physicalAmgHighs","physicalPresence","physicalMusicBoost",
+ "physicalShift","physicalPops","physicalFocus","physicalMuffling"]){
+ ui[id].addEventListener(id==="physicalPreset"||id==="physicalSensitivity"||id==="physicalTeslaMedia"?"change":"input",()=>{
+  VoltunePhysicalAudio.setConfig(getPhysicalSettings());
+  syncEngineUI();
+  scheduleSettingsSave();
+ });
+}
+
 function restoreLastDriveMode() {
   if (startupDriveModeClaimed) {
     return;
@@ -4088,6 +4206,8 @@ if (savedSettings) {
 restoreDriveMode();
 
 updateLabels();
+syncEngineUI();
+VoltunePhysicalAudio.setConfig(getPhysicalSettings());
 
 ui.gearDisplay.textContent =
   gearsEnabled
