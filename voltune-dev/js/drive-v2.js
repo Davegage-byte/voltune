@@ -17,7 +17,7 @@ const output={speed:$("v2Speed"),gear:$("v2Gear"),rpm:$("v2Rpm"),mode:$("v2ModeT
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const getNum=el=>{const x=String(el?.textContent||"").replace(",",".").match(/[-+]?\d+(?:\.\d+)?/);return x?Number(x[0])||0:0};
 const getRpm=()=>Number(String(old.rpm?.textContent||"0").match(/\d[\d.,]*/)?.[0].replace(/[.,]/g,""))||0;
-const ready=()=>!!(window.VoltuneAudio&&VoltuneAudio.isStarted());
+const ready=()=>!!(window.VoltuneAudio&&window.VoltuneAudio.isStarted());
 const getMode=()=>old.modeMadness.classList.contains("active")?"WAHNSINN":
  old.modeSport.classList.contains("active")?"SPORT":"NORMAL";
 const strings={normal:"NORMAL",sport:"SPORT",madness:"WAHNSINN"};
