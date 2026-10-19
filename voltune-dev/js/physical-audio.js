@@ -15,7 +15,7 @@ window.VoltunePhysicalAudio = (() => {
   musicBoost:8,accelDynamics:6,shiftStrength:70,shiftCut:25,popStrength:75,
   effectFocus:70,muffling:35,sensitivity:"sport",teslaMedia:false
  };
- let config={...defaults},ctx=null,engine=null,presence=null,events=null,
+ let config={...defaults},ctx=null,engine=null,presence=null,events=null,shiftAccent=null,
   profileGain=null,eq=null,master=null,accelGain=null,output=null,carrier=null,carrierUrl=null,
   active=false,muted=false,generation=0,lastAccelTime=0,lastAccelLoad=.13,
   prevLoad=.13,lastPop=0,lastShift=0,lastSpeed=0,lastValidAt=0,lastEventTime=0,
@@ -150,6 +150,9 @@ window.VoltunePhysicalAudio = (() => {
   engine.parameters.get("evBlend").setTargetAtTime(clamp(config.evBlend,0,100)/100,at,.035);
   presence.parameters.get("presence").setTargetAtTime(clamp(config.presence,0,100)/100,at,.075);
   events.parameters.get("shiftLevel").setTargetAtTime(level(config.shiftStrength,.7,1.75),at,.03);
+  // Schaltakzent läuft post-Kompressor: direkt vom bestehenden Schaltknall-Regler.
+  if(shiftAccent)shiftAccent.parameters.get("strength").setTargetAtTime(
+   clamp(config.shiftStrength,0,100)/100,at,.03);
   events.parameters.get("shiftCut").setTargetAtTime(clamp(config.shiftCut,0,100)/100,at,.035);
   events.parameters.get("popLevel").setTargetAtTime(level(config.popStrength,.65,2),at,.03);
   events.parameters.get("effectBoost").setTargetAtTime(1+4*clamp(config.effectFocus,0,100)/100,at,.04);
@@ -186,7 +189,8 @@ window.VoltunePhysicalAudio = (() => {
    const ready=audioContext.resume();
    beginCarrier();
    const files=["physical-engine-worklet-v4.js?v=4","physical-presence-worklet-v1.js?v=1",
-    "physical-events-worklet-v4.js?v=4","physical-output-limiter-v1.js?v=1"];
+    "physical-events-worklet-v4.js?v=4","physical-shift-accent-worklet-v1.js?v=1",
+    "physical-output-limiter-v1.js?v=1"];
    for(const name of files){
     await audioContext.audioWorklet.addModule("./js/"+name);
     if(token!==generation)throw Error("Engine-Start abgebrochen");
@@ -199,6 +203,8 @@ window.VoltunePhysicalAudio = (() => {
     {numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
    events=new AudioWorkletNode(audioContext,"voltune-events-v4",
     {numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
+   shiftAccent=new AudioWorkletNode(audioContext,"voltune-shift-accent-v1",
+    {numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
    output=new AudioWorkletNode(audioContext,"voltune-physical-output-limiter-v1",
     {numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
    engine.port.postMessage({type:"preset",value:config.preset});
@@ -211,10 +217,13 @@ window.VoltunePhysicalAudio = (() => {
    accelGain=audioContext.createGain();accelGain.gain.value=1;
    master=audioContext.createGain();master.gain.value=0;
    engine.connect(eq).connect(presence).connect(profileGain)
-    .connect(events).connect(compressor).connect(accelGain)
-    .connect(master).connect(output).connect(audioContext.destination);
+    .connect(events).connect(compressor).connect(accelGain);
+   // Der zusätzliche Impuls umgeht NUR den starken Motor-Kompressor.
+   // Gemeinsamer Beschleunigungs-/Master-Gain und finaler Stereo-Limiter bleiben.
+   shiftAccent.connect(accelGain);
+   accelGain.connect(master).connect(output).connect(audioContext.destination);
    const error=()=>console.warn("Voltune Physical Engine Worklet processing failed");
-   for(const node of [engine,presence,events,output])node.onprocessorerror=error;
+   for(const node of [engine,presence,events,shiftAccent,output])node.onprocessorerror=error;
    active=true;muted=false;resetDrivingState();apply();
   }catch(error){
    if(token===generation)stop();
@@ -225,7 +234,7 @@ window.VoltunePhysicalAudio = (() => {
   ++generation;
   cleanupCarrier();
   const old=ctx;
-  ctx=null;engine=null;presence=null;events=null;output=null;eq=null;
+  ctx=null;engine=null;presence=null;events=null;shiftAccent=null;output=null;eq=null;
   master=null;accelGain=null;profileGain=null;active=false;
   if(old)try{old.close()?.catch?.(()=>{});}catch(_){}
  }
@@ -239,7 +248,10 @@ window.VoltunePhysicalAudio = (() => {
   if(!active||muted||!events)return;
   const slider=type==="overrun"?config.popStrength:config.shiftStrength;
   if(clamp(slider,0,100)===0)return;
-  events.port.postMessage({type,intensity:clamp(intensity,.05,1)});
+  const strength=clamp(intensity,.05,1);
+  events.port.postMessage({type,intensity:strength});
+  if((type==="upshift"||type==="downshift")&&shiftAccent)
+   shiftAccent.port.postMessage({type,intensity:strength});
  }
  function triggerShiftBurble(intensity=1){
   const n=performance.now();if(n-lastShift<600)return;
