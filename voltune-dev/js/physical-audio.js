@@ -288,7 +288,13 @@ window.VoltunePhysicalAudio = (() => {
   if(!isStarted())return null;
   const rpm=clamp(data.rpm,700,8500),accel=clamp(data.acceleration,-6,6),
    speed=clamp(data.speedKmh,0,300),now=performance.now();
-  const load=accel>=.2?clamp(.24+accel*.28,.24,.94):accel<=-.3?.055:speed<=2?.13:.24;
+  // Sehr sanftes Beschleunigen soll den Motorklang nicht sofort stark aufhellen.
+  // Ab 0,8 m/s² bleibt die bisherige Lastkurve unverändert.
+  const gentleAccel=clamp(accel/.8,0,1);
+  const gentleBlend=gentleAccel*gentleAccel*(3-2*gentleAccel);
+  const load=accel>=.2
+   ?clamp(.24+accel*.28*gentleBlend,.24,.94)
+   :accel<=-.3?.055:speed<=2?.13:.24;
   REF.rpm=rpm;REF.load=load;
   updateAccelerationEnvelope(accel);
   // 1.6 s acceleration history: proven Sport mode from the isolated GPS lab.
