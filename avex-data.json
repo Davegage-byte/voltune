@@ -1,21 +1,21 @@
 {
-  "price": "0,55",
-  "free": 8,
-  "occupied": 0,
+  "price": "0,60",
+  "free": 6,
+  "occupied": 2,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-20T03:19:15+02:00",
-  "status_checked_at": "2026-10-20T03:19:15+02:00",
-  "price_changed_at": "2026-10-20T00:53:04+02:00",
-  "updated": "03:19",
-  "checked_at": "2026-10-20T03:19:15+02:00",
+  "price_checked_at": "2026-10-20T08:07:33+02:00",
+  "status_checked_at": "2026-10-20T08:07:33+02:00",
+  "price_changed_at": "2026-10-20T08:07:33+02:00",
+  "updated": "08:07",
+  "checked_at": "2026-10-20T08:07:33+02:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-19T22:00:00+00:00",
-  "price_valid_to": "2026-10-20T04:15:00+00:00",
+  "price_valid_from": "2026-10-20T05:15:00+00:00",
+  "price_valid_to": "2026-10-20T08:15:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-10-19T22:00:00+00:00",
@@ -73,7 +73,7 @@
       "price": 0.57
     }
   ],
-  "price_conflict": false,
+  "price_conflict": true,
   "price_quality": "official",
   "sources": {
     "avex": {
@@ -141,18 +141,30 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 8,
-        "occupied": 0,
+        "free": 6,
+        "occupied": 2,
         "offline": 0,
         "unknown": 0,
         "price": 0.55,
         "published_at": "2026-10-20T00:30:00+02:00",
         "evses": {
-          "DE*AVX*E262415": {
+          "DE*AVX*E262431": {
             "status": "free",
-            "status_at": "2026-10-12T18:33:00+02:00",
+            "status_at": "2026-10-20T01:14:00+02:00",
             "price": 0.55,
             "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262414": {
+            "status": "occupied",
+            "status_at": "2026-10-20T03:37:00+02:00",
+            "price": 0.55,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262452": {
+            "status": "free",
+            "status_at": "2026-10-12T13:59:00+02:00",
+            "price": 0.55,
+            "data_since": "2026-07-04"
           },
           "DE*AVX*E262427": {
             "status": "free",
@@ -178,21 +190,9 @@
             "price": 0.55,
             "data_since": "2026-07-03"
           },
-          "DE*AVX*E262431": {
-            "status": "free",
-            "status_at": "2026-10-12T18:58:00+02:00",
-            "price": 0.55,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262452": {
-            "status": "free",
-            "status_at": "2026-10-12T13:59:00+02:00",
-            "price": 0.55,
-            "data_since": "2026-07-04"
-          },
-          "DE*AVX*E262414": {
-            "status": "free",
-            "status_at": "2026-10-12T06:15:00+02:00",
+          "DE*AVX*E262415": {
+            "status": "occupied",
+            "status_at": "2026-10-20T03:22:00+02:00",
             "price": 0.55,
             "data_since": "2026-07-03"
           }
@@ -206,16 +206,20 @@
         "price": 0.55,
         "published_at": null,
         "free": 1,
-        "occupied": 0,
+        "occupied": 1,
         "offline": 0,
         "evses": {
           "DE*AVX*E262414": {
             "power_kw": 400,
-            "price": 0.55
+            "price": 0.55,
+            "status": "occupied",
+            "status_age_seconds": 720
           },
           "DE*AVX*E262415": {
             "power_kw": 400,
-            "price": 0.55
+            "price": 0.55,
+            "status": "free",
+            "status_age_seconds": 960
           },
           "DE*AVX*E262426": {
             "power_kw": 400,
@@ -231,9 +235,7 @@
           },
           "DE*AVX*E262431": {
             "power_kw": 400,
-            "price": 0.55,
-            "status": "free",
-            "status_age_seconds": 180
+            "price": 0.55
           },
           "DE*AVX*E262451": {
             "power_kw": 400,
