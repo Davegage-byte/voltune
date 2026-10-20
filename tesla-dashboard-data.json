@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-20T17:44:05+02:00",
+  "checked_at": "2026-10-20T21:36:56+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-20T17:44:05+02:00",
+    "checked_at": "2026-10-20T21:36:56+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.131,
-    "diesel": 2.239,
-    "e5_updated_at": "2026-10-20T17:10+02:00",
-    "diesel_updated_at": "2026-10-20T17:10+02:00",
+    "e5": 2.116,
+    "diesel": 2.228,
+    "e5_updated_at": "2026-10-20T21:10+02:00",
+    "diesel_updated_at": "2026-10-20T21:10+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-20T17:44:05+02:00",
+    "checked_at": "2026-10-20T21:36:56+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 374.33,
+    "price": 375.1,
     "currency": "USD",
-    "market_time": "2026-10-20T17:44:10+02:00",
+    "market_time": "2026-10-20T21:37:01+02:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-20T17:44:05+02:00",
+    "checked_at": "2026-10-20T21:36:56+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.4175,
+    "average": 0.415,
     "min": 0.35,
     "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-20T17:44:05+02:00"
+    "calculated_at": "2026-10-20T21:36:56+02:00"
   },
   "superchargers": [
     {
@@ -24446,9 +24446,19 @@
   ],
   "news": [
     {
-      "title": "Tesla Announces 2026 Shareholder Meeting for Dec. 3",
-      "url": "https://www.notateslaapp.com/news/4854/tesla-announces-2026-shareholder-meeting-for-dec-3",
-      "published_at": "2026-10-20T17:00:00+02:00"
+      "title": "Musk to Give Every Kid in the U.S. a Share of SpaceX",
+      "url": "https://www.notateslaapp.com/news/4857/musk-to-give-every-kid-in-the-us-a-share-of-spacex",
+      "published_at": "2026-10-20T21:00:00+02:00"
+    },
+    {
+      "title": "Ferrari CEO Praises Tesla, Gives Roadster a Perfect 10/10",
+      "url": "https://www.notateslaapp.com/news/4856/ferrari-ceo-praises-tesla-gives-roadster-a-perfect-1010",
+      "published_at": "2026-10-20T20:34:00+02:00"
+    },
+    {
+      "title": "Tesla Q3 Earnings Call: How to Listen & What to Expect",
+      "url": "https://www.notateslaapp.com/news/4855/tesla-q3-earnings-call-how-to-listen-what-to-expect",
+      "published_at": "2026-10-20T19:12:00+02:00"
     },
     {
       "title": "Tesla Announces 2026 Shareholder Meeting for Dec. 3",
@@ -24474,16 +24484,6 @@
       "title": "Tesla is Delaying Some Model Y L Orders in the U.S.",
       "url": "https://www.notateslaapp.com/news/4849/tesla-is-delaying-some-model-y-l-orders-in-the-us",
       "published_at": "2026-10-19T14:32:00+02:00"
-    },
-    {
-      "title": "Musk Confirms Bigger Text Option Coming to Tesla Screens",
-      "url": "https://www.notateslaapp.com/news/4847/musk-confirms-bigger-text-option-coming-to-tesla-screens",
-      "published_at": "2026-10-18T21:42:00+02:00"
-    },
-    {
-      "title": "The Best Tesla Frunk (Trunk) or Treat Ideas & Halloween Decorations",
-      "url": "https://www.notateslaapp.com/news/2199/the-best-tesla-frunk-trunk-or-treat-ideas-halloween-decorations",
-      "published_at": "2026-10-18T18:22:00+02:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xfa in position 3: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xf6 in position 2: invalid start byte"
   },
-  "superchargers_updated_at": "2026-10-20T17:44:05+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-20T17:44:05+02:00",
-  "news_updated_at": "2026-10-20T17:44:05+02:00",
-  "regional_news_updated_at": "2026-10-20T17:44:05+02:00",
-  "fuel_prices_updated_at": "2026-10-20T17:44:05+02:00",
-  "tesla_stock_updated_at": "2026-10-20T17:44:05+02:00"
+  "superchargers_updated_at": "2026-10-20T21:36:56+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-20T21:36:56+02:00",
+  "news_updated_at": "2026-10-20T21:36:56+02:00",
+  "regional_news_updated_at": "2026-10-20T21:36:56+02:00",
+  "fuel_prices_updated_at": "2026-10-20T21:36:56+02:00",
+  "tesla_stock_updated_at": "2026-10-20T21:36:56+02:00"
 }
