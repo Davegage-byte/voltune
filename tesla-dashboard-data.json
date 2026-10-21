@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-21T21:24:38+02:00",
+  "checked_at": "2026-10-22T00:32:41+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-21T21:24:38+02:00",
+    "checked_at": "2026-10-22T00:32:41+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.093,
-    "diesel": 2.226,
-    "e5_updated_at": "2026-10-21T20:50+02:00",
-    "diesel_updated_at": "2026-10-21T20:50+02:00",
+    "e5": 2.12,
+    "diesel": 2.256,
+    "e5_updated_at": "2026-10-22T00:00+02:00",
+    "diesel_updated_at": "2026-10-22T00:00+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-21T21:24:38+02:00",
+    "checked_at": "2026-10-22T00:32:41+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 386.26,
+    "price": 386.47,
     "currency": "USD",
-    "market_time": "2026-10-21T21:24:43+02:00",
+    "market_time": "2026-10-21T22:00:00+02:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-21T21:24:38+02:00",
+    "checked_at": "2026-10-22T00:32:41+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.415,
-    "min": 0.35,
-    "max": 0.45,
+    "average": 0.3094,
+    "min": 0.26,
+    "max": 0.41,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-21T21:24:38+02:00"
+    "calculated_at": "2026-10-22T00:32:41+02:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,21 @@
   ],
   "news": [
     {
+      "title": "Tesla FSD Hits Record Subs, Purchased With 75% of New Orders",
+      "url": "https://www.notateslaapp.com/news/4862/tesla-fsd-hits-record-subs-purchased-with-75-of-new-orders",
+      "published_at": "2026-10-21T23:30:00+02:00"
+    },
+    {
+      "title": "Tesla Q3 Earnings Call: How to Listen [TODAY]",
+      "url": "https://www.notateslaapp.com/news/4855/tesla-q3-earnings-call-how-to-listen-what-to-expect",
+      "published_at": "2026-10-21T22:26:00+02:00"
+    },
+    {
+      "title": "Tesla Shares Official Roadster Wallpapers for Your Phone",
+      "url": "https://www.notateslaapp.com/news/4861/tesla-shares-official-roadster-wallpapers-for-your-phone",
+      "published_at": "2026-10-21T21:33:00+02:00"
+    },
+    {
       "title": "Tesla Names Next Robotaxi Cities, Shares Miles Driven & Safety Data",
       "url": "https://www.notateslaapp.com/news/4860/tesla-names-next-robotaxi-cities-shares-miles-driven-safety-data",
       "published_at": "2026-10-21T21:04:00+02:00"
@@ -24466,27 +24481,18 @@
       "published_at": "2026-10-20T20:34:00+02:00"
     },
     {
-      "title": "Tesla Q3 Earnings Call: How to Listen & What to Expect",
-      "url": "https://www.notateslaapp.com/news/4855/tesla-q3-earnings-call-how-to-listen-what-to-expect",
-      "published_at": "2026-10-20T19:12:00+02:00"
-    },
-    {
       "title": "Tesla Announces 2026 Shareholder Meeting for Dec. 3",
       "url": "https://www.notateslaapp.com/news/4853/tesla-announces-2026-shareholder-meeting-for-dec-3",
       "published_at": "2026-10-20T16:10:00+02:00"
-    },
-    {
-      "title": "Tesla FSD v14.3.13 and FSD v14.3 Lite Release Notes (Update 2026.38.5.10)",
-      "url": "https://www.notateslaapp.com/software-updates/version/2026.38.5.10/release-notes",
-      "published_at": "2026-10-20T09:52:54+02:00"
-    },
-    {
-      "title": "What If Tesla's Parked Vehicle Screen Matched Your Real Surroundings?",
-      "url": "https://www.notateslaapp.com/news/4852/what-if-teslas-parked-vehicle-screen-matched-your-surroundings",
-      "published_at": "2026-10-19T18:49:00+02:00"
     }
   ],
   "regional_news": [
+    {
+      "title": "Aktuell: Tesla verfehlt bei Q3-Umsatz erhofften Rekord, Gewinn pro Aktie leicht über Prognose",
+      "url": "https://teslamag.de/news/aktuell-tesla-verfehlt-bei-q3-umsatz-erhofften-rekord-gewinn-pro-aktie-leicht-ueber-prognose-67610",
+      "published_at": "2026-10-21T23:00:15+02:00",
+      "source": "TeslaMag.de"
+    },
     {
       "title": "Vorschau: Tesla mit Q3-Geschäftszahlen und Ausblick – Fusion mit SpaceX rückt in Fokus",
       "url": "https://teslamag.de/news/tesla-q3-geschaeftszahlen-ausblick-fusion-spacex-in-fokus-67601",
@@ -24552,21 +24558,15 @@
       "url": "https://teslamag.de/news/auto-messe-paris-tesla-smart-zeigen-unterschiedliche-elektroauto-zweisitzer-67506",
       "published_at": "2026-10-13T07:19:10+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Tesla-Woche 41/26: Model Y vorn, FSD wird TAD, Grusel-Update, V2H in USA, Auto für AfD",
-      "url": "https://teslamag.de/news/tesla-41-26-model-y-vorn-fsd-tad-grusel-update-v2h-usa-auto-fuer-afd-67489",
-      "published_at": "2026-10-11T07:39:12+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0x82 in position 4: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0x99 in position 1: invalid start byte"
   },
-  "superchargers_updated_at": "2026-10-21T21:24:38+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-21T21:24:38+02:00",
-  "news_updated_at": "2026-10-21T21:24:38+02:00",
-  "regional_news_updated_at": "2026-10-21T21:24:38+02:00",
-  "fuel_prices_updated_at": "2026-10-21T21:24:38+02:00",
-  "tesla_stock_updated_at": "2026-10-21T21:24:38+02:00"
+  "superchargers_updated_at": "2026-10-22T00:32:41+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-22T00:32:41+02:00",
+  "news_updated_at": "2026-10-22T00:32:41+02:00",
+  "regional_news_updated_at": "2026-10-22T00:32:41+02:00",
+  "fuel_prices_updated_at": "2026-10-22T00:32:41+02:00",
+  "tesla_stock_updated_at": "2026-10-22T00:32:41+02:00"
 }
