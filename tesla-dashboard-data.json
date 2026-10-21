@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-21T12:23:01+02:00",
+  "checked_at": "2026-10-21T17:23:36+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-21T12:23:01+02:00",
+    "checked_at": "2026-10-21T17:23:36+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.112,
-    "diesel": 2.221,
-    "e5_updated_at": "2026-10-21T11:50+02:00",
-    "diesel_updated_at": "2026-10-21T11:50+02:00",
+    "e5": 2.105,
+    "diesel": 2.233,
+    "e5_updated_at": "2026-10-21T16:50+02:00",
+    "diesel_updated_at": "2026-10-21T16:50+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-21T12:23:01+02:00",
+    "checked_at": "2026-10-21T17:23:36+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 373.71,
+    "price": 385.66,
     "currency": "USD",
-    "market_time": "2026-10-20T22:00:00+02:00",
+    "market_time": "2026-10-21T17:23:40+02:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,7 +68,7 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-21T12:23:01+02:00",
+    "checked_at": "2026-10-21T17:23:36+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
@@ -80,7 +80,7 @@
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-21T12:23:01+02:00"
+    "calculated_at": "2026-10-21T17:23:36+02:00"
   },
   "superchargers": [
     {
@@ -24488,6 +24488,12 @@
   ],
   "regional_news": [
     {
+      "title": "Vorschau: Tesla mit Q3-Geschäftszahlen und Ausblick – Fusion mit SpaceX rückt in Fokus",
+      "url": "https://teslamag.de/news/tesla-q3-geschaeftszahlen-ausblick-fusion-spacex-in-fokus-67601",
+      "published_at": "2026-10-21T12:58:33+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
       "title": "Aktuell: Ausschüsse bei Tesla und SpaceX prüfen laut Musk Fusion beider Unternehmen",
       "url": "https://teslamag.de/news/musk-ausschuesse-tesla-spacex-pruefen-fusion-beider-unternehmen-67592",
       "published_at": "2026-10-21T09:19:45+02:00",
@@ -24552,21 +24558,15 @@
       "url": "https://teslamag.de/news/tesla-41-26-model-y-vorn-fsd-tad-grusel-update-v2h-usa-auto-fuer-afd-67489",
       "published_at": "2026-10-11T07:39:12+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Aktuell: Tesla benennt FSD in EU nach Einigung mit deutschem Minister in ‚Assisted Driving‘ um",
-      "url": "https://teslamag.de/news/tesla-benennt-fsd-supervised-vor-zulassung-in-europa-in-assisted-driving-um-67478",
-      "published_at": "2026-10-09T11:59:44+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xcc in position 1: invalid continuation byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xdb in position 3: invalid continuation byte"
   },
-  "superchargers_updated_at": "2026-10-21T12:23:01+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-21T12:23:01+02:00",
-  "news_updated_at": "2026-10-21T12:23:01+02:00",
-  "regional_news_updated_at": "2026-10-21T12:23:01+02:00",
-  "fuel_prices_updated_at": "2026-10-21T12:23:01+02:00",
-  "tesla_stock_updated_at": "2026-10-21T12:23:01+02:00"
+  "superchargers_updated_at": "2026-10-21T17:23:36+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-21T17:23:36+02:00",
+  "news_updated_at": "2026-10-21T17:23:36+02:00",
+  "regional_news_updated_at": "2026-10-21T17:23:36+02:00",
+  "fuel_prices_updated_at": "2026-10-21T17:23:36+02:00",
+  "tesla_stock_updated_at": "2026-10-21T17:23:36+02:00"
 }
