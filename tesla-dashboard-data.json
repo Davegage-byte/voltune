@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-22T07:29:49+02:00",
+  "checked_at": "2026-10-22T12:29:41+02:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-22T07:29:49+02:00",
+    "checked_at": "2026-10-22T12:29:41+02:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.09,
-    "diesel": 2.225,
-    "e5_updated_at": "2026-10-22T06:55+02:00",
-    "diesel_updated_at": "2026-10-22T06:55+02:00",
+    "e5": 2.088,
+    "diesel": 2.214,
+    "e5_updated_at": "2026-10-22T11:55+02:00",
+    "diesel_updated_at": "2026-10-22T11:55+02:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-22T07:29:49+02:00",
+    "checked_at": "2026-10-22T12:29:41+02:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-22T07:29:49+02:00",
+    "checked_at": "2026-10-22T12:29:41+02:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3131,
-    "min": 0.26,
-    "max": 0.41,
+    "average": 0.4175,
+    "min": 0.35,
+    "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-22T07:29:49+02:00"
+    "calculated_at": "2026-10-22T12:29:41+02:00"
   },
   "superchargers": [
     {
@@ -24488,6 +24488,12 @@
   ],
   "regional_news": [
     {
+      "title": "Aktuell: Tesla nennt neues Elektroauto-Ziel für 2030, Cybercabs für Kunden noch dieses Jahr",
+      "url": "https://teslamag.de/news/tesla-neues-elektroauto-ziel-2030-cybercabs-fuer-kunden-dieses-jahr-67631",
+      "published_at": "2026-10-22T11:15:28+02:00",
+      "source": "TeslaMag.de"
+    },
+    {
       "title": "Aktuell: Tesla verfehlt bei Q3-Umsatz erhofften Rekord, Gewinn pro Aktie leicht über Prognose",
       "url": "https://teslamag.de/news/aktuell-tesla-verfehlt-bei-q3-umsatz-erhofften-rekord-gewinn-pro-aktie-leicht-ueber-prognose-67610",
       "published_at": "2026-10-21T23:00:15+02:00",
@@ -24552,21 +24558,15 @@
       "url": "https://teslamag.de/news/musk-tesla-spacex-beste-chips-produzieren-deutsche-staerken-67516",
       "published_at": "2026-10-14T07:20:26+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Aktuell: Auto-Messe in Paris – Tesla und Smart zeigen denkbar unterschiedliche E-Zweisitzer",
-      "url": "https://teslamag.de/news/auto-messe-paris-tesla-smart-zeigen-unterschiedliche-elektroauto-zweisitzer-67506",
-      "published_at": "2026-10-13T07:19:10+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xb7 in position 2: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xf4 in position 1: invalid continuation byte"
   },
-  "superchargers_updated_at": "2026-10-22T07:29:49+02:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-22T07:29:49+02:00",
-  "news_updated_at": "2026-10-22T07:29:49+02:00",
-  "regional_news_updated_at": "2026-10-22T07:29:49+02:00",
-  "fuel_prices_updated_at": "2026-10-22T07:29:49+02:00",
-  "tesla_stock_updated_at": "2026-10-22T07:29:49+02:00"
+  "superchargers_updated_at": "2026-10-22T12:29:41+02:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-22T12:29:41+02:00",
+  "news_updated_at": "2026-10-22T12:29:41+02:00",
+  "regional_news_updated_at": "2026-10-22T12:29:41+02:00",
+  "fuel_prices_updated_at": "2026-10-22T12:29:41+02:00",
+  "tesla_stock_updated_at": "2026-10-22T12:29:41+02:00"
 }
