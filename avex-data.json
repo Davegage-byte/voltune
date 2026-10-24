@@ -1,21 +1,21 @@
 {
-  "price": "0,40",
+  "price": "0,38",
   "free": 8,
   "occupied": 0,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-24T21:03:45+02:00",
-  "status_checked_at": "2026-10-24T21:03:45+02:00",
-  "price_changed_at": "2026-10-24T21:03:45+02:00",
-  "updated": "21:03",
-  "checked_at": "2026-10-24T21:03:45+02:00",
+  "price_checked_at": "2026-10-24T23:31:16+02:00",
+  "status_checked_at": "2026-10-24T23:31:16+02:00",
+  "price_changed_at": "2026-10-24T23:31:16+02:00",
+  "updated": "23:31",
+  "checked_at": "2026-10-24T23:31:16+02:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-24T18:45:00+00:00",
-  "price_valid_to": "2026-10-24T19:45:00+00:00",
+  "price_valid_from": "2026-10-24T19:45:00+00:00",
+  "price_valid_to": "2026-10-24T21:45:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-10-23T22:00:00+00:00",
@@ -216,8 +216,14 @@
         "offline": 0,
         "unknown": 0,
         "price": 0.38,
-        "published_at": "2026-10-24T00:15:00+02:00",
+        "published_at": "2026-10-24T21:02:00+02:00",
         "evses": {
+          "DE*AVX*E262414": {
+            "status": "free",
+            "status_at": "2026-10-23T08:31:00+02:00",
+            "price": 0.38,
+            "data_since": "2026-07-03"
+          },
           "DE*AVX*E262452": {
             "status": "free",
             "status_at": "2026-10-24T09:49:00+02:00",
@@ -227,12 +233,6 @@
           "DE*AVX*E262415": {
             "status": "free",
             "status_at": "2026-10-23T13:48:00+02:00",
-            "price": 0.38,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262414": {
-            "status": "free",
-            "status_at": "2026-10-23T08:31:00+02:00",
             "price": 0.38,
             "data_since": "2026-07-03"
           },
@@ -315,5 +315,5 @@
       }
     }
   },
-  "status_published_at": "2026-10-24T00:15:00+02:00"
+  "status_published_at": "2026-10-24T21:02:00+02:00"
 }
