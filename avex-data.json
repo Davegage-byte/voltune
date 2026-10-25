@@ -1,16 +1,16 @@
 {
   "price": "0,36",
-  "free": 8,
-  "occupied": 0,
+  "free": 7,
+  "occupied": 1,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-25T01:35:06+02:00",
-  "status_checked_at": "2026-10-25T01:35:06+02:00",
+  "price_checked_at": "2026-10-25T02:32:51+01:00",
+  "status_checked_at": "2026-10-25T02:32:51+01:00",
   "price_changed_at": "2026-10-25T01:35:06+02:00",
-  "updated": "01:35",
-  "checked_at": "2026-10-25T01:35:06+02:00",
+  "updated": "02:32",
+  "checked_at": "2026-10-25T02:32:51+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
@@ -91,34 +91,16 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 8,
-        "occupied": 0,
+        "free": 7,
+        "occupied": 1,
         "offline": 0,
         "unknown": 0,
         "price": 0.38,
-        "published_at": "2026-10-24T21:02:00+02:00",
+        "published_at": "2026-10-25T00:15:00+02:00",
         "evses": {
-          "DE*AVX*E262414": {
-            "status": "free",
-            "status_at": "2026-10-23T08:31:00+02:00",
-            "price": 0.38,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262452": {
-            "status": "free",
-            "status_at": "2026-10-24T09:49:00+02:00",
-            "price": 0.38,
-            "data_since": "2026-07-04"
-          },
           "DE*AVX*E262415": {
             "status": "free",
             "status_at": "2026-10-23T13:48:00+02:00",
-            "price": 0.38,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262426": {
-            "status": "free",
-            "status_at": "2026-10-24T06:50:00+02:00",
             "price": 0.38,
             "data_since": "2026-07-03"
           },
@@ -136,15 +118,33 @@
           },
           "DE*AVX*E262451": {
             "status": "free",
-            "status_at": "2026-10-23T14:10:00+02:00",
+            "status_at": "2026-10-24T22:31:00+02:00",
             "price": 0.38,
             "data_since": "2026-07-04"
           },
-          "DE*AVX*E262431": {
+          "DE*AVX*E262426": {
             "status": "free",
-            "status_at": "2026-10-24T17:55:00+02:00",
+            "status_at": "2026-10-24T06:50:00+02:00",
             "price": 0.38,
             "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262414": {
+            "status": "free",
+            "status_at": "2026-10-23T08:31:00+02:00",
+            "price": 0.38,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262431": {
+            "status": "occupied",
+            "status_at": "2026-10-25T00:13:00+02:00",
+            "price": 0.38,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262452": {
+            "status": "free",
+            "status_at": "2026-10-24T09:49:00+02:00",
+            "price": 0.38,
+            "data_since": "2026-07-04"
           }
         }
       }
@@ -173,9 +173,7 @@
           },
           "DE*AVX*E262427": {
             "power_kw": 400,
-            "price": 0.36,
-            "status": "free",
-            "status_age_seconds": 780
+            "price": 0.36
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
@@ -191,11 +189,13 @@
           },
           "DE*AVX*E262452": {
             "power_kw": 400,
-            "price": 0.36
+            "price": 0.36,
+            "status": "free",
+            "status_age_seconds": 540
           }
         }
       }
     }
   },
-  "status_published_at": "2026-10-24T21:02:00+02:00"
+  "status_published_at": "2026-10-25T00:15:00+02:00"
 }
