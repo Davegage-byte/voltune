@@ -1,21 +1,21 @@
 {
-  "price": "0,49",
-  "free": 6,
-  "occupied": 2,
+  "price": "0,59",
+  "free": 5,
+  "occupied": 3,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-26T14:07:08+01:00",
-  "status_checked_at": "2026-10-26T14:07:08+01:00",
-  "price_changed_at": "2026-10-26T14:07:08+01:00",
-  "updated": "14:07",
-  "checked_at": "2026-10-26T14:07:08+01:00",
+  "price_checked_at": "2026-10-26T20:13:21+01:00",
+  "status_checked_at": "2026-10-26T20:13:21+01:00",
+  "price_changed_at": "2026-10-26T20:13:21+01:00",
+  "updated": "20:13",
+  "checked_at": "2026-10-26T20:13:21+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-26T12:30:00+00:00",
-  "price_valid_to": "2026-10-26T13:30:00+00:00",
+  "price_valid_from": "2026-10-26T15:30:00+00:00",
+  "price_valid_to": "2026-10-26T19:15:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-10-25T23:00:00+00:00",
@@ -111,6 +111,86 @@
       "valid_from": "2026-10-26T22:15:00+00:00",
       "valid_to": "2026-10-26T23:00:00+00:00",
       "price": 0.48
+    },
+    {
+      "valid_from": "2026-10-26T23:00:00+00:00",
+      "valid_to": "2026-10-26T23:15:00+00:00",
+      "price": 0.48
+    },
+    {
+      "valid_from": "2026-10-26T23:15:00+00:00",
+      "valid_to": "2026-10-27T00:45:00+00:00",
+      "price": 0.5
+    },
+    {
+      "valid_from": "2026-10-27T00:45:00+00:00",
+      "valid_to": "2026-10-27T01:45:00+00:00",
+      "price": 0.48
+    },
+    {
+      "valid_from": "2026-10-27T01:45:00+00:00",
+      "valid_to": "2026-10-27T04:15:00+00:00",
+      "price": 0.46
+    },
+    {
+      "valid_from": "2026-10-27T04:15:00+00:00",
+      "valid_to": "2026-10-27T05:15:00+00:00",
+      "price": 0.49
+    },
+    {
+      "valid_from": "2026-10-27T05:15:00+00:00",
+      "valid_to": "2026-10-27T06:15:00+00:00",
+      "price": 0.54
+    },
+    {
+      "valid_from": "2026-10-27T06:15:00+00:00",
+      "valid_to": "2026-10-27T07:30:00+00:00",
+      "price": 0.57
+    },
+    {
+      "valid_from": "2026-10-27T07:30:00+00:00",
+      "valid_to": "2026-10-27T08:30:00+00:00",
+      "price": 0.55
+    },
+    {
+      "valid_from": "2026-10-27T08:30:00+00:00",
+      "valid_to": "2026-10-27T09:30:00+00:00",
+      "price": 0.5
+    },
+    {
+      "valid_from": "2026-10-27T09:30:00+00:00",
+      "valid_to": "2026-10-27T10:30:00+00:00",
+      "price": 0.44
+    },
+    {
+      "valid_from": "2026-10-27T10:30:00+00:00",
+      "valid_to": "2026-10-27T11:30:00+00:00",
+      "price": 0.42
+    },
+    {
+      "valid_from": "2026-10-27T11:30:00+00:00",
+      "valid_to": "2026-10-27T12:30:00+00:00",
+      "price": 0.4
+    },
+    {
+      "valid_from": "2026-10-27T12:30:00+00:00",
+      "valid_to": "2026-10-27T13:30:00+00:00",
+      "price": 0.43
+    },
+    {
+      "valid_from": "2026-10-27T13:30:00+00:00",
+      "valid_to": "2026-10-27T14:30:00+00:00",
+      "price": 0.48
+    },
+    {
+      "valid_from": "2026-10-27T14:30:00+00:00",
+      "valid_to": "2026-10-27T15:30:00+00:00",
+      "price": 0.54
+    },
+    {
+      "valid_from": "2026-10-27T15:30:00+00:00",
+      "valid_to": "2026-10-27T23:00:00+00:00",
+      "price": 0.6
     }
   ],
   "price_conflict": true,
@@ -214,6 +294,86 @@
           "valid_from": "2026-10-26T22:15:00+00:00",
           "valid_to": "2026-10-26T23:00:00+00:00",
           "price": 0.48
+        },
+        {
+          "valid_from": "2026-10-26T23:00:00+00:00",
+          "valid_to": "2026-10-26T23:15:00+00:00",
+          "price": 0.48
+        },
+        {
+          "valid_from": "2026-10-26T23:15:00+00:00",
+          "valid_to": "2026-10-27T00:45:00+00:00",
+          "price": 0.5
+        },
+        {
+          "valid_from": "2026-10-27T00:45:00+00:00",
+          "valid_to": "2026-10-27T01:45:00+00:00",
+          "price": 0.48
+        },
+        {
+          "valid_from": "2026-10-27T01:45:00+00:00",
+          "valid_to": "2026-10-27T04:15:00+00:00",
+          "price": 0.46
+        },
+        {
+          "valid_from": "2026-10-27T04:15:00+00:00",
+          "valid_to": "2026-10-27T05:15:00+00:00",
+          "price": 0.49
+        },
+        {
+          "valid_from": "2026-10-27T05:15:00+00:00",
+          "valid_to": "2026-10-27T06:15:00+00:00",
+          "price": 0.54
+        },
+        {
+          "valid_from": "2026-10-27T06:15:00+00:00",
+          "valid_to": "2026-10-27T07:30:00+00:00",
+          "price": 0.57
+        },
+        {
+          "valid_from": "2026-10-27T07:30:00+00:00",
+          "valid_to": "2026-10-27T08:30:00+00:00",
+          "price": 0.55
+        },
+        {
+          "valid_from": "2026-10-27T08:30:00+00:00",
+          "valid_to": "2026-10-27T09:30:00+00:00",
+          "price": 0.5
+        },
+        {
+          "valid_from": "2026-10-27T09:30:00+00:00",
+          "valid_to": "2026-10-27T10:30:00+00:00",
+          "price": 0.44
+        },
+        {
+          "valid_from": "2026-10-27T10:30:00+00:00",
+          "valid_to": "2026-10-27T11:30:00+00:00",
+          "price": 0.42
+        },
+        {
+          "valid_from": "2026-10-27T11:30:00+00:00",
+          "valid_to": "2026-10-27T12:30:00+00:00",
+          "price": 0.4
+        },
+        {
+          "valid_from": "2026-10-27T12:30:00+00:00",
+          "valid_to": "2026-10-27T13:30:00+00:00",
+          "price": 0.43
+        },
+        {
+          "valid_from": "2026-10-27T13:30:00+00:00",
+          "valid_to": "2026-10-27T14:30:00+00:00",
+          "price": 0.48
+        },
+        {
+          "valid_from": "2026-10-27T14:30:00+00:00",
+          "valid_to": "2026-10-27T15:30:00+00:00",
+          "price": 0.54
+        },
+        {
+          "valid_from": "2026-10-27T15:30:00+00:00",
+          "valid_to": "2026-10-27T23:00:00+00:00",
+          "price": 0.6
         }
       ]
     },
@@ -221,59 +381,59 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 6,
-        "occupied": 2,
+        "free": 5,
+        "occupied": 3,
         "offline": 0,
         "unknown": 0,
-        "price": 0.43,
-        "published_at": "2026-10-26T11:15:00+01:00",
+        "price": 0.49,
+        "published_at": "2026-10-26T14:01:00+01:00",
         "evses": {
+          "DE*AVX*E262431": {
+            "status": "occupied",
+            "status_at": "2026-10-26T14:15:00+01:00",
+            "price": 0.49,
+            "data_since": "2026-07-03"
+          },
           "DE*AVX*E262414": {
             "status": "free",
             "status_at": "2026-10-23T08:31:00+02:00",
-            "price": 0.43,
+            "price": 0.49,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262452": {
-            "status": "free",
-            "status_at": "2026-10-25T16:54:00+01:00",
-            "price": 0.43,
+            "status": "occupied",
+            "status_at": "2026-10-26T14:09:00+01:00",
+            "price": 0.49,
             "data_since": "2026-07-04"
           },
           "DE*AVX*E262415": {
-            "status": "free",
-            "status_at": "2026-10-25T18:56:00+01:00",
-            "price": 0.43,
+            "status": "occupied",
+            "status_at": "2026-10-26T12:53:00+01:00",
+            "price": 0.49,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262427": {
             "status": "free",
             "status_at": "2026-10-25T21:50:00+01:00",
-            "price": 0.43,
+            "price": 0.49,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262430": {
             "status": "free",
             "status_at": "2026-10-25T17:00:00+01:00",
-            "price": 0.43,
+            "price": 0.49,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262451": {
             "status": "free",
             "status_at": "2026-10-26T04:45:00+01:00",
-            "price": 0.43,
+            "price": 0.49,
             "data_since": "2026-07-04"
           },
           "DE*AVX*E262426": {
-            "status": "occupied",
-            "status_at": "2026-10-26T11:13:00+01:00",
-            "price": 0.43,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262431": {
-            "status": "occupied",
-            "status_at": "2026-10-26T10:59:00+01:00",
-            "price": 0.43,
+            "status": "free",
+            "status_at": "2026-10-26T13:18:00+01:00",
+            "price": 0.49,
             "data_since": "2026-07-03"
           }
         }
@@ -286,7 +446,7 @@
         "price": 0.43,
         "published_at": null,
         "free": 1,
-        "occupied": 2,
+        "occupied": 0,
         "offline": 0,
         "evses": {
           "DE*AVX*E262414": {
@@ -296,8 +456,8 @@
           "DE*AVX*E262415": {
             "power_kw": 400,
             "price": 0.43,
-            "status": "occupied",
-            "status_age_seconds": 780
+            "status": "free",
+            "status_age_seconds": 120
           },
           "DE*AVX*E262426": {
             "power_kw": 400,
@@ -309,15 +469,11 @@
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 240
+            "price": 0.43
           },
           "DE*AVX*E262431": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "occupied",
-            "status_age_seconds": 2
+            "price": 0.43
           },
           "DE*AVX*E262451": {
             "power_kw": 400,
@@ -331,5 +487,5 @@
       }
     }
   },
-  "status_published_at": "2026-10-26T11:15:00+01:00"
+  "status_published_at": "2026-10-26T14:01:00+01:00"
 }
