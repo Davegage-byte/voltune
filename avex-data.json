@@ -1,21 +1,21 @@
 {
-  "price": "0,48",
+  "price": "0,46",
   "free": 8,
   "occupied": 0,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-27T00:07:16+01:00",
-  "status_checked_at": "2026-10-27T00:07:16+01:00",
-  "price_changed_at": "2026-10-27T00:07:16+01:00",
-  "updated": "00:07",
-  "checked_at": "2026-10-27T00:07:16+01:00",
+  "price_checked_at": "2026-10-27T03:00:37+01:00",
+  "status_checked_at": "2026-10-27T03:00:37+01:00",
+  "price_changed_at": "2026-10-27T03:00:37+01:00",
+  "updated": "03:00",
+  "checked_at": "2026-10-27T03:00:37+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-26T23:00:00+00:00",
-  "price_valid_to": "2026-10-26T23:15:00+00:00",
+  "price_valid_from": "2026-10-27T01:45:00+00:00",
+  "price_valid_to": "2026-10-27T04:15:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-10-26T23:00:00+00:00",
@@ -195,55 +195,55 @@
         "occupied": 0,
         "offline": 0,
         "unknown": 0,
-        "price": 0.48,
-        "published_at": "2026-10-26T22:47:00+01:00",
+        "price": 0.5,
+        "published_at": "2026-10-27T00:02:00+01:00",
         "evses": {
-          "DE*AVX*E262414": {
-            "status": "free",
-            "status_at": "2026-10-23T08:31:00+02:00",
-            "price": 0.48,
-            "data_since": "2026-07-03"
-          },
           "DE*AVX*E262452": {
             "status": "free",
             "status_at": "2026-10-26T15:26:00+01:00",
-            "price": 0.48,
+            "price": 0.5,
             "data_since": "2026-07-04"
           },
           "DE*AVX*E262415": {
             "status": "free",
             "status_at": "2026-10-26T15:57:00+01:00",
-            "price": 0.48,
+            "price": 0.5,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262427": {
             "status": "free",
             "status_at": "2026-10-25T21:50:00+01:00",
-            "price": 0.48,
+            "price": 0.5,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262430": {
             "status": "free",
             "status_at": "2026-10-25T17:00:00+01:00",
-            "price": 0.48,
+            "price": 0.5,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262426": {
             "status": "free",
             "status_at": "2026-10-26T13:18:00+01:00",
-            "price": 0.48,
+            "price": 0.5,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262431": {
+            "status": "free",
+            "status_at": "2026-10-26T14:49:00+01:00",
+            "price": 0.5,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262451": {
             "status": "free",
             "status_at": "2026-10-26T04:45:00+01:00",
-            "price": 0.48,
+            "price": 0.5,
             "data_since": "2026-07-04"
           },
-          "DE*AVX*E262431": {
+          "DE*AVX*E262414": {
             "status": "free",
-            "status_at": "2026-10-26T14:49:00+01:00",
-            "price": 0.48,
+            "status_at": "2026-10-27T01:41:00+01:00",
+            "price": 0.5,
             "data_since": "2026-07-03"
           }
         }
@@ -253,63 +253,49 @@
       "ok": true,
       "url": "https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/",
       "data": {
-        "price": 0.43,
+        "price": 0.4,
         "published_at": null,
-        "free": 8,
+        "free": 1,
         "occupied": 0,
         "offline": 0,
         "evses": {
           "DE*AVX*E262414": {
             "power_kw": 400,
-            "price": 0.43,
+            "price": 0.4,
             "status": "free",
-            "status_age_seconds": 1620
+            "status_age_seconds": 1080
           },
           "DE*AVX*E262415": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 1620
+            "price": 0.4
           },
           "DE*AVX*E262426": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 1620
+            "price": 0.4
           },
           "DE*AVX*E262427": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 1620
+            "price": 0.4
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 1620
+            "price": 0.4
           },
           "DE*AVX*E262431": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 1620
+            "price": 0.4
           },
           "DE*AVX*E262451": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 1620
+            "price": 0.4
           },
           "DE*AVX*E262452": {
             "power_kw": 400,
-            "price": 0.43,
-            "status": "free",
-            "status_age_seconds": 1620
+            "price": 0.4
           }
         }
       }
     }
   },
-  "status_published_at": "2026-10-26T22:47:00+01:00"
+  "status_published_at": "2026-10-27T00:02:00+01:00"
 }
