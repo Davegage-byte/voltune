@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-27T14:32:35+01:00",
+  "checked_at": "2026-10-27T19:53:44+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-27T14:32:35+01:00",
+    "checked_at": "2026-10-27T19:53:44+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.129,
-    "diesel": 2.311,
-    "e5_updated_at": "2026-10-27T14:05+01:00",
-    "diesel_updated_at": "2026-10-27T14:05+01:00",
+    "e5": 2.056,
+    "diesel": 2.265,
+    "e5_updated_at": "2026-10-27T19:20+01:00",
+    "diesel_updated_at": "2026-10-27T19:20+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-27T14:32:35+01:00",
+    "checked_at": "2026-10-27T19:53:44+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 398.4,
+    "price": 406.94,
     "currency": "USD",
-    "market_time": "2026-10-27T14:32:40+01:00",
+    "market_time": "2026-10-27T19:53:49+01:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,7 +68,7 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-27T14:32:35+01:00",
+    "checked_at": "2026-10-27T19:53:44+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
@@ -80,7 +80,7 @@
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-27T14:32:35+01:00"
+    "calculated_at": "2026-10-27T19:53:44+01:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,21 @@
   ],
   "news": [
     {
+      "title": "Tesla App to Add X Money Support for Payments",
+      "url": "https://www.notateslaapp.com/news/4907/tesla-app-to-add-x-money-support-for-payments",
+      "published_at": "2026-10-27T18:56:00+01:00"
+    },
+    {
+      "title": "Tesla App Code Reveals FSD Referral Rewards Are Coming",
+      "url": "https://www.notateslaapp.com/news/4905/tesla-app-code-reveals-fsd-referral-rewards-are-coming",
+      "published_at": "2026-10-27T17:55:00+01:00"
+    },
+    {
+      "title": "Tesla’s Optimus Robot Will Soon Plug In Robotaxis to Charge",
+      "url": "https://www.notateslaapp.com/news/4904/teslas-optimus-robot-will-soon-plug-in-robotaxis-to-charge",
+      "published_at": "2026-10-27T16:25:00+01:00"
+    },
+    {
       "title": "Tesla’s New Houston Robotaxi Area Is Shaped Like a Rocket",
       "url": "https://www.notateslaapp.com/news/4903/teslas-new-houston-robotaxi-area-is-shaped-like-a-rocket",
       "published_at": "2026-10-27T00:32:00+01:00"
@@ -24469,21 +24484,6 @@
       "title": "Tesla App Lead Talks Upcoming Features: Mac App, More Vehicle Controls and Immersive Powerwall View",
       "url": "https://www.notateslaapp.com/news/4897/tesla-app-lead-talks-upcoming-features-mac-app-more-vehicle-controls-and-immersive-powerwall-view",
       "published_at": "2026-10-26T14:18:00+01:00"
-    },
-    {
-      "title": "First Look at Tesla's Roadster New User Interface [VIDEO]",
-      "url": "https://www.notateslaapp.com/news/4894/tesla-shows-off-new-roadsters-fighter-jet-inspired-ui-video",
-      "published_at": "2026-10-25T20:28:00+01:00"
-    },
-    {
-      "title": "NHTSA Proposes Cyan Lights for Driverless Cars Like Cybercab",
-      "url": "https://www.notateslaapp.com/news/4892/nhtsa-proposes-cyan-lights-for-driverless-cars-like-cybercab",
-      "published_at": "2026-10-25T01:23:00+02:00"
-    },
-    {
-      "title": "New Tesla Roadster Now on Display at LA’s Petersen Museum",
-      "url": "https://www.notateslaapp.com/news/4891/new-tesla-roadster-now-on-display-at-las-petersen-museum",
-      "published_at": "2026-10-24T23:53:00+02:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0x9e in position 2: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xc3 in position 2: invalid continuation byte"
   },
-  "superchargers_updated_at": "2026-10-27T14:32:35+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-27T14:32:35+01:00",
-  "news_updated_at": "2026-10-27T14:32:35+01:00",
-  "regional_news_updated_at": "2026-10-27T14:32:35+01:00",
-  "fuel_prices_updated_at": "2026-10-27T14:32:35+01:00",
-  "tesla_stock_updated_at": "2026-10-27T14:32:35+01:00"
+  "superchargers_updated_at": "2026-10-27T19:53:44+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-27T19:53:44+01:00",
+  "news_updated_at": "2026-10-27T19:53:44+01:00",
+  "regional_news_updated_at": "2026-10-27T19:53:44+01:00",
+  "fuel_prices_updated_at": "2026-10-27T19:53:44+01:00",
+  "tesla_stock_updated_at": "2026-10-27T19:53:44+01:00"
 }
