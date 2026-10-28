@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-28T15:18:17+01:00",
+  "checked_at": "2026-10-28T20:38:36+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-28T15:18:17+01:00",
+    "checked_at": "2026-10-28T20:38:36+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.077,
-    "diesel": 2.285,
-    "e5_updated_at": "2026-10-28T14:50+01:00",
-    "diesel_updated_at": "2026-10-28T14:50+01:00",
+    "e5": 2.041,
+    "diesel": 2.25,
+    "e5_updated_at": "2026-10-28T20:05+01:00",
+    "diesel_updated_at": "2026-10-28T20:05+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-28T15:18:17+01:00",
+    "checked_at": "2026-10-28T20:38:36+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 399.08,
+    "price": 402.63,
     "currency": "USD",
-    "market_time": "2026-10-28T15:18:21+01:00",
+    "market_time": "2026-10-28T20:38:42+01:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,7 +68,7 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-28T15:18:17+01:00",
+    "checked_at": "2026-10-28T20:38:36+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
@@ -80,7 +80,7 @@
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-28T15:18:17+01:00"
+    "calculated_at": "2026-10-28T20:38:36+01:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,21 @@
   ],
   "news": [
     {
+      "title": "New Bill Would Bring Back U.S. EV Tax Credit, Doubled to $15K",
+      "url": "https://www.notateslaapp.com/news/4913/new-bill-would-bring-back-us-ev-tax-credit-doubled-to-15k",
+      "published_at": "2026-10-28T20:25:00+01:00"
+    },
+    {
+      "title": "Tesla Semi Catches Fire on the Highway [VIDEOS]",
+      "url": "https://www.notateslaapp.com/news/4912/tesla-semi-catches-fire-on-the-highway-videos",
+      "published_at": "2026-10-28T17:26:00+01:00"
+    },
+    {
+      "title": "Tesla Driver Accidentally Uses Emergency Drive Away [VIDEO]",
+      "url": "https://www.notateslaapp.com/news/4911/tesla-driver-accidentally-uses-emergency-drive-away-video",
+      "published_at": "2026-10-28T16:20:00+01:00"
+    },
+    {
       "title": "Goodbye AI4, Hello SI4: Tesla Renames Its FSD Computers",
       "url": "https://www.notateslaapp.com/news/4910/goodbye-ai4-hello-si4-tesla-renames-its-fsd-computers",
       "published_at": "2026-10-27T21:16:00+01:00"
@@ -24469,21 +24484,6 @@
       "title": "Tesla’s New Houston Robotaxi Area Is Shaped Like a Rocket",
       "url": "https://www.notateslaapp.com/news/4903/teslas-new-houston-robotaxi-area-is-shaped-like-a-rocket",
       "published_at": "2026-10-27T00:32:00+01:00"
-    },
-    {
-      "title": "Latvia Becomes 10th EU Country to Approve Tesla FSD",
-      "url": "https://www.notateslaapp.com/news/4902/latvia-becomes-10th-eu-country-to-approve-tesla-fsd",
-      "published_at": "2026-10-26T22:42:00+01:00"
-    },
-    {
-      "title": "Tesla Robotaxi App Now Supports iPad, iPhone Duo and Improved Live Activities",
-      "url": "https://www.notateslaapp.com/news/4896/tesla-adds-ipad-iphone-duo-support-to-robotaxi-app",
-      "published_at": "2026-10-26T15:58:00+01:00"
-    },
-    {
-      "title": "Tesla and SpaceX Form Special Committees to Discuss Potential Merger",
-      "url": "https://www.notateslaapp.com/news/4899/tesla-and-spacex-form-special-committees-to-discuss-potential-merger",
-      "published_at": "2026-10-26T15:02:00+01:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xc0 in position 5: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xa8 in position 2: invalid start byte"
   },
-  "superchargers_updated_at": "2026-10-28T15:18:17+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-28T15:18:17+01:00",
-  "news_updated_at": "2026-10-28T15:18:17+01:00",
-  "regional_news_updated_at": "2026-10-28T15:18:17+01:00",
-  "fuel_prices_updated_at": "2026-10-28T15:18:17+01:00",
-  "tesla_stock_updated_at": "2026-10-28T15:18:17+01:00"
+  "superchargers_updated_at": "2026-10-28T20:38:36+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-28T20:38:36+01:00",
+  "news_updated_at": "2026-10-28T20:38:36+01:00",
+  "regional_news_updated_at": "2026-10-28T20:38:36+01:00",
+  "fuel_prices_updated_at": "2026-10-28T20:38:36+01:00",
+  "tesla_stock_updated_at": "2026-10-28T20:38:36+01:00"
 }
