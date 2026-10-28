@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-10-28T02:43:43+01:00",
+  "checked_at": "2026-10-28T08:28:17+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-10-28T02:43:43+01:00",
+    "checked_at": "2026-10-28T08:28:17+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.078,
-    "diesel": 2.295,
-    "e5_updated_at": "2026-10-28T02:10+01:00",
-    "diesel_updated_at": "2026-10-28T02:10+01:00",
+    "e5": 2.044,
+    "diesel": 2.26,
+    "e5_updated_at": "2026-10-28T07:55+01:00",
+    "diesel_updated_at": "2026-10-28T07:55+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-10-28T02:43:43+01:00",
+    "checked_at": "2026-10-28T08:28:17+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-10-28T02:43:43+01:00",
+    "checked_at": "2026-10-28T08:28:17+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3094,
+    "average": 0.3531,
     "min": 0.26,
-    "max": 0.41,
+    "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-10-28T02:43:43+01:00"
+    "calculated_at": "2026-10-28T08:28:17+01:00"
   },
   "superchargers": [
     {
@@ -24488,6 +24488,12 @@
   ],
   "regional_news": [
     {
+      "title": "Aktuell: Tesla kann Cybercab-Robotaxis derzeit schneller produzieren als auf Straßen einsetzen",
+      "url": "https://teslamag.de/news/tesla-cybercab-robotaxis-schneller-produzieren-als-strasse-einsetzen-67666",
+      "published_at": "2026-10-28T07:35:58+01:00",
+      "source": "TeslaMag.de"
+    },
+    {
       "title": "Aktuell: Tesla-System TAD in Lettland erlaubt – Musk sieht Freigabe in ganzer EU in Q1 2027",
       "url": "https://teslamag.de/news/tesla-system-tad-lettland-erlaubt-musk-freigabe-ganz-eu-q1-2027-67658",
       "published_at": "2026-10-27T06:55:10+01:00",
@@ -24552,21 +24558,15 @@
       "url": "https://teslamag.de/news/anzahlung-mittlerer-tesla-roadster-hoch-wie-preis-altes-top-modell-67554",
       "published_at": "2026-10-16T09:05:49+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Aktuell: Tesla zeigt Raketen-Roadster – Flug, Drehung in der Luft, 100 km/h unter 1 Sekunde",
-      "url": "https://teslamag.de/news/aktuell-tesla-zeigt-raketen-roadster-flug-drehung-in-der-luft-100-km-h-unter-1-sekunde-67548",
-      "published_at": "2026-10-16T04:41:44+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0x98 in position 1: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xf9 in position 5: invalid start byte"
   },
-  "superchargers_updated_at": "2026-10-28T02:43:43+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-10-28T02:43:43+01:00",
-  "news_updated_at": "2026-10-28T02:43:43+01:00",
-  "regional_news_updated_at": "2026-10-28T02:43:43+01:00",
-  "fuel_prices_updated_at": "2026-10-28T02:43:43+01:00",
-  "tesla_stock_updated_at": "2026-10-28T02:43:43+01:00"
+  "superchargers_updated_at": "2026-10-28T08:28:17+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-10-28T08:28:17+01:00",
+  "news_updated_at": "2026-10-28T08:28:17+01:00",
+  "regional_news_updated_at": "2026-10-28T08:28:17+01:00",
+  "fuel_prices_updated_at": "2026-10-28T08:28:17+01:00",
+  "tesla_stock_updated_at": "2026-10-28T08:28:17+01:00"
 }
