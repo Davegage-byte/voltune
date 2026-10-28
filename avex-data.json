@@ -1,21 +1,21 @@
 {
-  "price": "0,60",
+  "price": "0,55",
   "free": 8,
   "occupied": 0,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-28T08:28:17+01:00",
-  "status_checked_at": "2026-10-28T08:28:17+01:00",
-  "price_changed_at": "2026-10-27T19:53:44+01:00",
-  "updated": "08:28",
-  "checked_at": "2026-10-28T08:28:17+01:00",
+  "price_checked_at": "2026-10-28T15:18:17+01:00",
+  "status_checked_at": "2026-10-28T15:18:17+01:00",
+  "price_changed_at": "2026-10-28T15:18:17+01:00",
+  "updated": "15:18",
+  "checked_at": "2026-10-28T15:18:17+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-10-27T23:00:00+00:00",
-  "price_valid_to": "2026-10-28T10:45:00+00:00",
+  "price_valid_from": "2026-10-28T14:00:00+00:00",
+  "price_valid_to": "2026-10-28T15:00:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-10-27T23:00:00+00:00",
@@ -78,21 +78,27 @@
         "price": 0.6,
         "published_at": "2026-10-28T03:02:00+01:00",
         "evses": {
-          "DE*AVX*E262415": {
+          "DE*AVX*E262431": {
             "status": "free",
             "status_at": "2026-10-28T00:01:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262414": {
+            "status": "free",
+            "status_at": "2026-10-28T00:01:00+01:00",
+            "price": 0.6,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262452": {
+            "status": "free",
+            "status_at": "2026-10-28T05:28:00+01:00",
+            "price": 0.6,
+            "data_since": "2026-07-04"
           },
           "DE*AVX*E262427": {
             "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
-            "price": 0.6,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262430": {
-            "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
+            "status_at": "2026-10-28T07:05:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
@@ -104,23 +110,17 @@
           },
           "DE*AVX*E262426": {
             "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
+            "status_at": "2026-10-28T07:58:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
-          "DE*AVX*E262452": {
-            "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
-            "price": 0.6,
-            "data_since": "2026-07-04"
-          },
-          "DE*AVX*E262431": {
+          "DE*AVX*E262415": {
             "status": "free",
             "status_at": "2026-10-28T00:01:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
-          "DE*AVX*E262414": {
+          "DE*AVX*E262430": {
             "status": "free",
             "status_at": "2026-10-28T00:01:00+01:00",
             "price": 0.6,
@@ -136,7 +136,7 @@
         "price": 0.55,
         "published_at": null,
         "free": 1,
-        "occupied": 0,
+        "occupied": 2,
         "offline": 0,
         "evses": {
           "DE*AVX*E262414": {
@@ -154,8 +154,8 @@
           "DE*AVX*E262427": {
             "power_kw": 400,
             "price": 0.55,
-            "status": "free",
-            "status_age_seconds": 1320
+            "status": "occupied",
+            "status_age_seconds": 60
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
@@ -163,7 +163,9 @@
           },
           "DE*AVX*E262431": {
             "power_kw": 400,
-            "price": 0.55
+            "price": 0.55,
+            "status": "free",
+            "status_age_seconds": 540
           },
           "DE*AVX*E262451": {
             "power_kw": 400,
@@ -171,7 +173,9 @@
           },
           "DE*AVX*E262452": {
             "power_kw": 400,
-            "price": 0.55
+            "price": 0.55,
+            "status": "occupied",
+            "status_age_seconds": 180
           }
         }
       }
