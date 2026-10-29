@@ -1,16 +1,16 @@
 {
   "price": "0,60",
-  "free": 7,
-  "occupied": 1,
+  "free": 5,
+  "occupied": 3,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-10-29T09:55:26+01:00",
-  "status_checked_at": "2026-10-29T09:55:26+01:00",
+  "price_checked_at": "2026-10-29T16:44:58+01:00",
+  "status_checked_at": "2026-10-29T16:44:58+01:00",
   "price_changed_at": "2026-10-28T20:38:36+01:00",
-  "updated": "09:55",
-  "checked_at": "2026-10-29T09:55:26+01:00",
+  "updated": "16:44",
+  "checked_at": "2026-10-29T16:44:58+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
@@ -20,6 +20,11 @@
     {
       "valid_from": "2026-10-28T23:00:00+00:00",
       "valid_to": "2026-10-29T23:00:00+00:00",
+      "price": 0.6
+    },
+    {
+      "valid_from": "2026-10-29T23:00:00+00:00",
+      "valid_to": "2026-10-30T23:00:00+00:00",
       "price": 0.6
     }
   ],
@@ -34,6 +39,11 @@
           "valid_from": "2026-10-28T23:00:00+00:00",
           "valid_to": "2026-10-29T23:00:00+00:00",
           "price": 0.6
+        },
+        {
+          "valid_from": "2026-10-29T23:00:00+00:00",
+          "valid_to": "2026-10-30T23:00:00+00:00",
+          "price": 0.6
         }
       ]
     },
@@ -41,40 +51,46 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 7,
-        "occupied": 1,
+        "free": 5,
+        "occupied": 3,
         "offline": 0,
         "unknown": 0,
         "price": 0.6,
         "published_at": "2026-10-28T03:02:00+01:00",
         "evses": {
-          "DE*AVX*E262452": {
+          "DE*AVX*E262414": {
             "status": "free",
-            "status_at": "2026-10-28T10:12:00+01:00",
-            "price": 0.6,
-            "data_since": "2026-07-04"
-          },
-          "DE*AVX*E262427": {
-            "status": "occupied",
-            "status_at": "2026-10-28T10:33:00+01:00",
+            "status_at": "2026-10-28T00:01:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262415": {
-            "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
+            "status": "occupied",
+            "status_at": "2026-10-28T13:28:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
+          "DE*AVX*E262431": {
+            "status": "free",
+            "status_at": "2026-10-28T14:07:00+01:00",
+            "price": 0.6,
+            "data_since": "2026-07-03"
+          },
+          "DE*AVX*E262452": {
+            "status": "occupied",
+            "status_at": "2026-10-28T14:33:00+01:00",
+            "price": 0.6,
+            "data_since": "2026-07-04"
+          },
           "DE*AVX*E262430": {
             "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
+            "status_at": "2026-10-28T13:45:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262451": {
-            "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
+            "status": "occupied",
+            "status_at": "2026-10-28T14:30:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-04"
           },
@@ -84,15 +100,9 @@
             "price": 0.6,
             "data_since": "2026-07-03"
           },
-          "DE*AVX*E262431": {
+          "DE*AVX*E262427": {
             "status": "free",
-            "status_at": "2026-10-28T12:29:00+01:00",
-            "price": 0.6,
-            "data_since": "2026-07-03"
-          },
-          "DE*AVX*E262414": {
-            "status": "free",
-            "status_at": "2026-10-28T00:01:00+01:00",
+            "status_at": "2026-10-28T14:32:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           }
@@ -105,31 +115,27 @@
       "data": {
         "price": 0.55,
         "published_at": null,
-        "free": 2,
-        "occupied": 1,
+        "free": 1,
+        "occupied": 0,
         "offline": 0,
         "evses": {
           "DE*AVX*E262414": {
             "power_kw": 400,
-            "price": 0.55,
-            "status": "free",
-            "status_age_seconds": 1500
+            "price": 0.55
           },
           "DE*AVX*E262415": {
             "power_kw": 400,
-            "price": 0.55
+            "price": 0.55,
+            "status": "free",
+            "status_age_seconds": 1740
           },
           "DE*AVX*E262426": {
             "power_kw": 400,
-            "price": 0.55,
-            "status": "free",
-            "status_age_seconds": 180
+            "price": 0.55
           },
           "DE*AVX*E262427": {
             "power_kw": 400,
-            "price": 0.55,
-            "status": "occupied",
-            "status_age_seconds": 780
+            "price": 0.55
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
