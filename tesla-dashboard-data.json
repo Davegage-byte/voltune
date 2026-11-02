@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-02T07:51:16+01:00",
+  "checked_at": "2026-11-02T17:37:26+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-11-02T07:51:16+01:00",
+    "checked_at": "2026-11-02T17:37:26+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.05,
-    "diesel": 2.26,
-    "e5_updated_at": "2026-11-02T07:25+01:00",
-    "diesel_updated_at": "2026-11-02T07:25+01:00",
+    "e5": 2.043,
+    "diesel": 2.264,
+    "e5_updated_at": "2026-11-02T17:10+01:00",
+    "diesel_updated_at": "2026-11-02T17:10+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-02T07:51:16+01:00",
+    "checked_at": "2026-11-02T17:37:26+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 399.81,
+    "price": 410.96,
     "currency": "USD",
-    "market_time": "2026-10-30T21:00:00+01:00",
+    "market_time": "2026-11-02T17:37:30+01:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-02T07:51:16+01:00",
+    "checked_at": "2026-11-02T17:37:26+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3131,
-    "min": 0.26,
-    "max": 0.41,
+    "average": 0.4175,
+    "min": 0.35,
+    "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-02T07:51:16+01:00"
+    "calculated_at": "2026-11-02T17:37:26+01:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,16 @@
   ],
   "news": [
     {
+      "title": "Tesla Cybercab Goes on Tour in Europe: Cities & Dates",
+      "url": "https://www.notateslaapp.com/news/4933/tesla-cybercab-goes-on-tour-in-europe-cities-dates",
+      "published_at": "2026-11-02T17:10:00+01:00"
+    },
+    {
+      "title": "Tesla Expands Robotaxi Service, Launches Unsupervised Rides in Fort Worth",
+      "url": "https://www.notateslaapp.com/news/4932/tesla-expands-robotaxi-service-launches-unsupervised-rides-in-fort-worth",
+      "published_at": "2026-11-02T15:00:00+01:00"
+    },
+    {
       "title": "Race and Fly the New Tesla Roadster in New ‘Need for Speed’ Type Game",
       "url": "https://www.notateslaapp.com/news/4931/this-fan-made-browser-game-lets-you-fly-teslas-new-roadster",
       "published_at": "2026-11-01T18:00:00+01:00"
@@ -24474,16 +24484,6 @@
       "title": "Gwynne Shotwell’s 2M SpaceX Share Gift to Kids Is Underway",
       "url": "https://www.notateslaapp.com/news/4924/gwynne-shotwells-2m-spacex-share-gift-to-kids-is-underway",
       "published_at": "2026-10-30T23:15:00+01:00"
-    },
-    {
-      "title": "Tesla’s New FSD Referral Program Is Live: How It Works",
-      "url": "https://www.notateslaapp.com/news/4923/teslas-new-fsd-referral-program-is-live-how-it-works",
-      "published_at": "2026-10-30T22:27:00+01:00"
-    },
-    {
-      "title": "Tesla Reveals 36 New Supercharger Sites Picked by Owners",
-      "url": "https://www.notateslaapp.com/news/4922/tesla-reveals-36-new-supercharger-sites-picked-by-owners",
-      "published_at": "2026-10-30T20:23:00+01:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xe0 in position 1: invalid continuation byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0x87 in position 1: invalid start byte"
   },
-  "superchargers_updated_at": "2026-11-02T07:51:16+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-02T07:51:16+01:00",
-  "news_updated_at": "2026-11-02T07:51:16+01:00",
-  "regional_news_updated_at": "2026-11-02T07:51:16+01:00",
-  "fuel_prices_updated_at": "2026-11-02T07:51:16+01:00",
-  "tesla_stock_updated_at": "2026-11-02T07:51:16+01:00"
+  "superchargers_updated_at": "2026-11-02T17:37:26+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-02T17:37:26+01:00",
+  "news_updated_at": "2026-11-02T17:37:26+01:00",
+  "regional_news_updated_at": "2026-11-02T17:37:26+01:00",
+  "fuel_prices_updated_at": "2026-11-02T17:37:26+01:00",
+  "tesla_stock_updated_at": "2026-11-02T17:37:26+01:00"
 }
