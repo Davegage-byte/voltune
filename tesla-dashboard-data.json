@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-03T05:01:40+01:00",
+  "checked_at": "2026-11-03T12:48:52+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-03T05:01:40+01:00",
+    "checked_at": "2026-11-03T12:48:52+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-03T05:01:40+01:00",
+    "checked_at": "2026-11-03T12:48:52+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3131,
-    "min": 0.26,
-    "max": 0.41,
+    "average": 0.4175,
+    "min": 0.35,
+    "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-03T05:01:40+01:00"
+    "calculated_at": "2026-11-03T12:48:52+01:00"
   },
   "superchargers": [
     {
@@ -24488,6 +24488,12 @@
   ],
   "regional_news": [
     {
+      "title": "Aktuell: Tesla Roadster rast in KI-Simulation über Nürburgring – Porsche 919 bleibt schneller",
+      "url": "https://teslamag.de/news/tesla-roadster-ki-simulation-nuerburgring-porsche-919-schneller-67699",
+      "published_at": "2026-11-03T11:47:28+01:00",
+      "source": "TeslaMag.de"
+    },
+    {
       "title": "Tesla-Woche 44/26: Model Y verliert, Grünheide zahlt, Semi brennt, Optimus-Show, GM-Kritik",
       "url": "https://teslamag.de/news/44-26-tesla-model-y-verliert-semi-brennt-gruenheide-zahlt-optimus-show-gm-kritik-67688",
       "published_at": "2026-11-01T07:21:47+01:00",
@@ -24552,21 +24558,16 @@
       "url": "https://teslamag.de/news/musk-ausschuesse-tesla-spacex-pruefen-fusion-beider-unternehmen-67592",
       "published_at": "2026-10-21T09:19:45+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Aktuell: Tesla will laut Bericht noch dieses Jahr autonomen Shuttle-Dienst in Grünheide starten",
-      "url": "https://teslamag.de/news/tesla-bericht-2026-autonomer-shuttle-schule-gruenheide-67584",
-      "published_at": "2026-10-20T07:04:22+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xe2 in position 1: invalid continuation byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xd7 in position 2: invalid continuation byte",
+    "fuel_prices": "The read operation timed out"
   },
-  "superchargers_updated_at": "2026-11-03T05:01:40+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-03T05:01:40+01:00",
-  "news_updated_at": "2026-11-03T05:01:40+01:00",
-  "regional_news_updated_at": "2026-11-03T05:01:40+01:00",
+  "superchargers_updated_at": "2026-11-03T12:48:52+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-03T12:48:52+01:00",
+  "news_updated_at": "2026-11-03T12:48:52+01:00",
+  "regional_news_updated_at": "2026-11-03T12:48:52+01:00",
   "fuel_prices_updated_at": "2026-11-03T05:01:40+01:00",
-  "tesla_stock_updated_at": "2026-11-03T05:01:40+01:00"
+  "tesla_stock_updated_at": "2026-11-03T12:48:52+01:00"
 }
