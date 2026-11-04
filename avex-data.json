@@ -1,16 +1,16 @@
 {
   "price": "0,60",
-  "free": 8,
-  "occupied": 0,
+  "free": 5,
+  "occupied": 3,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-11-04T04:14:31+01:00",
-  "status_checked_at": "2026-11-04T04:14:31+01:00",
+  "price_checked_at": "2026-11-04T19:28:28+01:00",
+  "status_checked_at": "2026-11-04T19:28:28+01:00",
   "price_changed_at": "2026-10-28T20:38:36+01:00",
-  "updated": "04:14",
-  "checked_at": "2026-11-04T04:14:31+01:00",
+  "updated": "19:28",
+  "checked_at": "2026-11-04T19:28:28+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
@@ -20,6 +20,11 @@
     {
       "valid_from": "2026-11-03T23:00:00+00:00",
       "valid_to": "2026-11-04T23:00:00+00:00",
+      "price": 0.6
+    },
+    {
+      "valid_from": "2026-11-04T23:00:00+00:00",
+      "valid_to": "2026-11-05T23:00:00+00:00",
       "price": 0.6
     }
   ],
@@ -34,6 +39,11 @@
           "valid_from": "2026-11-03T23:00:00+00:00",
           "valid_to": "2026-11-04T23:00:00+00:00",
           "price": 0.6
+        },
+        {
+          "valid_from": "2026-11-04T23:00:00+00:00",
+          "valid_to": "2026-11-05T23:00:00+00:00",
+          "price": 0.6
         }
       ]
     },
@@ -41,28 +51,28 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 8,
-        "occupied": 0,
+        "free": 5,
+        "occupied": 3,
         "offline": 0,
         "unknown": 0,
         "price": 0.6,
-        "published_at": "2026-11-04T00:01:00+01:00",
+        "published_at": "2026-11-04T13:00:00+01:00",
         "evses": {
           "DE*AVX*E262452": {
-            "status": "free",
-            "status_at": "2026-10-31T23:45:00+01:00",
+            "status": "occupied",
+            "status_at": "2026-11-04T15:12:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-04"
           },
           "DE*AVX*E262415": {
             "status": "free",
-            "status_at": "2026-10-31T23:54:00+01:00",
+            "status_at": "2026-11-04T06:27:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262427": {
-            "status": "free",
-            "status_at": "2026-11-03T10:57:00+01:00",
+            "status": "occupied",
+            "status_at": "2026-11-04T15:05:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
@@ -74,7 +84,7 @@
           },
           "DE*AVX*E262451": {
             "status": "free",
-            "status_at": "2026-11-02T04:40:00+01:00",
+            "status_at": "2026-11-04T14:05:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-04"
           },
@@ -85,14 +95,14 @@
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262431": {
-            "status": "free",
-            "status_at": "2026-11-03T10:26:00+01:00",
+            "status": "occupied",
+            "status_at": "2026-11-04T14:53:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           },
           "DE*AVX*E262414": {
             "status": "free",
-            "status_at": "2026-11-04T03:08:00+01:00",
+            "status_at": "2026-11-04T12:50:00+01:00",
             "price": 0.6,
             "data_since": "2026-07-03"
           }
@@ -111,9 +121,7 @@
         "evses": {
           "DE*AVX*E262414": {
             "power_kw": 400,
-            "price": 0.6,
-            "status": "free",
-            "status_age_seconds": 300
+            "price": 0.6
           },
           "DE*AVX*E262415": {
             "power_kw": 400,
@@ -125,7 +133,9 @@
           },
           "DE*AVX*E262427": {
             "power_kw": 400,
-            "price": 0.6
+            "price": 0.6,
+            "status": "free",
+            "status_age_seconds": 1260
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
@@ -147,5 +157,5 @@
       }
     }
   },
-  "status_published_at": "2026-11-04T00:01:00+01:00"
+  "status_published_at": "2026-11-04T13:00:00+01:00"
 }
