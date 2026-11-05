@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-05T04:47:19+01:00",
+  "checked_at": "2026-11-05T12:37:00+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-11-05T04:47:19+01:00",
+    "checked_at": "2026-11-05T12:37:00+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.024,
-    "diesel": 2.272,
-    "e5_updated_at": "2026-11-05T04:20+01:00",
-    "diesel_updated_at": "2026-11-05T04:20+01:00",
+    "e5": 2.244,
+    "diesel": 2.412,
+    "e5_updated_at": "2026-11-05T12:10+01:00",
+    "diesel_updated_at": "2026-11-05T12:10+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-05T04:47:19+01:00",
+    "checked_at": "2026-11-05T12:37:00+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-05T04:47:19+01:00",
+    "checked_at": "2026-11-05T12:37:00+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3131,
-    "min": 0.26,
-    "max": 0.41,
+    "average": 0.4175,
+    "min": 0.35,
+    "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-05T04:47:19+01:00"
+    "calculated_at": "2026-11-05T12:37:00+01:00"
   },
   "superchargers": [
     {
@@ -24488,6 +24488,12 @@
   ],
   "regional_news": [
     {
+      "title": "Aktuell: Tesla eröffnet in Berlin-Köpenick europäisches F&E-Zentrum für 100 Mio. Euro",
+      "url": "https://teslamag.de/news/tesla-berlin-koepenick-europaeisches-fe-zentrum-100-mio-euro-67704",
+      "published_at": "2026-11-05T08:50:23+01:00",
+      "source": "TeslaMag.de"
+    },
+    {
       "title": "Aktuell: Tesla Roadster rast in KI-Simulation über Nürburgring – Porsche 919 bleibt schneller",
       "url": "https://teslamag.de/news/tesla-roadster-ki-simulation-nuerburgring-porsche-919-schneller-67699",
       "published_at": "2026-11-03T11:47:28+01:00",
@@ -24552,21 +24558,15 @@
       "url": "https://teslamag.de/news/tesla-q3-geschaeftszahlen-ausblick-fusion-spacex-in-fokus-67601",
       "published_at": "2026-10-21T20:58:33+02:00",
       "source": "TeslaMag.de"
-    },
-    {
-      "title": "Aktuell: Ausschüsse bei Tesla und SpaceX prüfen laut Musk Fusion beider Unternehmen",
-      "url": "https://teslamag.de/news/musk-ausschuesse-tesla-spacex-pruefen-fusion-beider-unternehmen-67592",
-      "published_at": "2026-10-21T09:19:45+02:00",
-      "source": "TeslaMag.de"
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0x93 in position 3: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xd3 in position 1: invalid continuation byte"
   },
-  "superchargers_updated_at": "2026-11-05T04:47:19+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-05T04:47:19+01:00",
-  "news_updated_at": "2026-11-05T04:47:19+01:00",
-  "regional_news_updated_at": "2026-11-05T04:47:19+01:00",
-  "fuel_prices_updated_at": "2026-11-05T04:47:19+01:00",
-  "tesla_stock_updated_at": "2026-11-05T04:47:19+01:00"
+  "superchargers_updated_at": "2026-11-05T12:37:00+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-05T12:37:00+01:00",
+  "news_updated_at": "2026-11-05T12:37:00+01:00",
+  "regional_news_updated_at": "2026-11-05T12:37:00+01:00",
+  "fuel_prices_updated_at": "2026-11-05T12:37:00+01:00",
+  "tesla_stock_updated_at": "2026-11-05T12:37:00+01:00"
 }
