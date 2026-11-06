@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-06T13:29:18+01:00",
+  "checked_at": "2026-11-06T20:37:57+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-11-06T13:29:18+01:00",
+    "checked_at": "2026-11-06T20:37:57+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.187,
-    "diesel": 2.378,
-    "e5_updated_at": "2026-11-06T13:00+01:00",
-    "diesel_updated_at": "2026-11-06T13:00+01:00",
+    "e5": 1.961,
+    "diesel": 2.23,
+    "e5_updated_at": "2026-11-06T20:10+01:00",
+    "diesel_updated_at": "2026-11-06T20:10+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-06T13:29:18+01:00",
+    "checked_at": "2026-11-06T20:37:57+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 343.69,
+    "price": 360.17,
     "currency": "USD",
-    "market_time": "2026-11-05T22:00:01+01:00",
+    "market_time": "2026-11-06T20:38:00+01:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,7 +68,7 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-06T13:29:18+01:00",
+    "checked_at": "2026-11-06T20:37:57+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
@@ -80,7 +80,7 @@
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-06T13:29:18+01:00"
+    "calculated_at": "2026-11-06T20:37:57+01:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,26 @@
   ],
   "news": [
     {
+      "title": "Everything You Can Control With Grok in Your Tesla",
+      "url": "https://www.notateslaapp.com/news/4958/everything-you-can-control-with-grok-in-your-tesla",
+      "published_at": "2026-11-06T18:41:00+01:00"
+    },
+    {
+      "title": "NHTSA to Modernize Vehicle Recalls With a Focus on OTA Fixes",
+      "url": "https://www.notateslaapp.com/news/4957/nhtsa-to-modernize-vehicle-recalls-with-a-focus-on-ota-fixes",
+      "published_at": "2026-11-06T18:07:00+01:00"
+    },
+    {
+      "title": "Tesla Raises Cybertruck Prices, Pauses Base Trim Orders",
+      "url": "https://www.notateslaapp.com/news/4955/tesla-raises-cybertruck-prices-pauses-base-trim-orders",
+      "published_at": "2026-11-06T17:24:00+01:00"
+    },
+    {
+      "title": "Tesla Announces It Will Discontinue the Cybertruck",
+      "url": "https://www.notateslaapp.com/news/4954/tesla-will-end-cybertruck-production-to-make-more-cybercabs",
+      "published_at": "2026-11-06T15:00:00+01:00"
+    },
+    {
       "title": "Tesla's Robotaxi Geofences Are Smaller Than Advertised: Their Actual Sizes",
       "url": "https://www.notateslaapp.com/news/4953/teslas-robotaxi-geofences-are-smaller-than-advertised-their-actual-sizes",
       "published_at": "2026-11-05T20:58:00+01:00"
@@ -24464,31 +24484,11 @@
       "title": "Tesla Wouldn’t Build a Cybervan, So Hoffman EV Did",
       "url": "https://www.notateslaapp.com/news/4950/tesla-wouldnt-build-a-cybervan-so-hoffman-ev-did",
       "published_at": "2026-11-05T16:44:00+01:00"
-    },
-    {
-      "title": "Starlink Is Replacing OG ‘Dishy McFlatface’ Dishes for Free",
-      "url": "https://www.notateslaapp.com/news/4949/starlink-is-replacing-og-dishy-mcflatface-dishes-for-free",
-      "published_at": "2026-11-05T14:30:00+01:00"
-    },
-    {
-      "title": "SpaceX Taps Qualcomm to Build Nationwide Starlink Mobile Network",
-      "url": "https://www.notateslaapp.com/news/4947/spacex-taps-qualcomm-to-build-nationwide-starlink-mobile-network",
-      "published_at": "2026-11-04T22:16:00+01:00"
-    },
-    {
-      "title": "The Model S Is Gone, but Tesla Just Patented Its Design",
-      "url": "https://www.notateslaapp.com/news/4946/the-model-s-is-gone-but-tesla-just-patented-its-design",
-      "published_at": "2026-11-04T21:26:00+01:00"
-    },
-    {
-      "title": "Tesla Is Reportedly Doubling Production at Giga Texas",
-      "url": "https://www.notateslaapp.com/news/4945/tesla-is-reportedly-doubling-production-at-giga-texas",
-      "published_at": "2026-11-04T20:01:00+01:00"
     }
   ],
   "regional_news": [
     {
-      "title": "Aktuell: Tesla-Chef kündigt Aus für Ladenhüter Cybertruck an, Fabrik stattdessen für Cybercab",
+      "title": "Aktuell: Tesla-Chef kündigt Aus für Ladenhüter Cybertruck an – „Machen Platz für Cybercab“",
       "url": "https://teslamag.de/news/tesla-chef-einstellung-ladenhueter-cybertruck-platz-fuer-cybercab-67714",
       "published_at": "2026-11-06T09:02:09+01:00",
       "source": "TeslaMag.de"
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xd4 in position 6: invalid continuation byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xe2 in position 3: invalid continuation byte"
   },
-  "superchargers_updated_at": "2026-11-06T13:29:18+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-06T13:29:18+01:00",
-  "news_updated_at": "2026-11-06T13:29:18+01:00",
-  "regional_news_updated_at": "2026-11-06T13:29:18+01:00",
-  "fuel_prices_updated_at": "2026-11-06T13:29:18+01:00",
-  "tesla_stock_updated_at": "2026-11-06T13:29:18+01:00"
+  "superchargers_updated_at": "2026-11-06T20:37:57+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-06T20:37:57+01:00",
+  "news_updated_at": "2026-11-06T20:37:57+01:00",
+  "regional_news_updated_at": "2026-11-06T20:37:57+01:00",
+  "fuel_prices_updated_at": "2026-11-06T20:37:57+01:00",
+  "tesla_stock_updated_at": "2026-11-06T20:37:57+01:00"
 }
