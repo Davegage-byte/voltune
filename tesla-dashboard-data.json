@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-07T11:17:52+01:00",
+  "checked_at": "2026-11-07T17:30:27+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-11-07T11:17:52+01:00",
+    "checked_at": "2026-11-07T17:30:27+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 1.946,
-    "diesel": 2.214,
-    "e5_updated_at": "2026-11-07T10:45+01:00",
-    "diesel_updated_at": "2026-11-07T10:45+01:00",
+    "e5": 1.97,
+    "diesel": 2.241,
+    "e5_updated_at": "2026-11-07T17:05+01:00",
+    "diesel_updated_at": "2026-11-07T17:05+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-07T11:17:52+01:00",
+    "checked_at": "2026-11-07T17:30:27+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,7 +68,7 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-07T11:17:52+01:00",
+    "checked_at": "2026-11-07T17:30:27+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
@@ -80,7 +80,7 @@
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-07T11:17:52+01:00"
+    "calculated_at": "2026-11-07T17:30:27+01:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,16 @@
   ],
   "news": [
     {
+      "title": "EVgo Opens Its First Tesla Supercharger Site in Chicago",
+      "url": "https://www.notateslaapp.com/news/4961/evgo-opens-its-first-tesla-supercharger-site-in-chicago",
+      "published_at": "2026-11-07T16:30:00+01:00"
+    },
+    {
+      "title": "Tesla’s Giga Shanghai Now Sources 98% of Parts Locally",
+      "url": "https://www.notateslaapp.com/news/4960/teslas-giga-shanghai-now-sources-98-of-parts-locally",
+      "published_at": "2026-11-07T15:30:00+01:00"
+    },
+    {
       "title": "Musk: Tesla Will Rent Optimus Robots Instead of Selling Them",
       "url": "https://www.notateslaapp.com/news/4959/musk-tesla-will-rent-optimus-robots-instead-of-selling-them",
       "published_at": "2026-11-06T21:09:00+01:00"
@@ -24474,16 +24484,6 @@
       "title": "Tesla's Robotaxi Geofences Are Smaller Than Advertised: Their Actual Sizes",
       "url": "https://www.notateslaapp.com/news/4953/teslas-robotaxi-geofences-are-smaller-than-advertised-their-actual-sizes",
       "published_at": "2026-11-05T20:58:00+01:00"
-    },
-    {
-      "title": "All of Tesla's Robotaxi Markets and Their Actual Sizes [UPDATED]",
-      "url": "https://www.notateslaapp.com/news/4748/teslas-active-robotaxi-markets-and-their-sizes",
-      "published_at": "2026-11-05T19:06:00+01:00"
-    },
-    {
-      "title": "Introducing Our Tesla Feature Requests Feature, Where Owners Can Submit and Vote on Ideas",
-      "url": "https://www.notateslaapp.com/news/4951/introducing-our-tesla-feature-requests-feature-where-owners-can-submit-and-vote-on-ideas",
-      "published_at": "2026-11-05T19:03:00+01:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0x86 in position 1: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xf8 in position 6: invalid start byte"
   },
-  "superchargers_updated_at": "2026-11-07T11:17:52+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-07T11:17:52+01:00",
-  "news_updated_at": "2026-11-07T11:17:52+01:00",
-  "regional_news_updated_at": "2026-11-07T11:17:52+01:00",
-  "fuel_prices_updated_at": "2026-11-07T11:17:52+01:00",
-  "tesla_stock_updated_at": "2026-11-07T11:17:52+01:00"
+  "superchargers_updated_at": "2026-11-07T17:30:27+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-07T17:30:27+01:00",
+  "news_updated_at": "2026-11-07T17:30:27+01:00",
+  "regional_news_updated_at": "2026-11-07T17:30:27+01:00",
+  "fuel_prices_updated_at": "2026-11-07T17:30:27+01:00",
+  "tesla_stock_updated_at": "2026-11-07T17:30:27+01:00"
 }
