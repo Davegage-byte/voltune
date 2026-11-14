@@ -6,16 +6,16 @@
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-11-14T00:51:48+01:00",
-  "status_checked_at": "2026-11-14T00:51:48+01:00",
+  "price_checked_at": "2026-11-14T04:38:59+01:00",
+  "status_checked_at": "2026-11-14T04:38:59+01:00",
   "price_changed_at": "2026-11-14T00:51:48+01:00",
-  "updated": "00:51",
-  "checked_at": "2026-11-14T00:51:48+01:00",
+  "updated": "04:38",
+  "checked_at": "2026-11-14T04:38:59+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-11-13T23:00:00+00:00",
-  "price_valid_to": "2026-11-14T00:00:00+00:00",
+  "price_valid_from": "2026-11-14T01:30:00+00:00",
+  "price_valid_to": "2026-11-14T05:15:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-11-13T23:00:00+00:00",
@@ -243,49 +243,49 @@
             "power_kw": 400,
             "price": 0.47,
             "status": "occupied",
-            "status_age_seconds": 3420
+            "status_age_seconds": 14400
           },
           "DE*AVX*E262415": {
             "power_kw": 400,
             "price": 0.47,
             "status": "free",
-            "status_age_seconds": 32400
+            "status_age_seconds": 46800
           },
           "DE*AVX*E262426": {
             "power_kw": 400,
             "price": 0.47,
             "status": "free",
-            "status_age_seconds": 3600
+            "status_age_seconds": 18000
           },
           "DE*AVX*E262427": {
             "power_kw": 400,
             "price": 0.47,
             "status": "free",
-            "status_age_seconds": 18000
+            "status_age_seconds": 32400
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
             "price": 0.47,
             "status": "free",
-            "status_age_seconds": 57600
+            "status_age_seconds": 68400
           },
           "DE*AVX*E262431": {
             "power_kw": 400,
             "price": 0.47,
             "status": "free",
-            "status_age_seconds": 21600
+            "status_age_seconds": 36000
           },
           "DE*AVX*E262451": {
             "power_kw": 400,
             "price": 0.47,
             "status": "free",
-            "status_age_seconds": 18000
+            "status_age_seconds": 32400
           },
           "DE*AVX*E262452": {
             "power_kw": 400,
             "price": 0.47,
             "status": "free",
-            "status_age_seconds": 21600
+            "status_age_seconds": 36000
           }
         }
       }
