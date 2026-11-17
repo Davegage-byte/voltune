@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-17T13:30:58+01:00",
+  "checked_at": "2026-11-17T22:15:29+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-11-17T13:30:58+01:00",
+    "checked_at": "2026-11-17T22:15:29+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 2.1,
-    "diesel": 2.327,
-    "e5_updated_at": "2026-11-17T13:05+01:00",
-    "diesel_updated_at": "2026-11-17T13:05+01:00",
+    "e5": 1.866,
+    "diesel": 2.143,
+    "e5_updated_at": "2026-11-17T21:50+01:00",
+    "diesel_updated_at": "2026-11-17T21:50+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-17T13:30:58+01:00",
+    "checked_at": "2026-11-17T22:15:29+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 379.74,
+    "price": 380.11,
     "currency": "USD",
-    "market_time": "2026-11-16T22:00:00+01:00",
+    "market_time": "2026-11-17T22:00:01+01:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-17T13:30:58+01:00",
+    "checked_at": "2026-11-17T22:15:29+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.4175,
-    "min": 0.35,
+    "average": 0.3725,
+    "min": 0.26,
     "max": 0.45,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-17T13:30:58+01:00"
+    "calculated_at": "2026-11-17T22:15:29+01:00"
   },
   "superchargers": [
     {
@@ -24446,44 +24446,44 @@
   ],
   "news": [
     {
-      "title": "Tesla Owners Could Add Their Vehicles to the Robotaxi Network As Early as Next Month",
-      "url": "https://www.notateslaapp.com/news/5022/tesla-to-allow-customers-to-add-their-vehicles-to-robotaxi-as-early-as-next-month",
-      "published_at": "2026-11-17T00:29:00+01:00"
+      "title": "Tesla Launches Its First FSD Ad in Times Square",
+      "url": "https://www.notateslaapp.com/news/5030/tesla-launches-its-first-fsd-ad-in-times-square",
+      "published_at": "2026-11-17T21:53:00+01:00"
     },
     {
-      "title": "Tesla Nearly Doubles Miami Robotaxi Service Area, Expands Into Downtown",
-      "url": "https://www.notateslaapp.com/news/5021/tesla-nearly-doubles-miami-robotaxi-service-area-expands-into-downtown",
-      "published_at": "2026-11-16T18:32:00+01:00"
+      "title": "Tesla TAD in Europe to Require Attention During Maneuvers and Hands on Wheel Over 130 Km/h",
+      "url": "https://www.notateslaapp.com/news/5029/tesla-tad-in-europe-to-require-hands-on-wheel-over-130-kmh-more",
+      "published_at": "2026-11-17T21:05:00+01:00"
     },
     {
-      "title": "Cybercab is Coming to Europe as Tesla Announces $3.3 Billion Giga Berlin Expansion",
-      "url": "https://www.notateslaapp.com/news/5020/cybercab-is-coming-to-europe-as-tesla-announces-33-billion-giga-berlin-expansion",
-      "published_at": "2026-11-16T18:11:00+01:00"
+      "title": "Tesla Update 2026.44.1 Brings Redesigned Service Menu and Improved Charging Views",
+      "url": "https://www.notateslaapp.com/news/5028/tesla-update-2026441-brings-redesigned-service-menu-and-improved-charging-views",
+      "published_at": "2026-11-17T19:33:00+01:00"
     },
     {
-      "title": "MKBHD Orders a Tesla Cybercab to Decide Head-Shaving Bet",
-      "url": "https://www.notateslaapp.com/news/5019/mkbhd-orders-a-tesla-cybercab-to-decide-head-shaving-bet",
-      "published_at": "2026-11-14T23:46:00+01:00"
+      "title": "New Tesla Supercharger Adjusts Its Power Based on the Grid",
+      "url": "https://www.notateslaapp.com/news/5027/new-tesla-supercharger-adjusts-its-power-based-on-the-grid",
+      "published_at": "2026-11-17T19:01:00+01:00"
     },
     {
-      "title": "Tesla Model Y RWD Gets Increased Range at Same Price",
-      "url": "https://www.notateslaapp.com/news/5017/tesla-model-y-rwd-gets-increased-range-at-same-price",
-      "published_at": "2026-11-14T23:06:00+01:00"
+      "title": "Tesla Unveils Powercore, a New 7.4 MW Solid-State Transformer Coming in 2027",
+      "url": "https://www.notateslaapp.com/news/5026/tesla-unveils-powercore-a-new-74-mw-solid-state-transformer-coming-in-2027",
+      "published_at": "2026-11-17T18:42:00+01:00"
     },
     {
-      "title": "Tesla Cybercab Ownership Rules: No Wraps or Customizations, Subscription May Change",
-      "url": "https://www.notateslaapp.com/news/5016/tesla-cybercab-ownership-rules-no-wraps-or-customizations-subscription-may-change",
-      "published_at": "2026-11-14T22:34:00+01:00"
+      "title": "Tesla Update 2026.44.1 is Hiding a New Navigation Option, Supercharger Notifications and Grok Improvements",
+      "url": "https://www.notateslaapp.com/news/5025/tesla-update-2026441-is-hiding-a-new-navigation-option-supercharger-notifications-and-grok-improvements",
+      "published_at": "2026-11-17T18:32:00+01:00"
     },
     {
-      "title": "Tesla’s Cybercab Autonomy Subscription: Everything Included",
-      "url": "https://www.notateslaapp.com/news/5015/teslas-cybercab-autonomy-subscription-everything-included",
-      "published_at": "2026-11-14T20:29:00+01:00"
+      "title": "Tesla Update 2026.44.1 Release Notes",
+      "url": "https://www.notateslaapp.com/software-updates/version/2026.44.1/release-notes",
+      "published_at": "2026-11-17T05:37:59+01:00"
     },
     {
-      "title": "Musk: Cybercab Sales Are Going Nationwide, $299 Subscription 'Too High'",
-      "url": "https://www.notateslaapp.com/news/5014/musk-cybercab-sales-are-going-nationwide-299-subscription-too-high",
-      "published_at": "2026-11-14T19:19:00+01:00"
+      "title": "New Tesla Accessory Adds Kick-to-Open Trunk and Frunk for Just $99",
+      "url": "https://www.notateslaapp.com/news/5024/new-tesla-accessory-adds-wireless-kick-to-open-trunk-and-frunk-for-just-99",
+      "published_at": "2026-11-17T00:51:00+01:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xba in position 2: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xc1 in position 1: invalid start byte"
   },
-  "superchargers_updated_at": "2026-11-17T13:30:58+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-17T13:30:58+01:00",
-  "news_updated_at": "2026-11-17T13:30:58+01:00",
-  "regional_news_updated_at": "2026-11-17T13:30:58+01:00",
-  "fuel_prices_updated_at": "2026-11-17T13:30:58+01:00",
-  "tesla_stock_updated_at": "2026-11-17T13:30:58+01:00"
+  "superchargers_updated_at": "2026-11-17T22:15:29+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-17T22:15:29+01:00",
+  "news_updated_at": "2026-11-17T22:15:29+01:00",
+  "regional_news_updated_at": "2026-11-17T22:15:29+01:00",
+  "fuel_prices_updated_at": "2026-11-17T22:15:29+01:00",
+  "tesla_stock_updated_at": "2026-11-17T22:15:29+01:00"
 }
