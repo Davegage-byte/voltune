@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-16T22:08:47+01:00",
+  "checked_at": "2026-11-17T04:46:32+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-11-16T22:08:47+01:00",
+    "checked_at": "2026-11-17T04:46:32+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 1.909,
-    "diesel": 2.191,
-    "e5_updated_at": "2026-11-16T21:40+01:00",
-    "diesel_updated_at": "2026-11-16T21:40+01:00",
+    "e5": 1.927,
+    "diesel": 2.215,
+    "e5_updated_at": "2026-11-17T04:20+01:00",
+    "diesel_updated_at": "2026-11-17T04:20+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,7 +51,7 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-16T22:08:47+01:00",
+    "checked_at": "2026-11-17T04:46:32+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-16T22:08:47+01:00",
+    "checked_at": "2026-11-17T04:46:32+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.3725,
+    "average": 0.3131,
     "min": 0.26,
-    "max": 0.45,
+    "max": 0.41,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-16T22:08:47+01:00"
+    "calculated_at": "2026-11-17T04:46:32+01:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,11 @@
   ],
   "news": [
     {
+      "title": "Tesla Owners Could Add Their Vehicles to the Robotaxi Network As Early as Next Month",
+      "url": "https://www.notateslaapp.com/news/5022/tesla-to-allow-customers-to-add-their-vehicles-to-robotaxi-as-early-as-next-month",
+      "published_at": "2026-11-17T00:29:00+01:00"
+    },
+    {
       "title": "Tesla Nearly Doubles Miami Robotaxi Service Area, Expands Into Downtown",
       "url": "https://www.notateslaapp.com/news/5021/tesla-nearly-doubles-miami-robotaxi-service-area-expands-into-downtown",
       "published_at": "2026-11-16T18:32:00+01:00"
@@ -24479,11 +24484,6 @@
       "title": "Musk: Cybercab Sales Are Going Nationwide, $299 Subscription 'Too High'",
       "url": "https://www.notateslaapp.com/news/5014/musk-cybercab-sales-are-going-nationwide-299-subscription-too-high",
       "published_at": "2026-11-14T19:19:00+01:00"
-    },
-    {
-      "title": "Tesla Opens Orders for the Cybercab for Personal Use: Costs $29,990 and Requires a $299 Monthly Subscription",
-      "url": "https://www.notateslaapp.com/news/5012/tesla-opens-orders-for-the-cybercab-for-personal-use-costs-29990-and-requires-a-299-monthly-subscription",
-      "published_at": "2026-11-14T01:18:00+01:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0xad in position 4: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0x99 in position 8: invalid start byte"
   },
-  "superchargers_updated_at": "2026-11-16T22:08:47+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-16T22:08:47+01:00",
-  "news_updated_at": "2026-11-16T22:08:47+01:00",
-  "regional_news_updated_at": "2026-11-16T22:08:47+01:00",
-  "fuel_prices_updated_at": "2026-11-16T22:08:47+01:00",
-  "tesla_stock_updated_at": "2026-11-16T22:08:47+01:00"
+  "superchargers_updated_at": "2026-11-17T04:46:32+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-17T04:46:32+01:00",
+  "news_updated_at": "2026-11-17T04:46:32+01:00",
+  "regional_news_updated_at": "2026-11-17T04:46:32+01:00",
+  "fuel_prices_updated_at": "2026-11-17T04:46:32+01:00",
+  "tesla_stock_updated_at": "2026-11-17T04:46:32+01:00"
 }
