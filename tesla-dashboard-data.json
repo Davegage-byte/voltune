@@ -1,6 +1,6 @@
 {
   "data_version": 15,
-  "checked_at": "2026-11-24T21:20:41+01:00",
+  "checked_at": "2026-11-25T04:35:12+01:00",
   "origin": {
     "name": "AVEX Euskirchen",
     "latitude": 50.686726020023045,
@@ -35,15 +35,15 @@
     "page_url": "https://benzinpreise.de/statistik/bundeslaender",
     "e5_url": "https://benzinpreise.de/statistik/bundeslaender/super-e5",
     "diesel_url": "https://benzinpreise.de/statistik/bundeslaender/diesel",
-    "checked_at": "2026-11-24T21:20:41+01:00",
+    "checked_at": "2026-11-25T04:35:12+01:00",
     "note": "Stündlich berechnete Bundesland-Durchschnittspreise aus MTS-K-Daten",
     "license": "CC BY 4.0"
   },
   "fuel_prices": {
-    "e5": 1.787,
-    "diesel": 2.008,
-    "e5_updated_at": "2026-11-24T20:55+01:00",
-    "diesel_updated_at": "2026-11-24T20:55+01:00",
+    "e5": 1.807,
+    "diesel": 2.03,
+    "e5_updated_at": "2026-11-25T04:10+01:00",
+    "diesel_updated_at": "2026-11-25T04:10+01:00",
     "currency": "EUR",
     "unit": "l"
   },
@@ -51,14 +51,14 @@
     "name": "Yahoo Finance",
     "url": "https://finance.yahoo.com/quote/TSLA/",
     "api_url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=5m&range=1d&includePrePost=false",
-    "checked_at": "2026-11-24T21:20:41+01:00",
+    "checked_at": "2026-11-25T04:35:12+01:00",
     "note": "TSLA regular market price from Yahoo Finance chart metadata"
   },
   "tesla_stock": {
     "symbol": "TSLA",
-    "price": 381.92,
+    "price": 384.68,
     "currency": "USD",
-    "market_time": "2026-11-24T21:20:44+01:00",
+    "market_time": "2026-11-24T22:00:01+01:00",
     "exchange": "NMS"
   },
   "nrw_supercharger_price_source": {
@@ -68,19 +68,19 @@
     "boundary_url": "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json",
     "boundary_state": "Nordrhein-Westfalen",
     "boundary_state_id": "DE-NW",
-    "checked_at": "2026-11-24T21:20:41+01:00",
+    "checked_at": "2026-11-25T04:35:12+01:00",
     "note": "Unweighted average of currently active Supercharger site prices in NRW",
     "boundary_attribution": "GeoJSON: isellsoap/deutschlandGeoJSON"
   },
   "nrw_supercharger_prices": {
-    "average": 0.415,
-    "min": 0.35,
-    "max": 0.45,
+    "average": 0.3131,
+    "min": 0.26,
+    "max": 0.41,
     "priced_sites": 16,
     "total_sites": 19,
     "currency": "EUR",
     "unit": "kwh",
-    "calculated_at": "2026-11-24T21:20:41+01:00"
+    "calculated_at": "2026-11-25T04:35:12+01:00"
   },
   "superchargers": [
     {
@@ -24446,6 +24446,21 @@
   ],
   "news": [
     {
+      "title": "Tesla FSD V15 Improvements Coming: Faster Reality View, Purple Tint Fix, Santa Mode & More",
+      "url": "https://www.notateslaapp.com/news/5078/improvements-coming-to-fsd-v15-lower-latency-for-reality-view-santa-mode-more",
+      "published_at": "2026-11-25T00:34:00+01:00"
+    },
+    {
+      "title": "New York Bans Car Subscriptions, Tesla FSD Likely Exempt",
+      "url": "https://www.notateslaapp.com/news/5077/new-yorks-car-subscription-ban-likely-leaves-tesla-fsd-untouched",
+      "published_at": "2026-11-24T23:32:00+01:00"
+    },
+    {
+      "title": "Tesla FSD V15 Finally Lets You Hide FSD Visuals and Use Maps Full Screen",
+      "url": "https://www.notateslaapp.com/news/5076/tesla-fsd-v15-lets-you-hide-fsd-visuals-with-map-view-and-calm-mode",
+      "published_at": "2026-11-24T22:25:00+01:00"
+    },
+    {
       "title": "Tesla App to Add Supercharger Voting, Code Reveals",
       "url": "https://www.notateslaapp.com/news/5074/tesla-app-to-add-supercharger-voting-code-reveals",
       "published_at": "2026-11-24T21:03:00+01:00"
@@ -24469,21 +24484,6 @@
       "title": "Tesla FSD V15 Finally Removes the Disengagement Menu",
       "url": "https://www.notateslaapp.com/news/5069/tesla-fsd-v15-finally-removes-the-disengagement-menu",
       "published_at": "2026-11-23T20:06:00+01:00"
-    },
-    {
-      "title": "How Tesla's FSD V15 Reality View Actually Works [VIDEO]",
-      "url": "https://www.notateslaapp.com/news/5068/how-teslas-fsd-v15-reality-view-actually-works-video",
-      "published_at": "2026-11-23T18:21:00+01:00"
-    },
-    {
-      "title": "Tesla Is Looking to Add Starlink to Its Vehicles Next Year",
-      "url": "https://www.notateslaapp.com/news/5067/tesla-is-looking-to-add-starlink-to-its-vehicles-next-year",
-      "published_at": "2026-11-23T17:15:00+01:00"
-    },
-    {
-      "title": "Tesla Confirms Its Next-Gen FSD Computer (AI4.5) Will Now Include Less Ram Than Planned",
-      "url": "https://www.notateslaapp.com/news/5066/tesla-confirms-its-next-gen-fsd-computer-ai45-will-now-include-less-ram-than-planned",
-      "published_at": "2026-11-23T16:24:00+01:00"
     }
   ],
   "regional_news": [
@@ -24561,12 +24561,12 @@
     }
   ],
   "errors": {
-    "suc_tracker": "'utf-8' codec can't decode byte 0x9e in position 2: invalid start byte"
+    "suc_tracker": "'utf-8' codec can't decode byte 0xca in position 2: invalid continuation byte"
   },
-  "superchargers_updated_at": "2026-11-24T21:20:41+01:00",
-  "nrw_supercharger_prices_updated_at": "2026-11-24T21:20:41+01:00",
-  "news_updated_at": "2026-11-24T21:20:41+01:00",
-  "regional_news_updated_at": "2026-11-24T21:20:41+01:00",
-  "fuel_prices_updated_at": "2026-11-24T21:20:41+01:00",
-  "tesla_stock_updated_at": "2026-11-24T21:20:41+01:00"
+  "superchargers_updated_at": "2026-11-25T04:35:12+01:00",
+  "nrw_supercharger_prices_updated_at": "2026-11-25T04:35:12+01:00",
+  "news_updated_at": "2026-11-25T04:35:12+01:00",
+  "regional_news_updated_at": "2026-11-25T04:35:12+01:00",
+  "fuel_prices_updated_at": "2026-11-25T04:35:12+01:00",
+  "tesla_stock_updated_at": "2026-11-25T04:35:12+01:00"
 }
