@@ -24,7 +24,8 @@ window.VoltunePhysicalAudio = (() => {
   active=false,muted=false,generation=0,lastAccelTime=0,lastAccelLoad=.13,
   prevLoad=.13,lastPop=0,lastShift=0,lastSpeed=0,lastValidAt=0,lastEventTime=0,
   accelerationEnvelope=0,accelEnvelopeTime=0,
-  poseHeld=false,poseStartAt=0,poseReleaseAt=0,poseReleaseRpm=850,poseBaseRpm=850;
+  poseHeld=false,poseStartAt=0,poseReleaseAt=0,poseReleaseRpm=850,poseBaseRpm=850,
+  lastDrivingRpm=850,lastDrivingLoad=.13;
  const presetList=["hybrid","amg","gti","italia","v8","v4","v6","v12","i5","ev"];
  const names={hybrid:"Hybrid EV + V8",amg:"V8 AMG",gti:"Golf GTI",italia:"V12 Italia",
   v8:"V8 Crossplane",v4:"V4",v6:"V6",v12:"V12",i5:"Reihenfünfzylinder",ev:"EV"};
@@ -145,8 +146,15 @@ window.VoltunePhysicalAudio = (() => {
   return null;
  }
  function cancelPose(){
+  const wasPosing=poseHeld||poseReleaseAt>0;
   poseHeld=false;poseStartAt=0;poseReleaseAt=0;
   poseReleaseRpm=850;poseBaseRpm=850;
+  // Restore sound immediately even if the Tesla browser stops rendering.
+  if(wasPosing&&ctx&&engine&&ctx.state==="running"){
+   REF.rpm=lastDrivingRpm;REF.load=lastDrivingLoad;
+   engine.parameters.get("rpm").setTargetAtTime(REF.rpm,ctx.currentTime,.12);
+   engine.parameters.get("load").setTargetAtTime(REF.load,ctx.currentTime,.12);
+  }
  }
  function setPoseHeld(held){
   if(held){
@@ -161,6 +169,11 @@ window.VoltunePhysicalAudio = (() => {
   const now=performance.now();
   const rpmAtRelease=poseRpmAt(now)??poseBaseRpm;
   poseHeld=false;poseReleaseAt=now;poseReleaseRpm=rpmAtRelease;
+  // Start the fallback release even if animation frames are suspended.
+  if(ctx&&engine&&ctx.state==="running"){
+   engine.parameters.get("rpm").setTargetAtTime(poseBaseRpm,ctx.currentTime,.36);
+   engine.parameters.get("load").setTargetAtTime(.13,ctx.currentTime,.16);
+  }
   // A short tap must not fire a loud pop. Reuse the user's existing pop strength.
   if(now-poseStartAt>=250&&rpmAtRelease>=1450&&lastSpeed<=POSE_MAX_SPEED_KMH)
    sendEvent("overrun",.8);
@@ -306,6 +319,7 @@ window.VoltunePhysicalAudio = (() => {
  }
  function resetDrivingState(){
   cancelPose();
+  lastDrivingRpm=850;lastDrivingLoad=.13;
   prevLoad=.13;lastAccelTime=0;lastAccelLoad=.13;lastPop=performance.now();
   lastShift=performance.now();lastEventTime=0;lastValidAt=0;lastSpeed=0;REF.rpm=850;REF.load=.13;
   accelerationEnvelope=0;accelEnvelopeTime=0;
@@ -337,6 +351,7 @@ window.VoltunePhysicalAudio = (() => {
   const load=accel>=.2
    ?clamp(.24+accel*.28*gentleBlend,.24,.94)
    :accel<=-.3?.055:speed<=2?.13:.24;
+  lastDrivingRpm=rpm;lastDrivingLoad=load;
   // A hold-to-rev gesture may override only the AUDIO reference, never GPS.
   // Stop immediately if the vehicle begins rolling.
   if(speed>POSE_MAX_SPEED_KMH&&(poseHeld||poseReleaseAt))cancelPose();
