@@ -131,6 +131,29 @@ body.cleanDrive.v2-settings-open main>.debugCore{display:block!important;positio
 .v2RightNum.green{color:var(--v-green)}
 .v2RightNum.amber{color:var(--v-amber)}
 .v2RightFoot{font-size:10px;letter-spacing:.19em;color:var(--v-muted);margin-top:5px}
+/* Drive HUD: a touch-and-hold rev pad in the existing acceleration metric. */
+.v2Cockpit button.v2RevButton{
+ appearance:none;box-sizing:border-box;display:block;width:100%;height:auto;
+ margin:0;padding:10px 11px;min-height:0;border:1px solid transparent;
+ border-radius:12px;background:transparent;color:inherit;text-align:left;
+ font:inherit;line-height:inherit;touch-action:none;user-select:none;
+ -webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+ transition:background .15s ease,border-color .15s ease,box-shadow .15s ease
+}
+.v2RevButton:hover,.v2RevButton:focus-visible{
+ background:rgba(var(--v-rgb),.05);
+ border-color:rgba(var(--v-rgb),.32)
+}
+.v2RevButton:focus-visible{outline:2px solid var(--v-cyan);outline-offset:3px}
+.v2Cockpit button.v2RevButton.is-revving{
+ background:rgba(111,236,181,.10);border-color:rgba(111,236,181,.55);
+ box-shadow:0 0 16px rgba(111,236,181,.15)
+}
+.v2RevHint{
+ display:block;margin-top:8px;font-size:9px;font-weight:600;
+ letter-spacing:.13em;color:var(--v-dim)
+}
+.v2RevButton.is-revving .v2RevHint{color:var(--v-green)}
 /* Die Spur bleibt unbewegt; nur die Karosserie weicht sanft um max. 7px aus. */
 .v2CarMini{width:110px;max-width:70%;opacity:.77;overflow:visible}
 .v2CarMini path,.v2CarMini rect,.v2CarMini ellipse{fill:none;stroke:var(--v-dim);stroke-width:1.5}

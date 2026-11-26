@@ -23,11 +23,13 @@ window.VoltunePhysicalAudio = (() => {
   carrier=null,carrierUrl=null,
   active=false,muted=false,generation=0,lastAccelTime=0,lastAccelLoad=.13,
   prevLoad=.13,lastPop=0,lastShift=0,lastSpeed=0,lastValidAt=0,lastEventTime=0,
-  accelerationEnvelope=0,accelEnvelopeTime=0;
+  accelerationEnvelope=0,accelEnvelopeTime=0,
+  poseHeld=false,poseStartAt=0,poseReleaseAt=0,poseReleaseRpm=850,poseBaseRpm=850;
  const presetList=["hybrid","amg","gti","italia","v8","v4","v6","v12","i5","ev"];
  const names={hybrid:"Hybrid EV + V8",amg:"V8 AMG",gti:"Golf GTI",italia:"V12 Italia",
   v8:"V8 Crossplane",v4:"V4",v6:"V6",v12:"V12",i5:"Reihenfünfzylinder",ev:"EV"};
  const REF={rpm:850,load:.13};
+ const POSE_MAX_RPM=4500,POSE_RISE_MS=1150,POSE_FALL_MS=950,POSE_MAX_SPEED_KMH=2;
  const pendingPlay={value:null};
  const mediaActions=["play","pause","nexttrack","previoustrack"];
  let lastWheelAt=0,gearCallback=null;
@@ -127,6 +129,44 @@ window.VoltunePhysicalAudio = (() => {
  // Regelbereich: 0–12 dB PegelUNTERSCHIED zwischen Konstantfahrt
  // und starker Beschleunigung. Symmetrische Absenkung/Anhebung
  // erhält mehr Headroom als reine 12-dB-Verstärkung.
+ // Separate virtual rev layer for the Drive HUD. Never changes GPS or drivetrain.
+ function poseRpmAt(now=performance.now()){
+  if(poseHeld){
+   const t=clamp((now-poseStartAt)/POSE_RISE_MS,0,1);
+   return poseBaseRpm+(POSE_MAX_RPM-poseBaseRpm)*t*t*(3-2*t);
+  }
+  if(poseReleaseAt>0){
+   const t=(now-poseReleaseAt)/POSE_FALL_MS;
+   if(t<1){
+    const left=1-clamp(t,0,1);
+    return poseBaseRpm+(poseReleaseRpm-poseBaseRpm)*left*left;
+   }
+  }
+  return null;
+ }
+ function cancelPose(){
+  poseHeld=false;poseStartAt=0;poseReleaseAt=0;
+  poseReleaseRpm=850;poseBaseRpm=850;
+ }
+ function setPoseHeld(held){
+  if(held){
+   if(!isStarted()||muted||lastSpeed>POSE_MAX_SPEED_KMH||document.hidden)return false;
+   if(poseHeld)return true;
+   const now=performance.now();
+   poseBaseRpm=clamp(poseRpmAt(now)??REF.rpm,800,1250);
+   poseStartAt=now;poseReleaseAt=0;poseHeld=true;
+   return true;
+  }
+  if(!poseHeld)return false;
+  const now=performance.now();
+  const rpmAtRelease=poseRpmAt(now)??poseBaseRpm;
+  poseHeld=false;poseReleaseAt=now;poseReleaseRpm=rpmAtRelease;
+  // A short tap must not fire a loud pop. Reuse the user's existing pop strength.
+  if(now-poseStartAt>=250&&rpmAtRelease>=1450&&lastSpeed<=POSE_MAX_SPEED_KMH)
+   sendEvent("overrun",.8);
+  return true;
+ }
+ function getPoseRpm(){return isStarted()?poseRpmAt():null;}
  function applyAccelerationGain(){
   if(!ctx||!accelGain)return;
   const differenceDb=clamp(config.accelDynamics,0,12);
@@ -255,6 +295,7 @@ window.VoltunePhysicalAudio = (() => {
   }
  }
  function stop(){
+  cancelPose();
   ++generation;
   cleanupCarrier();
   const old=ctx;
@@ -264,6 +305,7 @@ window.VoltunePhysicalAudio = (() => {
   if(old)try{old.close()?.catch?.(()=>{});}catch(_){}
  }
  function resetDrivingState(){
+  cancelPose();
   prevLoad=.13;lastAccelTime=0;lastAccelLoad=.13;lastPop=performance.now();
   lastShift=performance.now();lastEventTime=0;lastValidAt=0;lastSpeed=0;REF.rpm=850;REF.load=.13;
   accelerationEnvelope=0;accelEnvelopeTime=0;
@@ -295,7 +337,16 @@ window.VoltunePhysicalAudio = (() => {
   const load=accel>=.2
    ?clamp(.24+accel*.28*gentleBlend,.24,.94)
    :accel<=-.3?.055:speed<=2?.13:.24;
-  REF.rpm=rpm;REF.load=load;
+  // A hold-to-rev gesture may override only the AUDIO reference, never GPS.
+  // Stop immediately if the vehicle begins rolling.
+  if(speed>POSE_MAX_SPEED_KMH&&(poseHeld||poseReleaseAt))cancelPose();
+  const posingRpm=poseRpmAt(now);
+  if(posingRpm===null){REF.rpm=rpm;REF.load=load;}
+  else {
+   const rev=clamp((posingRpm-poseBaseRpm)/(POSE_MAX_RPM-poseBaseRpm),0,1);
+   REF.rpm=posingRpm;
+   REF.load=poseHeld?.13+.72*rev:.13+.30*rev;
+  }
   updateAccelerationEnvelope(accel);
   // 1.6 s acceleration history: proven Sport mode from the isolated GPS lab.
   const sensitivity=config.sensitivity;
@@ -337,7 +388,8 @@ window.VoltunePhysicalAudio = (() => {
  function triggerTurboFlutter(){/* Legacy turbo flutter does not belong here. */}
  return {start,stop,isStarted,setMuted,isMuted,setMasterVolume,update,resetDrivingState,
   triggerShiftBurble,triggerDownshiftBlip,triggerOverrun,triggerBov,triggerTurboFlutter,testEvent,
-  setProfile,setConfig,getConfig,onProfileChange,presetList,names,getOutputMeter};
+  setProfile,setConfig,getConfig,onProfileChange,presetList,names,getOutputMeter,
+  setPoseHeld,cancelPose,getPoseRpm};
 })();
 window.VoltuneAudioRouter = (() => {
  const original=window.VoltuneAudio,physical=window.VoltunePhysicalAudio;

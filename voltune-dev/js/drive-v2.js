@@ -19,6 +19,7 @@ const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const getNum=el=>{const x=String(el?.textContent||"").replace(",",".").match(/[-+]?\d+(?:\.\d+)?/);return x?Number(x[0])||0:0};
 const getRpm=()=>Number(String(old.rpm?.textContent||"0").match(/\d[\d.,]*/)?.[0].replace(/[.,]/g,""))||0;
 const ready=()=>!!(window.VoltuneAudio&&window.VoltuneAudio.isStarted());
+const revButton=$("v2RevButton");
 const getMode=()=>old.modeMadness.classList.contains("active")?"WAHNSINN":
  old.modeSport.classList.contains("active")?"SPORT":"NORMAL";
 // Independent visual calibration: does NOT alter engine or audio.
@@ -85,7 +86,10 @@ for(let i=0;i<=62;i++){
 }
 const current=()=>{
  const speed=clamp(Math.round(getNum(old.speed)),0,400),a=clamp(getNum(old.accel),-12,12);
- const rpm=clamp(getRpm(),0,16000),maxRpm=clamp(Number(old.maxRpm?.value)||7000,1000,16000);
+ const poseRpm=window.VoltuneAudio?.getEngine?.()==="physical"
+  ?window.VoltunePhysicalAudio?.getPoseRpm?.():null;
+ const rpm=clamp(Number.isFinite(poseRpm)?Math.round(poseRpm):getRpm(),0,16000),
+  maxRpm=clamp(Number(old.maxRpm?.value)||7000,1000,16000);
  const gear=String(old.gear?.textContent||"1").trim()||"1";
  const status=old.status?.dataset.state||"ready";
  return {speed,a,rpm,maxRpm,gear,status,mode:getMode()};
@@ -225,6 +229,67 @@ $("v2Demo").addEventListener("click",()=>{
 $("v2Normal").addEventListener("click",()=>changeMode("normal"));
 $("v2Sport").addEventListener("click",()=>changeMode("sport"));
 $("v2Madness").addEventListener("click",()=>changeMode("madness"));
+// Hold the acceleration metric to free-rev the existing Physical Engine.
+// Pointer capture ensures release even when the finger slides off the pad.
+let revPointer=null,revKeyboard=false;
+const canRev=()=>ready()&&window.VoltuneAudio?.getEngine?.()==="physical"
+ &&getNum(old.speed)<=2&&!document.hidden;
+function beginRev(){
+ if(!canRev()||!window.VoltunePhysicalAudio?.setPoseHeld?.(true))return false;
+ revButton.classList.add("is-revving");
+ revButton.setAttribute("aria-pressed","true");
+ schedulePaint();
+ return true;
+}
+function finishRev(withPop){
+ if(!revButton.classList.contains("is-revving"))return;
+ revButton.classList.remove("is-revving");
+ revButton.setAttribute("aria-pressed","false");
+ if(withPop&&canRev())window.VoltunePhysicalAudio?.setPoseHeld?.(false);
+ else window.VoltunePhysicalAudio?.cancelPose?.();
+ schedulePaint();
+}
+revButton.addEventListener("pointerdown",event=>{
+ if(event.button!==0||revPointer!==null||revKeyboard)return;
+ if(!beginRev())return;
+ revPointer=event.pointerId;
+ try{revButton.setPointerCapture?.(event.pointerId);}catch(_){}
+ event.preventDefault();
+});
+revButton.addEventListener("pointerup",event=>{
+ if(revPointer!==event.pointerId)return;
+ revPointer=null;finishRev(true);
+});
+revButton.addEventListener("pointercancel",event=>{
+ if(revPointer!==event.pointerId)return;
+ revPointer=null;finishRev(false);
+});
+revButton.addEventListener("lostpointercapture",event=>{
+ if(revPointer!==event.pointerId)return;
+ revPointer=null;finishRev(false);
+});
+revButton.addEventListener("keydown",event=>{
+ if(event.key!==" "&&event.key!=="Enter")return;
+ event.preventDefault();
+ if(event.repeat||revKeyboard||revPointer!==null)return;
+ revKeyboard=beginRev();
+});
+revButton.addEventListener("keyup",event=>{
+ if(event.key!==" "&&event.key!=="Enter")return;
+ event.preventDefault();
+ if(revKeyboard){revKeyboard=false;finishRev(true);}
+});
+revButton.addEventListener("blur",()=>{
+ revKeyboard=false;revPointer=null;finishRev(false);
+});
+function cancelRevGesture(){
+ revPointer=null;revKeyboard=false;finishRev(false);
+}
+window.addEventListener("blur",cancelRevGesture);
+window.addEventListener("pagehide",cancelRevGesture);
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden)cancelRevGesture();
+});
 $("v2Theme").addEventListener("click",()=>old.theme.click());
 const shade=$("v2Shade"),settings=$("v2Settings");
 function showSettings(visible){
@@ -320,6 +385,11 @@ function tick(timestamp){
   $("v2VuStatus").textContent=physical?"LIVE-PEGEL":"";
   drawVolume();
   animateCar(timestamp);
+  if(revButton.classList.contains("is-revving")&&!canRev())cancelRevGesture();
+  revButton.setAttribute("aria-disabled",String(!canRev()));
+  // The fake rev lives in the audio engine, so refresh the RPM view even
+  // when the real GPS/drivetrain text remains unchanged at zero speed.
+  schedulePaint();
   // Keep the clock correct without creating another interval.
   if(timestamp%1000<60){
    $("v2Clock").textContent=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});

@@ -84,7 +84,7 @@ html[data-theme="light"] #startupOverlay {
   
 <link rel="stylesheet" href="css/voltune.css?v=physical-help-20261019">
 <link rel="stylesheet" href="css/launch.css">
-<link rel="stylesheet" href="css/drive-v2.css?v=drive-v2-settings-20261019-v4">
+<link rel="stylesheet" href="css/drive-v2.css?v=drive-rev-20261126">
 
 </head>
 <body class="cleanDrive">
@@ -308,11 +308,14 @@ html[data-theme="light"] #startupOverlay {
       </div>
     </div>
     <aside class="v2Side v2SideRight" aria-label="Beschleunigung und Rekuperation">
-      <div class="v2RightMetric">
+      <button type="button" class="v2RightMetric v2RevButton" id="v2RevButton"
+        aria-label="Nur im Stand: gedrückt halten, um den Motor aufheulen zu lassen; loslassen für Schubknallen"
+        aria-pressed="false" title="Im Stand halten: Motor aufheulen · loslassen: Schubknallen">
         <div class="v2RightNum green" id="v2AccelPct">0%</div>
         <div class="v2RightFoot">BESCHLEUNIGUNG</div>
         <div class="v2NoData" id="v2AccelRaw">0.00 m/s²</div>
-      </div>
+        <span class="v2RevHint" aria-hidden="true">HALTEN · REV</span>
+      </button>
       <svg class="v2CarMini" viewBox="0 0 124 190" aria-hidden="true">
         <!-- Die Fahrspur bleibt stehen, nur die Karosserie bewegt sich minimal. -->
         <path d="M 15 3 L 2 186 M 109 3 L 122 186"/>
