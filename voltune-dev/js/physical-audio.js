@@ -25,12 +25,15 @@ window.VoltunePhysicalAudio = (() => {
   prevLoad=.13,lastPop=0,lastShift=0,lastSpeed=0,lastValidAt=0,lastEventTime=0,
   accelerationEnvelope=0,accelEnvelopeTime=0,
   poseHeld=false,poseStartAt=0,poseReleaseAt=0,poseReleaseRpm=850,poseBaseRpm=850,
-  lastDrivingRpm=850,lastDrivingLoad=.13;
+  lastDrivingRpm=850,lastDrivingLoad=.13,idleTrimDb=-1.5;
  const presetList=["hybrid","amg","gti","italia","v8","v4","v6","v12","i5","ev"];
  const names={hybrid:"Hybrid EV + V8",amg:"V8 AMG",gti:"Golf GTI",italia:"V12 Italia",
   v8:"V8 Crossplane",v4:"V4",v6:"V6",v12:"V12",i5:"Reihenfünfzylinder",ev:"EV"};
  const REF={rpm:850,load:.13};
  const POSE_MAX_RPM=4500,POSE_RISE_MS=1150,POSE_FALL_MS=950,POSE_MAX_SPEED_KMH=2;
+ // Idle stays present but 1.5 dB quieter; fade the trim out by 8 km/h.
+ const IDLE_TRIM_DB=-1.5,IDLE_BLEND_END_KMH=8;
+ const smoothstep=x=>{const t=clamp(x,0,1);return t*t*(3-2*t);};
  const pendingPlay={value:null};
  const mediaActions=["play","pause","nexttrack","previoustrack"];
  let lastWheelAt=0,gearCallback=null;
@@ -163,6 +166,8 @@ window.VoltunePhysicalAudio = (() => {
    const now=performance.now();
    poseBaseRpm=clamp(poseRpmAt(now)??REF.rpm,800,1250);
    poseStartAt=now;poseReleaseAt=0;poseHeld=true;
+   // The intentional free-rev bypasses the stationary idle volume trim.
+   idleTrimDb=0;apply();
    return true;
   }
   if(!poseHeld)return false;
@@ -220,7 +225,10 @@ window.VoltunePhysicalAudio = (() => {
   events.parameters.get("effectBoost").setTargetAtTime(1+4*clamp(config.effectFocus,0,100)/100,at,.04);
   events.parameters.get("muffling").setTargetAtTime(clamp(config.muffling,0,100)/100,at,.03);
   eq.gain.setTargetAtTime(config.preset==="amg"?-11*clamp(config.amgHighs,0,100)/100:0,at,.055);
-  profileGain.gain.setTargetAtTime(config.preset==="hybrid"?2:1,at,.08);
+  // Apply idle loudness only to the engine before the event generator,
+  // so pops retain their configured level. Posing temporarily bypasses it.
+  const idleGain=Math.pow(10,idleTrimDb/20);
+  profileGain.gain.setTargetAtTime((config.preset==="hybrid"?2:1)*idleGain,at,.12);
   setMasterVolume(config.volume??32);
   applyAccelerationGain();
   applyTeslaEq();
@@ -319,7 +327,7 @@ window.VoltunePhysicalAudio = (() => {
  }
  function resetDrivingState(){
   cancelPose();
-  lastDrivingRpm=850;lastDrivingLoad=.13;
+  lastDrivingRpm=850;lastDrivingLoad=.13;idleTrimDb=IDLE_TRIM_DB;
   prevLoad=.13;lastAccelTime=0;lastAccelLoad=.13;lastPop=performance.now();
   lastShift=performance.now();lastEventTime=0;lastValidAt=0;lastSpeed=0;REF.rpm=850;REF.load=.13;
   accelerationEnvelope=0;accelEnvelopeTime=0;
@@ -344,18 +352,24 @@ window.VoltunePhysicalAudio = (() => {
   if(!isStarted())return null;
   const rpm=clamp(data.rpm,700,8500),accel=clamp(data.acceleration,-6,6),
    speed=clamp(data.speedKmh,0,300),now=performance.now();
-  // Sehr sanftes Beschleunigen soll den Motorklang nicht sofort stark aufhellen.
-  // Ab 0,8 m/s² bleibt die bisherige Lastkurve unverändert.
-  const gentleAccel=clamp(accel/.8,0,1);
-  const gentleBlend=gentleAccel*gentleAccel*(3-2*gentleAccel);
+  // At a standstill the physical engine idles at 13% load.
+  // Ease the cruise baseline toward 24% over 0-8 km/h instead of
+  // switching suddenly at 2 km/h. At >=0.8 m/s², the old acceleration
+  // load remains untouched even when pulling away from zero speed.
+  const rollingBlend=smoothstep(speed/IDLE_BLEND_END_KMH);
+  const gentleBlend=smoothstep(accel/.8);
+  const accelBlend=smoothstep((accel-.2)/.6);
+  const baseLoad=.13+.11*Math.max(rollingBlend,accelBlend);
   const load=accel>=.2
-   ?clamp(.24+accel*.28*gentleBlend,.24,.94)
-   :accel<=-.3?.055:speed<=2?.13:.24;
+   ?clamp(baseLoad+accel*.28*gentleBlend,.13,.94)
+   :accel<=-.3?.055:baseLoad;
   lastDrivingRpm=rpm;lastDrivingLoad=load;
   // A hold-to-rev gesture may override only the AUDIO reference, never GPS.
   // Stop immediately if the vehicle begins rolling.
   if(speed>POSE_MAX_SPEED_KMH&&(poseHeld||poseReleaseAt))cancelPose();
   const posingRpm=poseRpmAt(now);
+  // Only actual idle is quieter. The hold-to-rev and its release stay loud.
+  idleTrimDb=posingRpm===null?IDLE_TRIM_DB*(1-rollingBlend):0;
   if(posingRpm===null){REF.rpm=rpm;REF.load=load;}
   else {
    const rev=clamp((posingRpm-poseBaseRpm)/(POSE_MAX_RPM-poseBaseRpm),0,1);
