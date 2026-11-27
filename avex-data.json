@@ -1,21 +1,21 @@
 {
-  "price": "0,57",
-  "free": 8,
-  "occupied": 0,
+  "price": "0,59",
+  "free": 7,
+  "occupied": 1,
   "offline": 0,
   "unknown": 0,
   "price_source": "avex",
   "status_source": "e-stations",
-  "price_checked_at": "2026-11-27T05:39:38+01:00",
-  "status_checked_at": "2026-11-27T05:39:38+01:00",
-  "price_changed_at": "2026-11-26T23:55:01+01:00",
-  "updated": "05:39",
-  "checked_at": "2026-11-27T05:39:38+01:00",
+  "price_checked_at": "2026-11-27T15:19:00+01:00",
+  "status_checked_at": "2026-11-27T15:19:00+01:00",
+  "price_changed_at": "2026-11-27T15:19:00+01:00",
+  "updated": "15:19",
+  "checked_at": "2026-11-27T15:19:00+01:00",
   "scraper_version": "2026-09-23-v6",
   "price_fresh": true,
   "status_fresh": false,
-  "price_valid_from": "2026-11-26T23:00:00+00:00",
-  "price_valid_to": "2026-11-27T05:15:00+00:00",
+  "price_valid_from": "2026-11-27T05:15:00+00:00",
+  "price_valid_to": "2026-11-27T20:45:00+00:00",
   "price_schedule": [
     {
       "valid_from": "2026-11-26T23:00:00+00:00",
@@ -71,12 +71,12 @@
       "ok": true,
       "url": "https://www.e-stations.de/ladestationen/euskirchen/avex-euskirchen-108",
       "data": {
-        "free": 8,
-        "occupied": 0,
+        "free": 7,
+        "occupied": 1,
         "offline": 0,
         "unknown": 0,
         "price": 0.59,
-        "published_at": "2026-11-27T01:03:00+01:00",
+        "published_at": "2026-11-27T13:00:00+01:00",
         "evses": {
           "DE*AVX*E262452": {
             "status": "free",
@@ -85,8 +85,8 @@
             "data_since": "2026-07-04"
           },
           "DE*AVX*E262414": {
-            "status": "free",
-            "status_at": "2026-11-26T04:36:00+01:00",
+            "status": "occupied",
+            "status_at": "2026-11-27T07:59:00+01:00",
             "price": 0.59,
             "data_since": "2026-07-03"
           },
@@ -110,7 +110,7 @@
           },
           "DE*AVX*E262451": {
             "status": "free",
-            "status_at": "2026-11-26T04:36:00+01:00",
+            "status_at": "2026-11-27T08:14:00+01:00",
             "price": 0.59,
             "data_since": "2026-07-04"
           },
@@ -133,63 +133,63 @@
       "ok": true,
       "url": "https://adhocladen.de/euskirchen/avex-mineraloelhandelsgesellschaft/",
       "data": {
-        "price": 0.52,
+        "price": 0.55,
         "published_at": null,
         "free": 6,
-        "occupied": 0,
-        "offline": 2,
+        "occupied": 2,
+        "offline": 0,
         "evses": {
           "DE*AVX*E262414": {
             "power_kw": 400,
-            "price": 0.52,
+            "price": 0.55,
             "status": "free",
-            "status_age_seconds": 480
+            "status_age_seconds": 3600
           },
           "DE*AVX*E262415": {
             "power_kw": 400,
-            "price": 0.52,
-            "status": "free",
-            "status_age_seconds": 480
+            "price": 0.55,
+            "status": "occupied",
+            "status_age_seconds": 2220
           },
           "DE*AVX*E262426": {
             "power_kw": 400,
-            "price": 0.52,
-            "status": "offline",
-            "status_age_seconds": 600
+            "price": 0.55,
+            "status": "free",
+            "status_age_seconds": 21600
           },
           "DE*AVX*E262427": {
             "power_kw": 400,
-            "price": 0.52,
-            "status": "offline",
-            "status_age_seconds": 600
+            "price": 0.55,
+            "status": "free",
+            "status_age_seconds": 1020
           },
           "DE*AVX*E262430": {
             "power_kw": 400,
-            "price": 0.52,
+            "price": 0.55,
             "status": "free",
-            "status_age_seconds": 480
+            "status_age_seconds": 7200
           },
           "DE*AVX*E262431": {
             "power_kw": 400,
-            "price": 0.52,
-            "status": "free",
-            "status_age_seconds": 480
+            "price": 0.55,
+            "status": "occupied",
+            "status_age_seconds": 60
           },
           "DE*AVX*E262451": {
             "power_kw": 400,
-            "price": 0.52,
+            "price": 0.55,
             "status": "free",
-            "status_age_seconds": 480
+            "status_age_seconds": 18000
           },
           "DE*AVX*E262452": {
             "power_kw": 400,
-            "price": 0.52,
+            "price": 0.55,
             "status": "free",
-            "status_age_seconds": 480
+            "status_age_seconds": 3600
           }
         }
       }
     }
   },
-  "status_published_at": "2026-11-27T01:03:00+01:00"
+  "status_published_at": "2026-11-27T13:00:00+01:00"
 }
